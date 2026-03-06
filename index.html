@@ -790,6 +790,24 @@ function renderScreen0(){
   html+=`<div class="prog-section">
     <div class="prog-label"><span style="color:var(--vc2);font-weight:900">VC-2</span><span>${fmtHours(vc2V)} / ${fmtHours(vc2M)} <span style="color:${vc2C};font-weight:900">(${vc2Pct.toFixed(1)}%)</span></span></div>
     <div class="prog-track"><div class="prog-marker" style="left:${yearPct}%"></div><div class="prog-fill" style="width:${Math.min(vc2Pct,100)}%;background:linear-gradient(90deg,var(--vc2),${vc2C})" data-pct="${vc2Pct.toFixed(0)}%"></div></div></div>`;
+
+  // Avisos 50% e 70% — Ofício ao GABAER
+  const avisos=[];
+  if(vc1Pct>=70)avisos.push({anv:'VC-1',pct:70,cur:vc1Pct});
+  else if(vc1Pct>=50)avisos.push({anv:'VC-1',pct:50,cur:vc1Pct});
+  if(vc2Pct>=70)avisos.push({anv:'VC-2',pct:70,cur:vc2Pct});
+  else if(vc2Pct>=50)avisos.push({anv:'VC-2',pct:50,cur:vc2Pct});
+  if(avisos.length){
+    html+='<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">';
+    avisos.forEach(a=>{
+      const cor=a.pct>=70?'var(--red)':'var(--yellow)';
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid ${cor};background:rgba(${a.pct>=70?'255,68,68':'255,193,7'},0.08)">
+        <span style="font-size:1.2rem">${a.pct>=70?'🚨':'⚠️'}</span>
+        <div><div style="font-weight:900;color:${cor}">${a.anv} atingiu ${a.pct}% do esforço aéreo (${a.cur.toFixed(1)}%)</div>
+        <div style="font-size:.72rem;color:var(--text2)">Ofício ao GABAER necessário</div></div></div>`;
+    });
+    html+='</div>';
+  }
   html+='</div>';
 
   // --- PRÓXIMAS MISSÕES INTERNACIONAIS ---
