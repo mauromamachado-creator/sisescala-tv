@@ -257,7 +257,7 @@ footer a:hover{text-decoration:underline}
     <div id="kpi-box" style="display:flex;gap:24px;margin-left:24px">
       <div style="text-align:center"><div id="kpi-trip" style="font-size:1.5rem;font-weight:900;color:var(--vc1)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Tripulantes</div></div>
       <div style="text-align:center"><div id="kpi-miss" style="font-size:1.5rem;font-weight:900;color:var(--vc2)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Missoes</div></div>
-      <div style="text-align:center"><div id="kpi-aptos" style="font-size:1.5rem;font-weight:900;color:var(--green)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Aptos</div></div>
+      <div style="text-align:center"><div id="kpi-aptos" style="font-size:1.5rem;font-weight:900;color:var(--green)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Disponíveis</div></div>
     </div>
   </div>
   <div class="nav-btns">
@@ -509,7 +509,7 @@ function getPilotStatus(p,td){
   if(!isNaN(afNum)&&afNum<=-20)return{status:'AFASTADO PR',cls:'st-warning'};
   if(p.cviDate&&p.cviDate<td)return{status:'INAPTO (CVI)',cls:'st-inapto'};
   if(p.inspSauDate&&p.inspSauDate<td)return{status:'INAPTO (INSP)',cls:'st-inapto'};
-  return{status:'APTO',cls:'st-apto'};
+  return{status:'DISPONÍVEL',cls:'st-apto'};
 }
 
 // ===== DASHBOARD =====
@@ -569,7 +569,7 @@ function renderScreen0(){
         <span class="desadapt-badge ${bdgCls}">${st.status}</span></div>`;
     }
   }else{
-    html+='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:8px"><div style="font-size:2rem">✅</div><div style="color:var(--green);font-weight:700">Todos aptos</div></div>';
+    html+='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:8px"><div style="font-size:2rem">✅</div><div style="color:var(--green);font-weight:700">Todos disponíveis</div></div>';
   }
   html+='</div>';
 
@@ -914,7 +914,7 @@ function renderAll(){
   document.getElementById('loadingMsg').style.display='none';
   const allPilots=[...pilotData.vc1,...pilotData.vc2];const td=nowBRT();
   document.getElementById('kpi-trip').textContent=allPilots.filter(p=>p.grupo!=='OUT').length;
-  const totalAptos=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status==='APTO';}).length;
+  const totalAptos=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
   document.getElementById('kpi-aptos').textContent=totalAptos;
   const currentYear=nowBRT().getFullYear();
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
