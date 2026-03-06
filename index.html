@@ -16,6 +16,7 @@
   --glow1:rgba(0,212,255,.15);--glow2:rgba(0,255,136,.15);
 }
 body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono','Consolas','Courier New',monospace;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+
 header{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px}
 .nav-btns{display:flex;gap:6px;flex-wrap:wrap}
 .nav-btns button{background:var(--bg3);color:var(--text);border:1px solid var(--border);padding:8px 14px;cursor:pointer;font-family:inherit;font-size:.85rem;border-radius:4px;transition:.2s;white-space:nowrap}
@@ -79,10 +80,10 @@ h3{font-size:1.05rem;margin:16px 0 10px;color:var(--text2);border-bottom:1px sol
 .no-data{color:var(--text2);font-style:italic;padding:18px;text-align:center}
 
 /* ===== DASHBOARD ===== */
-.dash-layout{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;gap:16px;height:100%}
+.dash-layout{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto;gap:16px}
 @media(max-width:1200px){.dash-layout{grid-template-columns:1fr 1fr}}
 @media(max-width:768px){.dash-layout{grid-template-columns:1fr}}
-.dash-panel{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:10px;padding:18px;overflow:hidden;position:relative}
+.dash-panel{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:10px;padding:18px;overflow:visible;position:relative}
 .dash-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:10px 10px 0 0}
 .dash-panel.p-vc1::before{background:linear-gradient(90deg,var(--vc1),transparent)}
 .dash-panel.p-vc2::before{background:linear-gradient(90deg,var(--vc2),transparent)}
@@ -535,7 +536,7 @@ function renderScreen0(){
   html+='</div>';
 
   // --- HORAS PROGRESSO ---
-  html+='<div class="dash-panel p-hours" style="grid-column:span 2">';
+  html+='<div class="dash-panel p-hours" style="grid-column:1/-1">';
   html+='<div class="panel-title"><span class="icon">📊</span> Progresso Horas de Voo — Ano</div>';
   const yearStart=new Date(td.getFullYear(),0,1);const yearEnd=new Date(td.getFullYear(),11,31);
   const yearPct=((td-yearStart)/(yearEnd-yearStart)*100);
