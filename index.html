@@ -265,8 +265,8 @@ footer a:hover{text-decoration:underline}
     <button onclick="goScreen(1)" id="btn1">DISPONIBILIDADE</button>
     <button onclick="goScreen(2)" id="btn2">HORAS DE VOO</button>
     <button onclick="goScreen(3)" id="btn3">FERIAS/ALERTAS</button>
-    <button onclick="goScreen(4)" id="btn4">ACNT/ALTR</button>
-    <button onclick="goScreen(5)" id="btn5">DIÁRIO</button>
+    <button onclick="goScreen(4)" id="btn4">DIÁRIO</button>
+    <button onclick="goScreen(5)" id="btn5">ACNT/ALTR</button>
   </div>
   <div class="header-right">
     <span class="clock" id="clock"></span>
@@ -815,11 +815,11 @@ function parseACNT(rows){
   return missions;
 }
 
-function renderScreen4(){
+function renderScreenACNT(){
   let html='<h2>ACNT/ALTR — Checklist de Missões</h2>';
   if(!acntData.length){
     html+='<div class="no-data">Sem dados de ACNT/ALTR disponíveis.</div>';
-    document.getElementById('screen4').innerHTML=html;return;
+    document.getElementById('screen5').innerHTML=html;return;
   }
   html+='<div class="acnt-grid">';
   for(const m of acntData){
@@ -838,7 +838,7 @@ function renderScreen4(){
     html+='</ul></div>';
   }
   html+='</div>';
-  document.getElementById('screen4').innerHTML=html;
+  document.getElementById('screen5').innerHTML=html;
 }
 
 function parseChecklist(rows){
@@ -865,7 +865,7 @@ function parseChecklist(rows){
   return items;
 }
 
-function renderScreen5(){
+function renderScreenDiario(){
   const td=nowBRT();
   const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
   const todayStr=`${String(td.getDate()).padStart(2,'0')}/${String(td.getMonth()+1).padStart(2,'0')}/${td.getFullYear()}`;
@@ -874,7 +874,7 @@ function renderScreen5(){
   
   if(!checklistData.length){
     html+='<div class="no-data">Sem dados do checklist disponíveis.</div>';
-    document.getElementById('screen5').innerHTML=html;return;
+    document.getElementById('screen4').innerHTML=html;return;
   }
   
   const done=checklistData.filter(i=>i.done).length;
@@ -907,7 +907,7 @@ function renderScreen5(){
   }
   html+='</div>';
   
-  document.getElementById('screen5').innerHTML=html;
+  document.getElementById('screen4').innerHTML=html;
 }
 
 function renderAll(){
@@ -920,7 +920,7 @@ function renderAll(){
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
   const uniqueOMs=new Set(flightsThisYear.map(f=>f.om).filter(Boolean));
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
-  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreen4();renderScreen5();
+  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();
 }
 
 async function loadAllData(){
