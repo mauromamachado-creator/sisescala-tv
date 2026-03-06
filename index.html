@@ -775,17 +775,17 @@ function renderScreen0(){
   const yearPct=((td-yearStart)/(yearEnd-yearStart)*100);
   html+=`<div style="font-size:.72rem;color:var(--text2);margin-bottom:12px">Progresso do ano: ${yearPct.toFixed(0)}% — Meta diagonal</div>`;
   
-  // VC-1
-  const vc1Act=pilotData.vc1.filter(p=>p.voadas!=null&&p.meta!=null&&p.grupo!=='OUT');
-  const vc1V=vc1Act.reduce((s,p)=>s+(p.voadas||0),0);const vc1M=vc1Act.reduce((s,p)=>s+(p.meta||0),0);
+  // VC-1 — Esforço aéreo anual: 650h (27d 2h)
+  const vc1Act=pilotData.vc1.filter(p=>p.voadas!=null&&p.grupo!=='OUT');
+  const vc1V=vc1Act.reduce((s,p)=>s+(p.voadas||0),0);const vc1M=650;
   const vc1Pct=vc1M>0?(vc1V/vc1M*100):0;const vc1C=vc1Pct<yearPct*0.8?'var(--red)':vc1Pct<yearPct?'var(--yellow)':'var(--green)';
   html+=`<div class="prog-section">
     <div class="prog-label"><span style="color:var(--vc1);font-weight:900">VC-1</span><span>${fmtHours(vc1V)} / ${fmtHours(vc1M)} <span style="color:${vc1C};font-weight:900">(${vc1Pct.toFixed(1)}%)</span></span></div>
     <div class="prog-track"><div class="prog-marker" style="left:${yearPct}%"></div><div class="prog-fill" style="width:${Math.min(vc1Pct,100)}%;background:linear-gradient(90deg,var(--vc1),${vc1C})" data-pct="${vc1Pct.toFixed(0)}%"></div></div></div>`;
 
-  // VC-2
-  const vc2Act=pilotData.vc2.filter(p=>p.voadas!=null&&p.meta!=null&&p.grupo!=='OUT');
-  const vc2V=vc2Act.reduce((s,p)=>s+(p.voadas||0),0);const vc2M=vc2Act.reduce((s,p)=>s+(p.meta||0),0);
+  // VC-2 — Esforço aéreo anual: 1220h (50d 20h)
+  const vc2Act=pilotData.vc2.filter(p=>p.voadas!=null&&p.grupo!=='OUT');
+  const vc2V=vc2Act.reduce((s,p)=>s+(p.voadas||0),0);const vc2M=1220;
   const vc2Pct=vc2M>0?(vc2V/vc2M*100):0;const vc2C=vc2Pct<yearPct*0.8?'var(--red)':vc2Pct<yearPct?'var(--yellow)':'var(--green)';
   html+=`<div class="prog-section">
     <div class="prog-label"><span style="color:var(--vc2);font-weight:900">VC-2</span><span>${fmtHours(vc2V)} / ${fmtHours(vc2M)} <span style="color:${vc2C};font-weight:900">(${vc2Pct.toFixed(1)}%)</span></span></div>
