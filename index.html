@@ -1091,35 +1091,38 @@ function renderScreenCalendar(){
   
   // Domestic flights for this month
   flights.forEach(f=>{
-    if(!f.dep)return;
-    const fDate=f.date;
-    if(!fDate)return;
-    const parts=fDate.match(/(\d{2})\/(\d{2})/);
+    if(!f.data)return;
+    const parts=f.data.match(/(\d{2})\/(\d{2})\/(\d{4})/);
     if(!parts)return;
-    const fDay=parseInt(parts[1]),fMon=parseInt(parts[2])-1;
-    if(fMon===calMonth){
-      addEvent(fDay,`${f.dep}→${f.arr||'?'} ${f.depTime||''}`,'ev-mission');
+    const fDay=parseInt(parts[1]),fMon=parseInt(parts[2])-1,fYear=parseInt(parts[3]);
+    if(fMon===calMonth&&fYear===calYear){
+      const label=`${f.anv||''} ${f.piloto||''} ${f.missao||''}`.trim();
+      addEvent(fDay,label||f.data,'ev-mission');
     }
   });
   
   // International missions
   missionsData.forEach(m=>{
-    if(!m.dest)return;
-    if(m.startDate){
-      const sd=m.startDate;
-      if(sd.getMonth()===calMonth&&sd.getFullYear()===calYear){
-        addEvent(sd.getDate(),`🌍 ${m.dest}`,'ev-intl');
+    if(!m.pais)return;
+    if(m.inicio){
+      const sd=new Date(m.inicio);
+      const ed=m.fim?new Date(m.fim):sd;
+      for(let d=new Date(sd);d<=ed;d.setDate(d.getDate()+1)){
+        if(d.getMonth()===calMonth&&d.getFullYear()===calYear){
+          addEvent(d.getDate(),`🌍 ${m.pais}`,'ev-intl');
+        }
       }
     }
   });
   
   // Férias
   feriasData.forEach(f=>{
-    if(!f.start||!f.end)return;
-    const s=f.start,e=f.end;
-    for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){
+    const s=f.startDate||f.start,e=f.endDate||f.end;
+    if(!s||!e)return;
+    const sd=new Date(s),ed=new Date(e);
+    for(let d=new Date(sd);d<=ed;d.setDate(d.getDate()+1)){
       if(d.getMonth()===calMonth&&d.getFullYear()===calYear){
-        addEvent(d.getDate(),`🏖 ${f.trigrama}`,'ev-ferias');
+        addEvent(d.getDate(),`🏖 ${f.trigrama||f.tri||'?'}`,'ev-ferias');
       }
     }
   });
@@ -1227,9 +1230,9 @@ function renderScreenSearch(query){
     }
     
     // Missões
-    const pilotMissions=flights.filter(f=>f.crew&&f.crew.includes(p.trigrama));
+    const pilotMissions=flights.filter(f=>f.piloto&&f.piloto===p.trigrama);
     if(pilotMissions.length){
-      const mTxt=pilotMissions.slice(0,5).map(f=>`${f.date||'?'} ${f.dep}→${f.arr||'?'}`).join(' | ');
+      const mTxt=pilotMissions.slice(0,5).map(f=>`${f.data||'?'} ${f.obs||f.missao||''}`).join(' | ');
       html+=`<div class="sc-item" style="grid-column:1/-1"><div class="sc-item-label">Próximas Missões</div><div class="sc-item-value" style="font-size:.78rem">✈️ ${mTxt}</div></div>`;
     }
     
