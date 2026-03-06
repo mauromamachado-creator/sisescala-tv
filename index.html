@@ -1227,9 +1227,10 @@ function renderScreenSearch(query){
     
     // Horas voadas
     if(p.voadas!=null){
-      const pct=p.meta>0?((p.voadas/p.meta)*100):0;
-      const barColor=pct>=90?'var(--green)':pct>=60?'var(--yellow)':'var(--red)';
-      html+=`<div class="sc-item"><div class="sc-item-label">Horas Voadas</div><div class="sc-item-value" style="color:${barColor}">${fmtHours(p.voadas)} <span style="font-size:.7rem;color:var(--text2)">/ ${p.meta?Math.round(p.meta)+'h meta':'—'}</span></div>
+      const esforco=p.projeto==='VC-1'?650:1220;
+      const pct=esforco>0?((p.voadas/esforco)*100):0;
+      const barColor=pct>=70?'var(--green)':pct>=50?'var(--yellow)':'var(--red)';
+      html+=`<div class="sc-item"><div class="sc-item-label">Horas Voadas</div><div class="sc-item-value" style="color:${barColor}">${fmtHours(p.voadas)} <span style="font-size:.7rem;color:var(--text2)">/ ${esforco}h esforço</span></div>
       <div class="prog-track" style="height:8px;margin-top:6px"><div class="prog-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div></div>`;
     }
     
@@ -1243,7 +1244,7 @@ function renderScreenSearch(query){
     if(p.inspSau)html+=`<div class="sc-item"><div class="sc-item-label">Inspeção Saúde</div><div class="sc-item-value">${p.inspSau}</div></div>`;
     
     // Porcentagem
-    if(p.pct!=null)html+=`<div class="sc-item"><div class="sc-item-label">% da Meta</div><div class="sc-item-value">${typeof p.pct==='number'?(p.pct*100).toFixed(1)+'%':p.pct}</div></div>`;
+    if(p.voadas!=null){const esf=p.projeto==='VC-1'?650:1220;const pctMeta=esf>0?((p.voadas/esf)*100):0;html+=`<div class="sc-item"><div class="sc-item-label">% do Esforço Aéreo</div><div class="sc-item-value">${pctMeta.toFixed(1)}%</div></div>`;}
     
     // Férias
     const pilotFerias=feriasData.filter(f=>f.trigrama===p.trigrama);
