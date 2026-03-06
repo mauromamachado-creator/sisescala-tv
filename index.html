@@ -1193,20 +1193,13 @@ function renderScreenSearch(query){
   const allPilots=[...pilotData.vc1.map(p=>({...p,projeto:'VC-1'})),...pilotData.vc2.map(p=>({...p,projeto:'VC-2'}))];
   const td=nowBRT();
   
-  // Criar input só se ainda não existe
   const container=document.getElementById('screen7');
-  if(!document.getElementById('searchInput')){
-    let hdr=`<h2>🔍 Busca de Tripulante</h2>`;
-    hdr+=`<div class="search-box"><input class="search-input" id="searchInput" type="text" placeholder="Digite trigrama ou nome..." oninput="doSearch(this.value)" autofocus></div>`;
-    hdr+=`<div id="searchResults"></div>`;
-    container.innerHTML=hdr;
-    if(query)document.getElementById('searchInput').value=query;
-  }
-  let html='';
+  let html=`<h2>🔍 Busca de Tripulante</h2>`;
+  html+=`<div class="search-box"><input class="search-input" id="searchInput" type="text" placeholder="Digite trigrama ou nome..." value="${(query||'').replace(/"/g,'&quot;')}" oninput="doSearch(this.value)"></div>`;
   
   if(!query||query.length<2){
     html+=`<div style="color:var(--text2);text-align:center;padding:40px">Digite pelo menos 2 caracteres para buscar</div>`;
-    document.getElementById('searchResults').innerHTML=html;return;
+    container.innerHTML=html;const inp=document.getElementById('searchInput');if(inp&&query){inp.focus();inp.setSelectionRange(query.length,query.length);}return;
   }
   
   const q=query.toUpperCase();
@@ -1217,7 +1210,7 @@ function renderScreenSearch(query){
   
   if(!results.length){
     html+=`<div style="color:var(--text2);text-align:center;padding:40px">Nenhum tripulante encontrado para "${query}"</div>`;
-    document.getElementById('searchResults').innerHTML=html;return;
+    container.innerHTML=html;const _inp=document.getElementById('searchInput');if(_inp&&query){_inp.focus();_inp.setSelectionRange(query.length,query.length);};return;
   }
   
   html+='<div class="search-results">';
@@ -1277,7 +1270,7 @@ function renderScreenSearch(query){
   });
   html+='</div>';
   
-  document.getElementById('searchResults').innerHTML=html;
+  container.innerHTML=html;const _inp=document.getElementById('searchInput');if(_inp&&query){_inp.focus();_inp.setSelectionRange(query.length,query.length);};
   // Restore focus
   const inp=document.getElementById('searchInput');
   if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
