@@ -154,6 +154,23 @@ footer a:hover{text-decoration:underline}
   .bar-name{width:90px}
   .screen{padding:12px}
 }
+
+/* ACNT/ALTR cards */
+.acnt-grid{display:flex;gap:16px;overflow-x:auto;padding-bottom:12px}
+.acnt-card{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:10px;padding:18px;min-width:320px;max-width:380px;flex-shrink:0;position:relative;overflow:hidden}
+.acnt-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:10px 10px 0 0}
+.acnt-card.pct-high::before{background:linear-gradient(90deg,var(--green),transparent)}
+.acnt-card.pct-mid::before{background:linear-gradient(90deg,var(--yellow),transparent)}
+.acnt-card.pct-low::before{background:linear-gradient(90deg,var(--red),transparent)}
+.acnt-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.acnt-header .date{font-size:.82rem;color:var(--text2)}
+.acnt-header .anv{font-weight:900;font-size:1rem;padding:3px 10px;border-radius:4px;background:rgba(0,255,136,.12);color:var(--vc2);border:1px solid rgba(0,255,136,.25)}
+.acnt-progress{margin-bottom:14px}
+.acnt-progress .prog-track{height:24px}
+.acnt-items{list-style:none;max-height:400px;overflow-y:auto}
+.acnt-items li{padding:4px 0;font-size:.82rem;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:8px}
+.acnt-items li:last-child{border:none}
+.acnt-items li .icon{width:18px;text-align:center;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -177,6 +194,7 @@ footer a:hover{text-decoration:underline}
     <button onclick="goScreen(1)" id="btn1">DISPONIBILIDADE</button>
     <button onclick="goScreen(2)" id="btn2">HORAS DE VOO</button>
     <button onclick="goScreen(3)" id="btn3">FERIAS/ALERTAS</button>
+    <button onclick="goScreen(4)" id="btn4">ACNT/ALTR</button>
   </div>
   <div class="header-right">
     <span class="clock" id="clock"></span>
@@ -191,6 +209,7 @@ footer a:hover{text-decoration:underline}
   <div class="screen" id="screen1"></div>
   <div class="screen" id="screen2"></div>
   <div class="screen" id="screen3"></div>
+  <div class="screen" id="screen4"></div>
   <div class="loading" id="loadingMsg">Carregando dados...</div>
 </main>
 
@@ -207,11 +226,13 @@ footer a:hover{text-decoration:underline}
 
 <script>
 const SHEET='1gwkeV2iA_JPTZ3rp0wf1PvXUI0TiOzNg3Xd4DhWwpao';
-const GIDS={disp:2129805598,lanc:489572946,ferias:931364659,previsao:1534384160};
+const PLAN_SHEET='1EV81x0Np-zeHhznvzAGrPyck5YUHgW_eRb18uOGc7nQ';
+const GIDS={disp:2129805598,lanc:489572946,ferias:931364659,previsao:1534384160,acnt:519681315};
 const csvUrl=gid=>`https://docs.google.com/spreadsheets/d/${SHEET}/export?format=csv&gid=${gid}`;
+const planCsvUrl=()=>`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv`;
 
 let currentScreen=0;
-let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[];
+let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[], diarioData=[], acntData=[];
 
 function parseCSV(text){
   const rows=[];let row=[],field='',inQ=false;
@@ -334,6 +355,76 @@ function parsePrevisaoMissoes(rows){
   return missions;
 }
 
+function parseDiario(rows){
+  // Row 0: dates at certain columns. Row 1: aeronave. Rows 4,5,6: main flight legs. Row ~20: extra flights
+  // Find date columns in row 0
+  if(!rows.length)return[];
+  const r0=rows[0];const r1=rows[1]||[];
+  const dateColMap=[];// [{colIdx, date, aeronave}]
+  for(let c=0;c<r0.length;c++){
+    const v=String(r0[c]||'').trim();
+    // Match dates like "qua., 25 de fev. " or ISO-like dates
+    const mBR=v.match(/(\d{1,2})\s+de\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)/i);
+    const mISO=v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    let dt=null;
+    if(mBR){
+      const months={jan:0,fev:1,mar:2,abr:3,mai:4,jun:5,jul:6,ago:7,set:8,out:9,nov:10,dez:11};
+      const day=parseInt(mBR[1],10);const mon=months[mBR[2].toLowerCase()];
+      if(mon!=null)dt=new Date(nowBRT().getFullYear(),mon,day);
+    }else if(mISO){
+      dt=new Date(parseInt(mISO[1]),parseInt(mISO[2])-1,parseInt(mISO[3]));
+    }
+    if(dt){
+      const anv=String(r1[c]||'').trim();
+      dateColMap.push({col:c,date:dt,aeronave:anv});
+    }
+  }
+  // Flight rows: rows index 4,5,6 (main legs) and look for extra flights around row 20
+  const flightRowIdxs=[4,5,6];
+  // Find extra flight rows (look for rows where col 1 has task name and has route-like data)
+  for(let ri=15;ri<Math.min(rows.length,30);ri++){
+    const rr=rows[ri];if(!rr)continue;
+    // Check if any date column has route-like data (contains hyphen, looks like ICAO codes)
+    let hasFlightData=false;
+    for(const dc of dateColMap.slice(0,5)){
+      const dep=String(rr[dc.col]||'').trim();
+      const route=String(rr[dc.col+1]||'').trim();
+      if(dep&&route&&route.includes('-')&&!route.includes('Status')&&!route.includes('Origem')&&!route.includes('Marco')&&
+         !dep.includes('Lastro')&&!dep.includes('Nº')&&!dep.includes('DEP\n')&&!dep.includes('MP')&&!dep.includes('Status')){
+        hasFlightData=true;break;
+      }
+    }
+    if(hasFlightData)flightRowIdxs.push(ri);
+  }
+  // Extract flights per date
+  const result=[];// {date, dateStr, aeronave, legs:[{dep,route,fuel,pilots:[],mission,isExtra}]}
+  for(const dc of dateColMap){
+    const legs=[];
+    for(const ri of flightRowIdxs){
+      const rr=rows[ri];if(!rr)continue;
+      const dep=String(rr[dc.col]||'').trim();
+      const route=String(rr[dc.col+1]||'').trim();
+      if(!dep||!route||!route.includes('-'))continue;
+      if(dep.includes('Lastro')||dep.includes('Nº')||dep.includes('Status')||dep.includes('DEP'))continue;
+      if(route.includes('Status')||route.includes('Origem')||route.includes('Marco'))continue;
+      const fuel=String(rr[dc.col+2]||'').trim();
+      const p1=String(rr[dc.col+3]||'').trim();
+      const p2=String(rr[dc.col+4]||'').trim();
+      const p3=String(rr[dc.col+5]||'').trim();
+      const mission=String(rr[dc.col+6]||'').trim();
+      const pilots=[p1,p2,p3].filter(Boolean);
+      legs.push({dep,route,fuel,pilots,mission,isExtra:ri>10});
+    }
+    if(legs.length||dc.aeronave!=='AERONAVE'){
+      const ds=dc.date;
+      const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
+      result.push({date:dc.date,dateStr:`${String(ds.getDate()).padStart(2,'0')}/${String(ds.getMonth()+1).padStart(2,'0')}`,
+        dayName:dayNames[ds.getDay()],aeronave:dc.aeronave,legs});
+    }
+  }
+  return result;
+}
+
 function isOnVacation(trigrama,date){const t=String(trigrama||'').toUpperCase();return feriasData.some(f=>f.trigrama===t&&f.inicio<=date&&date<=f.fim);}
 
 function getPilotStatus(p,td){
@@ -406,6 +497,40 @@ function renderScreen0(){
     }
   }else{
     html+='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:8px"><div style="font-size:2rem">✅</div><div style="color:var(--green);font-weight:700">Todos aptos</div></div>';
+  }
+  html+='</div>';
+
+  // --- MISSÕES DE HOJE ---
+  html+='<div class="dash-panel p-miss" style="grid-column:1/-1">';
+  const todayStr=`${String(td.getDate()).padStart(2,'0')}/${String(td.getMonth()+1).padStart(2,'0')}`;
+  const todayData=diarioData.find(d=>{const ds=d.date;return ds.getDate()===td.getDate()&&ds.getMonth()===td.getMonth()&&ds.getFullYear()===td.getFullYear();});
+  const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
+  html+=`<div class="panel-title"><span class="icon">📋</span> Missões de Hoje — ${todayStr} (${dayNames[td.getDay()]}) ${todayData&&todayData.aeronave&&todayData.aeronave!=='AERONAVE'?'<span style="margin-left:auto;color:var(--vc1);font-weight:900">'+todayData.aeronave+'</span>':''}</div>`;
+  if(todayData&&todayData.legs.length){
+    for(const leg of todayData.legs){
+      const routeParts=leg.route.replace(/-/g,' → ');
+      const extraTag=leg.isExtra?'<span style="background:rgba(142,163,255,.15);color:#8ea3ff;border:1px solid rgba(142,163,255,.3);padding:1px 6px;border-radius:3px;font-size:.65rem;margin-left:6px">2ª ANV</span>':'';
+      html+=`<div class="mission-card">
+        <div style="min-width:55px;text-align:center;font-weight:900;font-size:.95rem;color:var(--vc1)">${leg.dep}</div>
+        <div class="mission-body"><div class="mission-title">${routeParts}${extraTag}</div><div class="mission-sub">${leg.pilots.join(' · ')}${leg.fuel?' · '+leg.fuel+'t':''}</div></div>
+        <div><span class="mission-tipo">${leg.mission||'—'}</span></div></div>`;
+    }
+  }else{
+    html+='<div class="no-data">Sem missões programadas para hoje.</div>';
+  }
+  // Show next days (week) inline
+  const weekDays=diarioData.filter(d=>{const diff=(d.date-td)/(86400000);return diff>0&&diff<=7&&d.legs.length>0;});
+  if(weekDays.length){
+    html+='<div style="margin-top:16px;font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">Próximos Dias</div>';
+    for(const day of weekDays){
+      const anvLabel=day.aeronave&&day.aeronave!=='AERONAVE'?day.aeronave:'TBD';
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+        <div style="min-width:70px;font-weight:900;color:var(--text)">${day.dateStr}</div>
+        <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${day.dayName}</div>
+        <div style="min-width:80px;font-size:.82rem;color:var(--vc1)">${anvLabel}</div>
+        <div style="flex:1;font-size:.82rem">${day.legs.map(l=>'<span style="margin-right:12px">'+l.dep+' '+l.route.replace(/-/g,'→')+'</span>').join('')}</div>
+        <div style="font-size:.72rem;color:var(--text2)">${day.legs.length} trecho(s)</div></div>`;
+    }
   }
   html+='</div>';
 
@@ -562,6 +687,87 @@ function renderScreen3(){
   document.getElementById('screen3').innerHTML=html;
 }
 
+function parseACNT(rows){
+  if(!rows||rows.length<5)return[];
+  // Find mission groups: row index 1 has dates in pattern "DATA:, DD/MM/YYYY"
+  // Each mission occupies 3 columns (status, item, blank separator)
+  const dateRow=rows[1]||[];
+  const anvRow=rows[3]||[];
+  const numRow=rows[4]||[];
+  const missions=[];
+  // Find date columns: look for "DATA:" markers
+  for(let c=0;c<dateRow.length;c++){
+    if(String(dateRow[c]||'').trim().toUpperCase()==='DATA:'){
+      const dateStr=String(dateRow[c+1]||'').trim();
+      if(!dateStr.match(/\d{2}\/\d{2}\/\d{4}/))continue;
+      // ANV info at same column group
+      const anvLabel=String(anvRow[c]||'').trim()||'ANV';
+      const anvNum=String(numRow[c]||'').trim();
+      const anvType=String(numRow[c+1]||'').trim();
+      // Parse checklist items from row 5 onward
+      const items=[];
+      let lastDataRowIdx=-1;
+      for(let r=5;r<rows.length;r++){
+        const row=rows[r];
+        const status=String(row[c]||'').trim().toUpperCase();
+        const name=String(row[c+1]||'').trim();
+        if(!name)continue;
+        // Check if this is the percentage row (contains % sign)
+        if(name.includes('%')||status.includes('%')){lastDataRowIdx=r;continue;}
+        if(status==='BRC'||status==='NIL'||status===''){
+          items.push({name,status:status==='BRC'?'done':'pending'});
+        }
+      }
+      // Parse percentages from last row
+      const lastRow=rows[rows.length-1]||[];
+      let pctDone=0,pctPending=100;
+      // Percentages are in format "86,96%" at column c and c+1
+      const rawDone=String(lastRow[c]||'').replace('%','').replace(',','.').trim();
+      const rawPend=String(lastRow[c+1]||'').replace('%','').replace(',','.').trim();
+      const pd=parseFloat(rawDone);const pp=parseFloat(rawPend);
+      if(!isNaN(pd))pctDone=pd;
+      if(!isNaN(pp))pctPending=pp;
+      // If pctDone is 0 but items have done statuses, calculate from items
+      if(pctDone===0&&items.length){
+        const done=items.filter(i=>i.status==='done').length;
+        pctDone=Math.round(done/items.length*10000)/100;
+        pctPending=Math.round((items.length-done)/items.length*10000)/100;
+      }
+      const dateObj=parseDateBR(dateStr);
+      missions.push({data:dateStr,dataObj:dateObj,anv:anvLabel,anvNum,anvType,items,pctDone,pctPending});
+    }
+  }
+  // Sort by date, most recent first
+  missions.sort((a,b)=>(b.dataObj?.getTime()||0)-(a.dataObj?.getTime()||0));
+  return missions;
+}
+
+function renderScreen4(){
+  let html='<h2>ACNT/ALTR — Checklist de Missões</h2>';
+  if(!acntData.length){
+    html+='<div class="no-data">Sem dados de ACNT/ALTR disponíveis.</div>';
+    document.getElementById('screen4').innerHTML=html;return;
+  }
+  html+='<div class="acnt-grid">';
+  for(const m of acntData){
+    const pctCls=m.pctDone>80?'pct-high':m.pctDone>=50?'pct-mid':'pct-low';
+    const barColor=m.pctDone>80?'var(--green)':m.pctDone>=50?'var(--yellow)':'var(--red)';
+    html+=`<div class="acnt-card ${pctCls}">`;
+    html+=`<div class="acnt-header"><span class="date">📅 ${m.data}</span><span class="anv">FAB ${m.anvNum} — ${m.anvType}</span></div>`;
+    html+=`<div class="acnt-progress"><div class="prog-label"><span style="font-size:.78rem">Progresso</span><span style="color:${barColor};font-weight:900">${m.pctDone.toFixed(1)}%</span></div>`;
+    html+=`<div class="prog-track"><div class="prog-fill" style="width:${Math.min(m.pctDone,100)}%;background:${barColor}" data-pct="${m.pctDone.toFixed(0)}%"></div></div></div>`;
+    html+='<ul class="acnt-items">';
+    for(const item of m.items){
+      const icon=item.status==='done'?'✅':'⬜';
+      const style=item.status==='done'?'':'color:var(--text2)';
+      html+=`<li style="${style}"><span class="icon">${icon}</span>${item.name}</li>`;
+    }
+    html+='</ul></div>';
+  }
+  html+='</div>';
+  document.getElementById('screen4').innerHTML=html;
+}
+
 function renderAll(){
   document.getElementById('loadingMsg').style.display='none';
   const allPilots=[...pilotData.vc1,...pilotData.vc2];const td=nowBRT();
@@ -572,7 +778,7 @@ function renderAll(){
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
   const uniqueOMs=new Set(flightsThisYear.map(f=>f.om).filter(Boolean));
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
-  renderScreen0();renderScreen1();renderScreen2();renderScreen3();
+  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreen4();
 }
 
 async function loadAllData(){
@@ -580,10 +786,14 @@ async function loadAllData(){
   document.getElementById('loadingMsg').style.display='block';
   document.getElementById('statusDot').className='status-dot';
   try{
-    const[dispRows,lancRows,ferRows,prevRows]=await Promise.all([
-      fetchCSV(GIDS.disp),fetchCSV(GIDS.lanc),fetchCSV(GIDS.ferias),fetchCSV(GIDS.previsao)]);
+    const planFetch=fetch(planCsvUrl(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>t?parseCSV(t):[]).catch(()=>[]);
+    const acntFetch=fetch(`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv&gid=${GIDS.acnt}`,{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>t?parseCSV(t):[]).catch(()=>[]);
+    const[dispRows,lancRows,ferRows,prevRows,planRows,acntRows]=await Promise.all([
+      fetchCSV(GIDS.disp),fetchCSV(GIDS.lanc),fetchCSV(GIDS.ferias),fetchCSV(GIDS.previsao),planFetch,acntFetch]);
     pilotData=parseDisponibilidade(dispRows);flights=parseLancamentos(lancRows);
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
+    diarioData=parseDiario(planRows);
+    acntData=parseACNT(acntRows);
     document.getElementById('statusDot').className='status-dot ok';
     const nowTxt=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
     document.getElementById('lastUpdate').textContent='Atualizado '+nowTxt;
