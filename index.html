@@ -172,6 +172,22 @@ footer a:hover{text-decoration:underline}
 .acnt-items li{padding:4px 0;font-size:.82rem;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:8px}
 .acnt-items li:last-child{border:none}
 .acnt-items li .icon{width:18px;text-align:center;flex-shrink:0}
+
+/* Diário Checklist */
+.checklist-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.checklist-grid{grid-template-columns:1fr}}
+.check-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;transition:.2s}
+.check-item.done{border-left:3px solid var(--green)}
+.check-item.pending{border-left:3px solid var(--text2);opacity:.7}
+.check-icon{font-size:1.2rem;width:28px;text-align:center;flex-shrink:0}
+.check-task{flex:1;font-size:.88rem}
+.check-resp{font-size:.78rem;font-weight:900;padding:3px 8px;border-radius:4px;min-width:42px;text-align:center}
+.check-resp.filled{background:rgba(0,255,136,.12);color:var(--green);border:1px solid rgba(0,255,136,.25)}
+.check-resp.empty{background:rgba(255,255,255,.05);color:var(--text2);border:1px solid var(--border)}
+.check-summary{display:flex;gap:24px;margin-bottom:20px;flex-wrap:wrap}
+.check-summary .stat{text-align:center;padding:12px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:8px}
+.check-summary .stat-num{font-size:1.8rem;font-weight:900}
+.check-summary .stat-label{font-size:.68rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
 </style>
 </head>
 <body>
@@ -196,6 +212,7 @@ footer a:hover{text-decoration:underline}
     <button onclick="goScreen(2)" id="btn2">HORAS DE VOO</button>
     <button onclick="goScreen(3)" id="btn3">FERIAS/ALERTAS</button>
     <button onclick="goScreen(4)" id="btn4">ACNT/ALTR</button>
+    <button onclick="goScreen(5)" id="btn5">DIÁRIO</button>
   </div>
   <div class="header-right">
     <span class="clock" id="clock"></span>
@@ -211,6 +228,7 @@ footer a:hover{text-decoration:underline}
   <div class="screen" id="screen2"></div>
   <div class="screen" id="screen3"></div>
   <div class="screen" id="screen4"></div>
+  <div class="screen" id="screen5"></div>
   <div class="loading" id="loadingMsg">Carregando dados...</div>
 </main>
 
@@ -233,7 +251,7 @@ const csvUrl=gid=>`https://docs.google.com/spreadsheets/d/${SHEET}/export?format
 const planCsvUrl=()=>`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv`;
 
 let currentScreen=0;
-let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[], diarioData=[], acntData=[];
+let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[], diarioData=[], acntData=[], checklistData=[];
 
 function parseCSV(text){
   const rows=[];let row=[],field='',inQ=false;
@@ -769,6 +787,75 @@ function renderScreen4(){
   document.getElementById('screen4').innerHTML=html;
 }
 
+function parseChecklist(rows){
+  // Checklist is in columns 0-1, rows ~4-38
+  // Col 0: trigram of person who did it (empty = pending)
+  // Col 1: task description
+  // Skip rows that look like flight headers (contain "Local", "Origem", "DEP")
+  const items=[];
+  const skipWords=['Local','Origem','DEP','Comb','Pilotos','Missão'];
+  let started=false;
+  for(let r=0;r<rows.length;r++){
+    const row=rows[r];
+    const c0=String(row[0]||'').trim();
+    const c1=String(row[1]||'').trim();
+    // Start after the header rows (row 0-2 are header/date/aeronave)
+    if(r<3)continue;
+    // Skip flight data rows
+    if(!c1||skipWords.some(w=>c1.includes(w)))continue;
+    // Skip rows that are clearly flight leg data (c0 looks like a time)
+    if(c0.match(/^\d{4}$/)||c0==='A DET')continue;
+    // This is a checklist item
+    items.push({resp:c0,task:c1,done:c0!==''});
+  }
+  return items;
+}
+
+function renderScreen5(){
+  const td=nowBRT();
+  const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
+  const todayStr=`${String(td.getDate()).padStart(2,'0')}/${String(td.getMonth()+1).padStart(2,'0')}/${td.getFullYear()}`;
+  
+  let html=`<h2>Diário — Checklist (${todayStr} ${dayNames[td.getDay()]})</h2>`;
+  
+  if(!checklistData.length){
+    html+='<div class="no-data">Sem dados do checklist disponíveis.</div>';
+    document.getElementById('screen5').innerHTML=html;return;
+  }
+  
+  const done=checklistData.filter(i=>i.done).length;
+  const pending=checklistData.filter(i=>!i.done).length;
+  const total=checklistData.length;
+  const pct=total>0?Math.round(done/total*100):0;
+  const barColor=pct>=80?'var(--green)':pct>=50?'var(--yellow)':'var(--red)';
+  
+  // Summary
+  html+='<div class="check-summary">';
+  html+=`<div class="stat"><div class="stat-num" style="color:var(--green)">${done}</div><div class="stat-label">Concluídos</div></div>`;
+  html+=`<div class="stat"><div class="stat-num" style="color:var(--red)">${pending}</div><div class="stat-label">Pendentes</div></div>`;
+  html+=`<div class="stat"><div class="stat-num" style="color:var(--vc1)">${total}</div><div class="stat-label">Total</div></div>`;
+  html+=`<div class="stat" style="flex:1;min-width:200px"><div class="stat-label" style="margin-bottom:6px">Progresso: <span style="color:${barColor};font-weight:900">${pct}%</span></div><div class="prog-track" style="height:24px"><div class="prog-fill" style="width:${pct}%;background:${barColor}" data-pct="${pct}%"></div></div></div>`;
+  html+='</div>';
+  
+  // Checklist items - done first, then pending
+  const sorted=[...checklistData.filter(i=>!i.done),...checklistData.filter(i=>i.done)];
+  html+='<div class="checklist-grid">';
+  for(const item of sorted){
+    const cls=item.done?'done':'pending';
+    const icon=item.done?'✅':'⬜';
+    const respCls=item.done?'filled':'empty';
+    const respText=item.resp||'—';
+    html+=`<div class="check-item ${cls}">
+      <span class="check-icon">${icon}</span>
+      <span class="check-task">${item.task}</span>
+      <span class="check-resp ${respCls}">${respText}</span>
+    </div>`;
+  }
+  html+='</div>';
+  
+  document.getElementById('screen5').innerHTML=html;
+}
+
 function renderAll(){
   document.getElementById('loadingMsg').style.display='none';
   const allPilots=[...pilotData.vc1,...pilotData.vc2];const td=nowBRT();
@@ -779,7 +866,7 @@ function renderAll(){
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
   const uniqueOMs=new Set(flightsThisYear.map(f=>f.om).filter(Boolean));
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
-  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreen4();
+  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreen4();renderScreen5();
 }
 
 async function loadAllData(){
@@ -798,6 +885,7 @@ async function loadAllData(){
     document.getElementById('statusDot').className='status-dot ok';
     const nowTxt=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
     document.getElementById('lastUpdate').textContent='Atualizado '+nowTxt;
+    checklistData=parseChecklist(planRows);
     renderAll();
   }catch(e){
     console.error(e);document.getElementById('statusDot').className='status-dot err';
