@@ -712,7 +712,7 @@ function renderScreen2(){
       const barColor=pct<50?'var(--red)':pct<75?'var(--yellow)':'var(--green)';
       const rank=i<3?`<span style="font-size:1.3rem;margin-right:4px">${medals[i]}</span>`:`<span style="display:inline-block;width:28px;text-align:center;font-size:.85rem;color:#667;margin-right:4px">${i+1}º</span>`;
       const highlight=i<3?'border-left:3px solid '+(i===0?'#ffd700':i===1?'#c0c0c0':'#cd7f32')+';padding-left:8px;':'';
-      html+=`<div class="bar-row" style="${highlight}">${rank}<span class="bar-label">${p.trigrama}</span><span class="bar-name">${p.name||''}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.min(Math.max(pct,0),100)}%;background:${barColor}"></div></div><span class="bar-pct" style="color:${barColor}">${pct.toFixed(1)}%</span><span class="bar-hours">${fmtHours(p.voadas)}/${Math.round(p.meta)}h</span></div>`;
+      html+=`<div class="bar-row" style="${highlight}">${rank}<span class="bar-label">${p.trigrama}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.min(Math.max(pct,0),100)}%;background:${barColor}"></div></div><span class="bar-pct" style="color:${barColor}">${pct.toFixed(1)}%</span><span class="bar-hours">${fmtHours(p.voadas)}/${Math.round(p.meta)}h</span></div>`;
     }
     const others=pilots.filter(p=>p.meta==null||p.voadas==null);
     if(others.length){html+='<h3 style="font-size:.85rem;color:#556;">Sem dados de horas</h3>';for(const p of others)html+=`<div class="bar-row"><span class="bar-label" style="color:#667">${p.trigrama}</span><span class="bar-name" style="color:#556">${p.name||''}</span><span style="color:#556;font-size:.8rem">${p.grupo||''}</span></div>`;}
