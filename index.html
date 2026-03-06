@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SisEscala — GTE Planejamento</title>
+<title>SisOPR — Comando e Controle GTE-1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
@@ -249,6 +249,44 @@ footer a:hover{text-decoration:underline}
 .check-summary .stat{text-align:center;padding:12px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:8px}
 .check-summary .stat-num{font-size:1.8rem;font-weight:900}
 .check-summary .stat-label{font-size:.68rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+
+/* Calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:12px}
+.cal-header{text-align:center;font-size:.68rem;color:var(--text2);padding:6px 0;font-weight:900;text-transform:uppercase}
+.cal-day{min-height:80px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:.7rem;position:relative}
+.cal-day.today{border:2px solid var(--vc1);background:rgba(0,255,255,.05)}
+.cal-day.other-month{opacity:.3}
+.cal-day .day-num{font-weight:900;font-size:.78rem;margin-bottom:4px}
+.cal-day .cal-event{padding:2px 4px;border-radius:3px;font-size:.58rem;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default}
+.cal-event.ev-mission{background:rgba(0,255,136,.15);color:var(--green);border-left:2px solid var(--green)}
+.cal-event.ev-intl{background:rgba(0,255,255,.12);color:var(--vc1);border-left:2px solid var(--vc1)}
+.cal-event.ev-ferias{background:rgba(255,200,50,.12);color:var(--yellow);border-left:2px solid var(--yellow)}
+.cal-nav{display:flex;align-items:center;gap:16px}
+.cal-nav button{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:900}
+.cal-nav button:hover{background:var(--bg3)}
+.cal-month{font-size:1.2rem;font-weight:900;min-width:200px;text-align:center}
+@media(max-width:768px){
+  .cal-grid{gap:1px}
+  .cal-day{min-height:50px;padding:2px 3px}
+  .cal-day .day-num{font-size:.65rem}
+  .cal-event{font-size:.5rem!important;padding:1px 2px!important}
+}
+
+/* Search */
+.search-box{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.search-input{flex:1;min-width:200px;padding:12px 16px;background:var(--bg2);border:2px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:1rem;outline:none;transition:.2s}
+.search-input:focus{border-color:var(--vc1)}
+.search-input::placeholder{color:var(--text2)}
+.search-results{display:flex;flex-direction:column;gap:16px}
+.search-card{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid var(--border);border-radius:10px;padding:20px;overflow:hidden}
+.search-card .sc-header{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.search-card .sc-tri{font-size:2rem;font-weight:900;color:var(--vc1)}
+.search-card .sc-name{font-size:1rem;color:var(--text2)}
+.search-card .sc-status{padding:4px 10px;border-radius:4px;font-size:.75rem;font-weight:900;margin-left:auto}
+.search-card .sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.search-card .sc-item{background:var(--bg);padding:10px;border-radius:6px;border:1px solid var(--border)}
+.search-card .sc-item-label{font-size:.65rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.search-card .sc-item-value{font-size:.95rem;font-weight:700}
 </style>
 </head>
 <body>
@@ -259,7 +297,7 @@ footer a:hover{text-decoration:underline}
     </div>
     <div>
       <div style="font-size:.6rem;letter-spacing:3px;color:var(--vc1);text-transform:uppercase">Comando e Controle — GTE-1</div>
-      <div style="font-size:1.3rem;font-weight:900;letter-spacing:1px">SisEscala<span style="font-weight:400;color:var(--text2);font-size:.85rem;margin-left:6px">— Painel TV</span></div>
+      <div style="font-size:1.3rem;font-weight:900;letter-spacing:1px">SisOPR</div>
     </div>
     <div id="kpi-box" style="display:flex;gap:24px;margin-left:24px">
       <div style="text-align:center"><div id="kpi-trip" style="font-size:1.5rem;font-weight:900;color:var(--vc1)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Tripulantes</div></div>
@@ -274,6 +312,8 @@ footer a:hover{text-decoration:underline}
     <button onclick="goScreen(3)" id="btn3">FERIAS/ALERTAS</button>
     <button onclick="goScreen(4)" id="btn4">DIÁRIO</button>
     <button onclick="goScreen(5)" id="btn5">ACNT/ALTR</button>
+    <button onclick="goScreen(6)" id="btn6">CALENDÁRIO</button>
+    <button onclick="goScreen(7)" id="btn7">🔍 BUSCA</button>
   </div>
   <div class="header-right">
     <span class="clock" id="clock"></span>
@@ -290,6 +330,8 @@ footer a:hover{text-decoration:underline}
   <div class="screen" id="screen3"></div>
   <div class="screen" id="screen4"></div>
   <div class="screen" id="screen5"></div>
+  <div class="screen" id="screen6"></div>
+  <div class="screen" id="screen7"></div>
   <div class="loading" id="loadingMsg">Carregando dados...</div>
 </main>
 
@@ -300,7 +342,7 @@ footer a:hover{text-decoration:underline}
 </div>
 
 <footer>
-  <span>SisEscala v2.1 — Desenvolvido para o GTE — Major Machado</span>
+  <span>SisOPR v3.0 — Desenvolvido para o GTE — Major Machado</span>
   <a onclick="loadAllData()">Atualizar dados</a>
 </footer>
 
@@ -1021,6 +1063,192 @@ function renderScreenDiario(){
   document.getElementById('screen4').innerHTML=html;
 }
 
+// ===== CALENDÁRIO =====
+let calYear, calMonth;
+(function(){const t=nowBRT();calYear=t.getFullYear();calMonth=t.getMonth();})();
+
+function renderScreenCalendar(){
+  const td=nowBRT();
+  const monthNames=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+  
+  let html='<div class="cal-nav">';
+  html+=`<button onclick="calPrev()">◀</button>`;
+  html+=`<div class="cal-month">${monthNames[calMonth]} ${calYear}</div>`;
+  html+=`<button onclick="calNext()">▶</button>`;
+  html+='</div>';
+  
+  html+='<div class="cal-grid">';
+  dayNames.forEach(d=>html+=`<div class="cal-header">${d}</div>`);
+  
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const daysInPrev=new Date(calYear,calMonth,0).getDate();
+  
+  // Build events map: day -> events[]
+  const events={};
+  const addEvent=(day,text,cls)=>{if(!events[day])events[day]=[];events[day].push({text,cls});};
+  
+  // Domestic flights for this month
+  flights.forEach(f=>{
+    if(!f.dep)return;
+    const fDate=f.date;
+    if(!fDate)return;
+    const parts=fDate.match(/(\d{2})\/(\d{2})/);
+    if(!parts)return;
+    const fDay=parseInt(parts[1]),fMon=parseInt(parts[2])-1;
+    if(fMon===calMonth){
+      addEvent(fDay,`${f.dep}→${f.arr||'?'} ${f.depTime||''}`,'ev-mission');
+    }
+  });
+  
+  // International missions
+  missionsData.forEach(m=>{
+    if(!m.dest)return;
+    if(m.startDate){
+      const sd=m.startDate;
+      if(sd.getMonth()===calMonth&&sd.getFullYear()===calYear){
+        addEvent(sd.getDate(),`🌍 ${m.dest}`,'ev-intl');
+      }
+    }
+  });
+  
+  // Férias
+  feriasData.forEach(f=>{
+    if(!f.start||!f.end)return;
+    const s=f.start,e=f.end;
+    for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){
+      if(d.getMonth()===calMonth&&d.getFullYear()===calYear){
+        addEvent(d.getDate(),`🏖 ${f.trigrama}`,'ev-ferias');
+      }
+    }
+  });
+  
+  // Prev month padding
+  for(let i=firstDay-1;i>=0;i--){
+    const day=daysInPrev-i;
+    html+=`<div class="cal-day other-month"><div class="day-num">${day}</div></div>`;
+  }
+  
+  // Current month
+  for(let d=1;d<=daysInMonth;d++){
+    const isToday=(d===td.getDate()&&calMonth===td.getMonth()&&calYear===td.getFullYear());
+    html+=`<div class="cal-day${isToday?' today':''}"><div class="day-num">${d}</div>`;
+    if(events[d]){
+      events[d].slice(0,3).forEach(ev=>{
+        html+=`<div class="cal-event ${ev.cls}" title="${ev.text}">${ev.text}</div>`;
+      });
+      if(events[d].length>3)html+=`<div style="font-size:.55rem;color:var(--text2)">+${events[d].length-3} mais</div>`;
+    }
+    html+='</div>';
+  }
+  
+  // Next month padding
+  const totalCells=firstDay+daysInMonth;
+  const remaining=totalCells%7===0?0:7-(totalCells%7);
+  for(let d=1;d<=remaining;d++){
+    html+=`<div class="cal-day other-month"><div class="day-num">${d}</div></div>`;
+  }
+  
+  html+='</div>';
+  document.getElementById('screen6').innerHTML=html;
+}
+
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderScreenCalendar();}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderScreenCalendar();}
+
+// ===== BUSCA TRIPULANTE =====
+function renderScreenSearch(query){
+  const allPilots=[...pilotData.vc1.map(p=>({...p,projeto:'VC-1'})),...pilotData.vc2.map(p=>({...p,projeto:'VC-2'}))];
+  const td=nowBRT();
+  
+  let html=`<h2>🔍 Busca de Tripulante</h2>`;
+  html+=`<div class="search-box"><input class="search-input" id="searchInput" type="text" placeholder="Digite trigrama ou nome..." value="${query||''}" oninput="doSearch(this.value)" autofocus></div>`;
+  
+  if(!query||query.length<2){
+    html+=`<div style="color:var(--text2);text-align:center;padding:40px">Digite pelo menos 2 caracteres para buscar</div>`;
+    document.getElementById('screen7').innerHTML=html;return;
+  }
+  
+  const q=query.toUpperCase();
+  const results=allPilots.filter(p=>{
+    return (p.trigrama&&p.trigrama.toUpperCase().includes(q))||
+           (p.name&&p.name.toUpperCase().includes(q));
+  });
+  
+  if(!results.length){
+    html+=`<div style="color:var(--text2);text-align:center;padding:40px">Nenhum tripulante encontrado para "${query}"</div>`;
+    document.getElementById('screen7').innerHTML=html;return;
+  }
+  
+  html+='<div class="search-results">';
+  results.forEach(p=>{
+    const st=getPilotStatus(p,td);
+    const stColor=st.status==='DISPONÍVEL'?'var(--green)':st.status.startsWith('INDISPONÍVEL')?'var(--red)':'var(--yellow)';
+    const stBg=st.status==='DISPONÍVEL'?'rgba(0,255,136,.12)':st.status.startsWith('INDISPONÍVEL')?'rgba(255,80,80,.12)':'rgba(255,200,50,.12)';
+    
+    html+=`<div class="search-card">`;
+    html+=`<div class="sc-header">`;
+    html+=`<div class="sc-tri">${p.trigrama||'?'}</div>`;
+    html+=`<div><div style="font-weight:700">${p.name||'—'}</div><div class="sc-name">${p.projeto}</div></div>`;
+    html+=`<div class="sc-status" style="background:${stBg};color:${stColor};border:1px solid ${stColor}">${st.status}</div>`;
+    html+=`</div>`;
+    
+    html+=`<div class="sc-grid">`;
+    
+    // Horas voadas
+    if(p.voadas!=null){
+      const pct=p.meta>0?((p.voadas/p.meta)*100):0;
+      const barColor=pct>=90?'var(--green)':pct>=60?'var(--yellow)':'var(--red)';
+      html+=`<div class="sc-item"><div class="sc-item-label">Horas Voadas</div><div class="sc-item-value" style="color:${barColor}">${fmtHours(p.voadas)} <span style="font-size:.7rem;color:var(--text2)">/ ${p.meta?Math.round(p.meta)+'h meta':'—'}</span></div>
+      <div class="prog-track" style="height:8px;margin-top:6px"><div class="prog-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div></div>`;
+    }
+    
+    // Grupo
+    if(p.grupo)html+=`<div class="sc-item"><div class="sc-item-label">Grupo</div><div class="sc-item-value">${p.grupo}</div></div>`;
+    
+    // CVI
+    if(p.cvi)html+=`<div class="sc-item"><div class="sc-item-label">CVI</div><div class="sc-item-value">${p.cvi}</div></div>`;
+    
+    // INSP Saúde
+    if(p.inspSau)html+=`<div class="sc-item"><div class="sc-item-label">Inspeção Saúde</div><div class="sc-item-value">${p.inspSau}</div></div>`;
+    
+    // Porcentagem
+    if(p.pct!=null)html+=`<div class="sc-item"><div class="sc-item-label">% da Meta</div><div class="sc-item-value">${typeof p.pct==='number'?(p.pct*100).toFixed(1)+'%':p.pct}</div></div>`;
+    
+    // Férias
+    const pilotFerias=feriasData.filter(f=>f.trigrama===p.trigrama);
+    if(pilotFerias.length){
+      const ferTxt=pilotFerias.map(f=>{
+        const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+        return `${fmt(f.start)} — ${fmt(f.end)}`;
+      }).join(', ');
+      html+=`<div class="sc-item"><div class="sc-item-label">Férias</div><div class="sc-item-value" style="font-size:.82rem">🏖 ${ferTxt}</div></div>`;
+    }
+    
+    // Missões
+    const pilotMissions=flights.filter(f=>f.crew&&f.crew.includes(p.trigrama));
+    if(pilotMissions.length){
+      const mTxt=pilotMissions.slice(0,5).map(f=>`${f.date||'?'} ${f.dep}→${f.arr||'?'}`).join(' | ');
+      html+=`<div class="sc-item" style="grid-column:1/-1"><div class="sc-item-label">Próximas Missões</div><div class="sc-item-value" style="font-size:.78rem">✈️ ${mTxt}</div></div>`;
+    }
+    
+    html+=`</div></div>`;
+  });
+  html+='</div>';
+  
+  document.getElementById('screen7').innerHTML=html;
+  // Restore focus
+  const inp=document.getElementById('searchInput');
+  if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
+}
+
+let searchTimeout;
+function doSearch(val){
+  clearTimeout(searchTimeout);
+  searchTimeout=setTimeout(()=>renderScreenSearch(val),200);
+}
+
 function renderAll(){
   document.getElementById('loadingMsg').style.display='none';
   const allPilots=[...pilotData.vc1,...pilotData.vc2];const td=nowBRT();
@@ -1031,7 +1259,7 @@ function renderAll(){
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
   const uniqueOMs=new Set(flightsThisYear.map(f=>f.om).filter(Boolean));
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
-  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();
+  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();
 }
 
 async function loadAllData(){
