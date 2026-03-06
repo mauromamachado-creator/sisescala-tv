@@ -1262,7 +1262,7 @@ function renderScreenSearch(query){
     const today=new Date();today.setHours(0,0,0,0);
     const pilotMissions=flights.filter(f=>f.piloto&&f.piloto===p.trigrama&&f.dataObj&&f.dataObj>=today);
     if(pilotMissions.length){
-      const mTxt=pilotMissions.sort((a,b)=>(a.dataObj||0)-(b.dataObj||0)).slice(0,5).map(f=>`${f.data||'?'} ${f.obs||f.missao||''}`).join(' | ');
+      const mTxt=pilotMissions.sort((a,b)=>(a.dataObj||0)-(b.dataObj||0)).slice(0,5).map(f=>`${f.data||'?'} ${f.missao||''}${f.obs?' ('+f.obs+')':''}`).join(' | ');
       html+=`<div class="sc-item" style="grid-column:1/-1"><div class="sc-item-label">Próximas Missões</div><div class="sc-item-value" style="font-size:.78rem">✈️ ${mTxt}</div></div>`;
     }
     
