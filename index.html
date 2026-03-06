@@ -1191,12 +1191,20 @@ function renderScreenSearch(query){
   const allPilots=[...pilotData.vc1.map(p=>({...p,projeto:'VC-1'})),...pilotData.vc2.map(p=>({...p,projeto:'VC-2'}))];
   const td=nowBRT();
   
-  let html=`<h2>🔍 Busca de Tripulante</h2>`;
-  html+=`<div class="search-box"><input class="search-input" id="searchInput" type="text" placeholder="Digite trigrama ou nome..." value="${query||''}" oninput="doSearch(this.value)" autofocus></div>`;
+  // Criar input só se ainda não existe
+  const container=document.getElementById('screen7');
+  if(!document.getElementById('searchInput')){
+    let hdr=`<h2>🔍 Busca de Tripulante</h2>`;
+    hdr+=`<div class="search-box"><input class="search-input" id="searchInput" type="text" placeholder="Digite trigrama ou nome..." oninput="doSearch(this.value)" autofocus></div>`;
+    hdr+=`<div id="searchResults"></div>`;
+    container.innerHTML=hdr;
+    if(query)document.getElementById('searchInput').value=query;
+  }
+  let html='';
   
   if(!query||query.length<2){
     html+=`<div style="color:var(--text2);text-align:center;padding:40px">Digite pelo menos 2 caracteres para buscar</div>`;
-    document.getElementById('screen7').innerHTML=html;return;
+    document.getElementById('searchResults').innerHTML=html;return;
   }
   
   const q=query.toUpperCase();
@@ -1207,7 +1215,7 @@ function renderScreenSearch(query){
   
   if(!results.length){
     html+=`<div style="color:var(--text2);text-align:center;padding:40px">Nenhum tripulante encontrado para "${query}"</div>`;
-    document.getElementById('screen7').innerHTML=html;return;
+    document.getElementById('searchResults').innerHTML=html;return;
   }
   
   html+='<div class="search-results">';
@@ -1267,7 +1275,7 @@ function renderScreenSearch(query){
   });
   html+='</div>';
   
-  document.getElementById('screen7').innerHTML=html;
+  document.getElementById('searchResults').innerHTML=html;
   // Restore focus
   const inp=document.getElementById('searchInput');
   if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
