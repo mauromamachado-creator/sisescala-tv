@@ -578,7 +578,7 @@ function decodeMetar(raw){
 
 async function fetchMetar(){
   try{
-    const r=await fetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw',{cache:'no-store'});
+    const r=await fetch('https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw'),{cache:'no-store'});
     if(!r.ok)return;
     metarRaw=(await r.text()).trim();
     metarDecoded=decodeMetar(metarRaw);
