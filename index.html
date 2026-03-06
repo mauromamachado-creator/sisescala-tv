@@ -11,8 +11,9 @@
 :root{
   --bg:#0a0f1a;--bg2:#111827;--bg3:#1a2332;
   --vc1:#00d4ff;--vc2:#00ff88;
-  --red:#ff4444;--yellow:#ffaa00;--green:#00ff88;
+  --red:#ff4444;--yellow:#ffaa00;--green:#00ff88;--orange:#ff8800;
   --text:#e0e6ed;--text2:#8899aa;--border:#1e2d3d;
+  --glow1:rgba(0,212,255,.15);--glow2:rgba(0,255,136,.15);
 }
 body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono','Consolas','Courier New',monospace;overflow:hidden;height:100vh;display:flex;flex-direction:column}
 header{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px}
@@ -29,7 +30,9 @@ header{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 2
 main{flex:1;position:relative;overflow:hidden}
 .screen{position:absolute;inset:0;padding:18px;opacity:0;pointer-events:none;transition:opacity .6s;overflow:auto}
 .screen.active{opacity:1;pointer-events:auto}
-.screen::-webkit-scrollbar{display:none}
+.screen::-webkit-scrollbar{width:6px}
+.screen::-webkit-scrollbar-track{background:var(--bg)}
+.screen::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
 h2{font-size:1.3rem;margin-bottom:14px;color:var(--vc1);text-transform:uppercase;letter-spacing:1px}
 h2.vc2{color:var(--vc2)}
@@ -45,9 +48,9 @@ h3{font-size:1.05rem;margin:16px 0 10px;color:var(--text2);border-bottom:1px sol
 .pilot-card .status{font-size:.82rem;font-weight:900;padding:3px 8px;border-radius:3px;display:inline-block;margin-top:6px}
 .st-apto{background:#0a3a1a;color:var(--green);border:1px solid var(--green)}
 .st-inapto{background:#3a0a0a;color:var(--red);border:1px solid var(--red)}
-.st-ferias{background:#3a2a0a;color:#ff8800;border:1px solid #ff8800}
+.st-ferias{background:#3a2a0a;color:var(--orange);border:1px solid var(--orange)}
 .st-afastado{background:#3a0a0a;color:var(--red);border:1px solid var(--red)}
-.st-warning{background:#3a3a0a;color:#ff8800;border:1px solid #ff8800}
+.st-warning{background:#3a3a0a;color:var(--orange);border:1px solid var(--orange)}
 .st-ext{background:#101a2a;color:#8ea3ff;border:1px solid #5169d8}
 .st-out{background:#1a1a1a;color:#888;border:1px solid #444}
 .card-vc1{border-left-color:var(--vc1)}
@@ -64,52 +67,78 @@ h3{font-size:1.05rem;margin:16px 0 10px;color:var(--text2);border-bottom:1px sol
 .bar-pct{width:60px;text-align:right;font-size:.82rem;flex-shrink:0}
 .bar-hours{font-size:.72rem;color:var(--text2);width:92px;flex-shrink:0;text-align:center}
 
-/* Flight table */
-.flight-table{width:100%;border-collapse:collapse;font-size:.86rem}
-.flight-table th{background:var(--bg2);padding:8px 10px;text-align:left;border-bottom:2px solid var(--border);color:var(--text2);font-size:.75rem;text-transform:uppercase;letter-spacing:1px;position:sticky;top:0}
-.flight-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-.flight-table tr:hover{background:var(--bg3)}
-.flight-table .vc1-row{border-left:3px solid var(--vc1)}
-.flight-table .vc2-row{border-left:3px solid var(--vc2)}
-.missao-tag{padding:2px 6px;border-radius:3px;font-size:.75rem;font-weight:900;display:inline-block}
-.m-inst{background:#1a2a3a;color:#55aaff}
-.m-escav{background:#1a3a2a;color:#55ffaa}
-.m-pr{background:#2a2a1a;color:#ddcc55}
-.m-ver{background:#2a1a2a;color:#cc88ff}
-.m-trn{background:#1a2a2a;color:#55cccc}
-.m-disp{background:#1a1a1a;color:#aaa}
-.m-rec{background:#2a1a1a;color:#ff9b9b}
-
 /* Alerts */
 .alert-section{margin-bottom:18px}
 .alert-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
 .alert-card.warning{border-left:3px solid var(--yellow)}
 .alert-card.danger{border-left:3px solid var(--red)}
 .alert-card.info{border-left:3px solid var(--vc1)}
-.alert-card.vacation{border-left:3px solid #ff8800}
+.alert-card.vacation{border-left:3px solid var(--orange)}
 .alert-card.mission{border-left:3px solid var(--vc2)}
 .alert-icon{width:22px;text-align:center;font-weight:900}
 .no-data{color:var(--text2);font-style:italic;padding:18px;text-align:center}
 
-/* Dashboard specific */
-.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-@media(max-width:980px){.dash-grid{grid-template-columns:1fr}}
-.dash-panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;overflow:hidden}
-.dash-panel h3{margin:0 0 12px;border:none;padding:0;font-size:.9rem;color:var(--vc1);text-transform:uppercase;letter-spacing:1px}
-.dash-panel h3.vc2t{color:var(--vc2)}
-.top3-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
-.top3-row:last-child{border:none}
-.top3-rank{font-size:1.3rem;width:30px;text-align:center}
-.top3-tri{font-weight:900;font-size:1.1rem;width:50px}
-.top3-name{font-size:.75rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.top3-hours{font-size:.85rem;font-weight:700;text-align:right}
-.top3-pct{font-size:.72rem;width:55px;text-align:right}
-.desadapt-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
-.desadapt-row:last-child{border:none}
-.hours-chart{position:relative;height:200px;margin-top:8px}
-.hours-chart canvas{width:100%!important;height:100%!important}
-.mission-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:.82rem}
-.mission-row:last-child{border:none}
+/* ===== DASHBOARD ===== */
+.dash-layout{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;gap:16px;height:100%}
+@media(max-width:1200px){.dash-layout{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){.dash-layout{grid-template-columns:1fr}}
+.dash-panel{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:10px;padding:18px;overflow:hidden;position:relative}
+.dash-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:10px 10px 0 0}
+.dash-panel.p-vc1::before{background:linear-gradient(90deg,var(--vc1),transparent)}
+.dash-panel.p-vc2::before{background:linear-gradient(90deg,var(--vc2),transparent)}
+.dash-panel.p-red::before{background:linear-gradient(90deg,var(--red),transparent)}
+.dash-panel.p-hours::before{background:linear-gradient(90deg,var(--vc1),var(--vc2))}
+.dash-panel.p-miss::before{background:linear-gradient(90deg,#ddcc55,var(--orange))}
+.dash-panel.p-intl::before{background:linear-gradient(90deg,#8ea3ff,#c488ff)}
+.panel-title{font-size:.82rem;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.panel-title .icon{font-size:1.1rem}
+.panel-title .count{margin-left:auto;background:var(--bg);padding:2px 8px;border-radius:10px;font-size:.72rem;color:var(--text)}
+
+/* Top pilots */
+.top-pilot{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.top-pilot:last-child{border:none}
+.top-rank{font-size:1.6rem;width:36px;text-align:center;line-height:1}
+.top-info{flex:1;min-width:0}
+.top-tri{font-weight:900;font-size:1.15rem;letter-spacing:1px}
+.top-name{font-size:.7rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-stat{text-align:right}
+.top-hours{font-size:1.1rem;font-weight:800}
+.top-bar{width:100%;height:4px;background:var(--bg);border-radius:2px;margin-top:4px;overflow:hidden}
+.top-bar-fill{height:100%;border-radius:2px;transition:width .6s}
+
+/* Desadaptados */
+.desadapt-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.desadapt-item:last-child{border:none}
+.desadapt-tri{font-weight:900;font-size:1.05rem;width:50px}
+.desadapt-badge{padding:3px 8px;border-radius:4px;font-size:.72rem;font-weight:900}
+.badge-danger{background:rgba(255,68,68,.15);color:var(--red);border:1px solid rgba(255,68,68,.3)}
+.badge-warning{background:rgba(255,136,0,.15);color:var(--orange);border:1px solid rgba(255,136,0,.3)}
+
+/* Hours progress */
+.prog-section{margin-bottom:16px}
+.prog-label{display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:6px}
+.prog-track{height:32px;background:var(--bg);border:1px solid var(--border);border-radius:6px;position:relative;overflow:hidden}
+.prog-fill{height:100%;border-radius:5px;transition:width .6s;position:relative}
+.prog-fill::after{content:attr(data-pct);position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:.72rem;font-weight:900;color:var(--bg)}
+.prog-marker{position:absolute;top:-2px;bottom:-2px;width:3px;background:var(--text);border-radius:2px;opacity:.5;z-index:2}
+
+/* Missions */
+.mission-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:14px;transition:.2s}
+.mission-card:hover{border-color:rgba(255,255,255,.15)}
+.mission-anv{font-weight:900;font-size:.9rem;padding:4px 8px;border-radius:4px;text-align:center;min-width:50px}
+.mission-anv.vc1{background:rgba(0,212,255,.12);color:var(--vc1);border:1px solid rgba(0,212,255,.25)}
+.mission-anv.vc2{background:rgba(0,255,136,.12);color:var(--vc2);border:1px solid rgba(0,255,136,.25)}
+.mission-body{flex:1;min-width:0}
+.mission-title{font-weight:700;font-size:.88rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mission-sub{font-size:.72rem;color:var(--text2)}
+.mission-date{text-align:right;min-width:90px}
+.mission-date-main{font-size:.82rem;font-weight:700}
+.mission-date-range{font-size:.68rem;color:var(--text2)}
+.mission-tipo{padding:2px 6px;border-radius:3px;font-size:.68rem;font-weight:900;display:inline-block;background:rgba(221,204,85,.12);color:#ddcc55;border:1px solid rgba(221,204,85,.25)}
+.mission-ongoing{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+.full-missions{grid-column:1/-1}
 
 footer{background:var(--bg2);border-top:1px solid var(--border);padding:6px 20px;font-size:.72rem;color:var(--text2);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:10px}
 footer a{color:var(--vc1);cursor:pointer;text-decoration:none;white-space:nowrap}
@@ -124,7 +153,6 @@ footer a:hover{text-decoration:underline}
   .pilot-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
   .bar-name{width:90px}
   .screen{padding:12px}
-  .dash-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -140,7 +168,7 @@ footer a:hover{text-decoration:underline}
     </div>
     <div id="kpi-box" style="display:flex;gap:24px;margin-left:24px">
       <div style="text-align:center"><div id="kpi-trip" style="font-size:1.5rem;font-weight:900;color:var(--vc1)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Tripulantes</div></div>
-      <div style="text-align:center"><div id="kpi-miss" style="font-size:1.5rem;font-weight:900;color:var(--vc2)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Missões</div></div>
+      <div style="text-align:center"><div id="kpi-miss" style="font-size:1.5rem;font-weight:900;color:var(--vc2)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Missoes</div></div>
       <div style="text-align:center"><div id="kpi-aptos" style="font-size:1.5rem;font-weight:900;color:var(--green)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Aptos</div></div>
     </div>
   </div>
@@ -173,7 +201,7 @@ footer a:hover{text-decoration:underline}
 </div>
 
 <footer>
-  <span>SisEscala v2.0 — Desenvolvido para o GTE-1 — Major Machado</span>
+  <span>SisEscala v2.1 — Desenvolvido para o GTE — Major Machado</span>
   <a onclick="loadAllData()">Atualizar dados</a>
 </footer>
 
@@ -185,115 +213,53 @@ const csvUrl=gid=>`https://docs.google.com/spreadsheets/d/${SHEET}/export?format
 let currentScreen=0;
 let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[];
 
-// ===== Utils =====
 function parseCSV(text){
   const rows=[];let row=[],field='',inQ=false;
   for(let i=0;i<text.length;i++){
     const c=text[i];
-    if(inQ){
-      if(c==='"'&&text[i+1]==='"'){field+='"';i++;}
-      else if(c==='"')inQ=false;
-      else field+=c;
-    }else{
-      if(c==='"')inQ=true;
-      else if(c===','){row.push(field.trim());field='';}
-      else if(c==='\n'||c==='\r'){
-        if(c==='\r'&&text[i+1]==='\n')i++;
-        row.push(field.trim());
-        if(row.some(x=>x!==''))rows.push(row);
-        row=[];field='';
-      }else field+=c;
-    }
+    if(inQ){if(c==='"'&&text[i+1]==='"'){field+='"';i++;}else if(c==='"')inQ=false;else field+=c;}
+    else{if(c==='"')inQ=true;else if(c===','){row.push(field.trim());field='';}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(field.trim());if(row.some(x=>x!==''))rows.push(row);row=[];field='';}else field+=c;}
   }
-  row.push(field.trim());
-  if(row.some(x=>x!==''))rows.push(row);
-  return rows;
+  row.push(field.trim());if(row.some(x=>x!==''))rows.push(row);return rows;
 }
 
-function parseBrNum(s){
-  if(!s||s==='#N/A'||s==='#DIV/0!'||s==='#VALUE!')return null;
-  return parseFloat(String(s).replace(/\s/g,'').replace('%','').replace(',','.'));
-}
+function parseBrNum(s){if(!s||s==='#N/A'||s==='#DIV/0!'||s==='#VALUE!')return null;return parseFloat(String(s).replace(/\s/g,'').replace('%','').replace(',','.'));}
+function parseHours(s){if(!s||s==='#N/A'||s==='#DIV/0!'||s==='#VALUE!')return null;const str=String(s).trim();const m=str.match(/(\d+):(\d+)/);if(m)return parseInt(m[1],10)+parseInt(m[2],10)/60;return parseBrNum(str);}
+function parseDateBR(s){if(!s||s==='#N/A'||s==='#DIV/0!'||s==='#VALUE!')return null;const str=String(s).trim();const m=str.match(/(\d{2})\/(\d{2})\/(\d{4})/);if(!m)return null;return new Date(parseInt(m[3],10),parseInt(m[2],10)-1,parseInt(m[1],10));}
+function nowBRT(){return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));}
+function fmtDate(d){if(!d)return'';return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});}
+function fmtDateShort(d){if(!d)return'';return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',timeZone:'America/Sao_Paulo'}).replace('.','');}
+function fmtHours(h){if(h==null)return'—';const hh=Math.floor(h);const mm=Math.round((h-hh)*60);return `${hh}h${mm.toString().padStart(2,'0')}`;}
+async function fetchCSV(gid){const r=await fetch(csvUrl(gid),{cache:'no-store'});if(!r.ok)throw new Error('fetch failed');return parseCSV(await r.text());}
 
-function parseHours(s){
-  if(!s||s==='#N/A'||s==='#DIV/0!'||s==='#VALUE!')return null;
-  const str=String(s).trim();
-  const m=str.match(/(\d+):(\d+)/);
-  if(m) return parseInt(m[1],10)+parseInt(m[2],10)/60;
-  return parseBrNum(str);
-}
-
-function parseDateBR(s){
-  if(!s||s==='#N/A'||s==='#DIV/0!'||s==='#VALUE!')return null;
-  const str=String(s).trim();
-  const m=str.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-  if(!m) return null;
-  return new Date(parseInt(m[3],10), parseInt(m[2],10)-1, parseInt(m[1],10));
-}
-
-function nowBRT(){
-  return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));
-}
-
-function fmtDate(d){
-  if(!d) return '';
-  return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});
-}
-
-function fmtHours(h){
-  if(h==null) return '—';
-  const hh=Math.floor(h); const mm=Math.round((h-hh)*60);
-  return `${hh}h${mm.toString().padStart(2,'0')}`;
-}
-
-async function fetchCSV(gid){
-  const r=await fetch(csvUrl(gid),{cache:'no-store'});
-  if(!r.ok) throw new Error('fetch failed');
-  return parseCSV(await r.text());
-}
-
-function findHeaderIndex(row, labels){
-  const up=row.map(x=>String(x||'').trim().toUpperCase());
-  const idx={};
-  for(const lab of labels){
-    const i=up.findIndex(c=>c===lab.toUpperCase());
-    if(i>=0) idx[lab]=i;
-  }
-  return idx;
-}
-
-// ===== Parsing =====
 function parseDisponibilidade(rows){
-  function norm(x){ return String(x||'').trim().toUpperCase(); }
-  let hdr=null, hdrRowIdx=-1;
+  function norm(x){return String(x||'').trim().toUpperCase();}
+  let hdr=null,hdrRowIdx=-1;
   for(let r=0;r<rows.length;r++){
     const row=rows[r];
     for(let i=0;i<row.length-4;i++){
-      if(norm(row[i])==='GRUPO' && norm(row[i+1])==='QT' && norm(row[i+2])==='TRIGRAMA' && norm(row[i+3])==='PILOTO'){
-        const base=i;
-        const slice=row.slice(base, base+40).map(norm);
-        const rel=(label)=>{ const j=slice.indexOf(label); return j>=0 ? base+j : null; };
+      if(norm(row[i])==='GRUPO'&&norm(row[i+1])==='QT'&&norm(row[i+2])==='TRIGRAMA'&&norm(row[i+3])==='PILOTO'){
+        const base=i;const slice=row.slice(base,base+40).map(norm);
+        const rel=(label)=>{const j=slice.indexOf(label);return j>=0?base+j:null;};
         hdr={GRUPO:base,QT:base+1,TRIGRAMA:base+2,PILOTO:base+3,
           OPR:rel('OPR'),META:rel('META'),VOADAS:rel('VOADAS'),
           PCT:(rel('% ANO')!=null?rel('% ANO'):rel('%')),
           INSP:rel('INSP SAU'),CVI:rel('CVI'),AFAST:rel('AFASTAMENTO')};
-        if(hdr.OPR!=null && hdr.META!=null && hdr.VOADAS!=null){ hdrRowIdx=r; break; }
-        else hdr=null;
+        if(hdr.OPR!=null&&hdr.META!=null&&hdr.VOADAS!=null){hdrRowIdx=r;break;}else hdr=null;
       }
     }
-    if(hdr) break;
+    if(hdr)break;
   }
-  if(!hdr) return {vc1:[],vc2:[]};
-
+  if(!hdr)return{vc1:[],vc2:[]};
   const vc1=[],vc2=[];
   for(let r=hdrRowIdx+1;r<rows.length;r++){
     const row=rows[r];
     const tri=String(row[hdr.TRIGRAMA]||'').trim().toUpperCase();
-    if(!tri||tri==='TRIGRAMA') continue;
+    if(!tri||tri==='TRIGRAMA')continue;
     const qt=String(row[hdr.QT]||'').trim().toUpperCase();
-    if(qt!=='VC1'&&qt!=='VC2') continue;
-    const pilot={
-      trigrama:tri, name:String(row[hdr.PILOTO]||'').trim(),
+    if(qt!=='VC1'&&qt!=='VC2')continue;
+    const pilot={trigrama:tri,name:String(row[hdr.PILOTO]||'').trim(),
       opr:hdr.OPR!=null?String(row[hdr.OPR]||'').trim():'',
       grupo:hdr.GRUPO!=null?String(row[hdr.GRUPO]||'').trim().toUpperCase():'',
       meta:hdr.META!=null?parseHours(row[hdr.META]):null,
@@ -304,55 +270,45 @@ function parseDisponibilidade(rows){
       cvi:hdr.CVI!=null?String(row[hdr.CVI]||'').trim():'',
       cviDate:hdr.CVI!=null?parseDateBR(row[hdr.CVI]):null,
       afastamento:hdr.AFAST!=null?String(row[hdr.AFAST]||'').trim():'',
-      anv:qt==='VC1'?'VC-1':'VC-2'
-    };
+      anv:qt==='VC1'?'VC-1':'VC-2'};
     (qt==='VC1'?vc1:vc2).push(pilot);
   }
   vc1.sort((a,b)=>a.trigrama.localeCompare(b.trigrama));
   vc2.sort((a,b)=>a.trigrama.localeCompare(b.trigrama));
-  return {vc1,vc2};
+  return{vc1,vc2};
 }
 
 function parseLancamentos(rows){
   const fl=[];
   for(const row of rows){
-    const anv=row[1]||'';
-    if(anv!=='VC1'&&anv!=='VC2') continue;
-    const data=row[3]||'';
-    if(!String(data).match(/\d{2}\/\d{2}\/\d{4}/)) continue;
-    fl.push({
-      anv:anv==='VC1'?'VC-1':'VC-2', om:(row[2]||'').trim(),
-      data:String(data).trim(), dataObj:parseDateBR(data),
-      piloto:(row[4]||'').trim(), missao:(row[5]||'').trim(),
-      tempo:(row[6]||'').trim(), obs:(row[7]||'').trim()
-    });
+    const anv=row[1]||'';if(anv!=='VC1'&&anv!=='VC2')continue;
+    const data=row[3]||'';if(!String(data).match(/\d{2}\/\d{2}\/\d{4}/))continue;
+    fl.push({anv:anv==='VC1'?'VC-1':'VC-2',om:(row[2]||'').trim(),
+      data:String(data).trim(),dataObj:parseDateBR(data),
+      piloto:(row[4]||'').trim(),missao:(row[5]||'').trim(),
+      tempo:(row[6]||'').trim(),obs:(row[7]||'').trim()});
   }
-  fl.sort((a,b)=>(b.dataObj?.getTime()||0)-(a.dataObj?.getTime()||0));
-  return fl;
+  fl.sort((a,b)=>(b.dataObj?.getTime()||0)-(a.dataObj?.getTime()||0));return fl;
 }
 
 function parseFerias(rows){
-  let hdrRow=null, hdr=null;
+  let hdrRow=null,hdr=null;
   for(const row of rows){
-    const idx=findHeaderIndex(row,['ANV','PILOTO','TRIGRAMA','INÍCIO','INICIO','FIM','PERÍODO','PERIODO']);
+    const idx={};const up=row.map(x=>String(x||'').trim().toUpperCase());
+    for(const lab of['ANV','PILOTO','TRIGRAMA','INÍCIO','INICIO','FIM','PERÍODO','PERIODO']){
+      const i=up.findIndex(c=>c===lab);if(i>=0)idx[lab]=i;}
     const hasDates=(idx['INÍCIO']!=null||idx['INICIO']!=null)&&idx['FIM']!=null;
     const hasPilot=idx['TRIGRAMA']!=null||idx['PILOTO']!=null;
     if(hasDates&&hasPilot){hdrRow=row;hdr=idx;break;}
   }
-  if(!hdr) return [];
+  if(!hdr)return[];
   const inicioIdx=hdr['INÍCIO']!=null?hdr['INÍCIO']:hdr['INICIO'];
-  const fimIdx=hdr['FIM'];
-  const triIdx=hdr['TRIGRAMA']!=null?hdr['TRIGRAMA']:hdr['PILOTO'];
-  const anvIdx=hdr['ANV'];
-  const list=[];
-  let started=false;
+  const fimIdx=hdr['FIM'];const triIdx=hdr['TRIGRAMA']!=null?hdr['TRIGRAMA']:hdr['PILOTO'];
+  const anvIdx=hdr['ANV'];const list=[];let started=false;
   for(const row of rows){
-    if(row===hdrRow){started=true;continue;}
-    if(!started) continue;
-    const tri=(row[triIdx]||'').trim();
-    const ini=parseDateBR(row[inicioIdx]);
-    const fim=parseDateBR(row[fimIdx]);
-    if(!tri||!ini||!fim) continue;
+    if(row===hdrRow){started=true;continue;}if(!started)continue;
+    const tri=(row[triIdx]||'').trim();const ini=parseDateBR(row[inicioIdx]);const fim=parseDateBR(row[fimIdx]);
+    if(!tri||!ini||!fim)continue;
     const anv=anvIdx!=null?String(row[anvIdx]||'').trim():'';
     list.push({trigrama:tri.toUpperCase(),anv,inicio:ini,fim:fim});
   }
@@ -360,269 +316,193 @@ function parseFerias(rows){
 }
 
 function parsePrevisaoMissoes(rows){
-  // Cols: (blank), ANV, Tipo, País, Motivo, Início, Fim, Link, Período
   const missions=[];
   for(const row of rows){
     const anv=String(row[1]||'').trim().toUpperCase();
-    if(anv!=='VC1'&&anv!=='VC2') continue;
-    const tipo=String(row[2]||'').trim();
-    const pais=String(row[3]||'').trim();
-    const motivo=String(row[4]||'').trim();
-    const inicioRaw=String(row[5]||'').trim();
-    const fimRaw=String(row[6]||'').trim();
-    const link=String(row[7]||'').trim();
-    
-    let inicio=parseDateBR(inicioRaw);
-    let fim=parseDateBR(fimRaw);
-    
-    // Try DD/MM format (no year) - assume current year
-    if(!inicio && inicioRaw.match(/^\d{1,2}\/\d{1,2}$/)){
-      const [d,m]=inicioRaw.split('/');
-      inicio=new Date(nowBRT().getFullYear(),parseInt(m,10)-1,parseInt(d,10));
-    }
-    if(!fim && fimRaw.match(/^\d{1,2}\/\d{1,2}$/)){
-      const [d,m]=fimRaw.split('/');
-      fim=new Date(nowBRT().getFullYear(),parseInt(m,10)-1,parseInt(d,10));
-    }
-    // Try DD/MM/YY format
-    if(!inicio){
-      const m2=inicioRaw.match(/(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
-      if(m2) inicio=new Date(2000+parseInt(m2[3],10),parseInt(m2[2],10)-1,parseInt(m2[1],10));
-    }
-    if(!fim){
-      const m2=fimRaw.match(/(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
-      if(m2) fim=new Date(2000+parseInt(m2[3],10),parseInt(m2[2],10)-1,parseInt(m2[1],10));
-    }
-    
-    missions.push({
-      anv:anv==='VC1'?'VC-1':'VC-2', tipo, pais, motivo,
-      inicioRaw, fimRaw, inicio, fim, link,
-      label: motivo ? `${pais} — ${motivo}` : pais
-    });
+    if(anv!=='VC1'&&anv!=='VC2')continue;
+    const tipo=String(row[2]||'').trim();const pais=String(row[3]||'').trim();
+    const motivo=String(row[4]||'').trim();const inicioRaw=String(row[5]||'').trim();
+    const fimRaw=String(row[6]||'').trim();const link=String(row[7]||'').trim();
+    let inicio=parseDateBR(inicioRaw),fim=parseDateBR(fimRaw);
+    if(!inicio&&inicioRaw.match(/^\d{1,2}\/\d{1,2}$/)){const[d,m]=inicioRaw.split('/');inicio=new Date(nowBRT().getFullYear(),parseInt(m,10)-1,parseInt(d,10));}
+    if(!fim&&fimRaw.match(/^\d{1,2}\/\d{1,2}$/)){const[d,m]=fimRaw.split('/');fim=new Date(nowBRT().getFullYear(),parseInt(m,10)-1,parseInt(d,10));}
+    if(!inicio){const m2=inicioRaw.match(/(\d{1,2})\/(\d{1,2})\/(\d{2})$/);if(m2)inicio=new Date(2000+parseInt(m2[3],10),parseInt(m2[2],10)-1,parseInt(m2[1],10));}
+    if(!fim){const m2=fimRaw.match(/(\d{1,2})\/(\d{1,2})\/(\d{2})$/);if(m2)fim=new Date(2000+parseInt(m2[3],10),parseInt(m2[2],10)-1,parseInt(m2[1],10));}
+    missions.push({anv:anv==='VC1'?'VC-1':'VC-2',tipo,pais,motivo,inicioRaw,fimRaw,inicio,fim,link,
+      label:motivo?`${pais} — ${motivo}`:pais});
   }
   return missions;
 }
 
-function isOnVacation(trigrama, date){
-  const t=String(trigrama||'').toUpperCase();
-  return feriasData.some(f=>f.trigrama===t&&f.inicio<=date&&date<=f.fim);
-}
+function isOnVacation(trigrama,date){const t=String(trigrama||'').toUpperCase();return feriasData.some(f=>f.trigrama===t&&f.inicio<=date&&date<=f.fim);}
 
-// ===== Business rules =====
-function getPilotStatus(p, td){
-  if(feriasData.length&&isOnVacation(p.trigrama,td)) return {status:'FERIAS',cls:'st-ferias'};
-  if(String(p.grupo).toUpperCase()==='OUT') return {status:'FORA',cls:'st-out'};
-  if(String(p.grupo).toUpperCase()==='EXT') return {status:'EXTERNO',cls:'st-ext'};
+function getPilotStatus(p,td){
+  if(feriasData.length&&isOnVacation(p.trigrama,td))return{status:'FERIAS',cls:'st-ferias'};
+  if(String(p.grupo).toUpperCase()==='OUT')return{status:'FORA',cls:'st-out'};
+  if(String(p.grupo).toUpperCase()==='EXT')return{status:'EXTERNO',cls:'st-ext'};
   const afNum=parseInt(String(p.afastamento||'').replace(/[^0-9\-]/g,''),10);
-  if(!isNaN(afNum)&&afNum<=-35) return {status:'DESADAPTADO',cls:'st-afastado'};
-  if(!isNaN(afNum)&&afNum<=-20) return {status:'AFASTADO PR',cls:'st-warning'};
-  if(p.cviDate&&p.cviDate<td) return {status:'INAPTO (CVI)',cls:'st-inapto'};
-  if(p.inspSauDate&&p.inspSauDate<td) return {status:'INAPTO (INSP)',cls:'st-inapto'};
-  return {status:'APTO',cls:'st-apto'};
+  if(!isNaN(afNum)&&afNum<=-35)return{status:'DESADAPTADO',cls:'st-afastado'};
+  if(!isNaN(afNum)&&afNum<=-20)return{status:'AFASTADO PR',cls:'st-warning'};
+  if(p.cviDate&&p.cviDate<td)return{status:'INAPTO (CVI)',cls:'st-inapto'};
+  if(p.inspSauDate&&p.inspSauDate<td)return{status:'INAPTO (INSP)',cls:'st-inapto'};
+  return{status:'APTO',cls:'st-apto'};
 }
 
-// ===== Dashboard (Screen 0) =====
+// ===== DASHBOARD =====
 function renderScreen0(){
-  const td=nowBRT();
-  const allPilots=[...pilotData.vc1,...pilotData.vc2];
-  let html=`<h2>Dashboard — ${fmtDate(td)}</h2>`;
-  html+='<div class="dash-grid">';
-
-  // Panel 1: Top 3 mais voados VC-1
-  html+='<div class="dash-panel">';
-  html+='<h3>Top 3 Mais Voados — VC-1</h3>';
-  const vc1Active=pilotData.vc1.filter(p=>p.voadas!=null&&p.grupo!=='OUT').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
+  const td=nowBRT();const allPilots=[...pilotData.vc1,...pilotData.vc2];
   const medals=['🥇','🥈','🥉'];
-  for(let i=0;i<Math.min(3,vc1Active.length);i++){
-    const p=vc1Active[i];
-    const pctColor=(p.pct||0)<50?'var(--red)':(p.pct||0)<75?'var(--yellow)':'var(--green)';
-    html+=`<div class="top3-row">
-      <span class="top3-rank">${medals[i]}</span>
-      <span class="top3-tri" style="color:var(--vc1)">${p.trigrama}</span>
-      <span class="top3-name">${p.name||''}</span>
-      <span class="top3-hours">${fmtHours(p.voadas)}</span>
-      <span class="top3-pct" style="color:${pctColor}">${(p.pct||0).toFixed(1)}%</span>
-    </div>`;
+  let html='<div class="dash-layout">';
+
+  // --- TOP 3 VC-1 ---
+  html+='<div class="dash-panel p-vc1">';
+  html+='<div class="panel-title"><span class="icon">✈️</span> Top Voados — VC-1</div>';
+  const vc1Sorted=pilotData.vc1.filter(p=>p.voadas!=null&&p.grupo!=='OUT').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
+  for(let i=0;i<Math.min(3,vc1Sorted.length);i++){
+    const p=vc1Sorted[i];const pct=p.pct||0;
+    const barColor=pct<50?'var(--red)':pct<75?'var(--yellow)':'var(--green)';
+    html+=`<div class="top-pilot">
+      <span class="top-rank">${medals[i]}</span>
+      <div class="top-info"><div class="top-tri" style="color:var(--vc1)">${p.trigrama}</div><div class="top-name">${p.name||''}</div></div>
+      <div class="top-stat"><div class="top-hours" style="color:${barColor}">${fmtHours(p.voadas)}</div>
+        <div style="font-size:.65rem;color:var(--text2)">${pct.toFixed(0)}% da meta</div>
+        <div class="top-bar"><div class="top-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div>
+      </div></div>`;
   }
-  if(!vc1Active.length) html+='<div class="no-data">Sem dados</div>';
+  if(!vc1Sorted.length)html+='<div class="no-data">Sem dados</div>';
   html+='</div>';
 
-  // Panel 2: Top 3 mais voados VC-2
-  html+='<div class="dash-panel">';
-  html+='<h3 class="vc2t">Top 3 Mais Voados — VC-2</h3>';
-  const vc2Active=pilotData.vc2.filter(p=>p.voadas!=null&&p.grupo!=='OUT').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
-  for(let i=0;i<Math.min(3,vc2Active.length);i++){
-    const p=vc2Active[i];
-    const pctColor=(p.pct||0)<50?'var(--red)':(p.pct||0)<75?'var(--yellow)':'var(--green)';
-    html+=`<div class="top3-row">
-      <span class="top3-rank">${medals[i]}</span>
-      <span class="top3-tri" style="color:var(--vc2)">${p.trigrama}</span>
-      <span class="top3-name">${p.name||''}</span>
-      <span class="top3-hours">${fmtHours(p.voadas)}</span>
-      <span class="top3-pct" style="color:${pctColor}">${(p.pct||0).toFixed(1)}%</span>
-    </div>`;
+  // --- TOP 3 VC-2 ---
+  html+='<div class="dash-panel p-vc2">';
+  html+='<div class="panel-title"><span class="icon">🛩️</span> Top Voados — VC-2</div>';
+  const vc2Sorted=pilotData.vc2.filter(p=>p.voadas!=null&&p.grupo!=='OUT').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
+  for(let i=0;i<Math.min(3,vc2Sorted.length);i++){
+    const p=vc2Sorted[i];const pct=p.pct||0;
+    const barColor=pct<50?'var(--red)':pct<75?'var(--yellow)':'var(--green)';
+    html+=`<div class="top-pilot">
+      <span class="top-rank">${medals[i]}</span>
+      <div class="top-info"><div class="top-tri" style="color:var(--vc2)">${p.trigrama}</div><div class="top-name">${p.name||''}</div></div>
+      <div class="top-stat"><div class="top-hours" style="color:${barColor}">${fmtHours(p.voadas)}</div>
+        <div style="font-size:.65rem;color:var(--text2)">${pct.toFixed(0)}% da meta</div>
+        <div class="top-bar"><div class="top-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div>
+      </div></div>`;
   }
-  if(!vc2Active.length) html+='<div class="no-data">Sem dados</div>';
+  if(!vc2Sorted.length)html+='<div class="no-data">Sem dados</div>';
   html+='</div>';
 
-  // Panel 3: Pilotos Desadaptados / Afastados
-  html+='<div class="dash-panel">';
-  html+='<h3 style="color:var(--red)">Pilotos Desadaptados / Afastados</h3>';
-  const problemPilots=allPilots.filter(p=>{
-    const s=getPilotStatus(p,td);
-    return s.status==='DESADAPTADO'||s.status==='AFASTADO PR'||s.status==='INAPTO (CVI)'||s.status==='INAPTO (INSP)';
-  });
+  // --- DESADAPTADOS / ALERTAS ---
+  html+='<div class="dash-panel p-red">';
+  const problemPilots=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status==='DESADAPTADO'||s.status==='AFASTADO PR'||s.status.startsWith('INAPTO');});
+  html+=`<div class="panel-title"><span class="icon">⚠️</span> Alertas Tripulantes <span class="count">${problemPilots.length}</span></div>`;
   if(problemPilots.length){
     for(const p of problemPilots){
-      const st=getPilotStatus(p,td);
-      const anvColor=p.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
-      html+=`<div class="desadapt-row">
-        <span style="font-weight:900;width:50px;color:${anvColor}">${p.trigrama}</span>
-        <span style="font-size:.75rem;color:var(--text2);flex:1">${p.name||''}</span>
-        <span style="font-size:.75rem;color:${anvColor}">${p.anv}</span>
-        <span class="status ${st.cls}" style="font-size:.72rem;padding:2px 6px">${st.status}</span>
-      </div>`;
+      const st=getPilotStatus(p,td);const anvColor=p.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
+      const bdgCls=st.status==='DESADAPTADO'||st.status.startsWith('INAPTO')?'badge-danger':'badge-warning';
+      html+=`<div class="desadapt-item">
+        <span class="desadapt-tri" style="color:${anvColor}">${p.trigrama}</span>
+        <span style="font-size:.72rem;color:var(--text2);flex:1">${p.name||''}</span>
+        <span style="font-size:.68rem;color:${anvColor}">${p.anv}</span>
+        <span class="desadapt-badge ${bdgCls}">${st.status}</span></div>`;
     }
   }else{
-    html+='<div style="color:var(--green);text-align:center;padding:16px;font-weight:700">Todos os pilotos aptos</div>';
+    html+='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:8px"><div style="font-size:2rem">✅</div><div style="color:var(--green);font-weight:700">Todos aptos</div></div>';
   }
   html+='</div>';
 
-  // Panel 4: Horas de Voo — Diagonal (progress bar chart)
-  html+='<div class="dash-panel">';
-  html+='<h3>Horas de Voo — Progresso Anual</h3>';
-  // Show combined VC-1 and VC-2 total hours vs total meta
-  const vc1Total=pilotData.vc1.filter(p=>p.voadas!=null&&p.meta!=null&&p.grupo!=='OUT');
-  const vc2Total=pilotData.vc2.filter(p=>p.voadas!=null&&p.meta!=null&&p.grupo!=='OUT');
-  const vc1Voadas=vc1Total.reduce((s,p)=>s+(p.voadas||0),0);
-  const vc1Meta=vc1Total.reduce((s,p)=>s+(p.meta||0),0);
-  const vc2Voadas=vc2Total.reduce((s,p)=>s+(p.voadas||0),0);
-  const vc2Meta=vc2Total.reduce((s,p)=>s+(p.meta||0),0);
+  // --- HORAS PROGRESSO ---
+  html+='<div class="dash-panel p-hours" style="grid-column:span 2">';
+  html+='<div class="panel-title"><span class="icon">📊</span> Progresso Horas de Voo — Ano</div>';
+  const yearStart=new Date(td.getFullYear(),0,1);const yearEnd=new Date(td.getFullYear(),11,31);
+  const yearPct=((td-yearStart)/(yearEnd-yearStart)*100);
+  html+=`<div style="font-size:.72rem;color:var(--text2);margin-bottom:12px">Progresso do ano: ${yearPct.toFixed(0)}% — Meta diagonal</div>`;
   
-  // Year progress diagonal reference
-  const yearStart=new Date(td.getFullYear(),0,1);
-  const yearEnd=new Date(td.getFullYear(),11,31);
-  const yearPct=((td-yearStart)/(yearEnd-yearStart)*100).toFixed(0);
-  
-  html+=`<div style="margin-bottom:14px;font-size:.75rem;color:var(--text2)">Progresso do ano: ${yearPct}% (diagonal ideal)</div>`;
-  
-  // VC-1 bar
-  const vc1Pct=vc1Meta>0?(vc1Voadas/vc1Meta*100):0;
-  const vc1Color=vc1Pct<(yearPct*0.8)?'var(--red)':vc1Pct<(yearPct*1)?'var(--yellow)':'var(--green)';
-  html+=`<div style="margin-bottom:12px">
-    <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:.8rem">
-      <span style="color:var(--vc1);font-weight:900">VC-1</span>
-      <span>${fmtHours(vc1Voadas)} / ${fmtHours(vc1Meta)}</span>
-    </div>
-    <div style="position:relative;height:28px;background:var(--bg);border:1px solid var(--border);border-radius:4px;overflow:hidden">
-      <div style="position:absolute;left:${yearPct}%;top:0;bottom:0;width:2px;background:var(--text2);opacity:.5;z-index:2"></div>
-      <div style="height:100%;width:${Math.min(vc1Pct,100)}%;background:var(--vc1);opacity:.7;border-radius:3px;transition:width .5s"></div>
-    </div>
-    <div style="text-align:right;font-size:.75rem;color:${vc1Color};margin-top:2px">${vc1Pct.toFixed(1)}%</div>
-  </div>`;
-  
-  // VC-2 bar
-  const vc2Pct=vc2Meta>0?(vc2Voadas/vc2Meta*100):0;
-  const vc2Color=vc2Pct<(yearPct*0.8)?'var(--red)':vc2Pct<(yearPct*1)?'var(--yellow)':'var(--green)';
-  html+=`<div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:.8rem">
-      <span style="color:var(--vc2);font-weight:900">VC-2</span>
-      <span>${fmtHours(vc2Voadas)} / ${fmtHours(vc2Meta)}</span>
-    </div>
-    <div style="position:relative;height:28px;background:var(--bg);border:1px solid var(--border);border-radius:4px;overflow:hidden">
-      <div style="position:absolute;left:${yearPct}%;top:0;bottom:0;width:2px;background:var(--text2);opacity:.5;z-index:2"></div>
-      <div style="height:100%;width:${Math.min(vc2Pct,100)}%;background:var(--vc2);opacity:.7;border-radius:3px;transition:width .5s"></div>
-    </div>
-    <div style="text-align:right;font-size:.75rem;color:${vc2Color};margin-top:2px">${vc2Pct.toFixed(1)}%</div>
-  </div>`;
+  // VC-1
+  const vc1Act=pilotData.vc1.filter(p=>p.voadas!=null&&p.meta!=null&&p.grupo!=='OUT');
+  const vc1V=vc1Act.reduce((s,p)=>s+(p.voadas||0),0);const vc1M=vc1Act.reduce((s,p)=>s+(p.meta||0),0);
+  const vc1Pct=vc1M>0?(vc1V/vc1M*100):0;const vc1C=vc1Pct<yearPct*0.8?'var(--red)':vc1Pct<yearPct?'var(--yellow)':'var(--green)';
+  html+=`<div class="prog-section">
+    <div class="prog-label"><span style="color:var(--vc1);font-weight:900">VC-1</span><span>${fmtHours(vc1V)} / ${fmtHours(vc1M)} <span style="color:${vc1C};font-weight:900">(${vc1Pct.toFixed(1)}%)</span></span></div>
+    <div class="prog-track"><div class="prog-marker" style="left:${yearPct}%"></div><div class="prog-fill" style="width:${Math.min(vc1Pct,100)}%;background:linear-gradient(90deg,var(--vc1),${vc1C})" data-pct="${vc1Pct.toFixed(0)}%"></div></div></div>`;
+
+  // VC-2
+  const vc2Act=pilotData.vc2.filter(p=>p.voadas!=null&&p.meta!=null&&p.grupo!=='OUT');
+  const vc2V=vc2Act.reduce((s,p)=>s+(p.voadas||0),0);const vc2M=vc2Act.reduce((s,p)=>s+(p.meta||0),0);
+  const vc2Pct=vc2M>0?(vc2V/vc2M*100):0;const vc2C=vc2Pct<yearPct*0.8?'var(--red)':vc2Pct<yearPct?'var(--yellow)':'var(--green)';
+  html+=`<div class="prog-section">
+    <div class="prog-label"><span style="color:var(--vc2);font-weight:900">VC-2</span><span>${fmtHours(vc2V)} / ${fmtHours(vc2M)} <span style="color:${vc2C};font-weight:900">(${vc2Pct.toFixed(1)}%)</span></span></div>
+    <div class="prog-track"><div class="prog-marker" style="left:${yearPct}%"></div><div class="prog-fill" style="width:${Math.min(vc2Pct,100)}%;background:linear-gradient(90deg,var(--vc2),${vc2C})" data-pct="${vc2Pct.toFixed(0)}%"></div></div></div>`;
   html+='</div>';
 
-  // Panel 5: Próximas Missões
-  html+='<div class="dash-panel" style="grid-column:1/-1">';
-  html+='<h3>Próximas Missões</h3>';
-  const futureMissions=missionsData
-    .filter(m=>m.inicio && m.inicio>=td)
-    .sort((a,b)=>(a.inicio?.getTime()||Infinity)-(b.inicio?.getTime()||Infinity));
-  const undatedMissions=missionsData.filter(m=>!m.inicio);
-  
-  if(futureMissions.length||undatedMissions.length){
-    // Show missions in a clean table-like layout
-    html+='<div style="display:grid;grid-template-columns:90px 70px 1fr auto auto;gap:6px 12px;font-size:.82rem;align-items:center">';
-    html+='<div style="color:var(--text2);font-size:.7rem;font-weight:700">PERÍODO</div>';
-    html+='<div style="color:var(--text2);font-size:.7rem;font-weight:700">ANV</div>';
-    html+='<div style="color:var(--text2);font-size:.7rem;font-weight:700">DESTINO / MOTIVO</div>';
-    html+='<div style="color:var(--text2);font-size:.7rem;font-weight:700">TIPO</div>';
-    html+='<div style="color:var(--text2);font-size:.7rem;font-weight:700">PAÍS</div>';
-    
-    for(const m of futureMissions.slice(0,10)){
-      const anvColor=m.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
-      const dateStr=m.inicio?fmtDate(m.inicio):'A definir';
-      html+=`<div style="font-size:.75rem">${dateStr}</div>`;
-      html+=`<div style="color:${anvColor};font-weight:900">${m.anv}</div>`;
-      html+=`<div style="font-weight:700">${m.motivo||'—'}</div>`;
-      html+=`<div><span class="missao-tag m-pr">${m.tipo||'—'}</span></div>`;
-      html+=`<div style="color:var(--text2)">${m.pais||'—'}</div>`;
-    }
-    
-    for(const m of undatedMissions.slice(0,5)){
-      const anvColor=m.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
-      html+=`<div style="font-size:.75rem;color:var(--text2)">A definir</div>`;
-      html+=`<div style="color:${anvColor};font-weight:900">${m.anv}</div>`;
-      html+=`<div style="font-weight:700">${m.motivo||'—'}</div>`;
-      html+=`<div><span class="missao-tag m-pr">${m.tipo||'—'}</span></div>`;
-      html+=`<div style="color:var(--text2)">${m.pais||'—'}</div>`;
-    }
-    html+='</div>';
-  }else{
-    html+='<div class="no-data">Nenhuma missão programada.</div>';
-  }
-  
-  // Also show ongoing missions (started but not ended)
-  const ongoing=missionsData.filter(m=>m.inicio&&m.fim&&m.inicio<=td&&m.fim>=td);
+  // --- PRÓXIMAS MISSÕES INTERNACIONAIS ---
+  html+='<div class="dash-panel p-intl full-missions" style="grid-column:1/-1">';
+  const td2=new Date(td);td2.setHours(0,0,0,0);
+  const ongoing=missionsData.filter(m=>m.inicio&&m.fim&&m.inicio<=td2&&m.fim>=td2);
+  const future=missionsData.filter(m=>m.inicio&&m.inicio>td2).sort((a,b)=>(a.inicio?.getTime()||0)-(b.inicio?.getTime()||0));
+  const undated=missionsData.filter(m=>!m.inicio);
+  const totalMiss=ongoing.length+future.length+undated.length;
+  html+=`<div class="panel-title"><span class="icon">🌎</span> Proximas Missoes Internacionais <span class="count">${totalMiss}</span></div>`;
+
   if(ongoing.length){
-    html+='<h3 style="border:none;margin:14px 0 8px;color:var(--green)">Em Andamento</h3>';
+    html+='<div style="margin-bottom:12px;font-size:.75rem;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700">Em andamento</div>';
     for(const m of ongoing){
-      const anvColor=m.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
-      html+=`<div class="alert-card mission">
-        <span style="color:${anvColor};font-weight:900;width:50px">${m.anv}</span>
-        <span style="font-weight:700;flex:1">${m.label}</span>
-        <span class="missao-tag m-pr">${m.tipo}</span>
-        <span style="font-size:.75rem;color:var(--text2)">${fmtDate(m.inicio)} — ${fmtDate(m.fim)}</span>
-      </div>`;
+      const anvCls=m.anv==='VC-1'?'vc1':'vc2';
+      html+=`<div class="mission-card mission-ongoing" style="border-color:var(--green)">
+        <div class="mission-anv ${anvCls}">${m.anv}</div>
+        <div class="mission-body"><div class="mission-title">${m.pais}</div><div class="mission-sub">${m.motivo}</div></div>
+        <div><span class="mission-tipo">${m.tipo||'—'}</span></div>
+        <div class="mission-date"><div class="mission-date-main" style="color:var(--green)">EM CURSO</div><div class="mission-date-range">${m.inicioRaw} — ${m.fimRaw}</div></div></div>`;
     }
   }
+
+  if(future.length){
+    if(ongoing.length)html+='<div style="margin:14px 0 12px;font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700">Programadas</div>';
+    for(const m of future.slice(0,8)){
+      const anvCls=m.anv==='VC-1'?'vc1':'vc2';
+      const daysUntil=Math.ceil((m.inicio-td2)/(86400000));
+      const urgColor=daysUntil<=7?'var(--red)':daysUntil<=30?'var(--yellow)':'var(--text)';
+      html+=`<div class="mission-card">
+        <div class="mission-anv ${anvCls}">${m.anv}</div>
+        <div class="mission-body"><div class="mission-title">${m.pais}</div><div class="mission-sub">${m.motivo}</div></div>
+        <div><span class="mission-tipo">${m.tipo||'—'}</span></div>
+        <div class="mission-date"><div class="mission-date-main" style="color:${urgColor}">${daysUntil<=0?'HOJE':'em '+daysUntil+'d'}</div><div class="mission-date-range">${m.inicioRaw} — ${m.fimRaw}</div></div></div>`;
+    }
+  }
+
+  if(undated.length){
+    html+='<div style="margin:14px 0 12px;font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700">A definir</div>';
+    for(const m of undated.slice(0,5)){
+      const anvCls=m.anv==='VC-1'?'vc1':'vc2';
+      html+=`<div class="mission-card" style="opacity:.7">
+        <div class="mission-anv ${anvCls}">${m.anv}</div>
+        <div class="mission-body"><div class="mission-title">${m.pais}</div><div class="mission-sub">${m.motivo}</div></div>
+        <div><span class="mission-tipo">${m.tipo||'—'}</span></div>
+        <div class="mission-date"><div class="mission-date-main" style="color:var(--text2)">TBD</div></div></div>`;
+    }
+  }
+
+  if(!totalMiss)html+='<div class="no-data">Nenhuma missao internacional programada.</div>';
   html+='</div>';
 
-  html+='</div>'; // close dash-grid
+  html+='</div>'; // close dash-layout
   document.getElementById('screen0').innerHTML=html;
 }
 
-// ===== Disponibilidade (Screen 1) =====
+// ===== DISPONIBILIDADE =====
 function renderScreen1(){
   const td=nowBRT();
   const renderSection=(title,pilots,cardClass,h2Class)=>{
     let html=`<h2 class="${h2Class}">${title}</h2><div class="pilot-grid">`;
     for(const p of pilots){
-      const st=getPilotStatus(p,td);
-      const metaTxt=(p.meta!=null)?`Meta: ${Math.round(p.meta)}h`:'Meta: —';
-      html+=`<div class="pilot-card ${cardClass}">
-        <div class="trigrama">${p.trigrama}</div>
-        <div class="name">${p.name||''}</div>
-        <div class="opr">${p.opr||''}${p.grupo?` | ${p.grupo}`:''}</div>
-        <div class="meta">${metaTxt}</div>
-        <div class="status ${st.cls}">${st.status}</div>
-      </div>`;
+      const st=getPilotStatus(p,td);const metaTxt=(p.meta!=null)?`Meta: ${Math.round(p.meta)}h`:'Meta: —';
+      html+=`<div class="pilot-card ${cardClass}"><div class="trigrama">${p.trigrama}</div><div class="name">${p.name||''}</div><div class="opr">${p.opr||''}${p.grupo?` | ${p.grupo}`:''}</div><div class="meta">${metaTxt}</div><div class="status ${st.cls}">${st.status}</div></div>`;
     }
-    html+='</div>';
-    return html;
+    return html+'</div>';
   };
   document.getElementById('screen1').innerHTML=
-    `<h2>Disponibilidade Hoje — ${fmtDate(td)}</h2>`+
-    renderSection('VC-1',pilotData.vc1,'card-vc1','')+
-    renderSection('VC-2',pilotData.vc2,'card-vc2','vc2');
+    `<h2>Disponibilidade Hoje — ${fmtDate(td)}</h2>`+renderSection('VC-1',pilotData.vc1,'card-vc1','')+renderSection('VC-2',pilotData.vc2,'card-vc2','vc2');
 }
 
-// ===== Horas de Voo (Screen 2) =====
+// ===== HORAS DE VOO =====
 function renderScreen2(){
   const medals=['🥇','🥈','🥉'];
   const renderCol=(title,pilots,h2Class)=>{
@@ -630,178 +510,96 @@ function renderScreen2(){
     const sorted=[...active].sort((a,b)=>(b.pct??0)-(a.pct??0));
     let html=`<div><h2 class="${h2Class}">${title}</h2>`;
     for(let i=0;i<sorted.length;i++){
-      const p=sorted[i];
-      const pct=(p.pct??0);
+      const p=sorted[i];const pct=(p.pct??0);
       const barColor=pct<50?'var(--red)':pct<75?'var(--yellow)':'var(--green)';
       const rank=i<3?`<span style="font-size:1.3rem;margin-right:4px">${medals[i]}</span>`:`<span style="display:inline-block;width:28px;text-align:center;font-size:.85rem;color:#667;margin-right:4px">${i+1}º</span>`;
       const highlight=i<3?'border-left:3px solid '+(i===0?'#ffd700':i===1?'#c0c0c0':'#cd7f32')+';padding-left:8px;':'';
-      html+=`<div class="bar-row" style="${highlight}">
-        ${rank}
-        <span class="bar-label">${p.trigrama}</span>
-        <span class="bar-name">${p.name||''}</span>
-        <div class="bar-track"><div class="bar-fill" style="width:${Math.min(Math.max(pct,0),100)}%;background:${barColor}"></div></div>
-        <span class="bar-pct" style="color:${barColor}">${pct.toFixed(1)}%</span>
-        <span class="bar-hours">${fmtHours(p.voadas)}/${Math.round(p.meta)}h</span>
-      </div>`;
+      html+=`<div class="bar-row" style="${highlight}">${rank}<span class="bar-label">${p.trigrama}</span><span class="bar-name">${p.name||''}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.min(Math.max(pct,0),100)}%;background:${barColor}"></div></div><span class="bar-pct" style="color:${barColor}">${pct.toFixed(1)}%</span><span class="bar-hours">${fmtHours(p.voadas)}/${Math.round(p.meta)}h</span></div>`;
     }
     const others=pilots.filter(p=>p.meta==null||p.voadas==null);
-    if(others.length){
-      html+='<h3 style="font-size:.85rem;color:#556;">Sem dados de horas</h3>';
-      for(const p of others){
-        html+=`<div class="bar-row"><span class="bar-label" style="color:#667">${p.trigrama}</span><span class="bar-name" style="color:#556">${p.name||''}</span><span style="color:#556;font-size:.8rem">${p.grupo||''}</span></div>`;
-      }
-    }
+    if(others.length){html+='<h3 style="font-size:.85rem;color:#556;">Sem dados de horas</h3>';for(const p of others)html+=`<div class="bar-row"><span class="bar-label" style="color:#667">${p.trigrama}</span><span class="bar-name" style="color:#556">${p.name||''}</span><span style="color:#556;font-size:.8rem">${p.grupo||''}</span></div>`;}
     return html+'</div>';
   };
-  document.getElementById('screen2').innerHTML=
-    '<h2>Horas de Voo — Ranking</h2>'+
-    '<div class="hours-cols">'+
-      renderCol('VC-1',pilotData.vc1,'')+
-      renderCol('VC-2',pilotData.vc2,'vc2')+
-    '</div>';
+  document.getElementById('screen2').innerHTML='<h2>Horas de Voo — Ranking</h2><div class="hours-cols">'+renderCol('VC-1',pilotData.vc1,'')+renderCol('VC-2',pilotData.vc2,'vc2')+'</div>';
 }
 
-// ===== Férias & Alertas (Screen 3) =====
+// ===== FERIAS & ALERTAS =====
 function renderScreen3(){
-  const td=nowBRT();
-  const in30=new Date(td);in30.setDate(in30.getDate()+30);
-  const in60=new Date(td);in60.setDate(in60.getDate()+60);
+  const td=nowBRT();const in30=new Date(td);in30.setDate(in30.getDate()+30);const in60=new Date(td);in60.setDate(in60.getDate()+60);
   let html='<h2>Ferias & Alertas</h2>';
-
-  // Férias
-  html+='<div class="alert-section"><h3>Férias</h3>';
-  if(!feriasData.length){
-    html+='<div class="no-data">Sem dados de férias programadas.</div>';
-  }else{
+  html+='<div class="alert-section"><h3>Ferias</h3>';
+  if(!feriasData.length){html+='<div class="no-data">Sem dados de ferias programadas.</div>';}
+  else{
     const nowList=feriasData.filter(f=>f.inicio<=td&&td<=f.fim).sort((a,b)=>a.fim-b.fim);
     const upcoming=feriasData.filter(f=>f.inicio>td&&f.inicio<=in60).sort((a,b)=>a.inicio-b.inicio);
-    if(nowList.length){
-      html+='<h3 style="border:none;margin:10px 0 8px">Em férias hoje</h3>';
-      for(const f of nowList) html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:#ff8800">F</div><div>${f.trigrama} — ${fmtDate(f.inicio)} a ${fmtDate(f.fim)}</div></div>`;
-    }else{
-      html+='<div class="no-data" style="padding:10px 0">Nenhum piloto em férias hoje.</div>';
-    }
-    html+='<h3 style="border:none;margin:10px 0 8px">Próximas (60 dias)</h3>';
-    if(upcoming.length){
-      for(const f of upcoming) html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:#ff8800">F</div><div>${f.trigrama} — ${fmtDate(f.inicio)} a ${fmtDate(f.fim)}</div></div>`;
-    }else{
-      html+='<div class="no-data" style="padding:10px 0">Nenhuma férias programada nos próximos 60 dias.</div>';
-    }
+    if(nowList.length){html+='<h3 style="border:none;margin:10px 0 8px">Em ferias hoje</h3>';for(const f of nowList)html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:var(--orange)">F</div><div>${f.trigrama} — ${fmtDate(f.inicio)} a ${fmtDate(f.fim)}</div></div>`;}
+    else html+='<div class="no-data" style="padding:10px 0">Nenhum piloto em ferias hoje.</div>';
+    html+='<h3 style="border:none;margin:10px 0 8px">Proximas (60 dias)</h3>';
+    if(upcoming.length){for(const f of upcoming)html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:var(--orange)">F</div><div>${f.trigrama} — ${fmtDate(f.inicio)} a ${fmtDate(f.fim)}</div></div>`;}
+    else html+='<div class="no-data" style="padding:10px 0">Nenhuma ferias programada nos proximos 60 dias.</div>';
   }
   html+='</div>';
-
-  // Alertas
-  const alerts=[];
-  const allPilots=[...pilotData.vc1,...pilotData.vc2];
+  const alerts=[];const allPilots=[...pilotData.vc1,...pilotData.vc2];
   for(const p of allPilots){
-    if(String(p.grupo).toUpperCase()==='OUT') continue;
-    if(p.cviDate){
-      if(p.cviDate<td) alerts.push({type:'danger',text:`${p.trigrama} — CVI vencido em ${p.cvi}`});
-      else if(p.cviDate<in30) alerts.push({type:'warning',text:`${p.trigrama} — CVI vence em ${p.cvi}`});
-    }
-    if(p.inspSauDate){
-      if(p.inspSauDate<td) alerts.push({type:'danger',text:`${p.trigrama} — INSP SAU vencido em ${p.inspSau}`});
-      else if(p.inspSauDate<in30) alerts.push({type:'warning',text:`${p.trigrama} — INSP SAU vence em ${p.inspSau}`});
-    }
+    if(String(p.grupo).toUpperCase()==='OUT')continue;
+    if(p.cviDate){if(p.cviDate<td)alerts.push({type:'danger',text:`${p.trigrama} — CVI vencido em ${p.cvi}`});else if(p.cviDate<in30)alerts.push({type:'warning',text:`${p.trigrama} — CVI vence em ${p.cvi}`});}
+    if(p.inspSauDate){if(p.inspSauDate<td)alerts.push({type:'danger',text:`${p.trigrama} — INSP SAU vencido em ${p.inspSau}`});else if(p.inspSauDate<in30)alerts.push({type:'warning',text:`${p.trigrama} — INSP SAU vence em ${p.inspSau}`});}
     const afNum=parseInt(String(p.afastamento||'').replace(/[^0-9\-]/g,''),10);
-    if(!isNaN(afNum)&&afNum<=-35) alerts.push({type:'danger',text:`${p.trigrama} — DESADAPTADO (${afNum} dias)`});
-    else if(!isNaN(afNum)&&afNum<=-20) alerts.push({type:'warning',text:`${p.trigrama} — Afastado PR (${afNum} dias)`});
+    if(!isNaN(afNum)&&afNum<=-35)alerts.push({type:'danger',text:`${p.trigrama} — DESADAPTADO (${afNum} dias)`});
+    else if(!isNaN(afNum)&&afNum<=-20)alerts.push({type:'warning',text:`${p.trigrama} — Afastado PR (${afNum} dias)`});
   }
   html+='<div class="alert-section"><h3>Alertas (30 dias)</h3>';
-  if(alerts.length){
-    for(const a of alerts){
-      const color=a.type==='danger'?'var(--red)':'var(--yellow)';
-      html+=`<div class="alert-card ${a.type}"><div class="alert-icon" style="color:${color}">!</div><div>${a.text}</div></div>`;
-    }
-  }else{
-    html+='<div class="no-data">Nenhum alerta encontrado para os próximos 30 dias.</div>';
-  }
+  if(alerts.length){for(const a of alerts){const color=a.type==='danger'?'var(--red)':'var(--yellow)';html+=`<div class="alert-card ${a.type}"><div class="alert-icon" style="color:${color}">!</div><div>${a.text}</div></div>`;}}
+  else html+='<div class="no-data">Nenhum alerta encontrado para os proximos 30 dias.</div>';
   html+='</div>';
-
-  // Resumo 7 dias
-  const last7=new Date(td);last7.setDate(last7.getDate()-7);
-  const recent=flights.filter(f=>f.dataObj&&f.dataObj>=last7);
-  html+='<div class="alert-section"><h3>Resumo Últimos 7 Dias</h3>';
-  if(recent.length){
-    const byPilot={};
-    for(const f of recent) byPilot[f.piloto]=(byPilot[f.piloto]||0)+1;
-    const sorted=Object.entries(byPilot).sort((a,b)=>b[1]-a[1]);
+  const last7=new Date(td);last7.setDate(last7.getDate()-7);const recent=flights.filter(f=>f.dataObj&&f.dataObj>=last7);
+  html+='<div class="alert-section"><h3>Resumo Ultimos 7 Dias</h3>';
+  if(recent.length){const byPilot={};for(const f of recent)byPilot[f.piloto]=(byPilot[f.piloto]||0)+1;const sorted=Object.entries(byPilot).sort((a,b)=>b[1]-a[1]);
     html+=`<div class="alert-card info"><div class="alert-icon" style="color:var(--vc1)">i</div><div>${recent.length} voos no total</div></div>`;
-    for(const [tri,c] of sorted.slice(0,10)) html+=`<div class="alert-card info"><div class="alert-icon" style="color:var(--vc1)">${c}</div><div>${tri} — ${c} voo(s)</div></div>`;
-  }else{
-    html+='<div class="no-data">Nenhum voo nos últimos 7 dias.</div>';
-  }
+    for(const[tri,c]of sorted.slice(0,10))html+=`<div class="alert-card info"><div class="alert-icon" style="color:var(--vc1)">${c}</div><div>${tri} — ${c} voo(s)</div></div>`;}
+  else html+='<div class="no-data">Nenhum voo nos ultimos 7 dias.</div>';
   html+='</div>';
   document.getElementById('screen3').innerHTML=html;
 }
 
-// ===== Render All =====
 function renderAll(){
   document.getElementById('loadingMsg').style.display='none';
-  const allPilots=[...pilotData.vc1,...pilotData.vc2];
-  const totalTrip=allPilots.filter(p=>p.grupo!=='OUT').length;
-  const td=nowBRT();
+  const allPilots=[...pilotData.vc1,...pilotData.vc2];const td=nowBRT();
+  document.getElementById('kpi-trip').textContent=allPilots.filter(p=>p.grupo!=='OUT').length;
   const totalAptos=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status==='APTO';}).length;
-  document.getElementById('kpi-trip').textContent=totalTrip;
+  document.getElementById('kpi-aptos').textContent=totalAptos;
   const currentYear=nowBRT().getFullYear();
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
   const uniqueOMs=new Set(flightsThisYear.map(f=>f.om).filter(Boolean));
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
-  document.getElementById('kpi-aptos').textContent=totalAptos;
-  renderScreen0();
-  renderScreen1();
-  renderScreen2();
-  renderScreen3();
+  renderScreen0();renderScreen1();renderScreen2();renderScreen3();
 }
 
-// ===== App =====
 async function loadAllData(){
   document.getElementById('errorOverlay').style.display='none';
   document.getElementById('loadingMsg').style.display='block';
   document.getElementById('statusDot').className='status-dot';
   try{
-    const [dispRows,lancRows,ferRows,prevRows]=await Promise.all([
-      fetchCSV(GIDS.disp),fetchCSV(GIDS.lanc),fetchCSV(GIDS.ferias),fetchCSV(GIDS.previsao)
-    ]);
-    pilotData=parseDisponibilidade(dispRows);
-    flights=parseLancamentos(lancRows);
-    feriasData=parseFerias(ferRows);
-    missionsData=parsePrevisaoMissoes(prevRows);
+    const[dispRows,lancRows,ferRows,prevRows]=await Promise.all([
+      fetchCSV(GIDS.disp),fetchCSV(GIDS.lanc),fetchCSV(GIDS.ferias),fetchCSV(GIDS.previsao)]);
+    pilotData=parseDisponibilidade(dispRows);flights=parseLancamentos(lancRows);
+    feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
     document.getElementById('statusDot').className='status-dot ok';
     const nowTxt=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
     document.getElementById('lastUpdate').textContent='Atualizado '+nowTxt;
     renderAll();
   }catch(e){
-    console.error(e);
-    document.getElementById('statusDot').className='status-dot err';
+    console.error(e);document.getElementById('statusDot').className='status-dot err';
     document.getElementById('errorOverlay').style.display='flex';
     document.getElementById('loadingMsg').style.display='none';
   }
 }
 
-function goScreen(n){
-  currentScreen=n;
-  document.querySelectorAll('.screen').forEach((s,i)=>s.classList.toggle('active',i===n));
-  document.querySelectorAll('.nav-btns button').forEach((b,i)=>b.classList.toggle('active',i===n));
-}
-
-function goFullscreen(){
-  document.documentElement.requestFullscreen?.();
-}
-
-function updateClock(){
-  const now=new Date().toLocaleString('pt-BR',{
-    timeZone:'America/Sao_Paulo',
-    weekday:'short',day:'2-digit',month:'2-digit',year:'numeric',
-    hour:'2-digit',minute:'2-digit',second:'2-digit'
-  });
-  document.getElementById('clock').textContent=now;
-}
-
-updateClock();
-setInterval(updateClock,1000);
-loadAllData();
-setInterval(loadAllData, 300000);
+function goScreen(n){currentScreen=n;document.querySelectorAll('.screen').forEach((s,i)=>s.classList.toggle('active',i===n));document.querySelectorAll('.nav-btns button').forEach((b,i)=>b.classList.toggle('active',i===n));}
+function goFullscreen(){document.documentElement.requestFullscreen?.();}
+function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+updateClock();setInterval(updateClock,1000);
+loadAllData();setInterval(loadAllData,300000);
 goScreen(0);
 </script>
 </body>
