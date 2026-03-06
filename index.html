@@ -383,6 +383,7 @@ function fmtDate(d){if(!d)return'';return d.toLocaleDateString('pt-BR',{timeZone
 function fmtDateShort(d){if(!d)return'';return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',timeZone:'America/Sao_Paulo'}).replace('.','');}
 function fmtHours(h){if(h==null)return'—';const hh=Math.floor(h);const mm=Math.round((h-hh)*60);return `${hh}h${mm.toString().padStart(2,'0')}`;}
 async function fetchCSV(gid){const r=await fetch(csvUrl(gid),{cache:'no-store'});if(!r.ok)throw new Error('fetch failed');return parseCSV(await r.text());}
+async function fetchCSVByName(sheetName){const url=`https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('fetch failed');return parseCSV(await r.text());}
 
 function parseDisponibilidade(rows){
   function norm(x){return String(x||'').trim().toUpperCase();}
@@ -1309,7 +1310,7 @@ async function loadAllData(){
     const planFetch=fetch(planCsvUrl(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>t?parseCSV(t):[]).catch(()=>[]);
     const acntFetch=fetch(`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv&gid=${GIDS.acnt}`,{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>t?parseCSV(t):[]).catch(()=>[]);
     const[dispRows,lancRows,ferRows,prevRows,planRows,acntRows]=await Promise.all([
-      fetchCSV(GIDS.disp),fetchCSV(GIDS.lanc),fetchCSV(GIDS.ferias),fetchCSV(GIDS.previsao),planFetch,acntFetch]);
+      fetchCSV(GIDS.disp),fetchCSV(GIDS.lanc),fetchCSVByName('Férias'),fetchCSV(GIDS.previsao),planFetch,acntFetch]);
     await metarFetch;
     pilotData=parseDisponibilidade(dispRows);flights=parseLancamentos(lancRows);
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
