@@ -909,12 +909,13 @@ function renderScreen3(){
   if(!feriasData.length){html+='<div class="no-data">Sem dados de ferias programadas.</div>';}
   else{
     const nowList=feriasData.filter(f=>f.inicio<=td&&td<=f.fim).sort((a,b)=>a.fim-b.fim);
-    const upcoming=feriasData.filter(f=>f.inicio>td&&f.inicio<=in60).sort((a,b)=>a.inicio-b.inicio);
-    if(nowList.length){html+='<h3 style="border:none;margin:10px 0 8px">Em ferias hoje</h3>';for(const f of nowList)html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:var(--orange)">F</div><div>${f.trigrama} — ${fmtDate(f.inicio)} a ${fmtDate(f.fim)}</div></div>`;}
-    else html+='<div class="no-data" style="padding:10px 0">Nenhum piloto em ferias hoje.</div>';
-    html+='<h3 style="border:none;margin:10px 0 8px">Proximas (60 dias)</h3>';
-    if(upcoming.length){for(const f of upcoming)html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:var(--orange)">F</div><div>${f.trigrama} — ${fmtDate(f.inicio)} a ${fmtDate(f.fim)}</div></div>`;}
-    else html+='<div class="no-data" style="padding:10px 0">Nenhuma ferias programada nos proximos 60 dias.</div>';
+    const upcoming=feriasData.filter(f=>f.inicio>td).sort((a,b)=>a.inicio-b.inicio);
+    html+='<h3 style="border:none;margin:10px 0 8px">🏖 Em férias hoje</h3>';
+    if(nowList.length){for(const f of nowList){const dias=Math.ceil((f.fim-td)/(86400000));html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:var(--orange)">F</div><div><strong>${f.trigrama}</strong> — ${fmtDate(f.inicio)} a ${fmtDate(f.fim)} <span style="font-size:.75rem;color:var(--text2)">(volta em ${dias}d)</span></div></div>`;}}
+    else html+='<div class="no-data" style="padding:10px 0">Nenhum piloto em férias hoje.</div>';
+    html+='<h3 style="border:none;margin:10px 0 8px">📅 Próximas férias</h3>';
+    if(upcoming.length){for(const f of upcoming){const diasP=Math.ceil((f.inicio-td)/(86400000));html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:var(--text2)">F</div><div><strong>${f.trigrama}</strong> — ${fmtDate(f.inicio)} a ${fmtDate(f.fim)} <span style="font-size:.75rem;color:var(--text2)">(em ${diasP}d)</span></div></div>`;}}
+    else html+='<div class="no-data" style="padding:10px 0">Nenhuma férias programada.</div>';
   }
   html+='</div>';
   const alerts=[];const allPilots=[...pilotData.vc1,...pilotData.vc2];
