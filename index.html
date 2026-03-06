@@ -178,15 +178,13 @@ footer a:hover{text-decoration:underline}
   .top-hours{font-size:.95rem!important}
   
   .mission-card{padding:8px 10px;gap:4px;flex-wrap:wrap}
-  .mission-anv{font-size:.68rem;padding:2px 4px}
-  .mission-body{flex:1;min-width:120px}
+  .mission-anv{font-size:.68rem;padding:2px 4px;flex-shrink:0}
+  .mission-body{flex:1;min-width:0}
   .mission-title{font-size:.78rem}
-  .mission-subtitle{font-size:.65rem!important}
-  .mission-right{display:flex;align-items:center;gap:6px;margin-left:auto}
-  .mission-tipo{font-size:.6rem!important;padding:1px 4px!important}
-  .mission-date{min-width:auto!important;text-align:right}
-  .mission-date>div:first-child{font-size:.68rem}
-  .mission-date>div:last-child{font-size:.58rem}
+  .mission-tipo{font-size:.6rem!important;padding:1px 4px!important;flex-shrink:0;align-self:flex-start}
+  .mission-date{min-width:auto!important;flex-basis:100%;text-align:left;margin-top:2px;padding-left:0}
+  .mission-date-main{font-size:.7rem;display:inline}
+  .mission-date-range{font-size:.62rem;display:inline;margin-left:4px;color:var(--text2)}
   
   .prog-section{margin-bottom:12px}
   .prog-label{font-size:.75rem}
