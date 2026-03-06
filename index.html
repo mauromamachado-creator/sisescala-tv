@@ -150,10 +150,64 @@ footer a:hover{text-decoration:underline}
 .loading{color:var(--text2);text-align:center;padding:40px;font-size:1rem}
 
 @media(max-width:768px){
-  header{flex-wrap:wrap}
-  .pilot-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-  .bar-name{width:90px}
-  .screen{padding:12px}
+  header{flex-wrap:wrap;padding:6px 10px;gap:6px}
+  #kpi-box{gap:12px!important;margin-left:8px!important}
+  #kpi-box>div>div:first-child{font-size:1.1rem!important}
+  .header-right{width:100%;justify-content:center;flex-wrap:wrap;gap:6px}
+  .clock{font-size:.82rem!important}
+  .ctrl-btn{display:none}
+  .nav-btns{width:100%;justify-content:center;flex-wrap:wrap;gap:4px}
+  .nav-btns button{padding:6px 10px;font-size:.75rem}
+  header>div:first-child{flex-wrap:wrap;gap:8px}
+  header>div:first-child>div:first-child{width:36px;height:36px}
+  header>div:first-child>div:first-child svg{width:24px;height:24px}
+  header>div:first-child>div:nth-child(2) div:last-child{font-size:1rem!important}
+  
+  main{overflow:auto}
+  .screen{padding:10px;overflow:auto}
+  
+  .dash-layout{grid-template-columns:1fr!important;gap:12px}
+  .dash-panel{padding:14px}
+  .dash-panel[style*="grid-column"]{grid-column:1!important}
+  .panel-title{font-size:.75rem}
+  
+  .top-pilot{padding:8px 0}
+  .top-rank{font-size:1.3rem;width:30px}
+  .top-tri{font-size:1rem!important}
+  .top-hours{font-size:.95rem!important}
+  
+  .mission-card{padding:10px;gap:10px;flex-wrap:wrap}
+  .mission-anv{min-width:44px;font-size:.78rem;padding:3px 6px}
+  .mission-date{min-width:auto;text-align:left}
+  
+  .prog-section{margin-bottom:12px}
+  .prog-label{font-size:.75rem}
+  .prog-track{height:26px}
+  
+  .pilot-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+  .pilot-card{padding:10px}
+  .pilot-card .trigrama{font-size:1.2rem}
+  
+  .hours-cols{grid-template-columns:1fr!important}
+  .bar-row{font-size:.78rem;flex-wrap:wrap;gap:4px}
+  .bar-label{width:44px;font-size:.8rem}
+  .bar-name{width:80px;font-size:.65rem}
+  .bar-pct{width:48px;font-size:.75rem}
+  .bar-hours{width:auto;font-size:.65rem}
+  
+  .checklist-grid{grid-template-columns:1fr;gap:10px}
+  .check-item{padding:10px 12px;gap:8px}
+  .check-summary{gap:10px}
+  .check-summary .stat{padding:10px 14px}
+  .check-summary .stat-num{font-size:1.4rem}
+  
+  .acnt-grid{gap:12px}
+  .acnt-card{min-width:280px;max-width:100%;padding:14px}
+  
+  .alert-card{padding:8px 10px;gap:8px;font-size:.82rem}
+  
+  h2{font-size:1.1rem;margin-bottom:10px}
+  footer{padding:4px 10px;font-size:.65rem;flex-wrap:wrap;justify-content:center;gap:4px}
 }
 
 /* ACNT/ALTR cards */
