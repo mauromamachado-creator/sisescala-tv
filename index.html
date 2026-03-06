@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SisEscala — GTE Planejamento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0f1a;--bg2:#111827;--bg3:#1a2332;
+  --vc1:#00d4ff;--vc2:#00ff88;
+  --red:#ff4444;--yellow:#ffaa00;--green:#00ff88;
+  --text:#e0e6ed;--text2:#8899aa;--border:#1e2d3d;
+}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono', 'Consolas', 'Courier New', monospace;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px}
+.logo{font-size:1.35rem;font-weight:800;letter-spacing:2px;color:var(--vc1);white-space:nowrap}
+.logo span{color:var(--text2);font-weight:600;font-size:0.95rem;margin-left:8px;letter-spacing:1px}
+.nav-btns{display:flex;gap:6px;flex-wrap:wrap}
+.nav-btns button{background:var(--bg3);color:var(--text);border:1px solid var(--border);padding:8px 14px;cursor:pointer;font-family:inherit;font-size:.85rem;border-radius:4px;transition:.2s;white-space:nowrap}
+.nav-btns button:hover,.nav-btns button.active{background:var(--vc1);color:var(--bg);border-color:var(--vc1)}
+.header-right{display:flex;align-items:center;gap:10px;font-size:.85rem;white-space:nowrap}
+.clock{color:var(--vc1);font-size:1rem;font-weight:800}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:#444}
+.status-dot.ok{background:var(--green)}.status-dot.err{background:var(--red)}
+.ctrl-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:4px 10px;cursor:pointer;font-family:inherit;font-size:.8rem;border-radius:3px}
+.ctrl-btn:hover{border-color:var(--vc1);color:var(--vc1)}
+.ctrl-btn.on{border-color:var(--vc1);color:var(--vc1)}
+
+main{flex:1;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;padding:18px;opacity:0;pointer-events:none;transition:opacity .6s;overflow:auto}
+.screen.active{opacity:1;pointer-events:auto}
+.screen::-webkit-scrollbar{display:none}
+
+h2{font-size:1.3rem;margin-bottom:14px;color:var(--vc1);text-transform:uppercase;letter-spacing:1px}
+h2.vc2{color:var(--vc2)}
+h3{font-size:1.05rem;margin:16px 0 10px;color:var(--text2);border-bottom:1px solid var(--border);padding-bottom:4px}
+
+/* Screen 1 */
+.pilot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:18px}
+.pilot-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px;text-align:center;border-left:4px solid var(--border)}
+.pilot-card .trigrama{font-size:1.4rem;font-weight:900;margin-bottom:2px}
+.pilot-card .name{font-size:.78rem;color:var(--text2);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pilot-card .opr{font-size:.72rem;color:var(--text2)}
+.pilot-card .meta{font-size:.72rem;color:var(--text2);margin-top:2px}
+.pilot-card .status{font-size:.82rem;font-weight:900;padding:3px 8px;border-radius:3px;display:inline-block;margin-top:6px}
+.st-apto{background:#0a3a1a;color:var(--green);border:1px solid var(--green)}
+.st-inapto{background:#3a0a0a;color:var(--red);border:1px solid var(--red)}
+.st-ferias{background:#3a2a0a;color:#ff8800;border:1px solid #ff8800}
+.st-afastado{background:#3a0a0a;color:var(--red);border:1px solid var(--red)}
+.st-warning{background:#3a3a0a;color:#ff8800;border:1px solid #ff8800}
+.st-ext{background:#101a2a;color:#8ea3ff;border:1px solid #5169d8}
+.st-out{background:#1a1a1a;color:#888;border:1px solid #444}
+.card-vc1{border-left-color:var(--vc1)}
+.card-vc2{border-left-color:var(--vc2)}
+
+/* Screen 2 */
+.hours-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:980px){.hours-cols{grid-template-columns:1fr}}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:.88rem}
+.bar-label{width:58px;text-align:right;font-weight:900;flex-shrink:0}
+.bar-name{width:120px;font-size:.72rem;color:var(--text2);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:22px;background:var(--bg);border-radius:3px;position:relative;overflow:hidden;border:1px solid var(--border)}
+.bar-fill{height:100%;border-radius:2px;transition:width .5s}
+.bar-pct{width:60px;text-align:right;font-size:.82rem;flex-shrink:0}
+.bar-hours{font-size:.72rem;color:var(--text2);width:92px;flex-shrink:0;text-align:center}
+
+/* Screen 3 */
+.flight-table{width:100%;border-collapse:collapse;font-size:.86rem}
+.flight-table th{background:var(--bg2);padding:8px 10px;text-align:left;border-bottom:2px solid var(--border);color:var(--text2);font-size:.75rem;text-transform:uppercase;letter-spacing:1px;position:sticky;top:0}
+.flight-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.flight-table tr:hover{background:var(--bg3)}
+.flight-table .vc1-row{border-left:3px solid var(--vc1)}
+.flight-table .vc2-row{border-left:3px solid var(--vc2)}
+.missao-tag{padding:2px 6px;border-radius:3px;font-size:.75rem;font-weight:900;display:inline-block}
+.m-inst{background:#1a2a3a;color:#55aaff}
+.m-escav{background:#1a3a2a;color:#55ffaa}
+.m-pr{background:#2a2a1a;color:#ddcc55}
+.m-ver{background:#2a1a2a;color:#cc88ff}
+.m-trn{background:#1a2a2a;color:#55cccc}
+.m-disp{background:#1a1a1a;color:#aaa}
+.m-rec{background:#2a1a1a;color:#ff9b9b}
+
+/* Screen 4 */
+.alert-section{margin-bottom:18px}
+.alert-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.alert-card.warning{border-left:3px solid var(--yellow)}
+.alert-card.danger{border-left:3px solid var(--red)}
+.alert-card.info{border-left:3px solid var(--vc1)}
+.alert-card.vacation{border-left:3px solid #ff8800}
+.alert-icon{width:22px;text-align:center;font-weight:900}
+.no-data{color:var(--text2);font-style:italic;padding:18px;text-align:center}
+
+footer{background:var(--bg2);border-top:1px solid var(--border);padding:6px 20px;font-size:.72rem;color:var(--text2);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:10px}
+footer a{color:var(--vc1);cursor:pointer;text-decoration:none;white-space:nowrap}
+footer a:hover{text-decoration:underline}
+
+.error-overlay{position:fixed;inset:0;background:rgba(10,15,26,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;gap:16px;padding:20px;text-align:center}
+.error-overlay h2{color:var(--red)}
+.error-overlay button{padding:10px 24px;background:var(--vc1);color:var(--bg);border:none;cursor:pointer;font-family:inherit;font-size:1rem;border-radius:4px}
+.loading{color:var(--text2);text-align:center;padding:40px;font-size:1rem}
+
+@media(max-width:768px){
+  header{flex-wrap:wrap}
+  .pilot-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .bar-name{width:90px}
+  .screen{padding:12px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo" style="display:flex;align-items:center;gap:12px">
+    <div style="width:48px;height:48px;background:rgba(0,212,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.5 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z"/></svg>
+    </div>
+    <div>
+      <div style="font-size:.6rem;letter-spacing:3px;color:var(--vc1);text-transform:uppercase">Sistema Operacional de Voo</div>
+      <div style="font-size:1.3rem;font-weight:900;letter-spacing:1px">SisEscala<span style="font-weight:400;color:var(--text2);font-size:.85rem;margin-left:6px">— Painel TV</span></div>
+    </div>
+    <div id="kpi-box" style="display:flex;gap:24px;margin-left:24px">
+      <div style="text-align:center"><div id="kpi-trip" style="font-size:1.5rem;font-weight:900;color:var(--vc1)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Tripulantes</div></div>
+      <div style="text-align:center"><div id="kpi-miss" style="font-size:1.5rem;font-weight:900;color:var(--vc2)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Missões</div></div>
+      <div style="text-align:center"><div id="kpi-aptos" style="font-size:1.5rem;font-weight:900;color:var(--green)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Aptos</div></div>
+    </div>
+  </div>
+  <div class="nav-btns">
+    <button onclick="goScreen(0)" id="btn0">DISPONIBILIDADE</button>
+    <button onclick="goScreen(1)" id="btn1">HORAS DE VOO</button>
+    <button onclick="goScreen(2)" id="btn2">LANCAMENTOS</button>
+    <button onclick="goScreen(3)" id="btn3">FERIAS/ALERTAS</button>
+  </div>
+  <div class="header-right">
+    <span class="clock" id="clock"></span>
+    <span class="status-dot" id="statusDot"></span>
+    <span id="lastUpdate" style="color:var(--text2);font-size:.75rem"></span>
+    <button class="ctrl-btn on" id="autoBtn" onclick="toggleAuto()">AUTO</button>
+    <button class="ctrl-btn" onclick="goFullscreen()">TELA CHEIA</button>
+  </div>
+</header>
+
+<main>
+  <div class="screen active" id="screen0"></div>
+  <div class="screen" id="screen1"></div>
+  <div class="screen" id="screen2"></div>
+  <div class="screen" id="screen3"></div>
+  <div class="loading" id="loadingMsg">Carregando dados...</div>
+</main>
+
+<div class="error-overlay" id="errorOverlay" style="display:none">
+  <h2>ERRO AO CARREGAR DADOS</h2>
+  <p style="color:var(--text2)">Verifique a conexao com a internet e tente novamente.</p>
+  <button onclick="loadAllData()">TENTAR NOVAMENTE</button>
+</div>
+
+<footer>
+  <span>SisEscala v1.0 — Desenvolvido para o GTE-1 — Major Machado</span>
+  <a onclick="loadAllData()">Atualizar dados</a>
+</footer>
+
+<script>
+const SHEET='1gwkeV2iA_JPTZ3rp0wf1PvXUI0TiOzNg3Xd4DhWwpao';
+const GIDS={disp:2129805598,lanc:489572946,ferias:931364659};
+const csvUrl=gid=>`https://docs.google.com/spreadsheets/d/${SHEET}/export?format=csv&gid=${gid}`;
+
+let currentScreen=0, autoRotate=true, autoTimer=null;
+let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[];
+
+// ----- Utils -----
+function parseCSV(text){
+  const rows=[];let row=[],field='',inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQ){
+      if(c==='"'&&text[i+1]==='"'){field+='"';i++;}
+      else if(c==='"')inQ=false;
+      else field+=c;
+    }else{
+      if(c==='"')inQ=true;
+      else if(c===','){row.push(field.trim());field='';}
+      else if(c==='\n'||c==='\r'){
+        if(c==='\r'&&text[i+1]==='\n')i++;
+        row.push(field.trim());
+        if(row.some(x=>x!==''))rows.push(row);
+        row=[];field='';
+      }else field+=c;
+    }
+  }
+  row.push(field.trim());
+  if(row.some(x=>x!==''))rows.push(row);
+  return rows;
+}
+
+function parseBrNum(s){
+  if(!s||s==='#N/A'||s==='#DIV/0!'||s==='#VALUE!')return null;
+  return parseFloat(String(s).replace(/\s/g,'').replace('%','').replace(',','.'));
+}
+
+function parseHours(s){
+  if(!s||s==='#N/A'||s==='#DIV/0!'||s==='#VALUE!')return null;
+  const str=String(s).trim();
+  const m=str.match(/(\d+):(\d+)/);
+  if(m) return parseInt(m[1],10)+parseInt(m[2],10)/60;
+  return parseBrNum(str);
+}
+
+function parseDateBR(s){
+  if(!s||s==='#N/A'||s==='#DIV/0!'||s==='#VALUE!')return null;
+  const str=String(s).trim();
+  const m=str.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if(!m) return null;
+  return new Date(parseInt(m[3],10), parseInt(m[2],10)-1, parseInt(m[1],10));
+}
+
+function parseISODateTime(s){
+  if(!s) return null;
+  const d=new Date(s);
+  return isNaN(d.getTime())?null:d;
+}
+
+function nowBRT(){
+  return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));
+}
+
+function fmtDate(d){
+  if(!d) return '';
+  return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});
+}
+
+async function fetchCSV(gid){
+  const r=await fetch(csvUrl(gid),{cache:'no-store'});
+  if(!r.ok) throw new Error('fetch failed');
+  return parseCSV(await r.text());
+}
+
+function findHeaderIndex(row, labels){
+  const up=row.map(x=>String(x||'').trim().toUpperCase());
+  const idx={};
+  for(const lab of labels){
+    const i=up.findIndex(c=>c===lab.toUpperCase());
+    if(i>=0) idx[lab]=i;
+  }
+  return idx;
+}
+
+// ----- Parsing -----
+function parseDisponibilidade(rows){
+  // The sheet has multiple blocks in the same tab. We want the roster table that contains the header sequence:
+  // GRUPO, QT, TRIGRAMA, PILOTO, (blank), OPR, META, VOADAS, ... INSP SAU, CVI, AFASTAMENTO
+  // Important: there is also another "PILOTO" earlier in the row, so we must detect the *sequence*, not the first match.
+
+  function norm(x){ return String(x||'').trim().toUpperCase(); }
+
+  let hdr=null;
+  let hdrRowIdx=-1;
+
+  for(let r=0;r<rows.length;r++){
+    const row=rows[r];
+    for(let i=0;i<row.length-4;i++){
+      if(norm(row[i])==='GRUPO' && norm(row[i+1])==='QT' && norm(row[i+2])==='TRIGRAMA' && norm(row[i+3])==='PILOTO'){
+        const base=i;
+        const slice=row.slice(base, base+40).map(norm);
+        const rel=(label)=>{
+          const j=slice.indexOf(label);
+          return j>=0 ? base+j : null;
+        };
+
+        hdr={
+          GRUPO: base,
+          QT: base+1,
+          TRIGRAMA: base+2,
+          PILOTO: base+3,
+          OPR: rel('OPR'),
+          META: rel('META'),
+          VOADAS: rel('VOADAS'),
+          PCT: (rel('% ANO')!=null? rel('% ANO') : rel('%')),
+          INSP: rel('INSP SAU'),
+          CVI: rel('CVI'),
+          AFAST: rel('AFASTAMENTO')
+        };
+
+        // Must have core columns
+        if(hdr.OPR!=null && hdr.META!=null && hdr.VOADAS!=null){
+          hdrRowIdx=r;
+          break;
+        } else {
+          hdr=null;
+        }
+      }
+    }
+    if(hdr) break;
+  }
+
+  if(!hdr) return {vc1:[], vc2:[]};
+
+  const vc1=[], vc2=[];
+  for(let r=hdrRowIdx+1;r<rows.length;r++){
+    const row=rows[r];
+    const tri=String(row[hdr.TRIGRAMA]||'').trim().toUpperCase();
+    if(!tri || tri==='TRIGRAMA') continue;
+
+    const qt=String(row[hdr.QT]||'').trim().toUpperCase();
+    if(qt!=='VC1' && qt!=='VC2') continue;
+
+    const piloto=String(row[hdr.PILOTO]||'').trim();
+    const opr=hdr.OPR!=null ? String(row[hdr.OPR]||'').trim() : '';
+    const meta=hdr.META!=null ? parseHours(row[hdr.META]) : null;
+    const voadas=hdr.VOADAS!=null ? parseHours(row[hdr.VOADAS]) : null;
+    const pct=hdr.PCT!=null ? parseBrNum(row[hdr.PCT]) : null;
+
+    const grupo=hdr.GRUPO!=null ? String(row[hdr.GRUPO]||'').trim().toUpperCase() : '';
+    const insp=hdr.INSP!=null ? String(row[hdr.INSP]||'').trim() : '';
+    const cvi=hdr.CVI!=null ? String(row[hdr.CVI]||'').trim() : '';
+    const afast=hdr.AFAST!=null ? String(row[hdr.AFAST]||'').trim() : '';
+
+    const pilot={
+      trigrama: tri,
+      name: piloto,
+      opr,
+      grupo,
+      meta,
+      voadas,
+      pct,
+      inspSau: insp,
+      inspSauDate: parseDateBR(insp),
+      cvi: cvi,
+      cviDate: parseDateBR(cvi),
+      afastamento: afast,
+      anv: qt==='VC1'?'VC-1':'VC-2'
+    };
+
+    (qt==='VC1'?vc1:vc2).push(pilot);
+  }
+
+  vc1.sort((a,b)=>a.trigrama.localeCompare(b.trigrama));
+  vc2.sort((a,b)=>a.trigrama.localeCompare(b.trigrama));
+  return {vc1, vc2};
+}
+
+function parseLancamentos(rows){
+  const flights=[];
+  for(const row of rows){
+    const anv=row[1]||'';
+    if(anv!=='VC1' && anv!=='VC2') continue;
+    const data=row[3]||'';
+    if(!String(data).match(/\d{2}\/\d{2}\/\d{4}/)) continue;
+    const dataObj=parseDateBR(data);
+    flights.push({
+      anv: anv==='VC1'?'VC-1':'VC-2',
+      om: (row[2]||'').trim(),
+      data: String(data).trim(),
+      dataObj,
+      piloto: (row[4]||'').trim(),
+      missao: (row[5]||'').trim(),
+      tempo: (row[6]||'').trim(),
+      obs: (row[7]||'').trim(),
+    });
+  }
+  flights.sort((a,b)=>(b.dataObj?.getTime()||0)-(a.dataObj?.getTime()||0));
+  return flights;
+}
+
+function parseFerias(rows){
+  // Try to find a vacation schedule table with columns like:
+  // ANV, Piloto (trigrama), Início, Fim, Período
+  // If not found, return [] and UI will show "sem dados".
+  let hdrRow=null;
+  let hdr=null;
+  for(const row of rows){
+    const idx=findHeaderIndex(row,['ANV','PILOTO','TRIGRAMA','INÍCIO','INICIO','FIM','PERÍODO','PERIODO']);
+    const hasDates = (idx['INÍCIO']!=null || idx['INICIO']!=null) && idx['FIM']!=null;
+    const hasPilot = idx['TRIGRAMA']!=null || idx['PILOTO']!=null;
+    if(hasDates && hasPilot){ hdrRow=row; hdr=idx; break; }
+  }
+  if(!hdr) return [];
+
+  const inicioIdx = hdr['INÍCIO']!=null ? hdr['INÍCIO'] : hdr['INICIO'];
+  const fimIdx = hdr['FIM'];
+  const triIdx = hdr['TRIGRAMA']!=null ? hdr['TRIGRAMA'] : hdr['PILOTO'];
+  const anvIdx = hdr['ANV'];
+
+  const list=[];
+  let started=false;
+  for(const row of rows){
+    if(row===hdrRow){ started=true; continue; }
+    if(!started) continue;
+
+    const tri=(row[triIdx]||'').trim();
+    const ini=parseDateBR(row[inicioIdx]);
+    const fim=parseDateBR(row[fimIdx]);
+    if(!tri || !ini || !fim) continue;
+
+    const anv = anvIdx!=null ? String(row[anvIdx]||'').trim() : '';
+    list.push({trigrama:tri.toUpperCase(),anv, inicio:ini, fim:fim});
+  }
+  return list;
+}
+
+function isOnVacation(trigrama, date){
+  const t=String(trigrama||'').toUpperCase();
+  return feriasData.some(f=>f.trigrama===t && f.inicio<=date && date<=f.fim);
+}
+
+// ----- Business rules -----
+function getPilotStatus(p, td){
+  // Vacation has highest priority if we have schedule
+  if(feriasData.length && isOnVacation(p.trigrama, td)){
+    return {status:'FERIAS', cls:'st-ferias'};
+  }
+
+  // OUT/EXT markers
+  if(String(p.grupo).toUpperCase()==='OUT') return {status:'FORA', cls:'st-out'};
+  if(String(p.grupo).toUpperCase()==='EXT') return {status:'EXTERNO', cls:'st-ext'};
+
+  // Afastamento: negative days since last flight
+  // <= -35 → DESADAPTADO (cannot fly at all)
+  // <= -20 → AFASTADO PR (cannot fly PR missions)
+  // > -20 → normal
+  const afNum=parseInt(String(p.afastamento||'').replace(/[^0-9\-]/g,''),10);
+  if(!isNaN(afNum) && afNum<=-35) return {status:'DESADAPTADO', cls:'st-afastado'};
+  if(!isNaN(afNum) && afNum<=-20) return {status:'AFASTADO PR', cls:'st-warning'};
+
+  // Validity checks
+  if(p.cviDate && p.cviDate < td) return {status:'INAPTO (CVI)', cls:'st-inapto'};
+  if(p.inspSauDate && p.inspSauDate < td) return {status:'INAPTO (INSP)', cls:'st-inapto'};
+
+  return {status:'APTO', cls:'st-apto'};
+}
+
+// ----- Rendering -----
+function renderScreen0(){
+  const td=nowBRT();
+  const renderSection=(title,pilots,cardClass,h2Class)=>{
+    let html=`<h2 class="${h2Class}">${title}</h2><div class="pilot-grid">`;
+    for(const p of pilots){
+      const st=getPilotStatus(p,td);
+      const metaTxt=(p.meta!=null)?`Meta: ${Math.round(p.meta)}h`:'Meta: —';
+      html+=`<div class="pilot-card ${cardClass}">
+        <div class="trigrama">${p.trigrama}</div>
+        <div class="name">${p.name||''}</div>
+        <div class="opr">${p.opr||''}${p.grupo?` | ${p.grupo}`:''}</div>
+        <div class="meta">${metaTxt}</div>
+        <div class="status ${st.cls}">${st.status}</div>
+      </div>`;
+    }
+    html+='</div>';
+    return html;
+  };
+
+  const note = feriasData.length ? '' : '<div class="no-data" style="padding:8px 0">Férias: sem tabela de Início/Fim encontrada na aba “Férias” (mostrando apenas regras CVI/INSP/Afastamento).</div>';
+
+  document.getElementById('screen0').innerHTML=
+    `<h2>Disponibilidade Hoje — ${fmtDate(td)}</h2>`+
+    note+
+    renderSection('VC-1',pilotData.vc1,'card-vc1','')+
+    renderSection('VC-2',pilotData.vc2,'card-vc2','vc2');
+}
+
+function renderScreen1(){
+  const medals=['🥇','🥈','🥉'];
+  const renderCol=(title,pilots,h2Class)=>{
+    const active=pilots.filter(p=>p.meta!=null && p.voadas!=null);
+    const sorted=[...active].sort((a,b)=>(b.pct??0)-(a.pct??0));
+    let html=`<div><h2 class="${h2Class}">${title}</h2>`;
+    for(let i=0;i<sorted.length;i++){
+      const p=sorted[i];
+      const pct = (p.pct??0);
+      const barColor = pct<50?'var(--red)':pct<75?'var(--yellow)':'var(--green)';
+      const voadas=(p.voadas??0);
+      const hh=Math.floor(voadas); const mm=Math.round((voadas-hh)*60);
+      const voadasStr=`${hh}h${mm.toString().padStart(2,'0')}`;
+      const meta=(p.meta??0);
+      const rank=i<3?`<span style="font-size:1.3rem;margin-right:4px">${medals[i]}</span>`:`<span style="display:inline-block;width:28px;text-align:center;font-size:.85rem;color:#667;margin-right:4px">${i+1}º</span>`;
+      const highlight=i<3?'border-left:3px solid '+(i===0?'#ffd700':i===1?'#c0c0c0':'#cd7f32')+';padding-left:8px;':'';
+      html+=`<div class="bar-row" style="${highlight}">
+        ${rank}
+        <span class="bar-label">${p.trigrama}</span>
+        <span class="bar-name">${p.name||''}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.min(Math.max(pct,0),100)}%;background:${barColor}"></div></div>
+        <span class="bar-pct" style="color:${barColor}">${pct.toFixed(1)}%</span>
+        <span class="bar-hours">${voadasStr}/${Math.round(meta)}h</span>
+      </div>`;
+    }
+
+    const others=pilots.filter(p=>p.meta==null || p.voadas==null);
+    if(others.length){
+      html+='<h3 style="font-size:.85rem;color:#556;">Sem dados de horas</h3>';
+      for(const p of others){
+        html+=`<div class="bar-row"><span class="bar-label" style="color:#667">${p.trigrama}</span><span class="bar-name" style="color:#556">${p.name||''}</span><span style="color:#556;font-size:.8rem">${p.grupo||''}</span></div>`;
+      }
+    }
+
+    return html+'</div>';
+  };
+
+  document.getElementById('screen1').innerHTML=
+    '<h2>Horas de Voo — Ranking</h2>'+
+    '<div class="hours-cols">'+
+      renderCol('VC-1',pilotData.vc1,'')+
+      renderCol('VC-2',pilotData.vc2,'vc2')+
+    '</div>';
+}
+
+function renderScreen2(){
+  const last=flights.slice(0,20);
+  let html='<h2>Ultimos Lancamentos</h2>';
+  if(!last.length){
+    html+='<div class="no-data">Nenhum lancamento encontrado.</div>';
+    document.getElementById('screen2').innerHTML=html;
+    return;
+  }
+
+  html+='<table class="flight-table"><thead><tr><th>Data</th><th>ANV</th><th>OM</th><th>Piloto</th><th>Missao</th><th>Tempo</th><th>Obs</th></tr></thead><tbody>';
+  for(const f of last){
+    const mc={'INST':'m-inst','ESCAV':'m-escav','PR':'m-pr','VER':'m-ver','TRN':'m-trn','DISP':'m-disp','REC':'m-rec'}[f.missao]||'';
+    const rc=f.anv==='VC-1'?'vc1-row':'vc2-row';
+    const anvColor=f.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
+    html+=`<tr class="${rc}">
+      <td>${f.data}</td>
+      <td style="color:${anvColor};font-weight:900">${f.anv}</td>
+      <td>${f.om}</td>
+      <td style="font-weight:900">${f.piloto}</td>
+      <td><span class="missao-tag ${mc}">${f.missao}</span></td>
+      <td>${f.tempo}</td>
+      <td>${f.obs||''}</td>
+    </tr>`;
+  }
+  html+='</tbody></table>';
+
+  document.getElementById('screen2').innerHTML=html;
+}
+
+function renderScreen3(){
+  const td=nowBRT();
+  const in30=new Date(td); in30.setDate(in30.getDate()+30);
+  const in60=new Date(td); in60.setDate(in60.getDate()+60);
+
+  let html='<h2>Ferias & Alertas</h2>';
+
+  // Férias: atuais + próximas
+  html+='<div class="alert-section"><h3>Férias</h3>';
+  if(!feriasData.length){
+    html+='<div class="no-data">A aba “Férias” não contém uma tabela com Início/Fim (ou não foi encontrada). Sem exibir férias programadas.</div>';
+  }else{
+    const nowList=feriasData.filter(f=>f.inicio<=td && td<=f.fim).sort((a,b)=>a.fim-b.fim);
+    const upcoming=feriasData.filter(f=>f.inicio>td && f.inicio<=in60).sort((a,b)=>a.inicio-b.inicio);
+
+    if(nowList.length){
+      html+='<h3 style="border:none;margin:10px 0 8px">Em férias hoje</h3>';
+      for(const f of nowList){
+        html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:#ff8800">F</div><div>${f.trigrama} — ${fmtDate(f.inicio)} a ${fmtDate(f.fim)}</div></div>`;
+      }
+    } else {
+      html+='<div class="no-data" style="padding:10px 0">Nenhum piloto em férias hoje.</div>';
+    }
+
+    html+='<h3 style="border:none;margin:10px 0 8px">Próximas (60 dias)</h3>';
+    if(upcoming.length){
+      for(const f of upcoming){
+        html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:#ff8800">F</div><div>${f.trigrama} — ${fmtDate(f.inicio)} a ${fmtDate(f.fim)}</div></div>`;
+      }
+    }else{
+      html+='<div class="no-data" style="padding:10px 0">Nenhuma férias programada nos próximos 60 dias.</div>';
+    }
+  }
+  html+='</div>';
+
+  // Alerts: CVI/INSP SAU expiring/expired in 30 days
+  const alerts=[];
+  const allPilots=[...pilotData.vc1,...pilotData.vc2];
+  for(const p of allPilots){
+    if(String(p.grupo).toUpperCase()==='OUT') continue;
+
+    if(p.cviDate){
+      if(p.cviDate<td) alerts.push({type:'danger', text:`${p.trigrama} — CVI vencido em ${p.cvi}`});
+      else if(p.cviDate<in30) alerts.push({type:'warning', text:`${p.trigrama} — CVI vence em ${p.cvi}`});
+    }
+    if(p.inspSauDate){
+      if(p.inspSauDate<td) alerts.push({type:'danger', text:`${p.trigrama} — INSP SAU vencido em ${p.inspSau}`});
+      else if(p.inspSauDate<in30) alerts.push({type:'warning', text:`${p.trigrama} — INSP SAU vence em ${p.inspSau}`});
+    }
+
+    const afNum=parseInt(String(p.afastamento||'').replace(/[^0-9\-]/g,''),10);
+    if(!isNaN(afNum) && afNum<=-35) alerts.push({type:'danger', text:`${p.trigrama} — DESADAPTADO (${afNum} dias)`});
+    else if(!isNaN(afNum) && afNum<=-20) alerts.push({type:'warning', text:`${p.trigrama} — Afastado PR (${afNum} dias)`});
+  }
+
+  html+='<div class="alert-section"><h3>Alertas (30 dias)</h3>';
+  if(alerts.length){
+    for(const a of alerts){
+      const color=a.type==='danger'?'var(--red)':'var(--yellow)';
+      html+=`<div class="alert-card ${a.type}"><div class="alert-icon" style="color:${color}">!</div><div>${a.text}</div></div>`;
+    }
+  }else{
+    html+='<div class="no-data">Nenhum alerta encontrado para os próximos 30 dias.</div>';
+  }
+  html+='</div>';
+
+  // Recent flights
+  const last7=new Date(td); last7.setDate(last7.getDate()-7);
+  const recent=flights.filter(f=>f.dataObj && f.dataObj>=last7);
+  html+='<div class="alert-section"><h3>Resumo Últimos 7 Dias</h3>';
+  if(recent.length){
+    const byPilot={};
+    for(const f of recent) byPilot[f.piloto]=(byPilot[f.piloto]||0)+1;
+    const sorted=Object.entries(byPilot).sort((a,b)=>b[1]-a[1]);
+    html+=`<div class="alert-card info"><div class="alert-icon" style="color:var(--vc1)">i</div><div>${recent.length} voos no total</div></div>`;
+    for(const [tri,c] of sorted.slice(0,10)){
+      html+=`<div class="alert-card info"><div class="alert-icon" style="color:var(--vc1)">${c}</div><div>${tri} — ${c} voo(s)</div></div>`;
+    }
+  }else{
+    html+='<div class="no-data">Nenhum voo nos últimos 7 dias.</div>';
+  }
+  html+='</div>';
+
+  document.getElementById('screen3').innerHTML=html;
+}
+
+function renderAll(){
+  document.getElementById('loadingMsg').style.display='none';
+  // Update KPIs
+  const allPilots=[...pilotData.vc1,...pilotData.vc2];
+  const totalTrip=allPilots.filter(p=>p.grupo!=='OUT').length;
+  const td=nowBRT();
+  const totalAptos=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status==='APTO';}).length;
+  document.getElementById('kpi-trip').textContent=totalTrip;
+  const currentYear=nowBRT().getFullYear();
+  const flightsThisYear=flights.filter(f=>f.dataObj && f.dataObj.getFullYear()===currentYear);
+  const uniqueOMs=new Set(flightsThisYear.map(f=>f.om).filter(Boolean));
+  document.getElementById('kpi-miss').textContent=uniqueOMs.size;
+  document.getElementById('kpi-aptos').textContent=totalAptos;
+  renderScreen0();
+  renderScreen1();
+  renderScreen2();
+  renderScreen3();
+}
+
+// ----- App flow -----
+async function loadAllData(){
+  document.getElementById('errorOverlay').style.display='none';
+  document.getElementById('loadingMsg').style.display='block';
+  document.getElementById('statusDot').className='status-dot';
+
+  try{
+    const [dispRows,lancRows,ferRows]=await Promise.all([
+      fetchCSV(GIDS.disp),
+      fetchCSV(GIDS.lanc),
+      fetchCSV(GIDS.ferias)
+    ]);
+
+    pilotData=parseDisponibilidade(dispRows);
+    flights=parseLancamentos(lancRows);
+    feriasData=parseFerias(ferRows);
+
+    document.getElementById('statusDot').className='status-dot ok';
+    const nowTxt=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('lastUpdate').textContent='Atualizado '+nowTxt;
+
+    renderAll();
+  }catch(e){
+    console.error(e);
+    document.getElementById('statusDot').className='status-dot err';
+    document.getElementById('errorOverlay').style.display='flex';
+    document.getElementById('loadingMsg').style.display='none';
+  }
+}
+
+function goScreen(n){
+  currentScreen=n;
+  document.querySelectorAll('.screen').forEach((s,i)=>s.classList.toggle('active',i===n));
+  document.querySelectorAll('.nav-btns button').forEach((b,i)=>b.classList.toggle('active',i===n));
+  if(autoRotate) resetAutoTimer();
+}
+
+function toggleAuto(){
+  autoRotate=!autoRotate;
+  document.getElementById('autoBtn').classList.toggle('on',autoRotate);
+  if(autoRotate) resetAutoTimer();
+  else clearInterval(autoTimer);
+}
+
+function resetAutoTimer(){
+  clearInterval(autoTimer);
+  autoTimer=setInterval(()=>goScreen((currentScreen+1)%4), 12000);
+}
+
+function goFullscreen(){
+  document.documentElement.requestFullscreen?.();
+}
+
+function updateClock(){
+  const now=new Date().toLocaleString('pt-BR',{
+    timeZone:'America/Sao_Paulo',
+    weekday:'short',
+    day:'2-digit',month:'2-digit',year:'numeric',
+    hour:'2-digit',minute:'2-digit',second:'2-digit'
+  });
+  document.getElementById('clock').textContent=now;
+}
+
+updateClock();
+setInterval(updateClock,1000);
+
+loadAllData();
+setInterval(loadAllData, 300000); // 5 min
+
+resetAutoTimer();
+goScreen(0);
+</script>
+</body>
+</html>
