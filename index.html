@@ -164,7 +164,8 @@ footer a:hover{text-decoration:underline}
   header>div:first-child>div:nth-child(2) div:last-child{font-size:1rem!important}
   
   main{overflow:auto}
-  .screen{padding:10px;overflow:auto}
+  .screen{padding:10px;overflow-x:hidden;overflow-y:auto}
+  .screen *{box-sizing:border-box;max-width:100%}
   
   .dash-layout{grid-template-columns:1fr!important;gap:12px}
   .dash-panel{padding:14px}
