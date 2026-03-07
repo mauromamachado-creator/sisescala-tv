@@ -855,28 +855,57 @@ function renderScreen0(){
     html+='<div class="no-data">Sem missões programadas para hoje.</div>';
   }
   // Show next days (week) inline
+  // Próximos dias: coleta datas do diário + OMs futuras, OM tem prioridade
   const weekDays=diarioData.filter(d=>{const diff=(d.date-td)/(86400000);return diff>0&&diff<=7&&d.legs.length>0;});
-  if(weekDays.length){
+  const futureOMs=omData.filter(o=>{const od=new Date(o.data+'T12:00:00');const diff=(od-td)/86400000;return diff>0&&diff<=7;});
+  // Juntar todas as datas únicas
+  const allDates=new Set();
+  weekDays.forEach(d=>{const iso=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');allDates.add(iso);});
+  futureOMs.forEach(o=>allDates.add(o.data));
+  const sortedDates=[...allDates].sort();
+  if(sortedDates.length){
     html+='<div style="margin-top:16px;font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">Próximos Dias</div>';
-    for(const day of weekDays){
-      const anvLabel=day.aeronave&&day.aeronave!=='AERONAVE'?day.aeronave:'A DEFINIR';
-      const mainLegs=day.legs.filter(l=>!l.isExtra);
-      const extraLegs=day.legs.filter(l=>l.isExtra);
-      if(mainLegs.length){
-        html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-          <div style="min-width:70px;font-weight:900;color:var(--text)">${day.dateStr}</div>
-          <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${day.dayName}</div>
-          <div style="min-width:80px;font-size:.82rem;color:var(--vc1)">${anvLabel}</div>
-          <div style="flex:1;font-size:.82rem">${mainLegs.map(l=>'<span style="margin-right:12px">'+l.dep+' '+l.route.replace(/-/g,'→')+'</span>').join('')}</div>
-          </div>`;
-      }
-      if(extraLegs.length){
-        html+=`<div style="display:flex;align-items:center;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-          <div style="min-width:70px"></div>
-          <div style="min-width:36px"></div>
-          <div style="min-width:80px;font-size:.82rem;color:var(--vc2)">FAB 2590</div>
-          <div style="flex:1;font-size:.82rem;color:var(--vc2)">${extraLegs.map(l=>'<span style="margin-right:12px">'+l.dep+' '+l.route.replace(/-/g,'→')+'</span>').join('')}</div>
-          </div>`;
+    for(const isoDate of sortedDates){
+      const dObj=new Date(isoDate+'T12:00:00');
+      const dateStr=String(dObj.getDate()).padStart(2,'0')+'/'+String(dObj.getMonth()+1).padStart(2,'0');
+      const dayName=dayNames[dObj.getDay()];
+      const dayOMs=omData.filter(o=>o.data===isoDate);
+      const dayDiario=weekDays.find(d=>{const di=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');return di===isoDate;});
+      if(dayOMs.length){
+        // OM tem prioridade — mostra dados da OM
+        for(const om of dayOMs){
+          const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
+          for(const p of om.pernas){
+            html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+              <div style="min-width:70px;font-weight:900;color:var(--text)">${dateStr}</div>
+              <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${dayName}</div>
+              <div style="min-width:80px;font-size:.82rem;color:${anvColor}">${om.fab}</div>
+              <div style="flex:1;font-size:.82rem">${p.origem}→${p.destino} <span style="color:var(--text2);font-size:.72rem">${p.etd.split(' ')[1]||''}</span> <span style="color:var(--yellow);font-size:.72rem">${p.missao}</span></div>
+              <div style="font-size:.6rem;color:var(--green)">📋 OM</div>
+              </div>`;
+          }
+        }
+      }else if(dayDiario){
+        // Sem OM — mostra diário (rascunho)
+        const anvLabel=dayDiario.aeronave&&dayDiario.aeronave!=='AERONAVE'?dayDiario.aeronave:'A DEFINIR';
+        const mainLegs=dayDiario.legs.filter(l=>!l.isExtra);
+        const extraLegs=dayDiario.legs.filter(l=>l.isExtra);
+        if(mainLegs.length){
+          html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+            <div style="min-width:70px;font-weight:900;color:var(--text)">${dateStr}</div>
+            <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${dayName}</div>
+            <div style="min-width:80px;font-size:.82rem;color:var(--vc1)">${anvLabel}</div>
+            <div style="flex:1;font-size:.82rem">${mainLegs.map(l=>'<span style="margin-right:12px">'+l.dep+' '+l.route.replace(/-/g,'→')+'</span>').join('')}</div>
+            </div>`;
+        }
+        if(extraLegs.length){
+          html+=`<div style="display:flex;align-items:center;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+            <div style="min-width:70px"></div>
+            <div style="min-width:36px"></div>
+            <div style="min-width:80px;font-size:.82rem;color:var(--vc2)">FAB 2590</div>
+            <div style="flex:1;font-size:.82rem;color:var(--vc2)">${extraLegs.map(l=>'<span style="margin-right:12px">'+l.dep+' '+l.route.replace(/-/g,'→')+'</span>').join('')}</div>
+            </div>`;
+        }
       }
     }
   }
@@ -1728,28 +1757,51 @@ function renderScreenTV(){
   // Row 3 Col 3: Próximos dias
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
   html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:6px;font-size:.78rem">📅 PRÓXIMOS DIAS</div>`;
-  const weekDays=diarioData.filter(d=>{const diff=(d.date-td)/86400000;return diff>0&&diff<=5&&d.legs.length>0;});
-  if(weekDays.length){
-    for(const day of weekDays){
-      const anvLabel=day.aeronave&&day.aeronave!=='AERONAVE'?day.aeronave:'';
-      // Separar legs por aeronave
-      const mainLegs=day.legs.filter(l=>!l.isExtra);
-      const extraLegs=day.legs.filter(l=>l.isExtra);
-      const mainRoute=mainLegs.map(l=>(l.route||'').replace(/-/g,'→')).join(' / ');
-      const extraRoute=extraLegs.map(l=>(l.route||'').replace(/-/g,'→')).join(' / ');
-      html+=`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem;align-items:center">`;
-      html+=`<span style="font-weight:900;min-width:40px">${day.dateStr}</span>`;
-      html+=`<span style="color:var(--text2);min-width:28px">${day.dayName}</span>`;
-      html+=`<span style="color:var(--vc1);font-size:.68rem;min-width:65px">${anvLabel}</span>`;
-      html+=`<span style="color:var(--text);font-size:.68rem">${mainRoute}</span>`;
-      html+=`</div>`;
-      if(extraLegs.length){
+  // Próximos dias TV: OM tem prioridade, sem duplicar
+  const weekDaysTV=diarioData.filter(d=>{const diff=(d.date-td)/86400000;return diff>0&&diff<=5&&d.legs.length>0;});
+  const futureOMsTV=omData.filter(o=>{const od=new Date(o.data+'T12:00:00');const diff=(od-td)/86400000;return diff>0&&diff<=5;});
+  const allDatesTV=new Set();
+  weekDaysTV.forEach(d=>{const iso=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');allDatesTV.add(iso);});
+  futureOMsTV.forEach(o=>allDatesTV.add(o.data));
+  const sortedDatesTV=[...allDatesTV].sort();
+  if(sortedDatesTV.length){
+    for(const isoDate of sortedDatesTV){
+      const dObj=new Date(isoDate+'T12:00:00');
+      const dateStr=String(dObj.getDate()).padStart(2,'0')+'/'+String(dObj.getMonth()+1).padStart(2,'0');
+      const dayName2=dayNames[dObj.getDay()];
+      const dayOMs=omData.filter(o=>o.data===isoDate);
+      const dayDiario=weekDaysTV.find(d=>{const di=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');return di===isoDate;});
+      if(dayOMs.length){
+        for(const om of dayOMs){
+          const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
+          const route=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
+          html+=`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem;align-items:center">`;
+          html+=`<span style="font-weight:900;min-width:40px">${dateStr}</span>`;
+          html+=`<span style="color:var(--text2);min-width:28px">${dayName2}</span>`;
+          html+=`<span style="color:${anvColor};font-size:.68rem;min-width:65px">${om.fab}</span>`;
+          html+=`<span style="color:var(--text);font-size:.68rem">${route}</span>`;
+          html+=`<span style="color:var(--green);font-size:.55rem;margin-left:4px">📋</span>`;
+          html+=`</div>`;
+        }
+      }else if(dayDiario){
+        const anvLabel=dayDiario.aeronave&&dayDiario.aeronave!=='AERONAVE'?dayDiario.aeronave:'';
+        const mainLegs=dayDiario.legs.filter(l=>!l.isExtra);
+        const extraLegs=dayDiario.legs.filter(l=>l.isExtra);
+        const mainRoute=mainLegs.map(l=>(l.route||'').replace(/-/g,'→')).join(' / ');
+        const extraRoute=extraLegs.map(l=>(l.route||'').replace(/-/g,'→')).join(' / ');
         html+=`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem;align-items:center">`;
-        html+=`<span style="min-width:40px"></span>`;
-        html+=`<span style="min-width:28px"></span>`;
-        html+=`<span style="color:var(--vc2);font-size:.68rem;min-width:65px">FAB 2590</span>`;
-        html+=`<span style="color:var(--text);font-size:.68rem">${extraRoute}</span>`;
+        html+=`<span style="font-weight:900;min-width:40px">${dateStr}</span>`;
+        html+=`<span style="color:var(--text2);min-width:28px">${dayName2}</span>`;
+        html+=`<span style="color:var(--vc1);font-size:.68rem;min-width:65px">${anvLabel}</span>`;
+        html+=`<span style="color:var(--text);font-size:.68rem">${mainRoute}</span>`;
         html+=`</div>`;
+        if(extraLegs.length){
+          html+=`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem;align-items:center">`;
+          html+=`<span style="min-width:40px"></span><span style="min-width:28px"></span>`;
+          html+=`<span style="color:var(--vc2);font-size:.68rem;min-width:65px">FAB 2590</span>`;
+          html+=`<span style="color:var(--text);font-size:.68rem">${extraRoute}</span>`;
+          html+=`</div>`;
+        }
       }
     }
   }else{html+=`<div style="color:var(--text2)">Sem voos programados.</div>`;}
