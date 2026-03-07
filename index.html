@@ -4342,7 +4342,9 @@ async function fetchAllAlerts(){
           return true;
         }).forEach(a=>{
           const colors={viagem:'#64b4ff',seguranca:'#ff6b6b',sistema:'#ffaa00',urgente:'#ff6b6b'};
-          allItems.push({id:a.id,icon:icons[a.type]||'🚨',color:colors[a.type]||'#ff6b6b',title:a.title||'ALERTA',body:a.body||'',sub:a.source?`Fonte: ${a.source} • ${a.date||''}`:(a.date||'')});
+          let _c=colors[a.type]||'#ff6b6b';
+          if(a.type==='viagem'&&(a.title||'').toUpperCase().includes('CANCELAD'))_c='#ff6b6b';
+          allItems.push({id:a.id,icon:icons[a.type]||'🚨',color:_c,title:a.title||'ALERTA',body:a.body||'',sub:a.source?`Fonte: ${a.source} • ${a.date||''}`:(a.date||'')});
         });
       }
     }
