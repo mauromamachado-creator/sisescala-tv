@@ -1872,10 +1872,10 @@ async function loadAllData(){
     await metarFetch;
     await metarMultiFetch;
     await fetchAnual().catch(()=>{warnings.push('Horas Anual');});
-    await fetchPauDeSebo().catch(()=>{warnings.push('Pau de Sebo');});
     await fetch('om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;}).catch(()=>{omData=[];});
     await fetchEscala().catch(()=>{warnings.push('Escala');});
-    pilotData=parseDisponibilidade(dispRows);flights=parseLancamentos(lancRows);
+    pilotData=parseDisponibilidade(dispRows);
+    await fetchPauDeSebo().catch(()=>{warnings.push('Pau de Sebo');});flights=parseLancamentos(lancRows);
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
     diarioData=parseDiario(planRows);
     acntData=parseACNT(acntRows);
