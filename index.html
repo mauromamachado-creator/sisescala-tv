@@ -744,15 +744,14 @@ function getPilotStatus(p,td){
   if(!isNaN(afAbs)&&afAbs>=20&&afAbs<35)return{status:'DISPONÍVEL',cls:'st-apto',alerta:'DESADAPTADO PR'};
   if(p.cviDate&&p.cviDate<td)return{status:'INDISPONÍVEL (CVI)',cls:'st-inapto'};
   if(p.inspSauDate&&p.inspSauDate<td)return{status:'INDISPONÍVEL (INSP)',cls:'st-inapto'};
-  // Cruzar com aba cartões
+  // Cruzar com aba cartões — reportar TODOS os vencidos
   if(typeof cartoesData!=='undefined'&&cartoesData.length){
     const ct=cartoesData.find(c=>c.trigrama===p.trigrama);
     if(ct){
-      const criticos=[{k:'inspSaude',nome:'INSP SAÚDE'},{k:'cviRvsm',nome:'CVI/RVSM'},{k:'crm',nome:'CRM'}];
-      for(const c of criticos){
-        const v=ct[c.k];
-        if(v&&v.date&&v.date<td)return{status:`INDISPONÍVEL (${c.nome})`,cls:'st-inapto'};
-      }
+      const isPiloto=(ct.funcao||'').toLowerCase().includes('piloto');
+      const criticos=[{k:'inspSaude',nome:'INSP SAÚDE'},{k:'cviRvsm',nome:'CVI/RVSM',pilotoOnly:true},{k:'crm',nome:'CRM'}];
+      const venc=criticos.filter(c=>{if(c.pilotoOnly&&!isPiloto)return false;const v=ct[c.k];return v&&v.date&&v.date<td;}).map(c=>c.nome);
+      if(venc.length)return{status:`INDISPONÍVEL (${venc.join(', ')})`,cls:'st-inapto'};
     }
   }
   return{status:'DISPONÍVEL',cls:'st-apto'};
@@ -825,7 +824,8 @@ function renderScreen0(){
     const pilotTrisSet=new Set(allPilots.map(p=>p.trigrama));
     outrosVencCount=cartoesData.filter(ct=>{
       if(pilotTrisSet.has(ct.trigrama))return false;
-      return ['inspSaude','cviRvsm','crm'].some(k=>ct[k]&&ct[k].date&&ct[k].date<td);
+      const isPil=(ct.funcao||'').toLowerCase().includes('piloto');
+      return [{k:'inspSaude',po:false},{k:'cviRvsm',po:true},{k:'crm',po:false}].some(c=>{if(c.po&&!isPil)return false;return ct[c.k]&&ct[c.k].date&&ct[c.k].date<td;});
     }).length;
   }
   html+=`<div class="panel-title"><span class="icon">⚠️</span> Alertas Tripulantes <span class="count">${problemPilots.length+outrosVencCount}</span></div>`;
@@ -844,15 +844,18 @@ function renderScreen0(){
   // Alertas de cartões vencidos para TODOS os tripulantes (não-pilotos)
   if(typeof cartoesData!=='undefined'&&cartoesData.length){
     const pilotTris=new Set(allPilots.map(p=>p.trigrama));
-    const criticos=[{k:'inspSaude',nome:'INSP SAÚDE'},{k:'cviRvsm',nome:'CVI/RVSM'},{k:'crm',nome:'CRM'}];
     const outrosTripVenc=cartoesData.filter(ct=>{
       if(pilotTris.has(ct.trigrama))return false;
-      return criticos.some(c=>ct[c.k]&&ct[c.k].date&&ct[c.k].date<td);
+      const isPil=(ct.funcao||'').toLowerCase().includes('piloto');
+      const criticos=[{k:'inspSaude',nome:'INSP SAÚDE'},{k:'cviRvsm',nome:'CVI/RVSM',pilotoOnly:true},{k:'crm',nome:'CRM'}];
+      return criticos.some(c=>{if(c.pilotoOnly&&!isPil)return false;return ct[c.k]&&ct[c.k].date&&ct[c.k].date<td;});
     });
     if(outrosTripVenc.length){
       html+=`<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;font-size:.68rem;color:var(--text2);margin-bottom:4px">Demais Tripulantes</div>`;
       for(const ct of outrosTripVenc){
-        const venc=criticos.filter(c=>ct[c.k]&&ct[c.k].date&&ct[c.k].date<td).map(c=>c.nome);
+        const isPil=(ct.funcao||'').toLowerCase().includes('piloto');
+        const criticos=[{k:'inspSaude',nome:'INSP SAÚDE'},{k:'cviRvsm',nome:'CVI/RVSM',pilotoOnly:true},{k:'crm',nome:'CRM'}];
+        const venc=criticos.filter(c=>{if(c.pilotoOnly&&!isPil)return false;return ct[c.k]&&ct[c.k].date&&ct[c.k].date<td;}).map(c=>c.nome);
         html+=`<div class="desadapt-item">
           <span class="desadapt-tri" style="color:var(--yellow)">${ct.trigrama}</span>
           <span style="font-size:.72rem;color:var(--text2);flex:1">${ct.nome||''}</span>
@@ -861,7 +864,7 @@ function renderScreen0(){
       }
     }
   }
-  if(!problemPilots.length&&(!cartoesData.length||!cartoesData.some(ct=>{const pilotTris=new Set(allPilots.map(p=>p.trigrama));if(pilotTris.has(ct.trigrama))return false;const criticos=['inspSaude','cviRvsm','crm'];return criticos.some(k=>ct[k]&&ct[k].date&&ct[k].date<td);}))){
+  if(!problemPilots.length&&outrosVencCount===0){
     html+='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:8px"><div style="font-size:2rem">✅</div><div style="color:var(--green);font-weight:700">Todos disponíveis</div></div>';
   }
   html+='</div>';
