@@ -749,7 +749,7 @@ let metarMulti={};
 let anualVC1={voadas:0,esforco:650}, anualVC2={voadas:0,esforco:1220};
 let escalaData={vc1:{consulta:'',raio:[]},vc2:{consulta:'',raio:[]}};
 let confirmaData=[];
-let omData=[];
+let omData=[];let dadosPessoais={};
 
 function parseCSV(text){
   const rows=[];let row=[],field='',inQ=false;
@@ -2467,6 +2467,48 @@ function showNovidades(){document.getElementById('novidadesModal').style.display
 // ═══════════════════════════════════════════════════
 // TELA 13 — DIÁRIAS
 // ═══════════════════════════════════════════════════
+function parseDadosPessoais(rows){
+  const map={};
+  rows.forEach(r=>{
+    const nome=r[22]||'';const tri=r[23]||'';const cpf=r[34]||'';const posto=r[20]||'';const nomeCompleto=r[21]||'';
+    if(!nomeCompleto||!cpf)return;
+    // Key by nome guerra (uppercase) and by trigrama
+    const key=nome.toUpperCase().trim();
+    if(key)map[key]={cpf,posto,nomeCompleto,trigrama:tri};
+    const tKey=(tri||'').toUpperCase().trim();
+    if(tKey)map['TRI_'+tKey]={cpf,posto,nomeCompleto,trigrama:tri};
+    // Also key by full name fragments for OM matching
+    const nUp=nomeCompleto.toUpperCase().trim();
+    if(nUp)map['FULL_'+nUp]={cpf,posto,nomeCompleto,trigrama:tri};
+  });
+  return map;
+}
+
+function findCPF(nome){
+  if(!dadosPessoais||!Object.keys(dadosPessoais).length)return '';
+  const n=nome.toUpperCase().trim();
+  // Direct match by nome guerra
+  if(dadosPessoais[n])return dadosPessoais[n].cpf;
+  // Try by trigrama
+  if(dadosPessoais['TRI_'+n])return dadosPessoais['TRI_'+n].cpf;
+  // Partial match on full name
+  for(const k of Object.keys(dadosPessoais)){
+    if(k.startsWith('FULL_')&&k.includes(n))return dadosPessoais[k].cpf;
+  }
+  return '';
+}
+
+function findNomeCompleto(nome){
+  if(!dadosPessoais||!Object.keys(dadosPessoais).length)return nome;
+  const n=nome.toUpperCase().trim();
+  if(dadosPessoais[n])return dadosPessoais[n].nomeCompleto;
+  if(dadosPessoais['TRI_'+n])return dadosPessoais['TRI_'+n].nomeCompleto;
+  for(const k of Object.keys(dadosPessoais)){
+    if(k.startsWith('FULL_')&&k.includes(n))return dadosPessoais[k].nomeCompleto;
+  }
+  return nome;
+}
+
 function getDiariasDownloaded(){return JSON.parse(localStorage.getItem('sisgopa_diarias_done')||'{}');}
 function setDiariaDownloaded(omId){const d=getDiariasDownloaded();d[omId]=Date.now();localStorage.setItem('sisgopa_diarias_done',JSON.stringify(d));}
 
@@ -2512,10 +2554,12 @@ function openDiariaForm(omId){
   let tripRows='';
   om.tripulacao.forEach((t,i)=>{
     const funcao=t.funcao||((['MJ','CP','TC','1T','2T'].includes(t.posto))?'Piloto':'');
+    const cpfAuto=findCPF(t.nome)||findCPF(t.trigrama||'')||'';
+    const nomeCompleto=findNomeCompleto(t.nome);
     tripRows+=`<tr>
       <td><input type="text" value="${t.posto}" data-field="trip_${i}_posto" style="width:50px" class="diaria-input"></td>
-      <td><input type="text" value="${t.nome}" data-field="trip_${i}_nome" style="width:100%" class="diaria-input"></td>
-      <td><input type="text" value="" data-field="trip_${i}_cpf" placeholder="000.000.000-00" style="width:120px" class="diaria-input"></td>
+      <td><input type="text" value="${nomeCompleto}" data-field="trip_${i}_nome" style="width:100%" class="diaria-input"></td>
+      <td><input type="text" value="${cpfAuto}" data-field="trip_${i}_cpf" placeholder="000.000.000-00" style="width:120px" class="diaria-input"></td>
       <td><input type="text" value="${funcao}" data-field="trip_${i}_funcao" style="width:100px" class="diaria-input"></td>
     </tr>`;
   });
@@ -4028,6 +4072,7 @@ async function loadAllData(){
     await fetchWithTimeout('om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;sourceStatus.om='ok';}).catch(()=>{omData=[];sourceStatus.om='fail';});
     await fetchEscala().then(()=>{sourceStatus.escala='ok';}).catch(()=>{sourceStatus.escala='fail';});
     await fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);cartoesFailed=false;sourceStatus.cartoes='ok';}).catch(()=>{cartoesData=[];cartoesFailed=true;sourceStatus.cartoes='fail';});
+    await fetchCSVByName('dados').then(rows=>{dadosPessoais=parseDadosPessoais(rows);sourceStatus.dados='ok';}).catch(()=>{dadosPessoais={};sourceStatus.dados='fail';});
     pilotData=parseDisponibilidade(dispRows);
     flights=parseLancamentos(lancRows);
     await fetchPauDeSebo().then(()=>{sourceStatus.pauSebo='ok';}).catch(()=>{sourceStatus.pauSebo='fail';});
