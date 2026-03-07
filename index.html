@@ -447,7 +447,7 @@ function calcAfastamentos(){
       p.afastamento=String(diffDays);
       // Fallback: calcular horas voadas a partir dos flights[] se não veio da planilha
       if(p.voadas==null){
-        const totalH=pilotFlights.reduce((s,f)=>s+(f.tempo||0),0);
+        const totalH=pilotFlights.reduce((s,f)=>s+parseHHMM(f.tempo),0);
         if(totalH>0)p.voadas=totalH;
       }
     }else{
