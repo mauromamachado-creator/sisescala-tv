@@ -2497,20 +2497,37 @@ function getPcnTireCat(pcn){
 
 // Fetch FAB fuel from CELOG planilha
 async function fetchFabFuel(icao){
+  // Double check: CELOG site + planilha (same as bot check_fuel_double)
+  let inSite=false,inPlanilha=false,planilhaRows=[];
+  // Source 1: CELOG site
+  try{
+    const siteHtml=await proxyFetchRaw('https://combavcelog.github.io/locscontratadas/index.html').catch(()=>'');
+    if(siteHtml){const m=siteHtml.match(/\bSB[A-Z]{2}\b/g);if(m)inSite=m.includes(icao);}
+  }catch(e){}
+  // Source 2: CELOG planilha
   try{
     const r=await fetchWithTimeout(CELOG_CSV,10000);
-    if(!r.ok)return{hasFuel:false,text:'Consulta indisponível'};
-    const csv=await r.text();
-    const rows=parseCSV(csv);
-    // Header: CHAVE(0),ICAO(1),LOCALIDADE(2),UF(3),REGIÃO(4),COMBUSTÍVEL(5),OBSERVAÇÕES(6),CONTRATO(7),VIGÊNCIA(8),EMPRESA(9),PREÇO ATUAL(10)
-    const found=rows.filter(row=>(row[1]||'').trim().toUpperCase()===icao);
-    if(found.length){
-      const suspended=found.some(r=>(r[6]||'').toUpperCase().includes('SUSPENSO'));
-      if(suspended)return{hasFuel:false,text:'Contrato FAB temporariamente suspenso',rows:found};
-      return{hasFuel:true,text:'Possui contrato FAB para abastecimento',rows:found};
+    if(r.ok){
+      const csv=await r.text();const rows=parseCSV(csv);
+      // Header: CHAVE(0),ICAO(1),LOCALIDADE(2),UF(3),REGIÃO(4),COMBUSTÍVEL(5),OBSERVAÇÕES(6),CONTRATO(7),VIGÊNCIA(8),EMPRESA(9),PREÇO ATUAL(10)
+      planilhaRows=rows.filter(row=>(row[1]||'').trim().toUpperCase()===icao);
+      inPlanilha=planilhaRows.length>0;
     }
-    return{hasFuel:false,text:'Não possui contrato FAB para abastecimento'};
-  }catch(e){return{hasFuel:false,text:'Consulta indisponível'};}
+  }catch(e){}
+  // Determine status (same logic as bot)
+  let hasFuel=false,text='';
+  if(inPlanilha){
+    const active=planilhaRows.filter(r=>!(r[6]||'').toUpperCase().includes('SUSPENSO'));
+    if(active.length){text='Possui contrato FAB para abastecimento';hasFuel=true;}
+    else{text='Contrato FAB temporariamente suspenso';hasFuel=false;}
+  }else if(inSite){
+    text='Possui contrato FAB para abastecimento';hasFuel=true;
+  }else{
+    text='Não possui contrato FAB para abastecimento';hasFuel=false;
+  }
+  // Divergence warning (same as bot)
+  if(inSite!==inPlanilha&&(inSite||inPlanilha))text+=' (divergência entre fontes - verificar)';
+  return{hasFuel,text,rows:planilhaRows};
 }
 
 // ---- METAR (multi ICAO, same as bot) ----
@@ -2677,12 +2694,16 @@ async function botFuel(){botLastFn=botFuel;
     if(fuel.rows&&fuel.rows.length){
       html+=`<div style="margin-top:8px">`;
       fuel.rows.forEach(r=>{
-        const tipo=r[5]||'',empresa=r[9]||'',preco=r[10]||'',obs=r[6]||'';
-        html+=`<div style="background:var(--bg);padding:6px 8px;border-radius:4px;margin-bottom:4px;font-size:.75rem">`;
+        const tipo=r[5]||'',obs=r[6]||'',contrato=r[7]||'',vigencia=r[8]||'',empresa=r[9]||'',preco=r[10]||'';
+        const susp=(obs).toUpperCase().includes('SUSPENSO');
+        html+=`<div style="background:var(--bg);padding:6px 8px;border-radius:4px;margin-bottom:4px;font-size:.75rem;${susp?'opacity:.6':''}">`;
         if(tipo)html+=`Tipo: <b>${tipo}</b> `;
         if(empresa)html+=`| Empresa: ${empresa} `;
         if(preco)html+=`| Preço: ${preco} `;
-        if(obs)html+=`<br><span style="color:var(--text2)">${obs}</span>`;
+        if(contrato)html+=`<br>Contrato: ${contrato} `;
+        if(vigencia)html+=`| Vigência: ${vigencia} `;
+        if(obs)html+=`<br><span style="color:${susp?'var(--red)':'var(--text2)'}">${obs}</span>`;
+        if(susp)html+=` ⚠️`;
         html+=`</div>`;
       });
       html+=`</div>`;
@@ -2752,6 +2773,33 @@ function botCodigo(){
   html+=`<button onclick="botExecCodigo()" style="background:var(--vc1);color:var(--bg);border:none;padding:10px 20px;border-radius:6px;font-family:inherit;font-weight:900;cursor:pointer">🔍</button>`;
   html+=`</div><div id="codResult" style="margin-top:12px"></div>`;
   botOut(html,false);
+}
+function filterNotamRunway(text){
+  if(!text)return[];
+  const alerts=[];
+  text.trim().split(/\n{2,}/).forEach(notam=>{
+    const u=notam.toUpperCase();
+    // Extract period
+    let timeInfo='';
+    const pm=notam.match(/(\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2}\s+a\s+\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2}\s*UTC)/);
+    if(pm)timeInfo+=` (${pm[1]})`;
+    const dly=notam.match(/DLY\s+(\d{4})-(\d{4})/);
+    if(dly)timeInfo+=` (${dly[1]}-${dly[2]} UTC DLY)`;
+    // RWY closed
+    if(u.includes('QMRLC')||(u.includes('RWY')&&(u.includes('CLSD')||u.includes('CLOSED')))){
+      const rm=u.match(/RWY\s+(\S+)\s+CLS[ED]/);
+      alerts.push(rm?`🚫 RWY ${rm[1]} FECHADA${timeInfo}`:`🚫 Pista fechada${timeInfo}`);
+    }
+    // RWY reduced/shortened
+    else if(u.includes('RWY')&&(u.includes('REDUCED')||u.includes('SHORTENED')||u.includes('REDUZIDA'))){
+      alerts.push(`⚠️ Pista com dimensão reduzida${timeInfo}`);
+    }
+    // Threshold displaced
+    else if(u.includes('THR')&&(u.includes('DISPLACED')||u.includes('DESLOCAD'))){
+      alerts.push(`⚠️ Cabeceira deslocada${timeInfo}`);
+    }
+  });
+  return alerts;
 }
 function removeAccents(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 let GLOBAL_AIRPORTS=[];
@@ -2990,8 +3038,8 @@ async function botExecMsgPadrao(){
     let notamAlert='NOTAM OK';
     const notamRaw=await proxyFetchRaw(`https://aviationweather.gov/api/data/notam?ids=${dest}&format=raw`).catch(()=>'');
     if(notamRaw){
-      const rwyNotams=notamRaw.split(/\n{2,}/).filter(n=>/\b(?:RWY|RUNWAY|PISTA|CLSD|CLOSED|REDUCED)\b/i.test(n));
-      if(rwyNotams.length)notamAlert=rwyNotams.map(n=>n.trim().substring(0,100)).join('; ');
+      const alerts=filterNotamRunway(notamRaw);
+      if(alerts.length)notamAlert=alerts.join('; ');
     }
     // Build message
     let lines=[];
