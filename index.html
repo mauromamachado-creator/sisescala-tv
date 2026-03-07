@@ -2465,7 +2465,6 @@ function showOMDetail(omId){
     pilotos.forEach(t=>{
       html+=`<div style="display:flex;justify-content:space-between;padding:4px 8px;background:#0d1220;border-radius:6px;margin-bottom:3px;font-size:.8rem">
         <span><span style="color:var(--green);font-weight:600">${t.posto}</span> ${t.nome}${t.trigrama?' <span style="color:var(--text2)">('+t.trigrama+')</span>':''}</span>
-        <span style="color:var(--text2);font-size:.7rem">${t.saram||''}</span>
       </div>`;
     });
   }
@@ -2474,7 +2473,6 @@ function showOMDetail(omId){
     outros.forEach(t=>{
       html+=`<div style="display:flex;justify-content:space-between;padding:4px 8px;background:#0d1220;border-radius:6px;margin-bottom:3px;font-size:.8rem">
         <span><span style="color:#ffaa00;font-weight:600">${t.posto}</span> ${t.nome}</span>
-        <span style="color:var(--text2);font-size:.7rem">${t.saram||''}</span>
       </div>`;
     });
   }
