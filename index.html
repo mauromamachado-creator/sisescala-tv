@@ -2257,6 +2257,8 @@ function renderCartoesNaBusca(trigrama,funcao){
 // ===== BOT (screen 11) =====
 const DISCLAIMER='⚠️ Os dados aqui apresentados são apenas referências. Embase seus planejamentos em fontes oficiais.';
 const CELOG_CSV='https://docs.google.com/spreadsheets/d/1qF75o4R4FuM0_uBo5lxcsLK1aJAmMhCPNRiIru3wobQ/export?format=csv';
+let BR_AIRPORTS={};
+fetch('br_airports.json?v=1').then(r=>r.ok?r.json():{}).then(d=>{BR_AIRPORTS=d;console.log(`BR_AIRPORTS: ${Object.keys(d).length} aeródromos`);}).catch(()=>{});
 
 function renderScreenBot(){
   const container=document.getElementById('screen11');
@@ -2311,9 +2313,17 @@ function roundUp5(min){return Math.ceil(min/5)*5;}
 function formatTime(h){const m=roundUp5(h*60);return `${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}min`;}
 
 async function getAirportInfo(icao){
+  // 1. Banco local BR_AIRPORTS (mesmo do bot)
+  if(BR_AIRPORTS[icao])return BR_AIRPORTS[icao];
+  // 2. Fallback: aviationweather.gov
   try{
     const raw=await proxyFetchRaw(`https://aviationweather.gov/api/data/airport?ids=${icao}&format=json`);
-    if(!raw)return null;const d=JSON.parse(raw);return d&&d.length?d[0]:null;
+    if(!raw)return null;const d=JSON.parse(raw);
+    if(d&&d.length){
+      const ap=d[0];
+      return{name:ap.name,lat:ap.lat,lon:ap.lon,elev:ap.elev,municipality:ap.city||'',region:ap.state||''};
+    }
+    return null;
   }catch(e){return null;}
 }
 
@@ -2465,7 +2475,9 @@ async function botAerodrome(){
     let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">🏢 Aeroporto ${icao}</div>`;
     if(info){
       html+=`<div>📍 Nome: <b>${info.name||'N/A'}</b></div>`;
-      if(info.city||info.state)html+=`<div>🏙 Cidade: ${info.city||''} ${info.state?'/ '+info.state:''}</div>`;
+      const city=info.municipality||info.city||'';
+      const region=info.region||info.state||'';
+      if(city||region)html+=`<div>🏙 Cidade: ${city} ${region?'/ '+region:''}</div>`;
       html+=`<div>📐 Coordenadas: ${info.lat}, ${info.lon}</div>`;
       if(info.elev!=null)html+=`<div>⬆️ Elevação: ${info.elev} ft</div>`;
     }else{
