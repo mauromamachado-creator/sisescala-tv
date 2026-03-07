@@ -1495,6 +1495,30 @@ function renderScreen0(){
   if(!totalMiss)html+='<div class="no-data">Nenhuma missão internacional programada.</div>';
   html+='</div>';
 
+  // --- Diárias pendentes ---
+  {
+    const _done=getDiariasDownloaded();const _conc=getDiariasConcluidas();
+    const _brP=['SB','SD','SN','SI','SS','SW'];
+    const _DM=['PR','RESERVA PR','ESCAV'];
+    const _diarias=(omData||[]).filter(om=>om.pernas.every(p=>_brP.some(pf=>p.origem.startsWith(pf))&&_brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>_DM.includes((p.missao||'').toUpperCase().trim())));
+    const _pend=_diarias.filter(om=>!_conc[om.om]);
+    const _nBiz=d=>{const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;};
+    const _hj=nowBRT();_hj.setHours(0,0,0,0);
+    const _venc=_pend.filter(om=>{const p=_nBiz(new Date(om.data+'T23:59:00'));p.setHours(0,0,0,0);return p<_hj;}).length;
+    const _naoGeradas=_pend.filter(om=>!_done[om.om]).length;
+    if(_pend.length){
+      html+=`<div class="dash-panel" style="grid-column:1/-1;border-top:3px solid ${_venc?'var(--red)':'#64b4ff'}">
+        <div class="panel-title"><span class="icon">💰</span> Diárias Pendentes</div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+          <div style="text-align:center"><span style="font-size:1.3rem;font-weight:900;color:#64b4ff">${_pend.length}</span><div style="font-size:.65rem;color:var(--text2)">pendentes</div></div>
+          ${_naoGeradas?`<div style="text-align:center"><span style="font-size:1.3rem;font-weight:900;color:var(--yellow)">${_naoGeradas}</span><div style="font-size:.65rem;color:var(--text2)">PDF não gerado</div></div>`:''}
+          ${_venc?`<div style="text-align:center"><span style="font-size:1.3rem;font-weight:900;color:var(--red)">${_venc}</span><div style="font-size:.65rem;color:var(--text2)">prazo vencido</div></div>`:''}
+          <button onclick="goScreen(13)" style="margin-left:auto;background:var(--bg3);color:var(--vc1);border:1px solid var(--border);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.78rem;font-weight:600">Ir para Diárias →</button>
+        </div>
+      </div>`;
+    }
+  }
+
   html+='</div>'; // close dash-layout
   document.getElementById('screen0').innerHTML=html;
 }
@@ -2562,12 +2586,31 @@ function setDiariaConcluida(omId){
   const d=getDiariasConcluidas();d[omId]=Date.now();localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();
 }
 function undoDiariaConcluida(omId){const d=getDiariasConcluidas();delete d[omId];localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();}
+function exportDiariasCSV(){
+  const done=getDiariasDownloaded();const conc=getDiariasConcluidas();
+  const brP=['SB','SD','SN','SI','SS','SW'];const DM=['PR','RESERVA PR','ESCAV'];
+  const list=(omData||[]).filter(om=>om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>DM.includes((p.missao||'').toUpperCase().trim())));
+  if(!list.length){alert('Nenhuma diária para exportar');return;}
+  let csv='OM;Data;Aeronave;Rota;Tripulantes;Status;Data Conclusão\n';
+  list.forEach(om=>{
+    const rotas=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
+    const nomes=om.tripulacao.map(t=>t.nome).join(', ');
+    const status=conc[om.om]?'Concluída':done[om.om]?'PDF Gerado':'Pendente';
+    const dtConc=conc[om.om]?new Date(conc[om.om]).toLocaleDateString('pt-BR'):'';
+    csv+=`${om.om};${om.data};${om.aeronave};${rotas};${nomes};${status};${dtConc}\n`;
+  });
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`diarias_sisgopa_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
 
 function renderScreenDiarias(){
   const c=document.getElementById('screen13');
   let html=`<h2>💰 Diárias</h2>`;
   html+=`<div style="color:var(--text2);font-size:.8rem;margin-bottom:6px">Solicitação de Pagamento de Diárias pré-preenchida a partir das Ordens de Missão.</div>`;
-  html+=`<div style="font-size:.78rem;margin-bottom:16px;padding:8px 12px;background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.25);border-radius:8px;color:#ffaa00">⚠️ <b>Prazo:</b> 1 dia útil após o término da missão · <b>Responsável:</b> Operador de Comunicações</div>`;
+  html+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    <div style="flex:1;font-size:.78rem;padding:8px 12px;background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.25);border-radius:8px;color:#ffaa00">⚠️ <b>Prazo:</b> 1 dia útil após o término da missão · <b>Responsável:</b> Operador de Comunicações</div>
+    <button onclick="exportDiariasCSV()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:.78rem;white-space:nowrap">📊 Exportar CSV</button>
+  </div>`;
   const done=getDiariasDownloaded();
   const concluidas=getDiariasConcluidas();
   if(!omData||!omData.length){
@@ -4290,6 +4333,32 @@ function dismissAlert(){
   const ov=document.getElementById('alertOverlay');ov.style.opacity='0';setTimeout(()=>{ov.style.display='none';},400);
 }
 fetchAlerts();setInterval(fetchAlerts,600000); // check every 10 min
+
+// ALERTA DIÁRIAS VENCENDO
+function checkDiariasAlert(){
+  try{
+    if(!omData||!omData.length)return;
+    const conc=getDiariasConcluidas();const done=getDiariasDownloaded();
+    const brP=['SB','SD','SN','SI','SS','SW'];const DM=['PR','RESERVA PR','ESCAV'];
+    const list=omData.filter(om=>!conc[om.om]&&om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>DM.includes((p.missao||'').toUpperCase().trim())));
+    const nBiz=d=>{const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;};
+    const hj=nowBRT();hj.setHours(0,0,0,0);
+    const vencidas=list.filter(om=>{const p=nBiz(new Date(om.data+'T23:59:00'));p.setHours(0,0,0,0);return p<hj;});
+    const hoje=list.filter(om=>{const p=nBiz(new Date(om.data+'T23:59:00'));p.setHours(0,0,0,0);return Math.floor((p-hj)/86400000)===0;});
+    const urgentes=[...vencidas,...hoje];
+    if(!urgentes.length)return;
+    const alertId='diarias-prazo-'+hj.toISOString().slice(0,10);
+    const dismissedAt=_alertDismissed[alertId];
+    if(dismissedAt&&(Date.now()-dismissedAt)<3600000)return;
+    const oms=urgentes.map(om=>'OM '+om.om).join(', ');
+    const body=vencidas.length
+      ?`<b>${vencidas.length} diária(s) com prazo vencido!</b><br>${oms}<br><br><span style="font-size:.8rem">Responsável: Operador de Comunicações<br>A solicitação deve ser enviada à PR em até 1 dia útil após o término da missão.</span>`
+      :`<b>${hoje.length} diária(s) vencem hoje!</b><br>${oms}<br><br><span style="font-size:.8rem">Responsável: Operador de Comunicações</span>`;
+    showAlert({id:alertId,type:'urgente',title:vencidas.length?'DIÁRIAS — PRAZO VENCIDO':'DIÁRIAS — VENCE HOJE',body,source:'SisGOPA'});
+  }catch(e){}
+}
+// Check after data loads + every 10 min
+setTimeout(checkDiariasAlert,8000);setInterval(checkDiariasAlert,600000);
 
 goScreen(0);
 </script>
