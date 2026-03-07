@@ -2809,7 +2809,7 @@ async function fetchGlobalAirports(){
     GLOBAL_AIRPORTS=await r.json();
   }catch(e){console.warn('Global airports load failed',e);}
 }
-function botExecCodigo(){
+async function botExecCodigo(){
   const rawQuery=(document.getElementById('codQuery')?.value||'').trim();
   const result=document.getElementById('codResult');
   if(!rawQuery){result.innerHTML='<div style="color:var(--red)">Informe a busca</div>';return;}
