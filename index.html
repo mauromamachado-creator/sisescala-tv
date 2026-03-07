@@ -1962,10 +1962,23 @@ function renderScreenCartoes(){
   html+=`<div onclick="filterCartoes('atencao')" id="fc-atencao" style="${fBase};background:rgba(255,170,0,.1);border:1px solid var(--yellow)"><span style="color:var(--yellow);font-weight:900">${totalAlert}</span> <span style="color:var(--text2)">atenção</span></div>`;
   html+=`<div onclick="filterCartoes('vencido')" id="fc-vencido" style="${fBase};background:rgba(255,68,68,.1);border:1px solid var(--red)"><span style="color:var(--red);font-weight:900">${totalVenc}</span> <span style="color:var(--text2)">vencidos</span></div>`;
   html+=`</div>`;
+  // Filtros por função
+  html+=`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">`;
+  const fBase2='cursor:pointer;padding:6px 12px;border-radius:6px;font-size:.8rem;transition:.2s;user-select:none;border:1px solid var(--border);background:var(--bg3)';
+  html+=`<div onclick="filterCartoesFuncao('todos')" id="ff-todos" style="${fBase2}"><span style="color:var(--vc1);font-weight:700">TODOS</span></div>`;
+  for(const[funcao,titulo] of Object.entries(grupos)){
+    const cnt=cartoesData.filter(p=>funcao==='Piloto'?isPiloto(p.funcao):p.funcao===funcao).length;
+    if(!cnt)continue;
+    const icon=titulo.split(' ')[0];
+    const label=titulo.split(' ').slice(1).join(' ');
+    html+=`<div onclick="filterCartoesFuncao('${funcao}')" id="ff-${funcao.replace(/\s/g,'_')}" style="${fBase2}"><span style="color:var(--text)">${icon} ${label}</span> <span style="color:var(--text2);font-size:.7rem">(${cnt})</span></div>`;
+  }
+  html+=`</div>`;
   for(const[funcao,titulo] of Object.entries(grupos)){
     const membros=cartoesData.filter(p=>funcao==='Piloto'?isPiloto(p.funcao):p.funcao===funcao);
     if(!membros.length)continue;
     const isMobile=window.innerWidth<=768;
+    html+=`<div data-cartao-grupo="${funcao}">`;
     html+=`<h3>${titulo} (${membros.length})</h3>`;
     if(!isMobile){
       html+=`<div style="overflow-x:auto;margin-bottom:20px"><table style="width:100%;border-collapse:collapse;font-size:.78rem;min-width:800px">`;
@@ -2044,10 +2057,22 @@ function renderScreenCartoes(){
       });
       html+=`</table></div>`;
     }
+    html+=`</div>`; /* close data-cartao-grupo */
   }
   container.innerHTML=html;
 }
 let cartoesFiltro='todos';
+let cartoesFiltroFunc='todos';
+function filterCartoesFuncao(f){
+  cartoesFiltroFunc=cartoesFiltroFunc===f?'todos':f;
+  document.querySelectorAll('[id^="ff-"]').forEach(el=>{
+    el.style.opacity=(cartoesFiltroFunc==='todos'&&el.id==='ff-todos')||(el.id==='ff-'+f.replace(/\s/g,'_')&&cartoesFiltroFunc!=='todos')?'1':'0.4';
+  });
+  if(cartoesFiltroFunc==='todos')document.getElementById('ff-todos').style.opacity='1';
+  document.querySelectorAll('[data-cartao-grupo]').forEach(el=>{
+    el.style.display=(cartoesFiltroFunc==='todos'||el.dataset.cartaoGrupo===cartoesFiltroFunc)?'':'none';
+  });
+}
 function filterCartoes(f){
   cartoesFiltro=cartoesFiltro===f?'todos':f;
   // Highlight active filter
