@@ -1513,8 +1513,14 @@ function renderScreenSearch(query){
     // Porcentagem
     if(p.voadas!=null&&p.meta>0){const pctMeta=(p.voadas/p.meta)*100;html+=`<div class="sc-item"><div class="sc-item-label">% da Meta</div><div class="sc-item-value">${pctMeta.toFixed(1)}%</div></div>`;}
     
-    // Férias
-    const pilotFerias=feriasData.filter(f=>f.trigrama===p.trigrama&&f.fim>=td);
+    // Férias — filtrar por aeronave quando trigrama é duplicado
+    const triDup=cartoesData.filter(c=>c.trigrama===p.trigrama).length>1;
+    const pAnv=(p.anv||p.projeto||'').replace('-','').toUpperCase();
+    const pilotFerias=feriasData.filter(f=>{
+      if(f.trigrama!==p.trigrama||f.fim<td)return false;
+      if(triDup&&pAnv){const fAnv=(f.anv||'').replace('-','').toUpperCase();if(fAnv&&fAnv!==pAnv)return false;}
+      return true;
+    });
     if(pilotFerias.length){
       const ferTxt=pilotFerias.map(f=>{
         const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -1555,8 +1561,14 @@ function renderScreenSearch(query){
     html+=`<div class="sc-grid">`;
     html+=`<div class="sc-item"><div class="sc-item-label">Função</div><div class="sc-item-value">${ct.funcao||'—'}</div></div>`;
     html+=`<div class="sc-item"><div class="sc-item-label">Aeronave</div><div class="sc-item-value">${ct.anv||'—'}</div></div>`;
-    // Férias
-    const ctFerias=feriasData.filter(f=>f.trigrama===ct.trigrama&&f.fim>=td);
+    // Férias — filtrar por aeronave quando trigrama duplicado
+    const ctTriDup=cartoesData.filter(c=>c.trigrama===ct.trigrama).length>1;
+    const ctAnv=(ct.aeronave||ct.anv||'').replace('-','').toUpperCase();
+    const ctFerias=feriasData.filter(f=>{
+      if(f.trigrama!==ct.trigrama||f.fim<td)return false;
+      if(ctTriDup&&ctAnv){const fAnv=(f.anv||'').replace('-','').toUpperCase();if(fAnv&&fAnv!==ctAnv)return false;}
+      return true;
+    });
     if(ctFerias.length){
       const ferTxt=ctFerias.map(f=>{const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;return `${fmt(f.inicio)} — ${fmt(f.fim)}`;}).join(', ');
       html+=`<div class="sc-item"><div class="sc-item-label">Férias</div><div class="sc-item-value" style="font-size:.82rem">🏖 ${ferTxt}</div></div>`;
