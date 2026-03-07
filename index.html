@@ -3025,8 +3025,6 @@ async function loadAllData(){
   dot.className='status-dot loading';
   sourceStatus={};STATUS_SOURCES.forEach(s=>sourceStatus[s.id]='pending');
   try{
-    // BR_AIRPORTS check
-    sourceStatus.brAirports=Object.keys(BR_AIRPORTS).length>0?'ok':'fail';
     const metarFetch=fetchMetar().then(()=>{sourceStatus.metar='ok';}).catch(()=>{sourceStatus.metar='fail';});
     const metarMultiFetch=fetchMetarMulti().then(()=>{sourceStatus.metarMulti='ok';}).catch(()=>{sourceStatus.metarMulti='fail';});
     const planFetch=fetchWithTimeout(planCsvUrl()).then(r=>r.ok?r.text():'').then(t=>{sourceStatus.plan='ok';return t?parseCSV(t):[];}).catch(()=>{sourceStatus.plan='fail';return[];});
@@ -3054,6 +3052,7 @@ async function loadAllData(){
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
     diarioData=parseDiario(planRows);
     acntData=parseACNT(acntRows);
+    sourceStatus.brAirports=Object.keys(BR_AIRPORTS).length>0?'ok':'fail';
     lastLoadTime=Date.now();
     const nowTxt=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
     document.getElementById('lastUpdate').textContent='Atualizado '+nowTxt;
