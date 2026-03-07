@@ -9,6 +9,15 @@
     "expires": "2026-03-20T00:00:00-03:00"
   },
   {
+    "id": "viagem-20260417-espanha",
+    "type": "viagem",
+    "title": "✈️ POSSÍVEL VIAGEM PR",
+    "body": "Lula confirmou viagem à <b>Espanha</b> de 17 a 18/04/2026. Visita bilateral a Barcelona com Pedro Sánchez + reunião do grupo \"Em Defesa da Democracia\".",
+    "source": "Estadão / Correio Braziliense",
+    "date": "04/03/2026",
+    "expires": "2026-04-19T00:00:00-03:00"
+  },
+  {
     "id": "teste-overlay-001",
     "type": "sistema",
     "title": "⚙️ TESTE — FUNDO ESMAECIDO",
