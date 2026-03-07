@@ -1754,7 +1754,7 @@ function renderScreenTV(){
   const totalVoadas=anualVC1.voadas+anualVC2.voadas;
   const totalHH=Math.floor(totalVoadas);const totalMM=Math.round((totalVoadas-totalHH)*60);
   html+=`<div style="text-align:center;margin-top:8px;padding:10px 0;border-top:1px solid var(--border)">`;
-  html+=`<div style="font-size:.6rem;color:var(--text2);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Total Horas Voadas GTE — 2026</div>`;
+  html+=`<div style="font-size:.6rem;color:var(--text2);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Total de Horas Voadas — 2026</div>`;
   html+=`<div id="tvTotalHoras" style="font-size:2rem;font-weight:900;background:linear-gradient(90deg,var(--vc1),var(--vc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px">${String(totalHH).padStart(3,'0')}h${String(totalMM).padStart(2,'0')}</div>`;
   html+=`</div>`;
   html+=`</div>`;
