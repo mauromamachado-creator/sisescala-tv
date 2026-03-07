@@ -2384,9 +2384,10 @@ async function fetchFabFuel(icao){
     if(!r.ok)return{hasFuel:false,text:'Consulta indisponível'};
     const csv=await r.text();
     const rows=parseCSV(csv);
-    const found=rows.filter(row=>(row[0]||'').trim().toUpperCase()===icao);
+    // Header: CHAVE(0),ICAO(1),LOCALIDADE(2),UF(3),REGIÃO(4),COMBUSTÍVEL(5),OBSERVAÇÕES(6),CONTRATO(7),VIGÊNCIA(8),EMPRESA(9),PREÇO ATUAL(10)
+    const found=rows.filter(row=>(row[1]||'').trim().toUpperCase()===icao);
     if(found.length){
-      const suspended=found.some(r=>(r[5]||'').toUpperCase().includes('SUSPENSO'));
+      const suspended=found.some(r=>(r[6]||'').toUpperCase().includes('SUSPENSO'));
       if(suspended)return{hasFuel:false,text:'Contrato FAB temporariamente suspenso',rows:found};
       return{hasFuel:true,text:'Possui contrato FAB para abastecimento',rows:found};
     }
@@ -2528,7 +2529,7 @@ async function botFuel(){
     if(fuel.rows&&fuel.rows.length){
       html+=`<div style="margin-top:8px">`;
       fuel.rows.forEach(r=>{
-        const tipo=r[1]||'',empresa=r[2]||'',preco=r[3]||'',obs=r[5]||'';
+        const tipo=r[5]||'',empresa=r[9]||'',preco=r[10]||'',obs=r[6]||'';
         html+=`<div style="background:var(--bg);padding:6px 8px;border-radius:4px;margin-bottom:4px;font-size:.75rem">`;
         if(tipo)html+=`Tipo: <b>${tipo}</b> `;
         if(empresa)html+=`| Empresa: ${empresa} `;
