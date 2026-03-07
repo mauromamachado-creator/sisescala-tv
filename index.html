@@ -763,7 +763,7 @@ function renderScreen0(){
   // --- TOP 3 VC-1 ---
   html+='<div class="dash-panel p-vc1">';
   html+='<div class="panel-title"><span class="icon">✈️</span> Top Voados — VC-1</div>';
-  const vc1Sorted=pilotData.vc1.filter(p=>p.voadas!=null&&p.grupo!=='OUT').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
+  const vc1Sorted=pilotData.vc1.filter(p=>p.voadas!=null&&getPilotStatus(p,td).status!=='FORA').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
   for(let i=0;i<Math.min(3,vc1Sorted.length);i++){
     const p=vc1Sorted[i];const pct=p.pct||0;
     const barColor=pct<50?'var(--red)':pct<75?'var(--yellow)':'var(--green)';
@@ -781,7 +781,7 @@ function renderScreen0(){
   // --- TOP 3 VC-2 ---
   html+='<div class="dash-panel p-vc2">';
   html+='<div class="panel-title"><span class="icon">🛩️</span> Top Voados — VC-2</div>';
-  const vc2Sorted=pilotData.vc2.filter(p=>p.voadas!=null&&p.grupo!=='OUT').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
+  const vc2Sorted=pilotData.vc2.filter(p=>p.voadas!=null&&getPilotStatus(p,td).status!=='FORA').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
   for(let i=0;i<Math.min(3,vc2Sorted.length);i++){
     const p=vc2Sorted[i];const pct=p.pct||0;
     const barColor=pct<50?'var(--red)':pct<75?'var(--yellow)':'var(--green)';
@@ -1615,8 +1615,8 @@ function renderScreenTV(){
   const td=nowBRT();const todayStr=`${String(td.getDate()).padStart(2,'0')}/${String(td.getMonth()+1).padStart(2,'0')}/${td.getFullYear()}`;
   const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
   const allPilots=[...pilotData.vc1,...pilotData.vc2];
-  const totalTrip=allPilots.filter(p=>p.grupo!=='OUT').length;
-  const totalDisp=allPilots.filter(p=>p.grupo!=='OUT').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
+  const totalTrip=allPilots.filter(p=>getPilotStatus(p,td).status!=='FORA').length;
+  const totalDisp=allPilots.filter(p=>getPilotStatus(p,td).status!=='FORA').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
   const totalIndisp=totalTrip-totalDisp;
   
   // Mini-header BI
@@ -1844,8 +1844,8 @@ function renderScreenTV(){
 function renderAll(){
   document.getElementById('loadingMsg').style.display='none';
   const allPilots=[...pilotData.vc1,...pilotData.vc2];const td=nowBRT();
-  document.getElementById('kpi-trip').textContent=allPilots.filter(p=>p.grupo!=='OUT').length;
-  const totalAptos=allPilots.filter(p=>p.grupo!=='OUT').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
+  document.getElementById('kpi-trip').textContent=allPilots.filter(p=>getPilotStatus(p,td).status!=='FORA').length;
+  const totalAptos=allPilots.filter(p=>getPilotStatus(p,td).status!=='FORA').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
   document.getElementById('kpi-aptos').textContent=totalAptos;
   const currentYear=nowBRT().getFullYear();
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
