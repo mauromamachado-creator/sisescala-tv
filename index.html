@@ -742,18 +742,24 @@ function getPilotStatus(p,td){
   const afAbs=!isNaN(afNum)?Math.abs(afNum):NaN;
   if(!isNaN(afAbs)&&afAbs>=35)return{status:'DESADAPTADO',cls:'st-afastado'};
   if(!isNaN(afAbs)&&afAbs>=20&&afAbs<35)return{status:'DISPONÍVEL',cls:'st-apto',alerta:'DESADAPTADO PR'};
-  if(p.cviDate&&p.cviDate<td)return{status:'INDISPONÍVEL (CVI)',cls:'st-inapto'};
-  if(p.inspSauDate&&p.inspSauDate<td)return{status:'INDISPONÍVEL (INSP)',cls:'st-inapto'};
-  // Cruzar com aba cartões — reportar TODOS os vencidos
+  // Acumular TODOS os motivos de indisponibilidade
+  const motivos=[];
+  if(p.cviDate&&p.cviDate<td)motivos.push('CVI');
+  if(p.inspSauDate&&p.inspSauDate<td)motivos.push('INSP');
+  // Cruzar com aba cartões
   if(typeof cartoesData!=='undefined'&&cartoesData.length){
     const ct=cartoesData.find(c=>c.trigrama===p.trigrama);
     if(ct){
       const isPiloto=(ct.funcao||'').toLowerCase().includes('piloto');
       const criticos=[{k:'inspSaude',nome:'INSP SAÚDE'},{k:'cviRvsm',nome:'CVI/RVSM',pilotoOnly:true},{k:'crm',nome:'CRM'}];
-      const venc=criticos.filter(c=>{if(c.pilotoOnly&&!isPiloto)return false;const v=ct[c.k];return v&&v.date&&v.date<td;}).map(c=>c.nome);
-      if(venc.length)return{status:`INDISPONÍVEL (${venc.join(', ')})`,cls:'st-inapto'};
+      criticos.forEach(c=>{
+        if(c.pilotoOnly&&!isPiloto)return;
+        const v=ct[c.k];
+        if(v&&v.date&&v.date<td&&!motivos.includes(c.nome))motivos.push(c.nome);
+      });
     }
   }
+  if(motivos.length)return{status:`INDISPONÍVEL (${motivos.join(', ')})`,cls:'st-inapto'};
   return{status:'DISPONÍVEL',cls:'st-apto'};
 }
 
