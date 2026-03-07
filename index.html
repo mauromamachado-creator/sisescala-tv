@@ -357,7 +357,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <button onclick="goScreen(11)" id="btn11">BOT</button>
     <button onclick="goScreen(13)" id="btn13">DIÁRIAS</button>
     <button onclick="goScreen(7)" id="btn7">🔍 BUSCA</button>
-    <button onclick="goScreen(12)" id="btn12" style="color:#ff6b6b">REPORTAR</button>
+    <button onclick="goScreen(12)" id="btn12" style="color:var(--red)">REPORTAR</button>
     <button onclick="goScreen(9)" id="btn9" class="desktop-only">📺 TV</button>
   </div>
   <div class="header-right">
@@ -397,18 +397,18 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 
 <!-- MODAL DETALHE OM -->
 <div id="omModal" style="display:none;position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeOMModal()">
-  <div style="background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #2a3a5a;border-radius:16px;padding:20px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;color:#e0e6f0;font-family:inherit;position:relative">
-    <span style="position:absolute;top:12px;right:16px;font-size:22px;color:#8892a4;cursor:pointer" onclick="closeOMModal()">✕</span>
+  <div style="background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #2a3a5a;border-radius:16px;padding:20px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;color:var(--text);font-family:inherit;position:relative">
+    <span style="position:absolute;top:12px;right:16px;font-size:22px;color:var(--text2);cursor:pointer" onclick="closeOMModal()">✕</span>
     <div id="omModalContent"></div>
   </div>
 </div>
 
 <!-- ALERTAS POP-UP -->
 <div id="alertOverlay" style="display:none;position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .4s ease" onclick="dismissAlert()">
-<div id="alertToast" style="max-width:420px;width:calc(100% - 40px);background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #ff6b6b;border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(255,50,50,.3);font-family:inherit;max-height:80vh;overflow-y:auto" onclick="event.stopPropagation()">
+<div id="alertToast" style="max-width:420px;width:calc(100% - 40px);background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid var(--red);border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(255,50,50,.3);font-family:inherit;max-height:80vh;overflow-y:auto" onclick="event.stopPropagation()">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <div style="font-weight:700;color:#ff6b6b;font-size:.95rem">🚨 Alertas</div>
-    <span style="color:#8892a4;font-size:18px;cursor:pointer;padding:0 4px" onclick="dismissAlert()">✕</span>
+    <div style="font-weight:700;color:var(--red);font-size:.95rem">🚨 Alertas</div>
+    <span style="color:var(--text2);font-size:18px;cursor:pointer;padding:0 4px" onclick="dismissAlert()">✕</span>
   </div>
   <div id="alertItems" style="display:flex;flex-direction:column;gap:8px"></div>
 </div>
@@ -426,13 +426,13 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 
 <!-- MODAL NOVIDADES -->
 <div id="novidadesModal" style="display:none;position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.85);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)this.style.display='none'">
-  <div style="background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #2a3a5a;border-radius:16px;padding:20px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;color:#e0e6f0;font-family:inherit;position:relative">
-    <span style="position:absolute;top:12px;right:16px;font-size:22px;color:#8892a4;cursor:pointer" onclick="document.getElementById('novidadesModal').style.display='none'">✕</span>
+  <div style="background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #2a3a5a;border-radius:16px;padding:20px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;color:var(--text);font-family:inherit;position:relative">
+    <span style="position:absolute;top:12px;right:16px;font-size:22px;color:var(--text2);cursor:pointer" onclick="document.getElementById('novidadesModal').style.display='none'">✕</span>
     <div style="font-size:1.1rem;font-weight:700;color:var(--green);margin-bottom:16px">📋 Novidades - SisGOPA</div>
 
     <div style="margin-bottom:16px">
       <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.7 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:#c0c8d8">
+      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
         <li>📞 <b>Telefone e e-mail</b> na busca de tripulantes (clicáveis)</li>
         <li>📋 <b>DIÁRIAS</b> só para missões PR, Reserva PR ou ESCAV</li>
         <li>⚡ <b>Cache de status</b> — carregamento mais rápido</li>
@@ -442,7 +442,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 
     <div style="margin-bottom:16px">
       <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.6 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:#c0c8d8">
+      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
         <li>🚨 <b>Alertas Pop-up</b> - notificações automáticas de viagens internacionais do PR (confirmadas e canceladas)</li>
         <li>📋 <b>Clique em "OM"</b> para ver tripulação completa + combustível de cada missão</li>
         <li>👥 <b>Missões para todos</b> - mecânicos, comissários e demais tripulantes veem suas próximas missões na BUSCA</li>
@@ -453,7 +453,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 
     <div style="margin-bottom:16px">
       <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.5 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:#c0c8d8">
+      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
         <li>🤖 <b>Tela BOT</b> - METAR, TAF, NOTAMs, combustível, planejamento de voo e mais</li>
         <li>📩 <b>Tela REPORTAR</b> - envie bugs ou sugestões direto do sistema</li>
         <li>✈️ <b>Animação de loading</b> - avião SVG voando durante carregamento</li>
@@ -463,7 +463,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 
     <div style="margin-bottom:16px">
       <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.4 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:#c0c8d8">
+      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
         <li>💳 <b>Tela CARTÕES</b> - validade de documentos de todos os tripulantes</li>
         <li>☰ <b>Menu hamburger</b> no celular</li>
         <li>🔍 <b>Busca expandida</b> - encontra qualquer tripulante (não só pilotos)</li>
@@ -473,7 +473,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 
     <div style="margin-bottom:16px">
       <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.3 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:#c0c8d8">
+      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
         <li>📺 <b>TV melhorada</b> - alertas por prioridade, horas voadas com glow</li>
         <li>🎖 <b>Missões Cumpridas</b> - KPI renomeado</li>
         <li>💳 <b>CARTÕES</b> - nova tela com validade de todos os tripulantes</li>
@@ -482,7 +482,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 
     <div>
       <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">💡 Dicas</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:#c0c8d8">
+      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
         <li>Textos <u>sublinhados</u> são clicáveis</li>
         <li>Clique em <u>📋 OM</u> para ver detalhes da missão (tripulação, combustível)</li>
         <li>Use a <b>BUSCA</b> para encontrar qualquer tripulante por nome ou trigrama</li>
@@ -654,17 +654,17 @@ function showEmergencyReport(){
   // Minimal inline report form that works even with broken main script
   const d=document.createElement('div');d.id='emergOverlay';
   d.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;padding:20px';
-  d.innerHTML=`<div style="background:#1a1f2e;border-radius:16px;padding:24px;max-width:500px;width:100%;color:#e0e6f0;font-family:system-ui">
-    <h2 style="margin:0 0 8px;color:#ff6b6b">🚨 Reporte de Erro</h2>
-    <p style="color:#8892a4;margin:0 0 16px;font-size:.85rem">O sistema não carregou corretamente. Descreva o que aconteceu.</p>
-    <select id="emType" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2a3040;background:#0d1220;color:#e0e6f0;margin-bottom:12px;font-size:.9rem">
+  d.innerHTML=`<div style="background:#1a1f2e;border-radius:16px;padding:24px;max-width:500px;width:100%;color:var(--text);font-family:system-ui">
+    <h2 style="margin:0 0 8px;color:var(--red)">🚨 Reporte de Erro</h2>
+    <p style="color:var(--text2);margin:0 0 16px;font-size:.85rem">O sistema não carregou corretamente. Descreva o que aconteceu.</p>
+    <select id="emType" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2a3040;background:#0d1220;color:var(--text);margin-bottom:12px;font-size:.9rem">
       <option value="bug">🐛 Bug / Erro</option><option value="sugestao">💡 Sugestão</option></select>
-    <textarea id="emDesc" placeholder="Descreva o problema..." style="width:100%;min-height:100px;padding:10px;border-radius:8px;border:1px solid #2a3040;background:#0d1220;color:#e0e6f0;resize:vertical;font-size:.9rem;box-sizing:border-box"></textarea>
+    <textarea id="emDesc" placeholder="Descreva o problema..." style="width:100%;min-height:100px;padding:10px;border-radius:8px;border:1px solid #2a3040;background:#0d1220;color:var(--text);resize:vertical;font-size:.9rem;box-sizing:border-box"></textarea>
     <div style="display:flex;gap:8px;margin-top:12px">
-      <button onclick="sendEmergencyReport()" style="flex:1;padding:12px;border-radius:8px;border:none;background:#ff6b6b;color:#fff;font-weight:700;cursor:pointer">ENVIAR</button>
-      <button onclick="document.getElementById('emergOverlay').remove()" style="padding:12px 20px;border-radius:8px;border:1px solid #2a3040;background:transparent;color:#8892a4;cursor:pointer">FECHAR</button>
+      <button onclick="sendEmergencyReport()" style="flex:1;padding:12px;border-radius:8px;border:none;background:var(--red);color:#fff;font-weight:700;cursor:pointer">ENVIAR</button>
+      <button onclick="document.getElementById('emergOverlay').remove()" style="padding:12px 20px;border-radius:8px;border:1px solid #2a3040;background:transparent;color:var(--text2);cursor:pointer">FECHAR</button>
     </div>
-    <div id="emStatus" style="margin-top:8px;font-size:.8rem;color:#8892a4"></div>
+    <div id="emStatus" style="margin-top:8px;font-size:.8rem;color:var(--text2)"></div>
   </div>`;
   document.body.appendChild(d);
 }
@@ -735,7 +735,7 @@ async function _sendReport(type,desc,diagnostics){
     const ta=document.getElementById('emDesc')||document.getElementById('reportDesc');
     if(ta)ta.value='';
   }else{
-    if(status)status.innerHTML='<span style="color:#ff6b6b">❌ Falha ao enviar. Tente novamente.</span>';
+    if(status)status.innerHTML='<span style="color:var(--red)">❌ Falha ao enviar. Tente novamente.</span>';
   }
 }
 </script>
@@ -1543,7 +1543,7 @@ function renderScreen2(){
       const p=sorted[i];const pct=(p.pct??0);const hasMeta=p.meta!=null&&p.meta>0;
       const total=sorted.length;
       const barColor=i<3?'var(--green)':i>=total-1?'var(--red)':i>=total-3?'#ff8c42':'var(--yellow)';
-      const rankColor=i===0?'#ffd700':i===1?'#c0c0c0':i===2?'#cd7f32':'#667';
+      const rankColor=i===0?'#ffd700':i===1?'var(--text2)':i===2?'#cd7f32':'#667';
       const borderColor=i<3?rankColor:i>=total-1?'var(--red)':'transparent';
       const rank=`<span style="display:inline-block;width:34px;text-align:right;font-size:.82rem;color:${rankColor};flex-shrink:0;padding-right:6px;font-weight:${i<3?'900':'400'}">${i+1}º</span>`;
       const pctLabel=hasMeta?`${pct.toFixed(1)}%`:'-';
@@ -2497,7 +2497,7 @@ function showOMDetail(omId){
         </div>`;
       }
       if(p.missao){
-        html+=`<div style="margin-top:4px;font-size:.75rem;color:#c0c0c0">Missão: <b>${p.missao}</b></div>`;
+        html+=`<div style="margin-top:4px;font-size:.75rem;color:var(--text2)">Missão: <b>${p.missao}</b></div>`;
       }
       html+=`</div>`;
     });
@@ -2579,7 +2579,7 @@ function setDiariaConcluida(omId){
   ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .3s ease';
   ov.innerHTML=`<div style="max-width:380px;width:calc(100% - 40px);background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #64b4ff;border-radius:12px;padding:20px;box-shadow:0 8px 32px rgba(100,180,255,.2);font-family:inherit" onclick="event.stopPropagation()">
     <div style="font-size:1.1rem;font-weight:700;color:#64b4ff;margin-bottom:12px">📤 Concluir Diária</div>
-    <div style="color:#c0c8d8;font-size:.85rem;line-height:1.6;margin-bottom:20px">A solicitação de diária da <b style="color:var(--vc1)">OM ${omId}</b> foi assinada e enviada à PR?<br><br><span style="color:var(--text2);font-size:.78rem">Ao confirmar, ela será arquivada como concluída.</span></div>
+    <div style="color:var(--text2);font-size:.85rem;line-height:1.6;margin-bottom:20px">A solicitação de diária da <b style="color:var(--vc1)">OM ${omId}</b> foi assinada e enviada à PR?<br><br><span style="color:var(--text2);font-size:.78rem">Ao confirmar, ela será arquivada como concluída.</span></div>
     <div style="display:flex;gap:10px;justify-content:flex-end">
       <button id="_dcCancel" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);padding:8px 18px;border-radius:6px;cursor:pointer;font-size:.82rem">Cancelar</button>
       <button id="_dcConfirm" style="background:#64b4ff;color:#000;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:700">Confirmar</button>
@@ -2709,7 +2709,7 @@ function openDiariaForm(omId){
       <td><input type="text" value="${nomeCompleto}" data-field="trip_${i}_nome" style="width:100%" class="diaria-input"></td>
       <td><input type="text" value="${cpfAuto}" data-field="trip_${i}_cpf" placeholder="000.000.000-00" style="width:120px" class="diaria-input"></td>
       <td><input type="text" value="${funcao}" data-field="trip_${i}_funcao" style="width:100px" class="diaria-input"></td>
-      <td style="border:none;padding:2px"><span onclick="this.closest('tr').remove()" style="color:#ff6b6b;cursor:pointer;font-size:1rem" title="Remover">✕</span></td>
+      <td style="border:none;padding:2px"><span onclick="this.closest('tr').remove()" style="color:var(--red);cursor:pointer;font-size:1rem" title="Remover">✕</span></td>
     </tr>`;
   });
 
@@ -2720,18 +2720,18 @@ function openDiariaForm(omId){
       <td><input type="text" value="${p.origem}" data-field="perna_${i}_origem" style="width:100%" class="diaria-input"></td>
       <td><input type="text" value="${p.destino}" data-field="perna_${i}_destino" style="width:100%" class="diaria-input"></td>
       <td><input type="text" value="${p.eta||''}" data-field="perna_${i}_eta" style="width:100%" class="diaria-input"></td>
-      <td style="border:none;padding:2px"><span onclick="this.closest('tr').remove()" style="color:#ff6b6b;cursor:pointer;font-size:1rem" title="Remover">✕</span></td>
+      <td style="border:none;padding:2px"><span onclick="this.closest('tr').remove()" style="color:var(--red);cursor:pointer;font-size:1rem" title="Remover">✕</span></td>
     </tr>`;
   });
 
   const modalHtml=`
   <div id="diariaModal" style="position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.85);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto" onclick="if(event.target===this)this.remove()">
-    <div style="background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #2a3a5a;border-radius:16px;padding:20px;max-width:700px;width:100%;color:#e0e6f0;font-family:inherit;position:relative;margin:20px 0">
-      <span style="position:absolute;top:12px;right:16px;font-size:22px;color:#8892a4;cursor:pointer" onclick="document.getElementById('diariaModal').remove()">✕</span>
+    <div style="background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #2a3a5a;border-radius:16px;padding:20px;max-width:700px;width:100%;color:var(--text);font-family:inherit;position:relative;margin:20px 0">
+      <span style="position:absolute;top:12px;right:16px;font-size:22px;color:var(--text2);cursor:pointer" onclick="document.getElementById('diariaModal').remove()">✕</span>
       <div style="font-size:1rem;font-weight:700;color:var(--green);margin-bottom:4px">📄 Solicitação de Pagamento de Diárias</div>
       <div style="font-size:.8rem;color:var(--text2);margin-bottom:16px">OM ${om.om} - ${om.aeronave} / ${om.fab}</div>
 
-      <style>.diaria-input{background:#0d1220;border:1px solid #2a3a5a;color:#e0e6f0;padding:6px 8px;border-radius:4px;font-family:inherit;font-size:.78rem;box-sizing:border-box}
+      <style>.diaria-input{background:#0d1220;border:1px solid #2a3a5a;color:var(--text);padding:6px 8px;border-radius:4px;font-family:inherit;font-size:.78rem;box-sizing:border-box}
       .diaria-input:focus{border-color:var(--vc1);outline:none}
       .diaria-label{font-size:.75rem;color:var(--text2);margin-bottom:4px;font-weight:600}
       .diaria-section{margin-bottom:16px}
@@ -2798,7 +2798,7 @@ function addDiariaPerna(){
     <td><input type="text" value="" data-field="perna_${i}_origem" style="width:100%" class="diaria-input" placeholder="ICAO"></td>
     <td><input type="text" value="" data-field="perna_${i}_destino" style="width:100%" class="diaria-input" placeholder="ICAO"></td>
     <td><input type="text" value="" data-field="perna_${i}_eta" style="width:100%" class="diaria-input" placeholder="DD/MM/AA HH:MMZ"></td>
-    <td style="border:none;padding:2px"><span onclick="this.closest('tr').remove()" style="color:#ff6b6b;cursor:pointer;font-size:1rem" title="Remover">✕</span></td>
+    <td style="border:none;padding:2px"><span onclick="this.closest('tr').remove()" style="color:var(--red);cursor:pointer;font-size:1rem" title="Remover">✕</span></td>
   </tr>`);
 }
 
@@ -2810,7 +2810,7 @@ function addDiariaTrip(){
     <td><input type="text" value="" data-field="trip_${i}_nome" style="width:100%" class="diaria-input"></td>
     <td><input type="text" value="" data-field="trip_${i}_cpf" placeholder="000.000.000-00" style="width:120px" class="diaria-input"></td>
     <td><input type="text" value="" data-field="trip_${i}_funcao" style="width:100px" class="diaria-input"></td>
-    <td style="border:none;padding:2px"><span onclick="this.closest('tr').remove()" style="color:#ff6b6b;cursor:pointer;font-size:1rem" title="Remover">✕</span></td>
+    <td style="border:none;padding:2px"><span onclick="this.closest('tr').remove()" style="color:var(--red);cursor:pointer;font-size:1rem" title="Remover">✕</span></td>
   </tr>`);
 }
 
@@ -2974,17 +2974,17 @@ function gerarDiariaPDF(omId){
 function renderScreenReport(){
   const c=document.getElementById('screen12');
   let html=`<div style="max-width:600px;margin:0 auto;padding:20px">
-    <h2 style="color:#ff6b6b;margin:0 0 4px">🚨 Reportar Erro / Sugestão</h2>
+    <h2 style="color:var(--red);margin:0 0 4px">🚨 Reportar Erro / Sugestão</h2>
     <p style="color:var(--text2);margin:0 0 20px;font-size:.85rem">Descreva o problema ou sugestão. Um diagnóstico automático será incluído no envio.</p>
     <div style="margin-bottom:16px">
       <label style="color:var(--text2);font-size:.8rem">Tipo do reporte:</label>
       <div style="display:flex;gap:8px;margin-top:6px">
-        <button id="repTypeBug" onclick="setReportType('bug')" style="flex:1;padding:10px;border-radius:8px;border:2px solid #ff6b6b;background:#ff6b6b22;color:#ff6b6b;font-weight:700;cursor:pointer">🐛 Bug / Erro</button>
+        <button id="repTypeBug" onclick="setReportType('bug')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--red);background:rgba(255,68,68,.13);color:var(--red);font-weight:700;cursor:pointer">🐛 Bug / Erro</button>
         <button id="repTypeSug" onclick="setReportType('sugestao')" style="flex:1;padding:10px;border-radius:8px;border:2px solid #2a3040;background:transparent;color:var(--text2);font-weight:700;cursor:pointer">💡 Sugestão</button>
       </div>
     </div>
     <textarea id="reportDesc" placeholder="Descreva o que aconteceu ou sua sugestão..." style="width:100%;min-height:120px;padding:12px;border-radius:8px;border:1px solid #2a3040;background:#0d1220;color:var(--text1);resize:vertical;font-size:.9rem;box-sizing:border-box;font-family:inherit"></textarea>
-    <button onclick="submitReport()" style="width:100%;padding:14px;border-radius:8px;border:none;background:#ff6b6b;color:#fff;font-weight:700;font-size:1rem;cursor:pointer;margin-top:12px">ENVIAR REPORTE</button>
+    <button onclick="submitReport()" style="width:100%;padding:14px;border-radius:8px;border:none;background:var(--red);color:#fff;font-weight:700;font-size:1rem;cursor:pointer;margin-top:12px">ENVIAR REPORTE</button>
     <div id="reportStatus" style="margin-top:8px;font-size:.85rem;text-align:center"></div>
     <div style="margin-top:24px;padding:16px;border-radius:8px;background:#0d1220;border:1px solid #1a2030">
       <h3 style="color:var(--text2);margin:0 0 8px;font-size:.85rem">📊 Diagnóstico automático (será incluído)</h3>
@@ -3003,7 +3003,7 @@ function setReportType(t){
   _reportType=t;
   const bugBtn=document.getElementById('repTypeBug'),sugBtn=document.getElementById('repTypeSug');
   if(t==='bug'){
-    bugBtn.style.borderColor='#ff6b6b';bugBtn.style.background='#ff6b6b22';bugBtn.style.color='#ff6b6b';
+    bugBtn.style.borderColor='var(--red)';bugBtn.style.background='rgba(255,68,68,.13)';bugBtn.style.color='var(--red)';
     sugBtn.style.borderColor='#2a3040';sugBtn.style.background='transparent';sugBtn.style.color='var(--text2)';
   }else{
     sugBtn.style.borderColor='#4ecdc4';sugBtn.style.background='#4ecdc422';sugBtn.style.color='#4ecdc4';
@@ -3034,7 +3034,7 @@ function updateReportDiag(){
 async function submitReport(){
   const desc=document.getElementById('reportDesc')?.value;
   if(!desc||!desc.trim()){
-    document.getElementById('reportStatus').innerHTML='<span style="color:#ff6b6b">Escreva uma descrição antes de enviar.</span>';
+    document.getElementById('reportStatus').innerHTML='<span style="color:var(--red)">Escreva uma descrição antes de enviar.</span>';
     return;
   }
   const clean=_sanitizeInput(desc.trim());
@@ -4341,9 +4341,9 @@ async function fetchAllAlerts(){
           if(a.expires&&new Date(a.expires).getTime()<now)return false;
           return true;
         }).forEach(a=>{
-          const colors={viagem:'#64b4ff',seguranca:'#ff6b6b',sistema:'#ffaa00',urgente:'#ff6b6b'};
-          let _c=colors[a.type]||'#ff6b6b';
-          if(a.type==='viagem'&&(a.title||'').toUpperCase().includes('CANCELAD'))_c='#ff6b6b';
+          const colors={viagem:'#64b4ff',seguranca:'var(--red)',sistema:'#ffaa00',urgente:'var(--red)'};
+          let _c=colors[a.type]||'var(--red)';
+          if(a.type==='viagem'&&(a.title||'').toUpperCase().includes('CANCELAD'))_c='var(--red)';
           allItems.push({id:a.id,icon:icons[a.type]||'🚨',color:_c,title:a.title||'ALERTA',body:a.body||'',sub:a.source?`Fonte: ${a.source} • ${a.date||''}`:(a.date||'')});
         });
       }
@@ -4367,16 +4367,16 @@ function showAlerts(items){
         <span style="font-size:18px">${a.icon}</span>
         <span style="font-weight:700;color:${a.color};font-size:.82rem">${a.title}</span>
       </div>
-      <div style="color:#e0e6f0;font-size:.78rem;line-height:1.4">${a.body}</div>
-      ${a.sub?`<div style="color:#8892a4;font-size:.68rem;margin-top:4px">${a.sub}</div>`:''}
+      <div style="color:var(--text);font-size:.78rem;line-height:1.4">${a.body}</div>
+      ${a.sub?`<div style="color:var(--text2);font-size:.68rem;margin-top:4px">${a.sub}</div>`:''}
     </div>`;
   });
   container.innerHTML=html;
   const toast=document.getElementById('alertToast');
   toast.dataset.alertIds=JSON.stringify(items.map(a=>a.id));
   // Border color: red if any red, else yellow
-  const hasRed=items.some(a=>a.color==='var(--red)'||a.color==='#ff6b6b');
-  toast.style.borderColor=hasRed?'#ff6b6b':'#ffaa00';
+  const hasRed=items.some(a=>a.color==='var(--red)'||a.color==='var(--red)');
+  toast.style.borderColor=hasRed?'var(--red)':'#ffaa00';
   const ov=document.getElementById('alertOverlay');ov.style.display='flex';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ov.style.opacity='1';}));
   setTimeout(()=>dismissAlert(),45000);
