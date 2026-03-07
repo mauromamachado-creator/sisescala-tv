@@ -1146,7 +1146,8 @@ function renderScreen2(){
       const pctLabel=hasMeta?`${pct.toFixed(1)}%`:'—';
       const hoursLabel=hasMeta?`${fmtHours(p.voadas)}/${Math.round(p.meta)}h`:fmtHours(p.voadas);
       const barWidth=hasMeta?Math.min(Math.max(pct,0),100):0;
-      html+=`<div class="bar-row" style="border-left:3px solid ${borderColor};padding-left:6px">${rank}<span class="bar-label">${p.trigrama}</span><div class="bar-track"><div class="bar-fill" style="width:${barWidth}%;background:${barColor}"></div></div><span class="bar-pct" style="color:${barColor}">${pctLabel}</span><span class="bar-hours">${hoursLabel}</span></div>`;
+      const barHtml=hasMeta?`<div class="bar-track"><div class="bar-fill" style="width:${barWidth}%;background:${barColor}"></div></div>`:`<div class="bar-track" style="opacity:.3"></div>`;
+      html+=`<div class="bar-row" style="border-left:3px solid ${borderColor};padding-left:6px">${rank}<span class="bar-label">${p.trigrama}</span>${barHtml}<span class="bar-pct" style="color:${hasMeta?barColor:'var(--text2)'}">${pctLabel}</span><span class="bar-hours">${hoursLabel}</span></div>`;
     }
     const others=pilots.filter(p=>p.voadas==null||p.voadas===0);
     if(others.length){html+='<h3 style="font-size:.85rem;color:#556;">Sem dados de horas</h3>';for(const p of others)html+=`<div class="bar-row"><span class="bar-label" style="color:#667">${p.trigrama}</span><span class="bar-name" style="color:#556">${p.name||''}</span><span style="color:#556;font-size:.8rem">${p.grupo||''}</span></div>`;}
