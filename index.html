@@ -764,9 +764,11 @@ function renderScreen0(){
     for(const leg of todayData.legs){
       const routeParts=leg.route.replace(/-/g,' → ');
       const extraTag=leg.isExtra?'<span style="background:rgba(142,163,255,.15);color:#8ea3ff;border:1px solid rgba(142,163,255,.3);padding:1px 6px;border-radius:3px;font-size:.65rem;margin-left:6px">2ª ANV</span>':'';
+      const anvTxt=todayData.aeronave&&todayData.aeronave!=='AERONAVE'?todayData.aeronave:'';
+      const anvDisplay=leg.isExtra?'FAB 2590':anvTxt;
       html+=`<div class="mission-card">
         <div style="min-width:55px;text-align:center;font-weight:900;font-size:.95rem;color:var(--vc1)">${leg.dep}</div>
-        <div class="mission-body"><div class="mission-title">${routeParts}${extraTag}</div><div class="mission-sub">${leg.pilots.join(' · ')}${leg.fuel?' · '+leg.fuel+'t':''}</div></div>
+        <div class="mission-body"><div class="mission-title">${routeParts}${extraTag}</div><div class="mission-sub">${anvDisplay?'<span style="color:var(--vc1);font-weight:700">'+anvDisplay+'</span> · ':''}${leg.pilots.join(' · ')}${leg.fuel?' · '+leg.fuel+'t':''}</div></div>
         <div><span class="mission-tipo">${leg.mission||'—'}</span></div></div>`;
     }
   }else{
