@@ -409,6 +409,148 @@ setTimeout(function(){
     document.getElementById('emergencyBtn').style.display='block';
   }
 },15000);
+
+// ═══════════════════════════════════════════════════
+// ANALYTICS — tracking de uso, erros, segurança
+// ═══════════════════════════════════════════════════
+const _ANALYTICS_KEY='sisgopa_analytics';
+const _ANALYTICS_BOT='8622080128:AAGmCjyAtDpbxNUmzJdojTMQzKsJhfWuPdM';
+const _ANALYTICS_CHAT=673591486;
+function _todayStr(){return new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});}
+function _getAnalytics(){
+  try{
+    const raw=localStorage.getItem(_ANALYTICS_KEY);
+    const a=raw?JSON.parse(raw):null;
+    if(a&&a.date===_todayStr())return a;
+    // New day — send yesterday's summary if exists, then reset
+    if(a&&a.date&&a.sessions>0)_sendDailySummary(a);
+    return _resetAnalytics();
+  }catch(e){return _resetAnalytics();}
+}
+function _resetAnalytics(){
+  const a={date:_todayStr(),sessions:0,screenViews:{},errors:0,criticalErrors:0,escalaAttempts:0,reportsSent:0,totalTimeMs:0,sessionStart:Date.now(),peakConcurrent:0,userAgents:[],xssAttempts:0,suspiciousInputs:0,loadFailures:0,metarFails:0,proxyFails:0};
+  _saveAnalytics(a);return a;
+}
+function _saveAnalytics(a){try{localStorage.setItem(_ANALYTICS_KEY,JSON.stringify(a));}catch(e){}}
+function _trackSession(){
+  const a=_getAnalytics();
+  a.sessions++;
+  a.sessionStart=Date.now();
+  const ua=navigator.userAgent.substring(0,100);
+  if(!a.userAgents)a.userAgents=[];
+  if(!a.userAgents.includes(ua))a.userAgents.push(ua);
+  _saveAnalytics(a);
+}
+function _trackScreen(n){
+  const a=_getAnalytics();
+  if(!a.screenViews)a.screenViews={};
+  const names={0:'DASHBOARD',1:'DISPONIBILIDADE',2:'HORAS_VOO',3:'FERIAS',4:'DIARIO',5:'ACNT',6:'CALENDARIO',7:'BUSCA',8:'ESCALA',9:'TV',10:'CARTOES',11:'BOT',12:'REPORTAR'};
+  const key=names[n]||('SCREEN_'+n);
+  a.screenViews[key]=(a.screenViews[key]||0)+1;
+  _saveAnalytics(a);
+}
+function _trackError(isCritical){
+  const a=_getAnalytics();
+  a.errors=(a.errors||0)+1;
+  if(isCritical)a.criticalErrors=(a.criticalErrors||0)+1;
+  _saveAnalytics(a);
+}
+function _trackEscalaAttempt(success){
+  const a=_getAnalytics();
+  if(!success)a.escalaAttempts=(a.escalaAttempts||0)+1;
+  _saveAnalytics(a);
+}
+function _trackSecurity(type){
+  const a=_getAnalytics();
+  if(type==='xss')a.xssAttempts=(a.xssAttempts||0)+1;
+  if(type==='suspicious')a.suspiciousInputs=(a.suspiciousInputs||0)+1;
+  _saveAnalytics(a);
+}
+function _trackLoadFailure(source){
+  const a=_getAnalytics();
+  if(source==='metar')a.metarFails=(a.metarFails||0)+1;
+  else if(source==='proxy')a.proxyFails=(a.proxyFails||0)+1;
+  else a.loadFailures=(a.loadFailures||0)+1;
+  _saveAnalytics(a);
+}
+function _trackReport(){const a=_getAnalytics();a.reportsSent=(a.reportsSent||0)+1;_saveAnalytics(a);}
+async function _sendDailySummary(a){
+  const screenRank=Object.entries(a.screenViews||{}).sort((x,y)=>y[1]-x[1]);
+  const topScreens=screenRank.slice(0,5).map(([k,v])=>`  ${k}: ${v}×`).join('\n');
+  const totalViews=screenRank.reduce((s,[,v])=>s+v,0);
+  const dur=a.totalTimeMs||((Date.now()-a.sessionStart)||0);
+  const durMin=Math.round(dur/60000);
+  const devices=(a.userAgents||[]).length;
+  const mobile=(a.userAgents||[]).filter(u=>/Mobile|iPhone|Android/i.test(u)).length;
+  const desktop=devices-mobile;
+  // Security score
+  let secScore=100;
+  if(a.escalaAttempts>0)secScore-=Math.min(30,a.escalaAttempts*10);
+  if(a.xssAttempts>0)secScore-=Math.min(40,a.xssAttempts*20);
+  if(a.suspiciousInputs>0)secScore-=Math.min(20,a.suspiciousInputs*5);
+  secScore=Math.max(0,secScore);
+  const secEmoji=secScore>=90?'🟢':secScore>=60?'🟡':'🔴';
+  // System health
+  let sysScore=100;
+  if(a.criticalErrors>0)sysScore-=30;
+  if(a.loadFailures>0)sysScore-=Math.min(20,a.loadFailures*5);
+  if(a.metarFails>3)sysScore-=10;
+  if(a.proxyFails>5)sysScore-=15;
+  sysScore=Math.max(0,sysScore);
+  const sysEmoji=sysScore>=90?'🟢':sysScore>=60?'🟡':'🔴';
+  let msg=`📊 *RELATÓRIO DIÁRIO — SisGOPA*\n📅 ${a.date}\n\n`;
+  msg+=`👥 *Acessos:* ${a.sessions} sessões\n`;
+  msg+=`📱 Dispositivos: ${devices} (${mobile} mobile, ${desktop} desktop)\n`;
+  msg+=`⏱ Tempo total: ~${durMin} min\n\n`;
+  msg+=`📺 *Telas mais utilizadas:*\n${topScreens||'  (sem dados)'}\n`;
+  msg+=`📊 Total de navegações: ${totalViews}\n\n`;
+  msg+=`⚠️ *Erros:*\n`;
+  msg+=`  JS Errors: ${a.errors||0} (${a.criticalErrors||0} críticos)\n`;
+  msg+=`  Load failures: ${a.loadFailures||0}\n`;
+  msg+=`  METAR fails: ${a.metarFails||0}\n`;
+  msg+=`  Proxy fails: ${a.proxyFails||0}\n`;
+  msg+=`  Reportes enviados: ${a.reportsSent||0}\n\n`;
+  msg+=`🔒 *Segurança:*\n`;
+  msg+=`  Tentativas senha ESCALA: ${a.escalaAttempts||0}\n`;
+  msg+=`  Tentativas XSS: ${a.xssAttempts||0}\n`;
+  msg+=`  Inputs suspeitos: ${a.suspiciousInputs||0}\n`;
+  msg+=`  ${secEmoji} Score: ${secScore}/100\n\n`;
+  msg+=`${sysEmoji} *Saúde do sistema:* ${sysScore}/100\n`;
+  if(sysScore<90)msg+=`⚠️ Ações recomendadas em andamento\n`;
+  try{
+    await fetch(`https://api.telegram.org/bot${_ANALYTICS_BOT}/sendMessage`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:_ANALYTICS_CHAT,text:msg,parse_mode:'Markdown',disable_notification:true})
+    });
+  }catch(e){}
+}
+// XSS detection for inputs
+function _sanitizeInput(val){
+  if(!val||typeof val!=='string')return val;
+  const suspicious=/<script|javascript:|on\w+\s*=|<iframe|<object|eval\(|document\.|window\./i;
+  if(suspicious.test(val)){
+    _trackSecurity('xss');
+    return val.replace(/[<>'"]/g,'');
+  }
+  return val;
+}
+// Track session on load
+_trackSession();
+// Send accumulated time on unload
+window.addEventListener('beforeunload',function(){
+  const a=_getAnalytics();
+  a.totalTimeMs=(a.totalTimeMs||0)+(Date.now()-(a.sessionStart||Date.now()));
+  _saveAnalytics(a);
+});
+// Force send at 23:55 local time (catch end of day)
+setInterval(function(){
+  const now=new Date();const h=parseInt(now.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',hour12:false}));
+  const m=parseInt(now.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',minute:'2-digit'}));
+  if(h===23&&m>=55){
+    const a=_getAnalytics();
+    if(a.sessions>0&&!a._sent){a._sent=true;_saveAnalytics(a);_sendDailySummary(a);}
+  }
+},60000);
 function showEmergencyReport(){
   // Minimal inline report form that works even with broken main script
   const d=document.createElement('div');d.id='emergOverlay';
@@ -2175,9 +2317,11 @@ async function submitReport(){
     document.getElementById('reportStatus').innerHTML='<span style="color:#ff6b6b">Escreva uma descrição antes de enviar.</span>';
     return;
   }
+  const clean=_sanitizeInput(desc.trim());
   document.getElementById('reportStatus').textContent='Enviando...';
   const checks=updateReportDiag();
-  await _sendReport(_reportType,desc.trim(),checks);
+  _trackReport();
+  await _sendReport(_reportType,clean,checks);
 }
 
 function renderAll(){
@@ -3352,8 +3496,8 @@ async function loadAllData(){
   dot.className='status-dot loading';
   sourceStatus={};STATUS_SOURCES.forEach(s=>sourceStatus[s.id]='pending');
   try{
-    const metarFetch=fetchMetar().then(()=>{sourceStatus.metar='ok';}).catch(()=>{sourceStatus.metar='fail';});
-    const metarMultiFetch=fetchMetarMulti().then(()=>{sourceStatus.metarMulti='ok';}).catch(()=>{sourceStatus.metarMulti='fail';});
+    const metarFetch=fetchMetar().then(()=>{sourceStatus.metar='ok';}).catch(()=>{sourceStatus.metar='fail';_trackLoadFailure('metar');});
+    const metarMultiFetch=fetchMetarMulti().then(()=>{sourceStatus.metarMulti='ok';}).catch(()=>{sourceStatus.metarMulti='fail';_trackLoadFailure('metar');});
     const planFetch=fetchWithTimeout(planCsvUrl()).then(r=>r.ok?r.text():'').then(t=>{sourceStatus.plan='ok';return t?parseCSV(t):[];}).catch(()=>{sourceStatus.plan='fail';return[];});
     const acntFetch=fetchWithTimeout(`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv&gid=${GIDS.acnt}`).then(r=>r.ok?r.text():'').then(t=>{sourceStatus.acnt='ok';return t?parseCSV(t):[];}).catch(()=>{sourceStatus.acnt='fail';return[];});
     const[dispRows,lancRows,ferRows,prevRows,planRows,acntRows]=await Promise.all([
@@ -3377,7 +3521,7 @@ async function loadAllData(){
     await fetchPauDeSebo().then(()=>{sourceStatus.pauSebo='ok';}).catch(()=>{sourceStatus.pauSebo='fail';});
     fetchGlobalAirports(); // async, non-blocking
     // Proxy health check — non-blocking, runs after render
-    proxyFetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw').then(r=>{sourceStatus.proxy=r?'ok':'fail';}).catch(()=>{sourceStatus.proxy='fail';}).finally(updateStatusPanel);
+    proxyFetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw').then(r=>{sourceStatus.proxy=r?'ok':'fail';if(!r)_trackLoadFailure('proxy');}).catch(()=>{sourceStatus.proxy='fail';_trackLoadFailure('proxy');}).finally(updateStatusPanel);
     calcAfastamentos();
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
     diarioData=parseDiario(planRows);
@@ -3404,9 +3548,10 @@ function goScreen(n){
     const pw=prompt('🔒 Área restrita. Digite a senha:');
     if(!pw){return;}
     async function verifyPw(p){const enc=new TextEncoder().encode(p);const buf=await crypto.subtle.digest('SHA-256',enc);return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-    verifyPw(pw).then(h=>{if(h==='eb9eaaaaf29e9838c97791fbf68ac2483f2aa3f93c6dc39c6bf0162cc51a6322'){escalaUnlocked=true;goScreen(8);}else{alert('Senha incorreta.');}});
+    verifyPw(pw).then(h=>{if(h==='eb9eaaaaf29e9838c97791fbf68ac2483f2aa3f93c6dc39c6bf0162cc51a6322'){escalaUnlocked=true;goScreen(8);}else{alert('Senha incorreta.');_trackEscalaAttempt(false);}});
     return;
   }
+  _trackScreen(n);
   currentScreen=n;document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id==='screen'+n));document.querySelectorAll('.nav-btns button').forEach(b=>b.classList.toggle('active',b.id==='btn'+n));
   // Fechar menu mobile ao trocar de tela
   const nav=document.querySelector('.nav-btns');if(nav)nav.classList.remove('open');
