@@ -1955,10 +1955,12 @@ function renderScreenCartoes(){
     cartoesCheck.forEach(k=>{const c=cartaoColor(p[k],hoje);if(c.cls==='vermelho')worst='vermelho';else if(c.cls==='amarelo'&&worst!=='vermelho')worst='amarelo';});
     if(worst==='vermelho')totalVenc++;else if(worst==='amarelo')totalAlert++;else totalOk++;
   });
-  html+=`<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">`;
-  html+=`<div style="background:rgba(0,255,136,.1);border:1px solid var(--green);padding:8px 16px;border-radius:6px;font-size:.9rem"><span style="color:var(--green);font-weight:900">${totalOk}</span> <span style="color:var(--text2)">regulares</span></div>`;
-  html+=`<div style="background:rgba(255,170,0,.1);border:1px solid var(--yellow);padding:8px 16px;border-radius:6px;font-size:.9rem"><span style="color:var(--yellow);font-weight:900">${totalAlert}</span> <span style="color:var(--text2)">atenção</span></div>`;
-  html+=`<div style="background:rgba(255,68,68,.1);border:1px solid var(--red);padding:8px 16px;border-radius:6px;font-size:.9rem"><span style="color:var(--red);font-weight:900">${totalVenc}</span> <span style="color:var(--text2)">vencidos/críticos</span></div>`;
+  html+=`<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">`;
+  const fBase='cursor:pointer;padding:8px 16px;border-radius:6px;font-size:.9rem;transition:.2s;user-select:none';
+  html+=`<div onclick="filterCartoes('todos')" id="fc-todos" style="${fBase};background:var(--bg3);border:1px solid var(--border)"><span style="color:var(--text);font-weight:900">TODOS</span></div>`;
+  html+=`<div onclick="filterCartoes('ok')" id="fc-ok" style="${fBase};background:rgba(0,255,136,.1);border:1px solid var(--green)"><span style="color:var(--green);font-weight:900">${totalOk}</span> <span style="color:var(--text2)">regulares</span></div>`;
+  html+=`<div onclick="filterCartoes('atencao')" id="fc-atencao" style="${fBase};background:rgba(255,170,0,.1);border:1px solid var(--yellow)"><span style="color:var(--yellow);font-weight:900">${totalAlert}</span> <span style="color:var(--text2)">atenção</span></div>`;
+  html+=`<div onclick="filterCartoes('vencido')" id="fc-vencido" style="${fBase};background:rgba(255,68,68,.1);border:1px solid var(--red)"><span style="color:var(--red);font-weight:900">${totalVenc}</span> <span style="color:var(--text2)">vencidos</span></div>`;
   html+=`</div>`;
   for(const[funcao,titulo] of Object.entries(grupos)){
     const membros=cartoesData.filter(p=>funcao==='Piloto'?isPiloto(p.funcao):p.funcao===funcao);
@@ -1990,6 +1992,7 @@ function renderScreenCartoes(){
       const pri=p=>{let w=3;cartoesCheck.forEach(k=>{const c=cartaoColor(p[k],hoje);if(c.cls==='vermelho')w=Math.min(w,0);else if(c.cls==='amarelo')w=Math.min(w,1);});return w;};
       return pri(a)-pri(b);
     });
+    const getWorst=p=>{let w='ok';cartoesCheck.forEach(k=>{const c=cartaoColor(p[k],hoje);if(c.cls==='vermelho')w='vencido';else if(c.cls==='amarelo'&&w!=='vencido')w='atencao';});return w;};
     if(isMobile){
       // Mobile: cards
       membros.forEach(p=>{
@@ -2001,7 +2004,7 @@ function renderScreenCartoes(){
         if(isPiloto(funcao)){
           allCartoes.push({nome:'ILS CAT',val:p.ilsCat},{nome:'TAI Prova',val:p.taiProva},{nome:'TAI Voo',val:p.taiVoo});
         }
-        html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">`;
+        html+=`<div data-cartao-status="${getWorst(p)}" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">`;
         html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
         html+=`<span style="font-weight:900;color:var(--vc1);font-size:.9rem">${p.trigrama}</span>`;
         html+=`<span style="color:var(--text2);font-size:.72rem">${p.nome} · ${p.aeronave||'—'}</span>`;
@@ -2021,7 +2024,7 @@ function renderScreenCartoes(){
     }else{
       // Desktop: table
       membros.forEach(p=>{
-        html+=`<tr style="border-bottom:1px solid var(--border)">`;
+        html+=`<tr data-cartao-status="${getWorst(p)}" style="border-bottom:1px solid var(--border)">`;
         html+=`<td style="padding:4px 8px;font-weight:900;color:var(--vc1);border:1px solid var(--border)">${p.trigrama}</td>`;
         html+=`<td style="padding:4px 8px;color:var(--text);border:1px solid var(--border);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nome}</td>`;
         html+=`<td style="padding:4px 8px;text-align:center;color:var(--text2);border:1px solid var(--border)">${p.aeronave||'—'}</td>`;
@@ -2043,6 +2046,20 @@ function renderScreenCartoes(){
     }
   }
   container.innerHTML=html;
+}
+let cartoesFiltro='todos';
+function filterCartoes(f){
+  cartoesFiltro=cartoesFiltro===f?'todos':f;
+  // Highlight active filter
+  ['todos','ok','atencao','vencido'].forEach(k=>{
+    const el=document.getElementById('fc-'+k);
+    if(el)el.style.opacity=cartoesFiltro===k||cartoesFiltro==='todos'&&k==='todos'?'1':'0.4';
+  });
+  // Show/hide cards and rows
+  document.querySelectorAll('[data-cartao-status]').forEach(el=>{
+    const s=el.dataset.cartaoStatus;
+    el.style.display=(cartoesFiltro==='todos'||s===cartoesFiltro)?'':'none';
+  });
 }
 function getCartoesTripulante(trigrama){
   return cartoesData.find(c=>c.trigrama===trigrama.toUpperCase());
