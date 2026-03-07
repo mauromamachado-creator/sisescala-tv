@@ -390,6 +390,14 @@ footer a:hover{text-decoration:underline}
   <button onclick="loadAllData()">TENTAR NOVAMENTE</button>
 </div>
 
+<!-- MODAL DETALHE OM -->
+<div id="omModal" style="display:none;position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeOMModal()">
+  <div style="background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #2a3a5a;border-radius:16px;padding:20px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;color:#e0e6f0;font-family:inherit;position:relative">
+    <span style="position:absolute;top:12px;right:16px;font-size:22px;color:#8892a4;cursor:pointer" onclick="closeOMModal()">✕</span>
+    <div id="omModalContent"></div>
+  </div>
+</div>
+
 <!-- ALERTAS POP-UP -->
 <div id="alertToast" style="display:none;position:fixed;top:20px;right:20px;z-index:99998;max-width:380px;width:calc(100% - 40px);background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #ff6b6b;border-left:4px solid #ff6b6b;border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(255,50,50,.3);animation:toastSlideIn .5s ease-out;cursor:pointer;font-family:inherit" onclick="dismissAlert()">
   <div style="display:flex;align-items:flex-start;gap:10px">
@@ -1198,7 +1206,7 @@ function renderScreen0(){
       html+=`<div style="background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);border-radius:8px;padding:10px;margin-bottom:8px">`;
       html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">`;
       html+=`<span style="font-weight:900;color:${anvColor};font-size:.9rem">${om.aeronave} / ${om.fab}</span>`;
-      html+=`<span style="font-size:.7rem;background:var(--green);color:#000;padding:2px 8px;border-radius:4px;font-weight:700">OM ${om.om}</span></div>`;
+      html+=`<span style="font-size:.7rem;background:var(--green);color:#000;padding:2px 8px;border-radius:4px;font-weight:700;cursor:pointer" onclick="showOMDetail('${om.om}')">📋 OM ${om.om}</span></div>`;
       for(const p of om.pernas){
         html+=`<div style="display:flex;gap:8px;align-items:center;padding:4px 0;font-size:.78rem">`;
         html+=`<span style="font-weight:700;min-width:40px">${p.origem}</span>`;
@@ -1271,7 +1279,7 @@ function renderScreen0(){
               <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${dayName}</div>
               <div style="min-width:80px;font-size:.82rem;color:${anvColor}">${om.fab}</div>
               <div style="flex:1;font-size:.82rem">${p.origem}→${p.destino} <span style="color:var(--text2);font-size:.72rem">${p.etd.split(' ')[1]||''}</span> <span style="color:var(--yellow);font-size:.72rem">${p.missao}</span></div>
-              <div style="font-size:.6rem;color:var(--green)">📋 OM</div>
+              <div style="font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</div>
               </div>`;
           }
         }
@@ -2089,7 +2097,7 @@ function renderScreenTV(){
   if(todayOMtv.length){
     for(const om of todayOMtv){
       const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
-      html+=`<div style="font-size:.7rem;color:var(--green);font-weight:700;margin-bottom:4px">📋 OM ${om.om}</div>`;
+      html+=`<div style="font-size:.7rem;color:var(--green);font-weight:700;margin-bottom:4px;cursor:pointer;text-decoration:underline" onclick="showOMDetail('${om.om}')">📋 OM ${om.om}</div>`;
       html+=`<div style="font-size:.68rem;color:${anvColor};font-weight:700;margin-bottom:4px">${om.fab}</div>`;
       for(const p of om.pernas){
         html+=`<div style="display:flex;gap:4px;align-items:center;padding:2px 0;font-size:.72rem">`;
@@ -2271,6 +2279,74 @@ function renderScreenTV(){
   const tvClockEl=document.getElementById('tvClock');
   if(tvClockEl){const d=new Date();const opts={timeZone:'America/Sao_Paulo'};tvClockEl.textContent=d.toLocaleDateString('pt-BR',{...opts,weekday:'long',day:'numeric',month:'long',year:'numeric'})+' — '+d.toLocaleTimeString('pt-BR',{...opts,hour:'2-digit',minute:'2-digit',second:'2-digit'});}
 }
+
+function showOMDetail(omId){
+  const om=omData.find(o=>o.om===omId);
+  if(!om){return;}
+  const c=document.getElementById('omModalContent');
+  let html=`<div style="margin-bottom:16px">
+    <div style="font-size:1.1rem;font-weight:700;color:var(--green)">📋 OM ${om.om}</div>
+    <div style="color:var(--text2);font-size:.8rem;margin-top:4px">${om.fab||om.aeronave} • ${new Date(om.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+  </div>`;
+  // Tripulação
+  html+=`<div style="margin-bottom:16px">
+    <div style="font-weight:700;color:#64b4ff;font-size:.85rem;margin-bottom:8px;border-bottom:1px solid #1a2a40;padding-bottom:4px">👥 TRIPULAÇÃO (${om.tripulacao.length})</div>`;
+  // Group by role
+  const pilotos=om.tripulacao.filter(t=>['MJ','CP','TC','1T','2T'].includes(t.posto));
+  const outros=om.tripulacao.filter(t=>!['MJ','CP','TC','1T','2T'].includes(t.posto));
+  if(pilotos.length){
+    html+=`<div style="color:var(--text2);font-size:.7rem;margin-bottom:4px;font-weight:600">PILOTOS</div>`;
+    pilotos.forEach(t=>{
+      html+=`<div style="display:flex;justify-content:space-between;padding:4px 8px;background:#0d1220;border-radius:6px;margin-bottom:3px;font-size:.8rem">
+        <span><span style="color:var(--green);font-weight:600">${t.posto}</span> ${t.nome}${t.trigrama?' <span style="color:var(--text2)">('+t.trigrama+')</span>':''}</span>
+        <span style="color:var(--text2);font-size:.7rem">${t.saram||''}</span>
+      </div>`;
+    });
+  }
+  if(outros.length){
+    html+=`<div style="color:var(--text2);font-size:.7rem;margin:8px 0 4px;font-weight:600">TRIPULANTES</div>`;
+    outros.forEach(t=>{
+      html+=`<div style="display:flex;justify-content:space-between;padding:4px 8px;background:#0d1220;border-radius:6px;margin-bottom:3px;font-size:.8rem">
+        <span><span style="color:#ffaa00;font-weight:600">${t.posto}</span> ${t.nome}</span>
+        <span style="color:var(--text2);font-size:.7rem">${t.saram||''}</span>
+      </div>`;
+    });
+  }
+  html+=`</div>`;
+  // Pernas com combustível
+  if(om.pernas&&om.pernas.length){
+    html+=`<div style="margin-bottom:16px">
+      <div style="font-weight:700;color:#64b4ff;font-size:.85rem;margin-bottom:8px;border-bottom:1px solid #1a2a40;padding-bottom:4px">🛫 PERNAS DE VOO</div>`;
+    om.pernas.forEach((p,i)=>{
+      html+=`<div style="background:#0d1220;border-radius:8px;padding:10px;margin-bottom:6px;border-left:3px solid var(--green)">
+        <div style="font-weight:700;font-size:.85rem">${p.origem} → ${p.destino}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;font-size:.75rem;color:var(--text2)">
+          <span>🕐 ETD: ${p.etd||'—'}</span>
+          <span>🕐 ETA: ${p.eta||'—'}</span>
+          <span>⏱ Tempo: ${p.ete||'—'}</span>
+          <span>🔄 ALTN: ${p.altn||'—'}</span>
+        </div>`;
+      if(p.comb_min||p.comb_rec){
+        html+=`<div style="display:flex;gap:12px;margin-top:6px;font-size:.8rem">
+          <span style="color:#ffaa00">⛽ Mín: <b>${(p.comb_min||0).toLocaleString('pt-BR')}L</b></span>
+          <span style="color:var(--green)">⛽ Rec: <b>${(p.comb_rec||0).toLocaleString('pt-BR')}L</b></span>
+        </div>`;
+      }
+      if(p.missao){
+        html+=`<div style="margin-top:4px;font-size:.75rem;color:#c0c0c0">Missão: <b>${p.missao}</b></div>`;
+      }
+      html+=`</div>`;
+    });
+    html+=`</div>`;
+  }
+  // Footer
+  if(om.gerado){
+    html+=`<div style="color:var(--text2);font-size:.7rem;text-align:right">Gerada em ${om.gerado}${om.gerado_por?' por '+om.gerado_por:''}</div>`;
+  }
+  c.innerHTML=html;
+  document.getElementById('omModal').style.display='flex';
+}
+function closeOMModal(){document.getElementById('omModal').style.display='none';}
 
 function renderScreenReport(){
   const c=document.getElementById('screen12');
