@@ -2556,6 +2556,9 @@ function findNomeCompleto(nome){
 
 function getDiariasDownloaded(){return JSON.parse(localStorage.getItem('sisgopa_diarias_done')||'{}');}
 function setDiariaDownloaded(omId){const d=getDiariasDownloaded();d[omId]=Date.now();localStorage.setItem('sisgopa_diarias_done',JSON.stringify(d));}
+function getDiariasConcluidas(){return JSON.parse(localStorage.getItem('sisgopa_diarias_concluidas')||'{}');}
+function setDiariaConcluida(omId){const d=getDiariasConcluidas();d[omId]=Date.now();localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();}
+function undoDiariaConcluida(omId){const d=getDiariasConcluidas();delete d[omId];localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();}
 
 function renderScreenDiarias(){
   const c=document.getElementById('screen13');
@@ -2563,48 +2566,75 @@ function renderScreenDiarias(){
   html+=`<div style="color:var(--text2);font-size:.8rem;margin-bottom:6px">Solicitação de Pagamento de Diárias pré-preenchida a partir das Ordens de Missão.</div>`;
   html+=`<div style="font-size:.78rem;margin-bottom:16px;padding:8px 12px;background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.25);border-radius:8px;color:#ffaa00">⚠️ <b>Prazo:</b> 1 dia útil após o término da missão · <b>Responsável:</b> Operador de Comunicações</div>`;
   const done=getDiariasDownloaded();
+  const concluidas=getDiariasConcluidas();
   if(!omData||!omData.length){
     html+=`<div style="color:var(--text2);text-align:center;padding:40px">Nenhuma OM disponível</div>`;
     c.innerHTML=html;return;
   }
-  html+=`<div style="display:flex;flex-direction:column;gap:8px">`;
   const brPrefixes=['SB','SD','SN','SI','SS','SW'];
   const isNacional=om=>om.pernas.every(p=>brPrefixes.some(pf=>p.origem.startsWith(pf))&&brPrefixes.some(pf=>p.destino.startsWith(pf)));
   const DIARIAS_MISSOES=['PR','RESERVA PR','ESCAV'];
   const temMissaoDiaria=om=>om.pernas.some(p=>{const m=(p.missao||'').toUpperCase().trim();return DIARIAS_MISSOES.some(d=>m===d);});
   const sorted=[...omData].filter(om=>isNacional(om)&&temMissaoDiaria(om)).sort((a,b)=>b.data.localeCompare(a.data));
-  // Calcula próximo dia útil após data
+  const pendentes=sorted.filter(om=>!concluidas[om.om]);
+  const arquivadas=sorted.filter(om=>!!concluidas[om.om]);
   function nextBizDay(d){const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;}
   const hoje=nowBRT();hoje.setHours(0,0,0,0);
-  sorted.forEach(om=>{
+  function renderDiariaCard(om,isArquivada){
     const isDone=done[om.om];
     const dateStr=new Date(om.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
     const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
     const rotas=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
-    // Prazo: 1 dia útil após término da missão
     const omDate=new Date(om.data+'T23:59:00');
     const prazo=nextBizDay(omDate);prazo.setHours(0,0,0,0);
     const diffPrazo=Math.floor((prazo-hoje)/(86400000));
     let prazoTag='';
-    if(!isDone){
+    if(!isDone&&!isArquivada){
       if(diffPrazo<0)prazoTag='<span style="color:var(--red);font-size:.7rem;font-weight:700;margin-left:6px">⚠️ PRAZO VENCIDO</span>';
       else if(diffPrazo===0)prazoTag='<span style="color:#ffaa00;font-size:.7rem;font-weight:700;margin-left:6px">⏰ VENCE HOJE</span>';
       else if(diffPrazo===1)prazoTag='<span style="color:#ffaa00;font-size:.7rem;margin-left:6px">⏳ Vence amanhã</span>';
     }
-    html+=`<div style="background:${isDone?'rgba(0,255,136,.06)':'var(--bg2)'};border:1px solid ${isDone?'rgba(0,255,136,.3)':diffPrazo<0&&!isDone?'rgba(255,68,68,.4)':'var(--border)'};border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    const bg=isArquivada?'rgba(100,180,255,.06)':isDone?'rgba(0,255,136,.06)':'var(--bg2)';
+    const bdr=isArquivada?'rgba(100,180,255,.25)':isDone?'rgba(0,255,136,.3)':diffPrazo<0?'rgba(255,68,68,.4)':'var(--border)';
+    const icon=isArquivada?'<span style="color:#64b4ff;font-size:1.1rem">📁</span>':isDone?'<span style="color:var(--green);font-size:1.1rem">✅</span>':'<span style="color:var(--yellow);font-size:1.1rem">📄</span>';
+    let h=`<div style="background:${bg};border:1px solid ${bdr};border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
       <div style="flex:1;min-width:200px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-          ${isDone?'<span style="color:var(--green);font-size:1.1rem">✅</span>':'<span style="color:var(--yellow);font-size:1.1rem">📄</span>'}
+          ${icon}
           <span style="font-weight:700;font-size:.9rem">Diária - OM ${om.om}</span>
           <span style="font-size:.75rem;color:${anvColor};font-weight:600">${om.aeronave}</span>
           ${prazoTag}
         </div>
         <div style="font-size:.78rem;color:var(--text2)">${dateStr} · ${rotas} · ${om.tripulacao.length} tripulantes</div>
       </div>
-      <button onclick="openDiariaForm('${om.om}')" style="background:var(--vc1);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:.8rem;white-space:nowrap">${isDone?'↻ Gerar novamente':'📥 Gerar PDF'}</button>
-    </div>`;
-  });
-  html+=`</div>`;
+      <div style="display:flex;gap:6px;flex-wrap:wrap">`;
+    if(isArquivada){
+      const dtConc=new Date(concluidas[om.om]);
+      h+=`<span style="font-size:.7rem;color:#64b4ff;align-self:center">Concluída ${dtConc.toLocaleDateString('pt-BR')}</span>`;
+      h+=`<button onclick="openDiariaForm('${om.om}')" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:6px;font-size:.75rem;cursor:pointer">↻ Gerar PDF</button>`;
+      h+=`<button onclick="undoDiariaConcluida('${om.om}')" style="background:rgba(255,68,68,.15);color:var(--red);border:1px solid rgba(255,68,68,.3);padding:6px 12px;border-radius:6px;font-size:.75rem;cursor:pointer">↩ Reabrir</button>`;
+    }else{
+      h+=`<button onclick="openDiariaForm('${om.om}')" style="background:var(--vc1);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:.8rem;white-space:nowrap">${isDone?'↻ Gerar novamente':'📥 Gerar PDF'}</button>`;
+      if(isDone)h+=`<button onclick="setDiariaConcluida('${om.om}')" style="background:rgba(100,180,255,.15);color:#64b4ff;border:1px solid rgba(100,180,255,.3);padding:8px 14px;border-radius:6px;font-weight:700;cursor:pointer;font-size:.8rem;white-space:nowrap">📤 CONCLUÍDO</button>`;
+    }
+    h+=`</div></div>`;
+    return h;
+  }
+  // Pendentes
+  if(pendentes.length){
+    html+=`<div style="display:flex;flex-direction:column;gap:8px">`;
+    pendentes.forEach(om=>{html+=renderDiariaCard(om,false);});
+    html+=`</div>`;
+  }else{
+    html+=`<div style="color:var(--text2);text-align:center;padding:20px">Nenhuma diária pendente 🎉</div>`;
+  }
+  // Arquivadas
+  if(arquivadas.length){
+    html+=`<details style="margin-top:20px"><summary style="cursor:pointer;color:var(--text2);font-size:.85rem;font-weight:600;padding:8px 0">📁 Concluídas (${arquivadas.length})</summary>`;
+    html+=`<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">`;
+    arquivadas.forEach(om=>{html+=renderDiariaCard(om,true);});
+    html+=`</div></details>`;
+  }
   c.innerHTML=html;
 }
 
