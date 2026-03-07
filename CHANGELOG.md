@@ -1,90 +1,57 @@
-# SisGOPA — Changelog
+# CHANGELOG — SisGOPA
+
+## v4.4 — 07/03/2026
+### Novidades
+- **Cartões mobile**: layout em cards (grid 2 colunas) em vez de tabela
+- **Filtros na tela Cartões**: por status (regulares/atenção/vencidos) e por função (Pilotos/Mecânicos/etc)
+- **Cruzamento cartões × disponibilidade**: cartão vencido (Insp Saúde, CVI/RVSM, CRM) = INDISPONÍVEL
+- **Múltiplos motivos**: getPilotStatus reporta todos os motivos (ex: "INDISPONÍVEL (CVI, INSP SAÚDE)")
+- **Alertas Dashboard**: inclui demais tripulantes (comissários, mecânicos) com cartões vencidos
+- **CVI/RVSM exclusivo para pilotos**: comissários/mecânicos não são avaliados nesse cartão
+- **Horas voadas**: pau de sebo como fonte primária, lançamentos como fallback
+- **EXT no ranking**: pilotos externos com horas aparecem no ranking (sem %, só horas)
+- **Busca expandida**: encontra mecânicos, comissários, op.comms, médicos (via aba cartões)
+- **Trigrama duplicado**: DAN/CIR/ALX diferenciados por nome e aeronave — férias, cartões e status nunca se misturam
+- **Hamburger menu mobile**: nav escondida, ☰ MENU toggle, grid 2 colunas
+
+### Correções (Auditoria)
+- Timeout 15s em todos os fetches (AbortController) — evita travamento
+- Fallback cartões: alerta "DADOS INCOMPLETOS" quando aba cartões falha
+- calcAfastamentos: regex word-boundary evita match parcial de trigrama
+- setInterval com referências globais (cleanup ready)
+- Calendário mobile: fonte menor, scroll touch
+- Ranking: bar-hours largura fixa no mobile (alinhamento)
+
+## v4.3 — 07/03/2026
+- calcAfastamentos auto-calculado (substituiu pau de sebo como fonte de afastamento)
+- BEH/SOZ excluídos (EXCLUIDOS array)
+- TV Alertas: DESADAPTADO + DESADAPTADO PR + INDISPONÍVEL + FÉRIAS ordenados por prioridade
+- TV: "Total de Horas Voadas 2026" com glow animado
+- TV METAR: fonte menor para caber 4 localidades
+- KPI renomeado: "MISSÕES CUMPRIDAS"
+- Missões de hoje: fix duplicação (comparação noon-to-noon)
+- CARTÕES: nova tela (screen 10) com validade de todos os tripulantes
+- BUSCA: integração cartões no card de busca
 
 ## v4.2 — 06/03/2026
-### Novidades
-- 🏆 **TV: Top Horas GTE** — ranking unificado (VC-1 + VC-2 juntos), top 8 pilotos por horas voadas
-- 📊 **TV: Progresso Horas do Ano** — barras VC-1, VC-2 e Total GTE com marcador da meta anual
-- 🖼️ **Logo transparente** — sem bordas brancas, integrada ao tema dark
-- 📏 **Logo mobile ajustável** — 40px no celular, 56px no desktop
-- 📱 **Ícone PWA** — pode adicionar à tela inicial do iPhone/Android como app
-- 🌐 **Favicon** personalizado com logo SisGOPA
-
-### Correções
-- Marcador "meta de voo hoje" mais visível (branco, glow, maior)
+- OMs integradas: Google Drive → om_data.json → SisGOPA
+- Hierarquia missões: OM > confirmaData > Diário
+- Badge 📋 OM nos próximos dias
+- EXT handling correto
+- Desadaptado PR como alerta (20-34 dias)
 
 ## v4.1 — 06/03/2026
-### Novidades
-- 🚦 **Status 3 cores**: verde (tudo OK), amarelo (falha parcial), vermelho (erro crítico)
-- 💬 **Tooltip no status dot**: passe o mouse/toque pra ver detalhes
-- 📝 **Renomeação**: SisGOP → **SisGOPA**
-
-### Correções
-- Formato de data: "sexta-feira, 6 de março de 2026 — HH:MM:SS"
-- METAR observação UTC não quebra mais linha no desktop (flex layout)
+- TV modo BI (header/nav/footer ocultos)
+- Fullscreen button
+- SAVISO como sobreaviso
+- ESCALA com senha SHA-256
+- METAR 3 proxies com fallback
+- METAR SPECI support
 
 ## v4.0 — 06/03/2026
-### Novidades
-- 🔄 **Auto-update**: código atualiza automaticamente a cada 5 minutos (sem precisar limpar cache)
-- 🔗 **Link curto**: https://is.gd/sisgop
-- 🖼️ **Logo personalizada** no header (substituiu SVG genérico)
-- 🌙 **Badge PERN** com visual diferenciado (pernoite) + tipo de missão quando disponível
-- 📊 **DIÁRIO na TV**: pisca vermelho após deadline, verde fixo quando 100%
-- 🎨 **Cor progressiva do DIÁRIO**: baseada no horário vs percentual (meta 17h seg-qui, 12h sex)
-- 📅 **Formato de data**: "sexta-feira, 6 de março de 2026 — HH:MM:SS"
-- 📱 **Status de conexão no mobile**: dot verde/vermelho + horário de atualização
-- 🏖️ **Férias na Busca**: só mostra férias atuais ou futuras (passadas desconsideradas)
-
-### Correções
-- 🐛 Fix: férias não apareciam no calendário (`startDate/end` → `inicio/fim`)
-- 🐛 Fix: `medals is not defined` no dashboard (trocado por 1º, 2º, 3º)
-- 🐛 Fix: METAR CORS — removido acesso direto ao aviationweather.gov (só proxy)
-- ✏️ Gramática: Missões, Férias, Próximas, Últimos, conexão (acentos corrigidos)
-- ✏️ TBD → A DEFINIR
-- 🧹 Código morto removido: `const medals`, `GIDS.ferias`
-
-### Alertas TV
-- Agora mostra apenas **indisponíveis** e **férias** (removidos alertas externos)
-
-### Estética
-- Badge tipo missão alinhado (desktop + mobile)
-- METAR: layout flex (observação UTC não quebra mais linha no desktop)
-
----
-
-## v3.0 — 05/03/2026
-### Novidades
-- 📺 **Tela TV** (screen9) com grid 3×3: KPIs, missões, top pilotos, METAR multi, alertas, próximos dias
-- 🔍 **Multi-METAR**: SBBR, SBCF, SBRJ, SBSP em uma única requisição
-- 🔒 **ESCALA** com proteção por senha
-- ✅ **SAVISO**: missões confirmadas com prioridade sobre planejamento
-- 📊 **Esforço aéreo**: progresso com alertas 50%/70% (ofício GABAER)
-- 🏆 **Rankings**: posições numeradas com cores (verde top 3, amarelo meio, vermelho último)
-- 🔎 **Busca**: pesquisa por piloto com horas, férias, missões
-- 📅 **Calendário**: visualização mensal de missões
-
-### Correções
-- Fix: férias fetch por nome (`fetchCSVByName`)
-- Fix: search input focus
-- Fix: SAVISO column mapping
-- Pilotos `grupo==='OUT'` excluídos dos KPIs
-
----
-
-## v2.0 — 04/03/2026
-### Novidades
-- Renomeação: SisEscala → SisOPR → **SisGOP**
-- 📋 **Tela DIÁRIO** com checklist de planejamento
-- 🛩️ **Disponibilidade** e **Horas de Voo** com dados ao vivo do Google Sheets
-- 📊 **ACNT/ALTR**: alertas e acidentes
-- 🌤️ **METAR decoder** com traduções em português
-- 📱 Layout responsivo mobile (iPhone 375×812)
-
----
-
-## v1.0 — 03/03/2026
-### Lançamento inicial
-- Dashboard básico com KPIs
-- Leitura de dados do Google Sheets
-- Tela de disponibilidade de tripulantes
-- Horas de voo por aeronave
-- Layout dark mode para TV (1280×720)
+- SisGOPA (renomeado de SisGOP)
+- Multi-METAR (SBBR, SBCF, SBRJ, SBSP)
+- TV screen com grid 3×3
+- Auto-update mechanism
+- Logo transparente
+- PWA manifest
