@@ -1527,7 +1527,7 @@ function renderScreenTV(){
   // Mini-header BI
   let html=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);margin-bottom:8px">`;
   html+=`<div style="display:flex;align-items:center;gap:10px"><img src="logo-sisgop-transp.png" style="width:32px;height:32px;border-radius:6px"><span style="font-size:1rem;font-weight:900;color:var(--vc1)">SisGOPA</span><span style="font-size:.65rem;color:var(--text2);letter-spacing:2px">GESTÃO DE OPERAÇÕES AÉREAS</span></div>`;
-  html+=`<div style="display:flex;align-items:center;gap:12px"><span id="tvClock" style="font-size:.8rem;color:var(--text2)"></span><button onclick="goScreen(0)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:.7rem">✕ SAIR</button></div>`;
+  html+=`<div style="display:flex;align-items:center;gap:12px"><span id="tvClock" style="font-size:.8rem;color:var(--text2)"></span><button onclick="goFullscreen()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:.7rem">⛶ TELA CHEIA</button><button onclick="goScreen(0)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:.7rem">✕ SAIR</button></div>`;
   html+=`</div>`;
   html+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto 1fr 1fr;gap:10px;height:calc(100vh - 60px);overflow:hidden;font-size:.82rem;padding:0 8px">`;
   
