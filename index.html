@@ -334,6 +334,7 @@ footer a:hover{text-decoration:underline}
     <button onclick="goScreen(6)" id="btn6">CALENDÁRIO</button>
     <button onclick="goScreen(7)" id="btn7">🔍 BUSCA</button>
     <button onclick="goScreen(8)" id="btn8">ESCALA</button>
+    <button onclick="goScreen(10)" id="btn10">📋 CARTÕES</button>
     <button onclick="goScreen(9)" id="btn9" class="desktop-only">📺 TV</button>
   </div>
   <div class="header-right">
@@ -355,6 +356,7 @@ footer a:hover{text-decoration:underline}
   <div class="screen" id="screen7"></div>
   <div class="screen" id="screen8"></div>
   <div class="screen" id="screen9"></div>
+  <div class="screen" id="screen10"></div>
   <div class="loading" id="loadingMsg">Carregando dados...</div>
 </main>
 
@@ -379,6 +381,7 @@ const planCsvUrl=()=>`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/expor
 
 let currentScreen=0;
 let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[], diarioData=[], acntData=[], checklistData=[], metarRaw='', metarDecoded={};
+let cartoesData=[];
 let metarMulti={};
 let anualVC1={voadas:0,esforco:650}, anualVC2={voadas:0,esforco:1220};
 let escalaData={vc1:{consulta:'',raio:[]},vc2:{consulta:'',raio:[]}};
@@ -882,7 +885,8 @@ function renderScreen0(){
   // Show next days (week) inline
   // Próximos dias: coleta datas do diário + OMs futuras, OM tem prioridade
   const weekDays=diarioData.filter(d=>{const diff=(d.date-td)/(86400000);return diff>0&&diff<=7&&d.legs.length>0;});
-  const futureOMs=omData.filter(o=>{const od=new Date(o.data+'T12:00:00');const diff=(od-td)/86400000;return diff>0&&diff<=7;});
+  const tdMid=new Date(td);tdMid.setHours(12,0,0,0);
+  const futureOMs=omData.filter(o=>{const od=new Date(o.data+'T12:00:00');const diff=(od-tdMid)/86400000;return diff>0&&diff<=7;});
   // Juntar todas as datas únicas
   const allDates=new Set();
   weekDays.forEach(d=>{const iso=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');allDates.add(iso);});
@@ -1435,6 +1439,9 @@ function renderScreenSearch(query){
       html+=`<div class="sc-item" style="grid-column:1/-1"><div class="sc-item-label">Próximas Missões</div><div class="sc-item-value" style="font-size:.78rem">✈️ ${mTxt}</div></div>`;
     }
     
+    // Cartões
+    html+=renderCartoesNaBusca(p.trigrama);
+    
     html+=`</div></div>`;
   });
   html+='</div>';
@@ -1796,7 +1803,8 @@ function renderScreenTV(){
   html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:6px;font-size:.78rem">📅 PRÓXIMOS DIAS</div>`;
   // Próximos dias TV: OM tem prioridade, sem duplicar
   const weekDaysTV=diarioData.filter(d=>{const diff=(d.date-td)/86400000;return diff>0&&diff<=5&&d.legs.length>0;});
-  const futureOMsTV=omData.filter(o=>{const od=new Date(o.data+'T12:00:00');const diff=(od-td)/86400000;return diff>0&&diff<=5;});
+  const tdMidTV=new Date(td);tdMidTV.setHours(12,0,0,0);
+  const futureOMsTV=omData.filter(o=>{const od=new Date(o.data+'T12:00:00');const diff=(od-tdMidTV)/86400000;return diff>0&&diff<=5;});
   const allDatesTV=new Set();
   weekDaysTV.forEach(d=>{const iso=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');allDatesTV.add(iso);});
   futureOMsTV.forEach(o=>allDatesTV.add(o.data));
@@ -1861,7 +1869,170 @@ function renderAll(){
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
   const uniqueOMs=new Set(flightsThisYear.map(f=>f.om).filter(Boolean));
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
-  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();renderScreenTV();
+  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();renderScreenTV();renderScreenCartoes();
+}
+
+// ===== CARTÕES =====
+const MESES_PT={'jan':0,'fev':1,'mar':2,'abr':3,'mai':4,'jun':5,'jul':6,'ago':7,'set':8,'out':9,'nov':10,'dez':11};
+function parseDateCartao(s){
+  if(!s)return null;
+  const str=String(s).trim();
+  if(!str||str==='---'||str==='#N/A'||str==='#REF!'||str==='#VALUE!')return null;
+  // Format: "29/set./26" or "08/ago./26"
+  const m1=str.match(/^(\d{1,2})\/(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\.?\/(\d{2,4})$/i);
+  if(m1){
+    const day=parseInt(m1[1],10);const mon=MESES_PT[m1[2].toLowerCase()];
+    let yr=parseInt(m1[3],10);if(yr<100)yr+=2000;
+    return new Date(yr,mon,day);
+  }
+  // Format: "dd/mm/yyyy"
+  const m2=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m2)return new Date(parseInt(m2[3],10),parseInt(m2[2],10)-1,parseInt(m2[1],10));
+  // Format: "dd/mm/yy"
+  const m3=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+  if(m3){let yr=parseInt(m3[3],10);yr+=yr<50?2000:1900;return new Date(yr,parseInt(m3[2],10)-1,parseInt(m3[1],10));}
+  return null;
+}
+function parseCartoes(rows){
+  const EXCLUIDOS=['BEH','SOZ'];
+  const result=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];
+    const trigrama=String(r[29]||'').trim().toUpperCase();
+    if(!trigrama||EXCLUIDOS.includes(trigrama))continue;
+    const funcao=String(r[30]||'').trim();
+    if(!funcao)continue;
+    result.push({
+      postoGrad:String(r[27]||'').trim(),
+      nome:String(r[28]||'').trim(),
+      trigrama,
+      funcao,
+      aeronave:String(r[31]||'').trim(),
+      inspSaude:{raw:String(r[36]||'').trim(),date:parseDateCartao(r[36])},
+      estFisio:{raw:String(r[37]||'').trim(),date:parseDateCartao(r[37])},
+      crm:{raw:String(r[38]||'').trim(),date:parseDateCartao(r[38])},
+      simulador:{raw:String(r[39]||'').trim(),date:parseDateCartao(r[39])},
+      cviRvsm:{raw:String(r[40]||'').trim(),date:parseDateCartao(r[40])},
+      ilsCat:{raw:String(r[41]||'').trim(),date:parseDateCartao(r[41])},
+      ctaiS1:{raw:String(r[42]||'').trim(),date:parseDateCartao(r[42])},
+      ctaiS:{raw:String(r[43]||'').trim(),date:parseDateCartao(r[43])},
+      tdie:{raw:String(r[44]||'').trim(),date:parseDateCartao(r[44])},
+      icao:{raw:String(r[45]||'').trim(),date:parseDateCartao(r[45])},
+      taiProva:{raw:String(r[46]||'').trim(),date:parseDateCartao(r[46])},
+      taiVoo:{raw:String(r[47]||'').trim(),date:parseDateCartao(r[47])},
+      passaporte:{raw:String(r[48]||'').trim(),date:parseDateCartao(r[48])},
+      cOperacional:{raw:String(r[49]||'').trim(),date:parseDateCartao(r[49])},
+    });
+  }
+  return result;
+}
+function cartaoColor(cartao,hoje){
+  if(!cartao||!cartao.raw||cartao.raw==='---'||cartao.raw==='')return{cls:'cinza',label:'N/A',color:'#555',bg:'rgba(80,80,80,.15)'};
+  if(!cartao.date)return{cls:'cinza',label:cartao.raw,color:'#888',bg:'rgba(80,80,80,.15)'};
+  const diff=(cartao.date-hoje)/(1000*60*60*24);
+  if(diff<0)return{cls:'vermelho',label:cartao.raw,color:'var(--red)',bg:'rgba(255,68,68,.15)',days:Math.round(diff)};
+  if(diff<30)return{cls:'vermelho',label:cartao.raw,color:'var(--red)',bg:'rgba(255,68,68,.15)',days:Math.round(diff)};
+  if(diff<60)return{cls:'amarelo',label:cartao.raw,color:'var(--yellow)',bg:'rgba(255,170,0,.15)',days:Math.round(diff)};
+  return{cls:'verde',label:cartao.raw,color:'var(--green)',bg:'rgba(0,255,136,.15)',days:Math.round(diff)};
+}
+function renderCartaoBadge(cartao,hoje,nome){
+  const c=cartaoColor(cartao,hoje);
+  const tip=c.days!=null?(c.days<0?`Vencido há ${Math.abs(c.days)}d`:`${c.days}d restantes`):'';
+  return `<td style="background:${c.bg};color:${c.color};font-size:.72rem;font-weight:700;padding:4px 6px;text-align:center;border:1px solid var(--border);white-space:nowrap" title="${nome}: ${c.label} ${tip}">${c.label||'—'}</td>`;
+}
+function renderScreenCartoes(){
+  const hoje=nowBRT();
+  const container=document.getElementById('screen10');
+  if(!cartoesData.length){container.innerHTML='<h2>📋 Cartões de Validade</h2><div class="no-data">Dados de cartões não disponíveis</div>';return;}
+  const grupos={'Piloto':'✈️ Pilotos','Mecânico':'🔧 Mecânicos','Operador de Comunicações':'📡 Op. Comunicações','Comissário':'🛎 Comissários','Médico':'🏥 Médicos'};
+  const isPiloto=f=>f.toLowerCase().includes('piloto');
+  let html='<h2>📋 Cartões de Validade</h2>';
+  // Summary
+  let totalVenc=0,totalAlert=0,totalOk=0;
+  const cartoesCheck=['inspSaude','crm','cviRvsm','simulador','tdie','passaporte','cOperacional'];
+  cartoesData.forEach(p=>{
+    let worst='verde';
+    cartoesCheck.forEach(k=>{const c=cartaoColor(p[k],hoje);if(c.cls==='vermelho')worst='vermelho';else if(c.cls==='amarelo'&&worst!=='vermelho')worst='amarelo';});
+    if(worst==='vermelho')totalVenc++;else if(worst==='amarelo')totalAlert++;else totalOk++;
+  });
+  html+=`<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">`;
+  html+=`<div style="background:rgba(0,255,136,.1);border:1px solid var(--green);padding:8px 16px;border-radius:6px;font-size:.9rem"><span style="color:var(--green);font-weight:900">${totalOk}</span> <span style="color:var(--text2)">regulares</span></div>`;
+  html+=`<div style="background:rgba(255,170,0,.1);border:1px solid var(--yellow);padding:8px 16px;border-radius:6px;font-size:.9rem"><span style="color:var(--yellow);font-weight:900">${totalAlert}</span> <span style="color:var(--text2)">atenção</span></div>`;
+  html+=`<div style="background:rgba(255,68,68,.1);border:1px solid var(--red);padding:8px 16px;border-radius:6px;font-size:.9rem"><span style="color:var(--red);font-weight:900">${totalVenc}</span> <span style="color:var(--text2)">vencidos/críticos</span></div>`;
+  html+=`</div>`;
+  for(const[funcao,titulo] of Object.entries(grupos)){
+    const membros=cartoesData.filter(p=>funcao==='Piloto'?isPiloto(p.funcao):p.funcao===funcao);
+    if(!membros.length)continue;
+    html+=`<h3>${titulo} (${membros.length})</h3>`;
+    html+=`<div style="overflow-x:auto;margin-bottom:20px"><table style="width:100%;border-collapse:collapse;font-size:.78rem;min-width:800px">`;
+    html+=`<tr style="background:var(--bg3)">`;
+    html+=`<th style="padding:6px 8px;text-align:left;border:1px solid var(--border);color:var(--vc1)">Trig</th>`;
+    html+=`<th style="padding:6px 8px;text-align:left;border:1px solid var(--border);color:var(--text2)">Nome</th>`;
+    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">Anv</th>`;
+    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">Insp Saúde</th>`;
+    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">CRM</th>`;
+    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">CVI/RVSM</th>`;
+    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">Simulador</th>`;
+    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">TDIE</th>`;
+    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">Passaporte</th>`;
+    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">C. Oper.</th>`;
+    if(isPiloto(funcao)){
+      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">ILS CAT</th>`;
+      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">TAI Prova</th>`;
+      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">TAI Voo</th>`;
+    }
+    html+=`</tr>`;
+    // Sort: worst status first
+    membros.sort((a,b)=>{
+      const pri=p=>{let w=3;cartoesCheck.forEach(k=>{const c=cartaoColor(p[k],hoje);if(c.cls==='vermelho')w=Math.min(w,0);else if(c.cls==='amarelo')w=Math.min(w,1);});return w;};
+      return pri(a)-pri(b);
+    });
+    membros.forEach(p=>{
+      html+=`<tr style="border-bottom:1px solid var(--border)">`;
+      html+=`<td style="padding:4px 8px;font-weight:900;color:var(--vc1);border:1px solid var(--border)">${p.trigrama}</td>`;
+      html+=`<td style="padding:4px 8px;color:var(--text);border:1px solid var(--border);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nome}</td>`;
+      html+=`<td style="padding:4px 8px;text-align:center;color:var(--text2);border:1px solid var(--border)">${p.aeronave||'—'}</td>`;
+      html+=renderCartaoBadge(p.inspSaude,hoje,'Insp Saúde');
+      html+=renderCartaoBadge(p.crm,hoje,'CRM');
+      html+=renderCartaoBadge(p.cviRvsm,hoje,'CVI/RVSM');
+      html+=renderCartaoBadge(p.simulador,hoje,'Simulador');
+      html+=renderCartaoBadge(p.tdie,hoje,'TDIE');
+      html+=renderCartaoBadge(p.passaporte,hoje,'Passaporte');
+      html+=renderCartaoBadge(p.cOperacional,hoje,'C. Operacional');
+      if(isPiloto(funcao)){
+        html+=renderCartaoBadge(p.ilsCat,hoje,'ILS CAT II/III');
+        html+=renderCartaoBadge(p.taiProva,hoje,'TAI Prova');
+        html+=renderCartaoBadge(p.taiVoo,hoje,'TAI Voo');
+      }
+      html+=`</tr>`;
+    });
+    html+=`</table></div>`;
+  }
+  container.innerHTML=html;
+}
+function getCartoesTripulante(trigrama){
+  return cartoesData.find(c=>c.trigrama===trigrama.toUpperCase());
+}
+function renderCartoesNaBusca(trigrama){
+  const p=getCartoesTripulante(trigrama);
+  if(!p)return'';
+  const hoje=nowBRT();
+  const cartoes=[
+    {nome:'Insp. Saúde',val:p.inspSaude},{nome:'CRM',val:p.crm},{nome:'CVI/RVSM',val:p.cviRvsm},
+    {nome:'Simulador',val:p.simulador},{nome:'TDIE',val:p.tdie},{nome:'Passaporte',val:p.passaporte},
+    {nome:'C. Operacional',val:p.cOperacional},{nome:'ILS CAT II/III',val:p.ilsCat},
+    {nome:'TAI Prova',val:p.taiProva},{nome:'TAI Voo',val:p.taiVoo},
+    {nome:'Est. Fisiológico',val:p.estFisio},{nome:'ICAO',val:p.icao}
+  ];
+  let html=`<div class="sc-item" style="grid-column:1/-1"><div class="sc-item-label">📋 Cartões</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">`;
+  cartoes.forEach(c=>{
+    if(!c.val||(!c.val.raw&&!c.val.date))return;
+    if(c.val.raw==='---')return;
+    const cor=cartaoColor(c.val,hoje);
+    html+=`<div style="background:${cor.bg};border:1px solid ${cor.color};color:${cor.color};padding:3px 8px;border-radius:4px;font-size:.72rem;font-weight:700" title="${cor.days!=null?(cor.days<0?'Vencido há '+Math.abs(cor.days)+'d':cor.days+'d restantes'):''}"><span style="color:var(--text2);font-weight:400">${c.nome}:</span> ${cor.label}</div>`;
+  });
+  html+=`</div></div>`;
+  return html;
 }
 
 async function loadAllData(){
@@ -1889,6 +2060,7 @@ async function loadAllData(){
     await fetchAnual().catch(()=>{warnings.push('Horas Anual');});
     await fetch('om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;}).catch(()=>{omData=[];});
     await fetchEscala().catch(()=>{warnings.push('Escala');});
+    await fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);}).catch(()=>{warnings.push('Cartões');cartoesData=[];});
     pilotData=parseDisponibilidade(dispRows);
     flights=parseLancamentos(lancRows);
     calcAfastamentos();
@@ -1921,7 +2093,7 @@ function goScreen(n){
     verifyPw(pw).then(h=>{if(h==='eb9eaaaaf29e9838c97791fbf68ac2483f2aa3f93c6dc39c6bf0162cc51a6322'){escalaUnlocked=true;goScreen(8);}else{alert('Senha incorreta.');}});
     return;
   }
-  currentScreen=n;document.querySelectorAll('.screen').forEach((s,i)=>s.classList.toggle('active',i===n));document.querySelectorAll('.nav-btns button').forEach((b,i)=>b.classList.toggle('active',i===n));
+  currentScreen=n;document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id==='screen'+n));document.querySelectorAll('.nav-btns button').forEach(b=>b.classList.toggle('active',b.id==='btn'+n));
   // Modo BI: esconde header/nav/footer na tela TV
   const isTV=n===9;
   document.querySelector('header').style.display=isTV?'none':'';
