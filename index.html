@@ -445,6 +445,11 @@ function calcAfastamentos(){
       const lastFlight=pilotFlights.reduce((a,b)=>a.dataObj>b.dataObj?a:b);
       const diffDays=Math.round((td-lastFlight.dataObj)/86400000);
       p.afastamento=String(diffDays);
+      // Fallback: calcular horas voadas a partir dos flights[] se não veio da planilha
+      if(p.voadas==null){
+        const totalH=pilotFlights.reduce((s,f)=>s+(f.tempo||0),0);
+        if(totalH>0)p.voadas=totalH;
+      }
     }else{
       // Sem voos registrados — considerar máximo afastamento
       if(!p.afastamento||p.afastamento==='#N/A')p.afastamento='999';
