@@ -16,14 +16,5 @@
     "source": "Estadão / Correio Braziliense",
     "date": "04/03/2026",
     "expires": "2026-04-19T00:00:00-03:00"
-  },
-  {
-    "id": "teste-overlay-001",
-    "type": "sistema",
-    "title": "⚙️ TESTE — FUNDO ESMAECIDO",
-    "body": "Este é um teste do pop-up com fundo escurecido. Se o fundo atrás ficou escuro, funcionou!",
-    "source": "Ravi 🦀",
-    "date": "07/03/2026",
-    "expires": "2026-03-07T23:59:00-03:00"
   }
 ]
