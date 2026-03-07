@@ -312,7 +312,7 @@ footer a:hover{text-decoration:underline}
     <div id="kpi-box" style="display:flex;gap:24px;margin-left:24px">
       <div style="text-align:center"><div id="kpi-trip" style="font-size:1.5rem;font-weight:900;color:var(--vc1)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Tripulantes</div></div>
       <div style="text-align:center"><div id="kpi-aptos" style="font-size:1.5rem;font-weight:900;color:var(--green)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Disponíveis</div></div>
-      <div style="text-align:center"><div id="kpi-miss" style="font-size:1.5rem;font-weight:900;color:var(--vc2)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Missoes</div></div>
+      <div style="text-align:center"><div id="kpi-miss" style="font-size:1.5rem;font-weight:900;color:var(--vc2)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Missões</div></div>
     </div>
   </div>
   <div class="nav-btns">
@@ -351,7 +351,7 @@ footer a:hover{text-decoration:underline}
 
 <div class="error-overlay" id="errorOverlay" style="display:none">
   <h2>ERRO AO CARREGAR DADOS</h2>
-  <p style="color:var(--text2)">Verifique a conexao com a internet e tente novamente.</p>
+  <p style="color:var(--text2)">Verifique a conexão com a internet e tente novamente.</p>
   <button onclick="loadAllData()">TENTAR NOVAMENTE</button>
 </div>
 
@@ -364,7 +364,7 @@ footer a:hover{text-decoration:underline}
 const SHEET='1gwkeV2iA_JPTZ3rp0wf1PvXUI0TiOzNg3Xd4DhWwpao';
 const PLAN_SHEET='1EV81x0Np-zeHhznvzAGrPyck5YUHgW_eRb18uOGc7nQ';
 const ESCALA_SHEET='1MxhMnlzZNdXUkFRs_XmBI8SI3xhL1TDLEiCZ7aJKE-g';
-const GIDS={disp:2129805598,lanc:489572946,ferias:931364659,previsao:1534384160,acnt:519681315};
+const GIDS={disp:2129805598,lanc:489572946,previsao:1534384160,acnt:519681315};
 const csvUrl=gid=>`https://docs.google.com/spreadsheets/d/${SHEET}/export?format=csv&gid=${gid}`;
 const planCsvUrl=()=>`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv`;
 
@@ -665,10 +665,11 @@ function decodeMetar(raw){
 
 async function fetchMetar(){
   try{
-    const r=await fetch('https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw'),{cache:'no-store'});
-    if(!r.ok)return;
-    metarRaw=(await r.text()).trim();
-    metarDecoded=decodeMetar(metarRaw);
+    let text='';
+    try{const r=await fetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw',{cache:'no-store'});if(r.ok)text=(await r.text()).trim();}catch(e){}
+    if(!text){try{const r=await fetch('https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw'),{cache:'no-store'});if(r.ok)text=(await r.text()).trim();}catch(e){}}
+    if(!text)return;
+    metarRaw=text;metarDecoded=decodeMetar(metarRaw);
   }catch(e){console.error('METAR fetch error',e);}
 }
 async function fetchMetarMulti(){
@@ -712,7 +713,6 @@ function getPilotStatus(p,td){
 // ===== DASHBOARD =====
 function renderScreen0(){
   const td=nowBRT();const allPilots=[...pilotData.vc1,...pilotData.vc2];
-  const medals=['🥇','🥈','🥉'];
   let html='<div class="dash-layout">';
 
   // --- METAR SBBR (primeiro painel) ---
@@ -822,7 +822,7 @@ function renderScreen0(){
   if(weekDays.length){
     html+='<div style="margin-top:16px;font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">Próximos Dias</div>';
     for(const day of weekDays){
-      const anvLabel=day.aeronave&&day.aeronave!=='AERONAVE'?day.aeronave:'TBD';
+      const anvLabel=day.aeronave&&day.aeronave!=='AERONAVE'?day.aeronave:'A DEFINIR';
       html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
         <div style="min-width:70px;font-weight:900;color:var(--text)">${day.dateStr}</div>
         <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${day.dayName}</div>
@@ -880,7 +880,7 @@ function renderScreen0(){
   const future=missionsData.filter(m=>m.inicio&&m.inicio>td2).sort((a,b)=>(a.inicio?.getTime()||0)-(b.inicio?.getTime()||0));
   const undated=missionsData.filter(m=>!m.inicio);
   const totalMiss=ongoing.length+future.length+undated.length;
-  html+=`<div class="panel-title"><span class="icon">🌎</span> Proximas Missoes Internacionais <span class="count">${totalMiss}</span></div>`;
+  html+=`<div class="panel-title"><span class="icon">🌎</span> Próximas Missões Internacionais <span class="count">${totalMiss}</span></div>`;
 
   if(ongoing.length){
     html+='<div style="margin-bottom:12px;font-size:.75rem;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700">Em andamento</div>';
@@ -916,11 +916,11 @@ function renderScreen0(){
         <div class="mission-anv ${anvCls}">${m.anv}</div>
         <div class="mission-body"><div class="mission-title">${m.pais}</div><div class="mission-sub">${m.motivo}</div></div>
         <div><span class="mission-tipo">${m.tipo||'—'}</span></div>
-        <div class="mission-date"><div class="mission-date-main" style="color:var(--text2)">TBD</div></div></div>`;
+        <div class="mission-date"><div class="mission-date-main" style="color:var(--text2)">A DEFINIR</div></div></div>`;
     }
   }
 
-  if(!totalMiss)html+='<div class="no-data">Nenhuma missao internacional programada.</div>';
+  if(!totalMiss)html+='<div class="no-data">Nenhuma missão internacional programada.</div>';
   html+='</div>';
 
   html+='</div>'; // close dash-layout
@@ -967,9 +967,9 @@ function renderScreen2(){
 // ===== FERIAS & ALERTAS =====
 function renderScreen3(){
   const td=nowBRT();const in30=new Date(td);in30.setDate(in30.getDate()+30);const in60=new Date(td);in60.setDate(in60.getDate()+60);
-  let html='<h2>Ferias & Alertas</h2>';
+  let html='<h2>Férias & Alertas</h2>';
   html+='<div class="alert-section"><h3>Ferias</h3>';
-  if(!feriasData.length){html+='<div class="no-data">Sem dados de ferias programadas.</div>';}
+  if(!feriasData.length){html+='<div class="no-data">Sem dados de férias programadas.</div>';}
   else{
     const nowList=feriasData.filter(f=>f.inicio<=td&&td<=f.fim).sort((a,b)=>a.fim-b.fim);
     const upcoming=feriasData.filter(f=>f.inicio>td).sort((a,b)=>a.inicio-b.inicio);
@@ -992,10 +992,10 @@ function renderScreen3(){
   }
   html+='<div class="alert-section"><h3>Alertas (30 dias)</h3>';
   if(alerts.length){for(const a of alerts){const color=a.type==='danger'?'var(--red)':'var(--yellow)';html+=`<div class="alert-card ${a.type}"><div class="alert-icon" style="color:${color}">!</div><div>${a.text}</div></div>`;}}
-  else html+='<div class="no-data">Nenhum alerta encontrado para os proximos 30 dias.</div>';
+  else html+='<div class="no-data">Nenhum alerta encontrado para os próximos 30 dias.</div>';
   html+='</div>';
   const last7=new Date(td);last7.setDate(last7.getDate()-7);const recent=flights.filter(f=>f.dataObj&&f.dataObj>=last7);
-  html+='<div class="alert-section"><h3>Resumo Ultimos 7 Dias</h3>';
+  html+='<div class="alert-section"><h3>Resumo Últimos 7 Dias</h3>';
   if(recent.length){const byPilot={};for(const f of recent)byPilot[f.piloto]=(byPilot[f.piloto]||0)+1;const sorted=Object.entries(byPilot).sort((a,b)=>b[1]-a[1]);
     html+=`<div class="alert-card info"><div class="alert-icon" style="color:var(--vc1)">i</div><div>${recent.length} voos no total</div></div>`;
     for(const[tri,c]of sorted.slice(0,10))html+=`<div class="alert-card info"><div class="alert-icon" style="color:var(--vc1)">${c}</div><div>${tri} — ${c} voo(s)</div></div>`;}
@@ -1208,7 +1208,7 @@ function renderScreenCalendar(){
   
   // Férias
   feriasData.forEach(f=>{
-    const s=f.startDate||f.start,e=f.endDate||f.end;
+    const s=f.inicio,e=f.fim;
     if(!s||!e)return;
     const sd=new Date(s),ed=new Date(e);
     for(let d=new Date(sd);d<=ed;d.setDate(d.getDate()+1)){
