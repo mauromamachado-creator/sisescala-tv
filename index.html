@@ -1355,12 +1355,12 @@ async function fetchEscala(){
     if(sav.length>1){
       for(let i=1;i<sav.length;i++){
         const row=sav[i];
-        const dia=String(row[0]||'').trim();if(!dia)continue;
-        const escalados=String(row[1]||'').trim().split('\n').map(s=>s.trim()).filter(Boolean);
-        const anv=String(row[7]||'').trim();
-        const num=String(row[8]||'').trim();
-        const letra=String(row[9]||'').trim();
-        confirmaData.push({dia,escalados,anv,num,letra});
+        const dia=String(row[1]||'').trim();if(!dia)continue;
+        const escalados=String(row[2]||'').trim().split('\n').map(s=>s.trim()).filter(Boolean);
+        const anv=String(row[8]||'').trim();
+        const num=String(row[9]||'').trim();
+        const letra=String(row[10]||'').trim();
+        if(escalados.length)confirmaData.push({dia,escalados,anv,num,letra});
       }
     }
   }catch(e){console.warn('fetchEscala error',e);}
