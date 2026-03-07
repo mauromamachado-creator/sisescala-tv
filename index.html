@@ -2406,36 +2406,72 @@ async function getAirportCoords(icao){
 
 // Fetch AISWEB page and scrape data
 async function getAiswebData(icao){
-  const empty={rwyLen:null,rwyWid:null,hasIfr:false,hasSid:false,hasStar:false,fireCat:null,pcn:null,oprType:null,hasNight:false,elevFt:null,adHr:null,hasTwr:false,runways:[]};
+  const empty={rwyLen:null,rwyWid:null,hasIfr:false,hasSid:false,hasStar:false,fireCat:null,pcn:null,oprType:null,hasNight:false,elevFt:null,adHr:null,hasTwr:false,runways:[],rwyDesig:[]};
   try{
     const raw=await proxyFetchRaw(`https://aisweb.decea.mil.br/?i=aerodromos&codigo=${icao}`);
     if(!raw)return empty;
     const clean=raw.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');
-    // SID/STAR
-    empty.hasSid=/\bSID\b/i.test(clean);
-    empty.hasStar=/\bSTAR\b/i.test(clean);
-    // IFR
-    empty.hasIfr=/\bIFR\b/i.test(clean);
-    // VFR only
-    if(/VFR\s+somente|somente\s+VFR/i.test(clean))empty.oprType='VFR';
-    else if(empty.hasIfr)empty.oprType='VFR/IFR';
-    // Night ops
-    empty.hasNight=/noturno|ilumina/i.test(clean);
+    // Runways with full dimensional data (same regex as bot)
+    const runways=[];const pcnList=[];let maxLen=0,maxWid=0;
+    // Pattern: designation "11L - " ... "( 3200x45 ASPH 76/F/B/X/T"
+    const desigRe=/\b((?:0[1-9]|[12]\d|3[0-6])[LRC]?)\s+-\s+/g;
+    let dm;
+    while((dm=desigRe.exec(clean))!==null){
+      const after=clean.substring(dm.index+dm[0].length,dm.index+dm[0].length+300);
+      const dimM=after.match(/\(?\s*(\d{3,5})\s*[xX×]\s*(\d{2,3})\s+(ASPH|CONC|GRVL|DIRT|GRAS)\s+(\d+\/\w\/\w\/\w\/\w)/);
+      if(dimM){
+        const l=parseInt(dimM[1]),w=parseInt(dimM[2]),pcnVal=dimM[4];
+        const num=parseInt(dm[1].slice(0,2)),sfx=dm[1].length>2?dm[1][2]:'';
+        const rn=(num<=18?num+18:num-18);const rs={L:'R',R:'L',C:'C'}[sfx]||'';
+        const rwyName=`${dm[1]}/${String(rn).padStart(2,'0')}${rs}`;
+        runways.push({name:rwyName,length:l,width:w,surface:dimM[3],pcn:pcnVal});
+        pcnList.push(pcnVal);
+        if(l>maxLen){maxLen=l;maxWid=w;}
+      }
+    }
+    // Fallback: dimension + surface + PCN without designation
+    if(!runways.length){
+      const fallback=[...raw.matchAll(/(\d{3,5})\s*[xX×]\s*(\d{2,3})\s+(ASPH|CONC|GRVL|DIRT|GRAS)\s+(\d+\/\w\/\w\/\w\/\w)/g)];
+      fallback.forEach(m=>{
+        const l=parseInt(m[1]),w=parseInt(m[2]);
+        runways.push({name:null,length:l,width:w,surface:m[3],pcn:m[4]});
+        pcnList.push(m[4]);
+        if(l>maxLen){maxLen=l;maxWid=w;}
+      });
+    }
+    // Fallback: simple dimensions
+    if(!runways.length){
+      const simple=[...clean.matchAll(/(\d{3,5})\s*[xX×]\s*(\d{2,3})/g)];
+      simple.forEach(m=>{const l=parseInt(m[1]),w=parseInt(m[2]);if(l>maxLen){maxLen=l;maxWid=w;}});
+    }
+    // IFR procedures (same keywords as bot)
+    const hasIfr=['IAC','ILS','VOR/DME','NDB','RNAV','RNP'].some(k=>raw.includes(k));
+    const hasSid=raw.includes('SID');
+    const hasStar=raw.includes('STAR');
+    // Fire category — RFFS...CAT N (same as bot)
+    let fireCat=null;
+    const fireM1=raw.match(/RFFS[\s\S]*?CAT\s*(?:CIVIL\s*-\s*)?(\d+)/);
+    if(fireM1)fireCat=fireM1[1];
+    else{const fireM2=raw.match(/Categoria Contra Inc[eê]ndio[\s\S]*?CAT\s*(\d+)/);if(fireM2)fireCat=fireM2[1];}
+    // Operating type — UTC±N VFR IFR (same as bot)
+    let oprType=null;
+    const oprM=raw.match(/UTC[+-]?\d\s+((?:VFR|IFR)(?:\s+(?:VFR|IFR))*)/);
+    if(oprM)oprType=oprM[1].trim().replace('VFR IFR','VFR/IFR').replace('IFR VFR','VFR/IFR');
+    // Night operations — runway edge lights L9, L21, L23, L26 (same as bot)
+    const hasNight=/L(?:9|21|23|26)\b/.test(raw);
+    // Elevation — ft in parentheses (same as bot)
+    let elevFt=null;
+    const elevM=raw.match(/\d{2,4}(?:\.\d+)?\s*\((\d{2,5})\)/);
+    if(elevM)elevFt=elevM[1];
+    // AD operating hours
+    let adHr=null;
+    const adM=raw.match(/AD\s+HR\s+SER\s+(.*?)\./);
+    if(adM)adHr=adM[0].replace(/<[^>]+>/g,'').trim();
     // Tower
-    empty.hasTwr=/\bTWR\b/i.test(clean);
-    // Runway dimensions
-    const rwyMatch=clean.match(/(\d{3,4})\s*x\s*(\d{2,3})/);
-    if(rwyMatch){empty.rwyLen=parseInt(rwyMatch[1]);empty.rwyWid=parseInt(rwyMatch[2]);}
-    // PCN
-    const pcnMatch=clean.match(/PCN\s+([^\s,]+(?:\/[^\s,]+)*)/i);
-    if(pcnMatch)empty.pcn=pcnMatch[1];
-    // Fire category
-    const fireMatch=clean.match(/(?:CAT|categoria)[^0-9]*(\d+)/i);
-    if(fireMatch)empty.fireCat=fireMatch[1];
-    // Elevation
-    const elevMatch=clean.match(/(\d{1,5})\s*(?:FT|ft|pés)/);
-    if(elevMatch)empty.elevFt=elevMatch[1];
-    return empty;
+    const hasTwr=/TWR\s/.test(raw.substring(0,30000));
+    // Runway designations
+    const rwyDesig=[...new Set((raw.match(/RWY\s+(\d{2}[LRC]?)/g)||[]).map(m=>m.replace('RWY ','').trim()))].sort();
+    return{rwyLen:maxLen||null,rwyWid:maxWid||null,hasIfr,hasSid,hasStar,fireCat,pcn:pcnList[0]||null,oprType,hasNight,elevFt,adHr,hasTwr,runways,rwyDesig};
   }catch(e){return empty;}
 }
 
@@ -2938,9 +2974,17 @@ async function botExecMsgPadrao(){
     lines.push(`${orig}-${dest}: ${formatTime(idaH)}`);
     lines.push(`${dest}-${orig}: ${formatTime(voltaH)}`);
     lines.push('');
-    // Pista
-    if(destAis.rwyLen)lines.push(`- Pista: ${destAis.rwyLen}x${destAis.rwyWid}${destAis.pcn?' (PCN '+destAis.pcn+')':''}`);
-    else lines.push(`- Pista: dados não encontrados (<a href="https://aisweb.decea.mil.br/?i=aerodromos&codigo=${dest}" target="_blank" style="color:var(--vc1)">AISWEB</a>)`);
+    // Pista(s)
+    if(destAis.runways&&destAis.runways.length){
+      destAis.runways.forEach(rwy=>{
+        const name=rwy.name||'N/D';
+        lines.push(`- Pista ${name}: ${rwy.length}x${rwy.width} ${rwy.surface||''} (PCN ${rwy.pcn||'N/D'})`);
+      });
+    }else if(destAis.rwyLen){
+      lines.push(`- Pista: ${destAis.rwyLen}x${destAis.rwyWid}${destAis.pcn?' (PCN '+destAis.pcn+')':''}`);
+    }else{
+      lines.push(`- Pista: dados não encontrados (<a href="https://aisweb.decea.mil.br/?i=aerodromos&codigo=${dest}" target="_blank" style="color:var(--vc1)">AISWEB</a>)`);
+    }
     if(destAis.elevFt)lines.push(`- Altitude ${destAis.elevFt}FT`);
     if(destAis.fireCat)lines.push(`- Categoria Contra Incêndio: CAT ${destAis.fireCat}`);
     else lines.push(`- Categoria Contra Incêndio: não encontrado`);
