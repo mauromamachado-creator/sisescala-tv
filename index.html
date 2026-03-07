@@ -1365,15 +1365,16 @@ function renderScreen0(){
         // OM tem prioridade - mostra dados da OM
         for(const om of dayOMs){
           const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
-          for(const p of om.pernas){
-            html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-              <div style="min-width:70px;font-weight:900;color:var(--text)">${dateStr}</div>
-              <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${dayName}</div>
-              <div style="min-width:80px;font-size:.82rem;color:${anvColor}">${om.fab}</div>
-              <div style="flex:1;font-size:.82rem">${p.origem}→${p.destino} <span style="color:var(--text2);font-size:.72rem">${p.etd.split(' ')[1]||''}</span> <span style="color:var(--yellow);font-size:.72rem">${p.missao}</span></div>
-              <div style="font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</div>
-              </div>`;
-          }
+          const rota=om.pernas.map(p=>p.origem).concat([om.pernas[om.pernas.length-1].destino]).join('→');
+          const horaDep=om.pernas[0].etd.split(' ')[1]||'';
+          const missoes=[...new Set(om.pernas.map(p=>p.missao).filter(Boolean))].join(' / ');
+          html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+            <div style="min-width:70px;font-weight:900;color:var(--text)">${dateStr}</div>
+            <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${dayName}</div>
+            <div style="min-width:80px;font-size:.82rem;color:${anvColor}">${om.fab}</div>
+            <div style="flex:1;font-size:.82rem">${rota} <span style="color:var(--text2);font-size:.72rem">${horaDep}</span> <span style="color:var(--yellow);font-size:.72rem">${missoes}</span></div>
+            <div style="font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</div>
+            </div>`;
         }
       }else if(dayDiario){
         // Sem OM - mostra diário (rascunho)
