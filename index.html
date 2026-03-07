@@ -1348,10 +1348,12 @@ function renderScreen0(){
   const weekDays=diarioData.filter(d=>{const diff=(d.date-td)/(86400000);return diff>0&&diff<=7&&d.legs.length>0;});
   const tdMid=new Date(td);tdMid.setHours(12,0,0,0);
   const futureOMs=omData.filter(o=>{const od=new Date(o.data+'T12:00:00');const diff=(od-tdMid)/86400000;return diff>0&&diff<=7;});
+  // Extrair todas as datas de pernas das OMs (para missões multi-dia)
+  function getOMDates(om){const dates=new Set([om.data]);om.pernas.forEach(p=>{const m=p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(m)dates.add('20'+m[3]+'-'+m[2]+'-'+m[1]);const m2=p.eta.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(m2)dates.add('20'+m2[3]+'-'+m2[2]+'-'+m2[1]);});return[...dates];}
   // Juntar todas as datas únicas
   const allDates=new Set();
   weekDays.forEach(d=>{const iso=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');allDates.add(iso);});
-  futureOMs.forEach(o=>allDates.add(o.data));
+  futureOMs.forEach(o=>getOMDates(o).forEach(d=>allDates.add(d)));
   const sortedDates=[...allDates].sort();
   if(sortedDates.length){
     html+='<div style="margin-top:16px;font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">Próximos Dias</div>';
@@ -1359,15 +1361,18 @@ function renderScreen0(){
       const dObj=new Date(isoDate+'T12:00:00');
       const dateStr=String(dObj.getDate()).padStart(2,'0')+'/'+String(dObj.getMonth()+1).padStart(2,'0');
       const dayName=dayNames[dObj.getDay()];
-      const dayOMs=omData.filter(o=>o.data===isoDate);
+      const dayOMs=omData.filter(o=>getOMDates(o).includes(isoDate));
       const dayDiario=weekDays.find(d=>{const di=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');return di===isoDate;});
       if(dayOMs.length){
         // OM tem prioridade - mostra dados da OM
         for(const om of dayOMs){
           const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
-          const rota=om.pernas.map(p=>p.origem).concat([om.pernas[om.pernas.length-1].destino]).join('→');
-          const horaDep=om.pernas[0].etd.split(' ')[1]||'';
-          const missoes=om.pernas[0].missao||'';
+          // Filtrar pernas deste dia (pela data no ETD)
+          const dayPernas=om.pernas.filter(p=>{const m=p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(!m)return true;const pd='20'+m[3]+'-'+m[2]+'-'+m[1];return pd===isoDate;});
+          const pernas=dayPernas.length?dayPernas:om.pernas;
+          const rota=pernas.map(p=>p.origem).concat([pernas[pernas.length-1].destino]).join('→');
+          const horaDep=pernas[0].etd.split(' ')[1]||'';
+          const missoes=pernas[0].missao||'';
           html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
             <div style="min-width:70px;font-weight:900;color:var(--text)">${dateStr}</div>
             <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${dayName}</div>
