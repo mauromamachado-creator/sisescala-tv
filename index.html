@@ -673,7 +673,7 @@ async function fetchMetar(){
 }
 async function fetchMetarMulti(){
   try{
-    const ids='SBBR,SBGL,SBRJ,SBSP';
+    const ids='SBBR,SBCF,SBRJ,SBSP';
     // Tenta direto primeiro, fallback pro proxy
     let text='';
     try{
@@ -1607,8 +1607,8 @@ function renderScreenTV(){
   // Row 3 Col 1: METAR (múltiplos aeródromos)
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow-y:auto">`;
   html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:6px;font-size:.78rem">🌤 METAR</div>`;
-  const metarIcaos=['SBBR','SBGL','SBRJ','SBSP'];
-  const metarNames={SBBR:'Brasília',SBGL:'Galeão',SBRJ:'Santos Dumont',SBSP:'Congonhas'};
+  const metarIcaos=['SBBR','SBCF','SBRJ','SBSP'];
+  const metarNames={SBBR:'Brasília',SBCF:'Confins',SBRJ:'Santos Dumont',SBSP:'Congonhas'};
   let hasMetar=false;
   for(const icao of metarIcaos){
     const raw=metarMulti[icao]||'';
