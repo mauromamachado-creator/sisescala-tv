@@ -2557,7 +2557,10 @@ function findNomeCompleto(nome){
 function getDiariasDownloaded(){return JSON.parse(localStorage.getItem('sisgopa_diarias_done')||'{}');}
 function setDiariaDownloaded(omId){const d=getDiariasDownloaded();d[omId]=Date.now();localStorage.setItem('sisgopa_diarias_done',JSON.stringify(d));}
 function getDiariasConcluidas(){return JSON.parse(localStorage.getItem('sisgopa_diarias_concluidas')||'{}');}
-function setDiariaConcluida(omId){const d=getDiariasConcluidas();d[omId]=Date.now();localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();}
+function setDiariaConcluida(omId){
+  if(!confirm('A solicitação de diária da OM '+omId+' foi assinada e enviada à PR?\n\nAo confirmar, ela será arquivada como concluída.'))return;
+  const d=getDiariasConcluidas();d[omId]=Date.now();localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();
+}
 function undoDiariaConcluida(omId){const d=getDiariasConcluidas();delete d[omId];localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();}
 
 function renderScreenDiarias(){
