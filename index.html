@@ -1533,9 +1533,9 @@ function renderScreenTV(){
         const anvDisplay=leg.isExtra?'FAB 2590':anvTxt;
         html+=`<div style="display:flex;gap:6px;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.75rem">`;
         html+=`<span style="font-weight:900;color:var(--vc1);min-width:40px">${leg.dep}</span>`;
-        html+=`<span>${leg.route.replace(/-/g,'→')}</span>`;
-        html+=`<span style="color:var(--text2);font-size:.68rem">${anvDisplay}</span>`;
-        html+=`<span style="margin-left:auto;background:rgba(0,255,255,.1);color:var(--vc1);padding:1px 6px;border-radius:3px;font-size:.65rem;font-weight:700">${leg.mission||'—'}</span>`;
+        html+=`<span style="color:var(--vc1);font-size:.68rem;min-width:65px">${anvDisplay}</span>`;
+        html+=`<span style="flex:1">${leg.route.replace(/-/g,'→')}</span>`;
+        html+=`<span style="background:rgba(0,255,255,.1);color:var(--vc1);padding:1px 6px;border-radius:3px;font-size:.65rem;font-weight:700">${leg.mission||'—'}</span>`;
         html+=`</div>`;
       }
     }else{html+=`<div style="color:var(--text2)">Sem missões hoje.</div>`;}
@@ -1611,15 +1611,13 @@ function renderScreenTV(){
   if(weekDays.length){
     for(const day of weekDays){
       const anvLabel=day.aeronave&&day.aeronave!=='AERONAVE'?day.aeronave:'';
-      // Extrair localidades únicas dos legs
-      const locs=new Set();
-      day.legs.forEach(l=>{const parts=(l.route||'').split('-');parts.forEach(p=>{const t=p.trim();if(t&&t!=='BR')locs.add(t);});});
-      const locStr=locs.size?[...locs].join('→'):'—';
-      html+=`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem">`;
+      // Montar rota completa dos legs
+      const fullRoute=day.legs.map(l=>l.route||'').join(' / ').replace(/-/g,'→');
+      html+=`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem;align-items:center">`;
       html+=`<span style="font-weight:900;min-width:40px">${day.dateStr}</span>`;
       html+=`<span style="color:var(--text2);min-width:28px">${day.dayName}</span>`;
-      html+=`<span style="color:var(--vc1);font-size:.68rem">${anvLabel}</span>`;
-      html+=`<span style="margin-left:auto;color:var(--text)">${locStr}</span>`;
+      html+=`<span style="color:var(--vc1);font-size:.68rem;min-width:60px">${anvLabel}</span>`;
+      html+=`<span style="color:var(--text);font-size:.68rem">${fullRoute}</span>`;
       html+=`</div>`;
     }
   }else{html+=`<div style="color:var(--text2)">Sem voos programados.</div>`;}
