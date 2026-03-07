@@ -1516,7 +1516,7 @@ let escalaUnlocked=false;
 function goScreen(n){
   if(n===8&&!escalaUnlocked){
     const pw=prompt('🔒 Área restrita. Digite a senha:');
-    if(pw!=='gte1'){alert('Senha incorreta.');return;}
+    if(pw!=='gte@macosv'){alert('Senha incorreta.');return;}
     escalaUnlocked=true;
   }
   currentScreen=n;document.querySelectorAll('.screen').forEach((s,i)=>s.classList.toggle('active',i===n));document.querySelectorAll('.nav-btns button').forEach((b,i)=>b.classList.toggle('active',i===n));
