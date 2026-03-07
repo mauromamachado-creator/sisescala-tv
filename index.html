@@ -1605,9 +1605,9 @@ function renderScreenTV(){
   
   // Row 2 Col 2: Top Horas GTE (ranking unificado)
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
-  html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px;font-size:.78rem">🏆 TOP HORAS GTE</div>`;
+  html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px;font-size:.78rem">🏆 TOP 10 GTE</div>`;
   const allSorted=[...pilotData.vc1.map(p=>({...p,anvType:'VC-1'})),...pilotData.vc2.map(p=>({...p,anvType:'VC-2'}))].filter(p=>p.voadas!=null&&p.voadas>0).sort((a,b)=>b.voadas-a.voadas);
-  for(let i=0;i<Math.min(8,allSorted.length);i++){
+  for(let i=0;i<Math.min(10,allSorted.length);i++){
     const p=allSorted[i];
     const anvColor=p.anvType==='VC-1'?'var(--vc1)':'var(--vc2)';
     html+=`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:.75rem">`;
@@ -1640,15 +1640,6 @@ function renderScreenTV(){
   html+=`<div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:4px"><span style="color:var(--vc2);font-weight:900">VC-2</span><span style="color:${vc2Color};font-weight:700">${fmtHours(anualVC2.voadas)} / ${anualVC2.esforco}h (${vc2pct.toFixed(1)}%)</span></div>`;
   html+=`<div style="height:14px;background:var(--bg3);border-radius:4px;position:relative;overflow:visible">`;
   html+=`<div style="height:100%;width:${Math.min(vc2pct,100)}%;background:linear-gradient(90deg,var(--vc2),${vc2Color});border-radius:4px"></div>`;
-  html+=`<div style="position:absolute;top:-3px;bottom:-3px;left:${yearPctTV}%;width:3px;background:#fff;border-radius:2px;opacity:.9;box-shadow:0 0 6px rgba(255,255,255,.6)"></div>`;
-  html+=`</div></div>`;
-  const totalVoadas=anualVC1.voadas+anualVC2.voadas;const totalEsforco=anualVC1.esforco+anualVC2.esforco;
-  const totalPct=totalEsforco>0?(totalVoadas/totalEsforco*100):0;
-  const totalColor=totalPct<yearPctTV*0.8?'var(--red)':totalPct<yearPctTV?'var(--yellow)':'var(--green)';
-  html+=`<div style="padding-top:8px;border-top:1px solid var(--border)">`;
-  html+=`<div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:4px"><span style="color:var(--text);font-weight:900">TOTAL GTE</span><span style="color:${totalColor};font-weight:700">${fmtHours(totalVoadas)} / ${totalEsforco}h (${totalPct.toFixed(1)}%)</span></div>`;
-  html+=`<div style="height:14px;background:var(--bg3);border-radius:4px;position:relative;overflow:visible">`;
-  html+=`<div style="height:100%;width:${Math.min(totalPct,100)}%;background:linear-gradient(90deg,#00d4ff,${totalColor});border-radius:4px"></div>`;
   html+=`<div style="position:absolute;top:-3px;bottom:-3px;left:${yearPctTV}%;width:3px;background:#fff;border-radius:2px;opacity:.9;box-shadow:0 0 6px rgba(255,255,255,.6)"></div>`;
   html+=`</div></div>`;
   html+=`</div>`;
