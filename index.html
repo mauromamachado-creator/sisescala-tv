@@ -1412,14 +1412,14 @@ function renderScreen0(){
   const vc1V=anualVC1.voadas;const vc1M=anualVC1.esforco||650;
   const vc1Pct=vc1M>0?(vc1V/vc1M*100):0;const vc1C=vc1Pct<yearPct*0.8?'var(--red)':vc1Pct<yearPct?'var(--yellow)':'var(--green)';
   html+=`<div class="prog-section">
-    <div class="prog-label"><span style="color:var(--vc1);font-weight:900">VC-1</span><span>${fmtHours(vc1V)} / ${fmtHours(vc1M)} <span style="color:${vc1C};font-weight:900">(${vc1Pct.toFixed(1)}%)</span></span></div>
+    <div class="prog-label"><span style="color:var(--vc1);font-weight:900">VC-1</span><span>${fmtHours(vc1V)} / ${fmtHours(vc1M)} <span style="color:var(--vc1);font-weight:900">(${vc1Pct.toFixed(1)}%)</span></span></div>
     <div class="prog-track"><div class="prog-marker" style="left:${yearPct}%"></div><div class="prog-fill" style="width:${Math.min(vc1Pct,100)}%;background:linear-gradient(90deg,var(--vc1),${vc1C})" data-pct="${vc1Pct.toFixed(0)}%"></div></div></div>`;
 
   // VC-2 - Dados da aba Anual (Aux Anual)
   const vc2V=anualVC2.voadas;const vc2M=anualVC2.esforco||1220;
   const vc2Pct=vc2M>0?(vc2V/vc2M*100):0;const vc2C=vc2Pct<yearPct*0.8?'var(--red)':vc2Pct<yearPct?'var(--yellow)':'var(--green)';
   html+=`<div class="prog-section">
-    <div class="prog-label"><span style="color:var(--vc2);font-weight:900">VC-2</span><span>${fmtHours(vc2V)} / ${fmtHours(vc2M)} <span style="color:${vc2C};font-weight:900">(${vc2Pct.toFixed(1)}%)</span></span></div>
+    <div class="prog-label"><span style="color:var(--vc2);font-weight:900">VC-2</span><span>${fmtHours(vc2V)} / ${fmtHours(vc2M)} <span style="color:var(--vc2);font-weight:900">(${vc2Pct.toFixed(1)}%)</span></span></div>
     <div class="prog-track"><div class="prog-marker" style="left:${yearPct}%"></div><div class="prog-fill" style="width:${Math.min(vc2Pct,100)}%;background:linear-gradient(90deg,var(--vc2),${vc2C})" data-pct="${vc2Pct.toFixed(0)}%"></div></div></div>`;
 
   // Avisos 50% e 70% - Ofício ao GABAER
