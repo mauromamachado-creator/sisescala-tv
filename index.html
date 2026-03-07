@@ -1364,43 +1364,39 @@ function renderScreen0(){
       const dayOMs=omData.filter(o=>getOMDates(o).includes(isoDate));
       const dayDiario=weekDays.find(d=>{const di=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');return di===isoDate;});
       if(dayOMs.length){
-        // OM tem prioridade - mostra dados da OM
         for(const om of dayOMs){
           const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
-          // Filtrar pernas deste dia (pela data no ETD)
           const dayPernas=om.pernas.filter(p=>{const m=p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(!m)return true;const pd='20'+m[3]+'-'+m[2]+'-'+m[1];return pd===isoDate;});
           const pernas=dayPernas.length?dayPernas:om.pernas;
-          let pernasTxt=pernas.map(p=>{const h=(p.etd.split(' ')[1]||'');return`<div style="font-size:.75rem;line-height:1.5"><span style="color:var(--text2)">${h}</span> ${p.origem}-${p.destino} <span style="color:var(--yellow)">${p.missao||''}</span></div>`;}).join('');
-          html+=`<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-            <div style="display:flex;align-items:flex-start;gap:10px">
-              <div style="min-width:42px;font-weight:900;color:var(--text);font-size:.82rem">${dateStr}</div>
-              <div style="min-width:28px;font-size:.72rem;color:var(--text2);padding-top:2px">${dayName}</div>
-              <div style="font-size:.8rem;color:${anvColor};font-weight:700;min-width:75px">${om.fab}</div>
-              <div style="flex:1">${pernasTxt}</div>
-              <div style="font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline;white-space:nowrap;align-self:center" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</div>
-            </div></div>`;
+          html+=`<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-weight:900;color:var(--text);font-size:.85rem">${dateStr} <span style="font-weight:400;color:var(--text2);font-size:.72rem">${dayName}</span></span>
+              <span style="font-size:.8rem;color:${anvColor};font-weight:700">${om.fab}</span>
+            </div>`;
+          for(const p of pernas){
+            const h=(p.etd.split(' ')[1]||'');
+            html+=`<div style="font-size:.78rem;padding:2px 0 2px 8px">${h} <span style="font-weight:600">${p.origem}→${p.destino}</span> <span style="color:var(--yellow)">${p.missao||''}</span></div>`;
+          }
+          html+=`<div style="margin-top:4px"><span style="font-size:.65rem;color:var(--green);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM ${om.om}</span></div>`;
+          html+=`</div>`;
         }
       }else if(dayDiario){
-        // Sem OM - mostra diário (rascunho)
         const anvLabel=dayDiario.aeronave&&dayDiario.aeronave!=='AERONAVE'?dayDiario.aeronave:'A DEFINIR';
         const mainLegs=dayDiario.legs.filter(l=>!l.isExtra);
         const extraLegs=dayDiario.legs.filter(l=>l.isExtra);
+        html+=`<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-weight:900;color:var(--text);font-size:.85rem">${dateStr} <span style="font-weight:400;color:var(--text2);font-size:.72rem">${dayName}</span></span>
+          </div>`;
         if(mainLegs.length){
-          html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-            <div style="min-width:70px;font-weight:900;color:var(--text)">${dateStr}</div>
-            <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${dayName}</div>
-            <div style="min-width:80px;font-size:.82rem;color:var(--vc1)">${anvLabel}</div>
-            <div style="flex:1;font-size:.82rem">${mainLegs.map(l=>'<span style="margin-right:12px">'+l.dep+' '+l.route.replace(/-/g,'→')+'</span>').join('')}</div>
-            </div>`;
+          html+=`<div style="font-size:.78rem;color:var(--vc1);font-weight:600;margin-bottom:2px">${anvLabel}</div>`;
+          for(const l of mainLegs)html+=`<div style="font-size:.78rem;padding:2px 0 2px 8px">${l.dep} ${l.route.replace(/-/g,'→')}</div>`;
         }
         if(extraLegs.length){
-          html+=`<div style="display:flex;align-items:center;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-            <div style="min-width:70px"></div>
-            <div style="min-width:36px"></div>
-            <div style="min-width:80px;font-size:.82rem;color:var(--vc2)">FAB 2590</div>
-            <div style="flex:1;font-size:.82rem;color:var(--vc2)">${extraLegs.map(l=>'<span style="margin-right:12px">'+l.dep+' '+l.route.replace(/-/g,'→')+'</span>').join('')}</div>
-            </div>`;
+          html+=`<div style="font-size:.78rem;color:var(--vc2);font-weight:600;margin-top:4px;margin-bottom:2px">FAB 2590</div>`;
+          for(const l of extraLegs)html+=`<div style="font-size:.78rem;padding:2px 0 2px 8px;color:var(--vc2)">${l.dep} ${l.route.replace(/-/g,'→')}</div>`;
         }
+        html+=`</div>`;
       }
     }
   }
