@@ -25,6 +25,8 @@ header{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 2
 .clock{color:var(--vc1);font-size:1rem;font-weight:800}
 .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:#444}
 .status-dot.ok{background:var(--green)}.status-dot.err{background:var(--red)}
+@keyframes tvBlink{0%,100%{opacity:1}50%{opacity:.2}}
+.tv-blink{animation:tvBlink 1s ease-in-out infinite}
 .ctrl-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:4px 10px;cursor:pointer;font-family:inherit;font-size:.8rem;border-radius:3px}
 .ctrl-btn:hover{border-color:var(--vc1);color:var(--vc1)}
 
@@ -1531,8 +1533,22 @@ function renderScreenTV(){
   const totalCheck=checklistData.length;
   const doneCheck=checklistData.filter(c=>c.done).length;
   const checkPct=totalCheck>0?Math.round(doneCheck/totalCheck*100):0;
-  const checkColor=checkPct===100?'var(--green)':checkPct>=50?'var(--yellow)':'var(--red)';
-  html+=`<div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:${checkColor}">${checkPct}%</div><div style="font-size:.7rem;color:var(--text2)">DIÁRIO</div></div>`;
+  // Meta: 100% às 17h (seg-qui) ou 12h (sex). Sáb/Dom não tem checklist.
+  const dow=td.getDay(); // 0=DOM,5=SEX,6=SAB
+  const deadlineH=(dow>=1&&dow<=4)?17:dow===5?12:null;
+  const nowH=td.getHours()+td.getMinutes()/60;
+  let checkColor;
+  if(checkPct===100){checkColor='var(--green)';}
+  else if(deadlineH!==null){
+    const expectedPct=deadlineH>0?Math.min((nowH/deadlineH)*100,100):0;
+    if(nowH>=deadlineH){checkColor='var(--red)';}
+    else if(checkPct>=expectedPct*0.9){checkColor='var(--green)';}
+    else if(checkPct>=expectedPct*0.6){checkColor='var(--yellow)';}
+    else{checkColor='var(--red)';}
+  }else{checkColor='var(--green)';/* sáb/dom */}
+  const shouldBlink=checkPct<100&&deadlineH!==null&&nowH>=deadlineH;
+  const blinkClass=shouldBlink?'tv-blink':'';
+  html+=`<div style="text-align:center" class="${blinkClass}"><div style="font-size:2rem;font-weight:900;color:${checkColor}">${checkPct}%</div><div style="font-size:.7rem;color:var(--text2)">DIÁRIO</div></div>`;
   html+=`</div>`;
   
   // Row 2 Col 1: Missões de Hoje (prioridade: confirmaData se disponível)
@@ -1626,7 +1642,7 @@ function renderScreenTV(){
   // Row 3 Col 2: Alertas
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
   html+=`<div style="font-weight:900;color:var(--yellow);margin-bottom:6px;font-size:.78rem">⚠️ ALERTAS</div>`;
-  const alerts=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status!=='DISPONÍVEL'&&s.status!=='FERIAS'&&p.grupo!=='OUT';});
+  const alerts=allPilots.filter(p=>{if(p.grupo==='OUT')return false;const s=getPilotStatus(p,td);return s.status.startsWith('INDISPONÍVEL')||s.status==='FERIAS'||isOnVacation(p.trigrama,td);});
   if(alerts.length){
     for(const p of alerts.slice(0,6)){
       const s=getPilotStatus(p,td);
