@@ -816,9 +816,10 @@ function renderScreen0(){
   html+='<div class="dash-panel p-vc1">';
   html+='<div class="panel-title"><span class="icon">✈️</span> Top Voados — VC-1</div>';
   const vc1Sorted=pilotData.vc1.filter(p=>p.voadas!=null&&getPilotStatus(p,td).status!=='FORA').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
+  const topColors=['#ffd700','#c0c0c0','#cd7f32']; // ouro, prata, bronze
   for(let i=0;i<Math.min(3,vc1Sorted.length);i++){
     const p=vc1Sorted[i];const pct=p.pct||0;
-    const barColor=pct<50?'var(--red)':pct<75?'var(--yellow)':'var(--green)';
+    const barColor=topColors[i]||'var(--vc1)';
     html+=`<div class="top-pilot">
       <span class="top-rank">${i+1}º</span>
       <div class="top-info"><div class="top-tri" style="color:var(--vc1)">${p.trigrama}</div><div class="top-name">${p.name||''}</div></div>
@@ -836,7 +837,7 @@ function renderScreen0(){
   const vc2Sorted=pilotData.vc2.filter(p=>p.voadas!=null&&getPilotStatus(p,td).status!=='FORA').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
   for(let i=0;i<Math.min(3,vc2Sorted.length);i++){
     const p=vc2Sorted[i];const pct=p.pct||0;
-    const barColor=pct<50?'var(--red)':pct<75?'var(--yellow)':'var(--green)';
+    const barColor=topColors[i]||'var(--vc2)';
     html+=`<div class="top-pilot">
       <span class="top-rank">${i+1}º</span>
       <div class="top-info"><div class="top-tri" style="color:var(--vc2)">${p.trigrama}</div><div class="top-name">${p.name||''}</div></div>
