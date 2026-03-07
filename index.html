@@ -32,6 +32,8 @@ header{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 2
 .status-dot:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a2233;color:var(--text);font-size:.7rem;padding:4px 8px;border-radius:4px;white-space:nowrap;border:1px solid var(--border);z-index:999;pointer-events:none}
 @keyframes tvBlink{0%,100%{opacity:1}50%{opacity:.2}}
 .tv-blink{animation:tvBlink 1s ease-in-out infinite}
+@keyframes horasGlow{0%,100%{text-shadow:0 0 10px rgba(0,212,255,.4),0 0 20px rgba(0,212,255,.2)}50%{text-shadow:0 0 20px rgba(0,212,255,.8),0 0 40px rgba(0,212,255,.4),0 0 60px rgba(0,255,136,.2)}}
+#tvTotalHoras{animation:horasGlow 3s ease-in-out infinite}
 .ctrl-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:4px 10px;cursor:pointer;font-family:inherit;font-size:.8rem;border-radius:3px}
 .ctrl-btn:hover{border-color:var(--vc1);color:var(--vc1)}
 
@@ -1728,7 +1730,10 @@ function renderScreenTV(){
   html+=`<div style="font-weight:900;color:var(--yellow);margin-bottom:10px;font-size:.78rem">📊 PROGRESSO HORAS DO ANO</div>`;
   const yearStart=new Date(td.getFullYear(),0,1);const yearEnd=new Date(td.getFullYear(),11,31);
   const yearPctTV=((td-yearStart)/(yearEnd-yearStart)*100);
-  html+=`<div style="font-size:.68rem;color:var(--text2);margin-bottom:10px">Progresso do ano: <span style="color:var(--text);font-weight:700">${yearPctTV.toFixed(0)}%</span></div>`;
+  // Meta proporcional para hoje
+  const metaHojeVC1=anualVC1.esforco*(yearPctTV/100);
+  const metaHojeVC2=anualVC2.esforco*(yearPctTV/100);
+  html+=`<div style="font-size:.68rem;color:var(--text2);margin-bottom:10px">Meta para Hoje: <span style="color:var(--vc1);font-weight:700">VC-1 ${fmtHours(metaHojeVC1)}</span> · <span style="color:var(--vc2);font-weight:700">VC-2 ${fmtHours(metaHojeVC2)}</span></div>`;
   const vc1pct=anualVC1.esforco>0?(anualVC1.voadas/anualVC1.esforco*100):0;
   const vc1Color=vc1pct<yearPctTV*0.8?'var(--red)':vc1pct<yearPctTV?'var(--yellow)':'var(--green)';
   html+=`<div style="margin-bottom:12px">`;
@@ -1745,6 +1750,13 @@ function renderScreenTV(){
   html+=`<div style="height:100%;width:${Math.min(vc2pct,100)}%;background:linear-gradient(90deg,var(--vc2),${vc2Color});border-radius:4px"></div>`;
   html+=`<div style="position:absolute;top:-3px;bottom:-3px;left:${yearPctTV}%;width:3px;background:#fff;border-radius:2px;opacity:.9;box-shadow:0 0 6px rgba(255,255,255,.6)"></div>`;
   html+=`</div></div>`;
+  // Total de horas voadas — animação contadora
+  const totalVoadas=anualVC1.voadas+anualVC2.voadas;
+  const totalHH=Math.floor(totalVoadas);const totalMM=Math.round((totalVoadas-totalHH)*60);
+  html+=`<div style="text-align:center;margin-top:8px;padding:10px 0;border-top:1px solid var(--border)">`;
+  html+=`<div style="font-size:.6rem;color:var(--text2);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Total Horas Voadas GTE — 2026</div>`;
+  html+=`<div id="tvTotalHoras" style="font-size:2rem;font-weight:900;background:linear-gradient(90deg,var(--vc1),var(--vc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px">${String(totalHH).padStart(3,'0')}h${String(totalMM).padStart(2,'0')}</div>`;
+  html+=`</div>`;
   html+=`</div>`;
   // Row 3 Col 1: METAR (múltiplos aeródromos)
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow-y:auto">`;
