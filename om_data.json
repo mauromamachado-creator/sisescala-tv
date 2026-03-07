@@ -1,5 +1,82 @@
 [
   {
+    "om": "86/GTE-1/2026",
+    "data": "2026-03-03",
+    "aeronave": "VC-1",
+    "fab": "FAB 2101",
+    "tripulacao": [
+      {
+        "posto": "MJ",
+        "nome": "MACHADO",
+        "trigrama": "MAC",
+        "funcao": "Piloto"
+      },
+      {
+        "posto": "MJ",
+        "nome": "MASLINKIEWICZ",
+        "funcao": "Piloto"
+      },
+      {
+        "posto": "CP",
+        "nome": "CIRIACO",
+        "funcao": "Piloto"
+      },
+      {
+        "posto": "CP",
+        "nome": "CHARLES",
+        "funcao": "Mecânico"
+      },
+      {
+        "posto": "2S",
+        "nome": "ANDRE",
+        "funcao": "Mecânico"
+      },
+      {
+        "posto": "1S",
+        "nome": "MARCO AURELIO",
+        "funcao": "Op. Comunicações"
+      },
+      {
+        "posto": "2S",
+        "nome": "ANDRESSA",
+        "funcao": "Comissária"
+      },
+      {
+        "posto": "2S",
+        "nome": "CLÉSIO",
+        "funcao": "Comissário"
+      }
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "destino": "SBKP",
+        "etd": "03/03/26 17:05Z",
+        "eta": "03/03/26 18:20Z",
+        "ete": "01:15",
+        "missao": "PR"
+      },
+      {
+        "origem": "SBKP",
+        "destino": "SBSP",
+        "etd": "03/03/26 21:20Z",
+        "eta": "03/03/26 21:35Z",
+        "ete": "00:15",
+        "missao": "PR"
+      },
+      {
+        "origem": "SBSP",
+        "destino": "SBBR",
+        "etd": "04/03/26 01:25Z",
+        "eta": "04/03/26 02:45Z",
+        "ete": "01:20",
+        "missao": "PR"
+      }
+    ],
+    "gerado": "03/03/2026",
+    "gerado_por": "TC GAMMERDINGER"
+  },
+  {
     "om": "94/GTE-1/2026",
     "data": "2026-03-06",
     "aeronave": "VC-2",
