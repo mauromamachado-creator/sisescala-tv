@@ -1611,14 +1611,25 @@ function renderScreenTV(){
   if(weekDays.length){
     for(const day of weekDays){
       const anvLabel=day.aeronave&&day.aeronave!=='AERONAVE'?day.aeronave:'';
-      // Montar rota completa dos legs
-      const fullRoute=day.legs.map(l=>l.route||'').join(' / ').replace(/-/g,'→');
+      // Separar legs por aeronave
+      const mainLegs=day.legs.filter(l=>!l.isExtra);
+      const extraLegs=day.legs.filter(l=>l.isExtra);
+      const mainRoute=mainLegs.map(l=>(l.route||'').replace(/-/g,'→')).join(' / ');
+      const extraRoute=extraLegs.map(l=>(l.route||'').replace(/-/g,'→')).join(' / ');
       html+=`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem;align-items:center">`;
       html+=`<span style="font-weight:900;min-width:40px">${day.dateStr}</span>`;
       html+=`<span style="color:var(--text2);min-width:28px">${day.dayName}</span>`;
-      html+=`<span style="color:var(--vc1);font-size:.68rem;min-width:60px">${anvLabel}</span>`;
-      html+=`<span style="color:var(--text);font-size:.68rem">${fullRoute}</span>`;
+      html+=`<span style="color:var(--vc1);font-size:.68rem;min-width:65px">${anvLabel}</span>`;
+      html+=`<span style="color:var(--text);font-size:.68rem">${mainRoute}</span>`;
       html+=`</div>`;
+      if(extraLegs.length){
+        html+=`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem;align-items:center">`;
+        html+=`<span style="min-width:40px"></span>`;
+        html+=`<span style="min-width:28px"></span>`;
+        html+=`<span style="color:var(--vc2);font-size:.68rem;min-width:65px">FAB 2590</span>`;
+        html+=`<span style="color:var(--text);font-size:.68rem">${extraRoute}</span>`;
+        html+=`</div>`;
+      }
     }
   }else{html+=`<div style="color:var(--text2)">Sem voos programados.</div>`;}
   html+=`</div>`;
