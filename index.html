@@ -340,6 +340,7 @@ footer a:hover{text-decoration:underline}
     <button onclick="goScreen(7)" id="btn7">🔍 BUSCA</button>
     <button onclick="goScreen(8)" id="btn8">ESCALA</button>
     <button onclick="goScreen(10)" id="btn10">CARTÕES</button>
+    <button onclick="goScreen(11)" id="btn11">BOT</button>
     <button onclick="goScreen(9)" id="btn9" class="desktop-only">📺 TV</button>
   </div>
   <div class="header-right">
@@ -362,6 +363,7 @@ footer a:hover{text-decoration:underline}
   <div class="screen" id="screen8"></div>
   <div class="screen" id="screen9"></div>
   <div class="screen" id="screen10"></div>
+  <div class="screen" id="screen11"></div>
   <div class="loading" id="loadingMsg">Carregando dados...</div>
 </main>
 
@@ -2003,7 +2005,7 @@ function renderAll(){
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
   const uniqueOMs=new Set(flightsThisYear.map(f=>f.om).filter(Boolean));
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
-  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();renderScreenTV();renderScreenCartoes();
+  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();renderScreenTV();renderScreenCartoes();renderScreenBot();
 }
 
 // ===== CARTÕES =====
@@ -2244,6 +2246,203 @@ function renderCartoesNaBusca(trigrama,funcao){
     html+=`<div class="sc-item"><div class="sc-item-label">${c.nome}</div><div class="sc-item-value" style="color:${cor.color}">${cor.label} <span style="font-size:.68rem;color:var(--text2)">${daysStr}</span></div></div>`;
   });
   return html;
+}
+
+// ===== BOT (screen 11) =====
+function renderScreenBot(){
+  const container=document.getElementById('screen11');
+  let html=`<h2>🤖 Central de Operações</h2>`;
+  html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px">`;
+  const btns=[
+    {icon:'🌤️',label:'METAR',fn:'botMetar'},
+    {icon:'📋',label:'TAF',fn:'botTaf'},
+    {icon:'⚠️',label:'NOTAMs',fn:'botNotam'},
+    {icon:'🛫',label:'Aeródromo',fn:'botAerodrome'},
+    {icon:'⛽',label:'Combustível',fn:'botFuel'},
+    {icon:'🗺️',label:'SkyVector',fn:'botSkyvector'},
+    {icon:'🛰️',label:'Satélite',fn:'botSat'},
+    {icon:'✈️',label:'Planejar Voo',fn:'botPlan'}
+  ];
+  btns.forEach(b=>{
+    html+=`<div onclick="${b.fn}()" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:.2s" onmouseover="this.style.borderColor='var(--vc1)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:1.8rem;margin-bottom:6px">${b.icon}</div>
+      <div style="font-size:.82rem;font-weight:700;color:var(--text)">${b.label}</div>
+    </div>`;
+  });
+  html+=`</div>`;
+  // Input ICAO
+  html+=`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">`;
+  html+=`<input id="botIcao" type="text" placeholder="Código ICAO (ex: SBBR)" maxlength="4" style="background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:10px 14px;border-radius:6px;font-family:inherit;font-size:.9rem;text-transform:uppercase;width:180px" oninput="this.value=this.value.toUpperCase()">`;
+  html+=`</div>`;
+  // Resultado
+  html+=`<div id="botResult" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;min-height:100px;font-size:.82rem;white-space:pre-wrap;line-height:1.6"></div>`;
+  container.innerHTML=html;
+}
+
+function getBotIcao(){
+  const v=(document.getElementById('botIcao')?.value||'').trim().toUpperCase();
+  if(!v||v.length<4){botOut('⚠️ Digite um código ICAO válido (ex: SBBR)');return null;}
+  return v;
+}
+function botOut(txt){document.getElementById('botResult').innerHTML=txt;}
+function botLoading(label){botOut(`<div style="color:var(--vc1)">⏳ Buscando ${label}...</div>`);}
+
+async function botMetar(){
+  const icao=getBotIcao();if(!icao)return;
+  botLoading('METAR '+icao);
+  try{
+    const raw=await proxyFetch(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=raw`);
+    if(!raw)throw new Error('Sem dados');
+    const decoded=decodeMetar(raw);
+    let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">🌤️ METAR — ${icao}</div>`;
+    html+=`<div style="font-family:monospace;background:var(--bg);padding:8px;border-radius:4px;margin-bottom:12px;color:var(--vc1);word-break:break-all">${raw}</div>`;
+    if(decoded.time)html+=`<div>🕐 Observação: ${decoded.time}</div>`;
+    if(decoded.wind)html+=`<div>💨 Vento: ${decoded.wind}</div>`;
+    if(decoded.vis)html+=`<div>👁 Visibilidade: ${decoded.vis}</div>`;
+    if(decoded.temp)html+=`<div>🌡 Temperatura: ${decoded.temp}</div>`;
+    if(decoded.dewpoint)html+=`<div>💧 Ponto de orvalho: ${decoded.dewpoint}</div>`;
+    if(decoded.qnh)html+=`<div>📊 QNH: ${decoded.qnh}</div>`;
+    if(decoded.wx.length)html+=`<div>⛅ Tempo: ${decoded.wx.join(', ')}</div>`;
+    if(decoded.clouds.length)html+=`<div>☁️ Nuvens: ${decoded.clouds.join(', ')}</div>`;
+    botOut(html);
+  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro ao buscar METAR: ${e.message}</div>`);}
+}
+
+async function botTaf(){
+  const icao=getBotIcao();if(!icao)return;
+  botLoading('TAF '+icao);
+  try{
+    const raw=await proxyFetch(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=raw`);
+    if(!raw)throw new Error('Sem dados');
+    let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">📋 TAF — ${icao}</div>`;
+    html+=`<div style="font-family:monospace;background:var(--bg);padding:8px;border-radius:4px;color:var(--green);word-break:break-all;line-height:1.8">${raw.replace(/\n/g,'<br>')}</div>`;
+    botOut(html);
+  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro ao buscar TAF: ${e.message}</div>`);}
+}
+
+async function botNotam(){
+  const icao=getBotIcao();if(!icao)return;
+  botLoading('NOTAMs '+icao);
+  try{
+    const url=`https://aisweb.decea.mil.br/api/?apiKey=&apiPass=&area=notam&IcaoCode=${icao}`;
+    const raw=await proxyFetch(url);
+    if(!raw)throw new Error('Sem dados ou API indisponível');
+    let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">⚠️ NOTAMs — ${icao}</div>`;
+    // Try to parse XML
+    try{
+      const parser=new DOMParser();
+      const doc=parser.parseFromString(raw,'text/xml');
+      const items=doc.querySelectorAll('notam,item,NOTAM');
+      if(items.length){
+        items.forEach(n=>{
+          const text=n.textContent||n.innerHTML||'';
+          html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;margin-bottom:6px;border-left:3px solid var(--yellow);font-size:.75rem">${text.trim()}</div>`;
+        });
+      }else{
+        html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;font-size:.75rem;word-break:break-all">${raw.substring(0,2000)}</div>`;
+      }
+    }catch(pe){
+      html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;font-size:.75rem;word-break:break-all">${raw.substring(0,2000)}</div>`;
+    }
+    botOut(html);
+  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro ao buscar NOTAMs: ${e.message}</div>`);}
+}
+
+async function botAerodrome(){
+  const icao=getBotIcao();if(!icao)return;
+  botLoading('info aeródromo '+icao);
+  try{
+    const url=`https://aisweb.decea.mil.br/api/?apiKey=&apiPass=&area=aerodromos&IcaoCode=${icao}`;
+    const raw=await proxyFetch(url);
+    if(!raw)throw new Error('Sem dados');
+    let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">🛫 Aeródromo — ${icao}</div>`;
+    html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;font-size:.75rem;word-break:break-all">${raw.substring(0,3000)}</div>`;
+    botOut(html);
+  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`);}
+}
+
+async function botFuel(){
+  const icao=getBotIcao();if(!icao)return;
+  botLoading('combustível '+icao);
+  try{
+    const url=`https://www.celog.aer.mil.br/consulta-abastecimento/`;
+    let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">⛽ Combustível — ${icao}</div>`;
+    html+=`<div style="color:var(--text2)">Consulta CELOG requer acesso direto. <a href="https://www.celog.aer.mil.br" target="_blank" style="color:var(--vc1)">Abrir CELOG ↗</a></div>`;
+    html+=`<div style="margin-top:8px;color:var(--text2);font-size:.75rem">Dica: use o Bot Telegram para consulta automatizada de combustível.</div>`;
+    botOut(html);
+  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`);}
+}
+
+function botSkyvector(){
+  const icao=getBotIcao();if(!icao)return;
+  const url=`https://skyvector.com/airport/${icao}`;
+  let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">🗺️ SkyVector — ${icao}</div>`;
+  html+=`<a href="${url}" target="_blank" style="color:var(--green);font-size:1rem">📍 Abrir ${icao} no SkyVector ↗</a>`;
+  html+=`<div style="margin-top:12px"><iframe src="${url}" style="width:100%;height:400px;border:1px solid var(--border);border-radius:6px" sandbox="allow-scripts allow-same-origin"></iframe></div>`;
+  botOut(html);
+}
+
+async function botSat(){
+  botLoading('imagem de satélite');
+  try{
+    const url='https://satelite.cptec.inpe.br/repositoriogoes/goes16/goes16_web/ams_ret_gt_ch13_brt/BR/CMD/latest.png';
+    let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">🛰️ Satélite — Brasil</div>`;
+    html+=`<img src="${url}" style="width:100%;max-width:600px;border-radius:6px;border:1px solid var(--border)" onerror="this.outerHTML='<div style=color:var(--red)>Imagem indisponível</div>'">`;
+    html+=`<div style="margin-top:6px;font-size:.7rem;color:var(--text2)">Fonte: CPTEC/INPE — GOES-16</div>`;
+    botOut(html);
+  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`);}
+}
+
+function botPlan(){
+  const icao=document.getElementById('botIcao')?.value||'';
+  let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:12px">✈️ Planejar Voo</div>`;
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">`;
+  html+=`<div><label style="font-size:.72rem;color:var(--text2)">Origem</label><input id="planOrig" type="text" maxlength="4" value="${icao}" placeholder="SBBR" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:8px;border-radius:4px;font-family:inherit;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>`;
+  html+=`<div><label style="font-size:.72rem;color:var(--text2)">Destino</label><input id="planDest" type="text" maxlength="4" placeholder="SBCF" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:8px;border-radius:4px;font-family:inherit;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>`;
+  html+=`<div><label style="font-size:.72rem;color:var(--text2)">Alternativa</label><input id="planAlt" type="text" maxlength="4" placeholder="SBRJ" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:4px;font-family:inherit;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>`;
+  html+=`<div><label style="font-size:.72rem;color:var(--text2)">Aeronave</label><select id="planAnv" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:4px;font-family:inherit"><option value="VC-1">VC-1 (FAB 2101)</option><option value="VC-2">VC-2 (FAB 2590)</option></select></div>`;
+  html+=`</div>`;
+  html+=`<button onclick="botExecPlan()" style="background:var(--vc1);color:var(--bg);border:none;padding:12px 24px;border-radius:6px;font-family:inherit;font-weight:900;font-size:.9rem;cursor:pointer;width:100%">🔍 CONSULTAR INFORMAÇÕES</button>`;
+  html+=`<div id="planResult" style="margin-top:16px"></div>`;
+  botOut(html);
+}
+
+async function botExecPlan(){
+  const orig=(document.getElementById('planOrig')?.value||'').trim().toUpperCase();
+  const dest=(document.getElementById('planDest')?.value||'').trim().toUpperCase();
+  const alt=(document.getElementById('planAlt')?.value||'').trim().toUpperCase();
+  if(!orig||!dest){document.getElementById('planResult').innerHTML='<div style="color:var(--red)">Preencha origem e destino</div>';return;}
+  const result=document.getElementById('planResult');
+  result.innerHTML='<div style="color:var(--vc1)">⏳ Buscando dados para '+orig+' → '+dest+'...</div>';
+  try{
+    const icaos=[orig,dest];if(alt)icaos.push(alt);
+    const unique=[...new Set(icaos)];
+    // Buscar METAR e TAF em paralelo
+    const metarPromises=unique.map(i=>proxyFetch(`https://aviationweather.gov/api/data/metar?ids=${i}&format=raw`).catch(()=>''));
+    const tafPromises=unique.map(i=>proxyFetch(`https://aviationweather.gov/api/data/taf?ids=${i}&format=raw`).catch(()=>''));
+    const[metars,tafs]=await Promise.all([Promise.all(metarPromises),Promise.all(tafPromises)]);
+    let html='';
+    unique.forEach((icao,idx)=>{
+      html+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:10px">`;
+      html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:6px">${icao=== orig?'🛫 ORIGEM':icao===dest?'🛬 DESTINO':'🔄 ALTERNATIVA'} — ${icao}</div>`;
+      if(metars[idx]){
+        const d=decodeMetar(metars[idx]);
+        html+=`<div style="font-size:.75rem;margin-bottom:4px"><span style="color:var(--text2)">METAR:</span> <span style="color:var(--green)">${metars[idx]}</span></div>`;
+        if(d.wind)html+=`<div style="font-size:.75rem">💨 ${d.wind}</div>`;
+        if(d.vis)html+=`<div style="font-size:.75rem">👁 ${d.vis}</div>`;
+        if(d.temp)html+=`<div style="font-size:.75rem">🌡 ${d.temp}</div>`;
+        if(d.qnh)html+=`<div style="font-size:.75rem">📊 ${d.qnh}</div>`;
+      }else{html+=`<div style="font-size:.75rem;color:var(--yellow)">METAR indisponível</div>`;}
+      if(tafs[idx]){
+        html+=`<div style="font-size:.72rem;margin-top:6px;color:var(--text2)">TAF:</div>`;
+        html+=`<div style="font-family:monospace;font-size:.68rem;color:var(--green);line-height:1.6;word-break:break-all">${tafs[idx].replace(/\n/g,'<br>')}</div>`;
+      }
+      html+=`</div>`;
+    });
+    // SkyVector link
+    html+=`<div style="margin-top:8px"><a href="https://skyvector.com/?fpl=${orig}%20${dest}" target="_blank" style="color:var(--vc1);font-size:.85rem">🗺️ Ver rota no SkyVector ↗</a></div>`;
+    result.innerHTML=html;
+  }catch(e){result.innerHTML=`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`;}
 }
 
 async function loadAllData(){
