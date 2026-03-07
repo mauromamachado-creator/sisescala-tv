@@ -1367,7 +1367,7 @@ function renderScreen0(){
           const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
           const rota=om.pernas.map(p=>p.origem).concat([om.pernas[om.pernas.length-1].destino]).join('→');
           const horaDep=om.pernas[0].etd.split(' ')[1]||'';
-          const missoes=[...new Set(om.pernas.map(p=>p.missao).filter(Boolean))].join(' / ');
+          const missoes=om.pernas[0].missao||'';
           html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
             <div style="min-width:70px;font-weight:900;color:var(--text)">${dateStr}</div>
             <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${dayName}</div>
