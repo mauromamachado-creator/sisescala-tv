@@ -402,7 +402,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 </div>
 
 <!-- ALERTAS POP-UP -->
-<div id="alertOverlay" style="display:none;position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:16px" onclick="dismissAlert()">
+<div id="alertOverlay" style="display:none;position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .4s ease" onclick="dismissAlert()">
 <div id="alertToast" style="max-width:380px;width:calc(100% - 40px);background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #ff6b6b;border-left:4px solid #ff6b6b;border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(255,50,50,.3);cursor:pointer;font-family:inherit" onclick="event.stopPropagation()">
   <div style="display:flex;align-items:flex-start;gap:10px">
     <span style="font-size:24px" id="alertIcon">🚨</span>
@@ -3806,7 +3806,7 @@ function showAlert(a){
   document.getElementById('alertTitle').textContent=a.title||'ALERTA';
   document.getElementById('alertBody').innerHTML=a.body||'';
   document.getElementById('alertMeta').textContent=a.source?`Fonte: ${a.source} • ${a.date||''}`:(a.date||'');
-  document.getElementById('alertOverlay').style.display='flex';
+  const ov=document.getElementById('alertOverlay');ov.style.display='flex';requestAnimationFrame(()=>requestAnimationFrame(()=>{ov.style.opacity='1';}));
   toast.dataset.alertId=a.id;
   // Auto-dismiss after 30s
   setTimeout(()=>{if(toast.dataset.alertId===a.id)dismissAlert();},30000);
@@ -3815,7 +3815,7 @@ function dismissAlert(){
   const toast=document.getElementById('alertToast');
   const id=toast.dataset.alertId;
   if(id){_alertDismissed[id]=Date.now();localStorage.setItem('sisgopa_dismissed_alerts',JSON.stringify(_alertDismissed));}
-  document.getElementById('alertOverlay').style.display='none';
+  const ov=document.getElementById('alertOverlay');ov.style.opacity='0';setTimeout(()=>{ov.style.display='none';},400);
 }
 fetchAlerts();setInterval(fetchAlerts,600000); // check every 10 min
 
