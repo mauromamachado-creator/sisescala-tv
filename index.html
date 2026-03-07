@@ -1731,10 +1731,7 @@ function renderScreenTV(){
   html+=`<div style="font-weight:900;color:var(--yellow);margin-bottom:10px;font-size:.78rem">📊 PROGRESSO HORAS DO ANO</div>`;
   const yearStart=new Date(td.getFullYear(),0,1);const yearEnd=new Date(td.getFullYear(),11,31);
   const yearPctTV=((td-yearStart)/(yearEnd-yearStart)*100);
-  // Meta proporcional para hoje
-  const metaHojeVC1=anualVC1.esforco*(yearPctTV/100);
-  const metaHojeVC2=anualVC2.esforco*(yearPctTV/100);
-  html+=`<div style="font-size:.68rem;color:var(--text2);margin-bottom:10px">Meta para Hoje: <span style="color:var(--vc1);font-weight:700">VC-1 ${fmtHours(metaHojeVC1)}</span> · <span style="color:var(--vc2);font-weight:700">VC-2 ${fmtHours(metaHojeVC2)}</span></div>`;
+  html+=`<div style="font-size:.68rem;color:var(--text2);margin-bottom:10px">Meta para Hoje: <span style="color:#fff;font-weight:900;font-size:.82rem">${yearPctTV.toFixed(1)}%</span></div>`;
   const vc1pct=anualVC1.esforco>0?(anualVC1.voadas/anualVC1.esforco*100):0;
   const vc1Color=vc1pct<yearPctTV*0.8?'var(--red)':vc1pct<yearPctTV?'var(--yellow)':'var(--green)';
   html+=`<div style="margin-bottom:12px">`;
