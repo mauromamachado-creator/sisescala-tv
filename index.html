@@ -150,6 +150,7 @@ footer a:hover{text-decoration:underline}
 .loading{color:var(--text2);text-align:center;padding:40px;font-size:1rem}
 
 @media(max-width:768px){
+  .desktop-only{display:none!important}
   header{flex-wrap:wrap;padding:6px 10px;gap:6px}
   header>div:first-child{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:6px!important;max-width:100%!important;width:100%!important}
   header>div:first-child>div:first-child{width:36px!important;height:36px!important;flex-shrink:0!important}
@@ -324,7 +325,7 @@ footer a:hover{text-decoration:underline}
     <button onclick="goScreen(6)" id="btn6">CALENDÁRIO</button>
     <button onclick="goScreen(7)" id="btn7">🔍 BUSCA</button>
     <button onclick="goScreen(8)" id="btn8">ESCALA</button>
-    <button onclick="goScreen(9)" id="btn9">📺 TV</button>
+    <button onclick="goScreen(9)" id="btn9" class="desktop-only">📺 TV</button>
   </div>
   <div class="header-right">
     <span class="clock" id="clock"></span>
@@ -671,13 +672,17 @@ async function fetchMetar(){
   }catch(e){console.error('METAR fetch error',e);}
 }
 async function fetchMetarMulti(){
-  const icaos=['SBBR','SBGF','SBRJ','SBSP'];
-  await Promise.all(icaos.map(async id=>{
-    try{
-      const r=await fetch('https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent('https://aviationweather.gov/api/data/metar?ids='+id+'&format=raw'),{cache:'no-store'});
-      if(r.ok){const raw=(await r.text()).trim();metarMulti[id]=raw;}
-    }catch(e){}
-  }));
+  try{
+    const ids='SBBR,SBGF,SBRJ,SBSP';
+    const r=await fetch('https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent('https://aviationweather.gov/api/data/metar?ids='+ids+'&format=raw'),{cache:'no-store'});
+    if(!r.ok)return;
+    const text=(await r.text()).trim();
+    const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+    for(const line of lines){
+      const m=line.match(/^(SB\w{2})\s/);
+      if(m)metarMulti[m[1]]=line;
+    }
+  }catch(e){console.warn('fetchMetarMulti error',e);}
 }
 
 function isOnVacation(trigrama,date){const t=String(trigrama||'').toUpperCase();return feriasData.some(f=>f.trigrama===t&&f.inicio<=date&&date<=f.fim);}
