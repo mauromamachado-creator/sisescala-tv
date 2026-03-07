@@ -1135,7 +1135,7 @@ function renderScreenCalendar(){
   
   // Build events map: day -> events[]
   const events={};
-  const addEvent=(day,text,cls)=>{if(!events[day])events[day]=[];events[day].push({text,cls});};
+  const addEvent=(day,text,cls)=>{if(!events[day])events[day]=[];if(!events[day].some(e=>e.text===text&&e.cls===cls))events[day].push({text,cls});};
   
   // Domestic flights for this month
   flights.forEach(f=>{
