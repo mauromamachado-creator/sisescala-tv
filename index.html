@@ -1370,19 +1370,17 @@ function renderScreen0(){
           // Filtrar pernas deste dia (pela data no ETD)
           const dayPernas=om.pernas.filter(p=>{const m=p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(!m)return true;const pd='20'+m[3]+'-'+m[2]+'-'+m[1];return pd===isoDate;});
           const pernas=dayPernas.length?dayPernas:om.pernas;
+          let pernasTxt=pernas.map(p=>{const h=(p.etd.split(' ')[1]||'').replace(':','');return`<div style="font-size:.75rem;line-height:1.5">- ${p.origem}-${p.destino} <span style="color:var(--yellow)">${p.missao||''}</span></div>`;}).join('');
           html+=`<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-            <div style="display:flex;align-items:center;gap:10px">
-              <div>
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="min-width:42px;font-weight:900;color:var(--text);font-size:.82rem">${dateStr}</div>
+              <div style="min-width:28px;font-size:.72rem;color:var(--text2);padding-top:2px">${dayName}</div>
+              <div style="min-width:75px">
                 <div style="font-size:.8rem;color:${anvColor};font-weight:700">${om.fab}</div>
                 <div style="font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline;margin-top:2px" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</div>
               </div>
-              <div style="flex:1">
-                <div style="display:flex;gap:8px;margin-bottom:2px"><span style="font-weight:900;color:var(--text);font-size:.82rem">${dateStr}</span><span style="font-size:.72rem;color:var(--text2)">${dayName}</span></div>`;
-          for(const p of pernas){
-            const h=(p.etd.split(' ')[1]||'').replace(':','');
-            html+=`<div style="font-size:.75rem;line-height:1.6"><span style="color:var(--text2)">${h}</span> ${p.origem}-${p.destino} <span style="color:var(--yellow)">${p.missao||''}</span></div>`;
-          }
-          html+=`</div></div></div>`;
+              <div style="flex:1">${pernasTxt}</div>
+            </div></div>`;
         }
       }else if(dayDiario){
         // Sem OM - mostra diário (rascunho)
