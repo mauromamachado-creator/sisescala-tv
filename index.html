@@ -1605,7 +1605,7 @@ function renderScreenTV(){
   
   // Row 2 Col 2: Top Horas GTE (ranking unificado)
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
-  html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px;font-size:.78rem">🏆 TOP 10 GTE</div>`;
+  html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px;font-size:.78rem">🏆 TOP 10 GTE-1</div>`;
   const allSorted=[...pilotData.vc1.map(p=>({...p,anvType:'VC-1'})),...pilotData.vc2.map(p=>({...p,anvType:'VC-2'}))].filter(p=>p.voadas!=null&&p.voadas>0).sort((a,b)=>b.voadas-a.voadas);
   for(let i=0;i<Math.min(10,allSorted.length);i++){
     const p=allSorted[i];
