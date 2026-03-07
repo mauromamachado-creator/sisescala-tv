@@ -1410,26 +1410,7 @@ function renderScreenEscala(){
       html+=`</tbody></table></div>`;
     }
     
-    // Ranking / Sugestão
-    if(missions.length){
-      html+=`<div style="margin-top:8px"><div style="font-size:.8rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">Sugestão de Escala (por prioridade)</div>`;
-      for(const m of missions){
-        const candidates=pilots.filter(p=>{const v=p.responses[m];return v&&v!=='-';}).sort((a,b)=>{
-          const va=parseInt(a.responses[m])||99;const vb=parseInt(b.responses[m])||99;return va-vb;
-        });
-        html+=`<div style="margin-bottom:8px"><span style="color:var(${colorVar});font-weight:900">Missão ${m}:</span> `;
-        if(candidates.length){
-          html+=candidates.slice(0,5).map((p,i)=>{
-            const prio=p.responses[m];
-            return `<span style="margin-right:8px">${i===0?'🏆':''}${p.name.split(' ')[0]} <span style="font-size:.7rem;color:var(--text2)">(${prio})</span></span>`;
-          }).join('');
-        }else{
-          html+=`<span style="color:var(--text2)">Nenhum voluntário</span>`;
-        }
-        html+=`</div>`;
-      }
-      html+=`</div>`;
-    }
+
     
     // Pendentes
     const pendList=pilots.filter(p=>!p.answered);
