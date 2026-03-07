@@ -1963,50 +1963,84 @@ function renderScreenCartoes(){
   for(const[funcao,titulo] of Object.entries(grupos)){
     const membros=cartoesData.filter(p=>funcao==='Piloto'?isPiloto(p.funcao):p.funcao===funcao);
     if(!membros.length)continue;
+    const isMobile=window.innerWidth<=768;
     html+=`<h3>${titulo} (${membros.length})</h3>`;
-    html+=`<div style="overflow-x:auto;margin-bottom:20px"><table style="width:100%;border-collapse:collapse;font-size:.78rem;min-width:800px">`;
-    html+=`<tr style="background:var(--bg3)">`;
-    html+=`<th style="padding:6px 8px;text-align:left;border:1px solid var(--border);color:var(--vc1)">Trig</th>`;
-    html+=`<th style="padding:6px 8px;text-align:left;border:1px solid var(--border);color:var(--text2)">Nome</th>`;
-    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">Anv</th>`;
-    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">Insp Saúde</th>`;
-    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">CRM</th>`;
-    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">CVI/RVSM</th>`;
-    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">Simulador</th>`;
-    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">TDIE</th>`;
-    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">Passaporte</th>`;
-    html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">C. Oper.</th>`;
-    if(isPiloto(funcao)){
-      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">ILS CAT</th>`;
-      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">TAI Prova</th>`;
-      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">TAI Voo</th>`;
+    if(!isMobile){
+      html+=`<div style="overflow-x:auto;margin-bottom:20px"><table style="width:100%;border-collapse:collapse;font-size:.78rem;min-width:800px">`;
+      html+=`<tr style="background:var(--bg3)">`;
+      html+=`<th style="padding:6px 8px;text-align:left;border:1px solid var(--border);color:var(--vc1)">Trig</th>`;
+      html+=`<th style="padding:6px 8px;text-align:left;border:1px solid var(--border);color:var(--text2)">Nome</th>`;
+      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">Anv</th>`;
+      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">Insp Saúde</th>`;
+      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">CRM</th>`;
+      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">CVI/RVSM</th>`;
+      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">Simulador</th>`;
+      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">TDIE</th>`;
+      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">Passaporte</th>`;
+      html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">C. Oper.</th>`;
+      if(isPiloto(funcao)){
+        html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">ILS CAT</th>`;
+        html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">TAI Prova</th>`;
+        html+=`<th style="padding:6px 8px;text-align:center;border:1px solid var(--border);color:var(--text2)">TAI Voo</th>`;
+      }
+      html+=`</tr>`;
     }
-    html+=`</tr>`;
     // Sort: worst status first
     membros.sort((a,b)=>{
       const pri=p=>{let w=3;cartoesCheck.forEach(k=>{const c=cartaoColor(p[k],hoje);if(c.cls==='vermelho')w=Math.min(w,0);else if(c.cls==='amarelo')w=Math.min(w,1);});return w;};
       return pri(a)-pri(b);
     });
-    membros.forEach(p=>{
-      html+=`<tr style="border-bottom:1px solid var(--border)">`;
-      html+=`<td style="padding:4px 8px;font-weight:900;color:var(--vc1);border:1px solid var(--border)">${p.trigrama}</td>`;
-      html+=`<td style="padding:4px 8px;color:var(--text);border:1px solid var(--border);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nome}</td>`;
-      html+=`<td style="padding:4px 8px;text-align:center;color:var(--text2);border:1px solid var(--border)">${p.aeronave||'—'}</td>`;
-      html+=renderCartaoBadge(p.inspSaude,hoje,'Insp Saúde');
-      html+=renderCartaoBadge(p.crm,hoje,'CRM');
-      html+=renderCartaoBadge(p.cviRvsm,hoje,'CVI/RVSM');
-      html+=renderCartaoBadge(p.simulador,hoje,'Simulador');
-      html+=renderCartaoBadge(p.tdie,hoje,'TDIE');
-      html+=renderCartaoBadge(p.passaporte,hoje,'Passaporte');
-      html+=renderCartaoBadge(p.cOperacional,hoje,'C. Operacional');
-      if(isPiloto(funcao)){
-        html+=renderCartaoBadge(p.ilsCat,hoje,'ILS CAT II/III');
-        html+=renderCartaoBadge(p.taiProva,hoje,'TAI Prova');
-        html+=renderCartaoBadge(p.taiVoo,hoje,'TAI Voo');
-      }
-      html+=`</tr>`;
-    });
-    html+=`</table></div>`;
+    if(isMobile){
+      // Mobile: cards
+      membros.forEach(p=>{
+        const allCartoes=[
+          {nome:'Insp. Saúde',val:p.inspSaude},{nome:'CRM',val:p.crm},{nome:'CVI/RVSM',val:p.cviRvsm},
+          {nome:'Simulador',val:p.simulador},{nome:'TDIE',val:p.tdie},{nome:'Passaporte',val:p.passaporte},
+          {nome:'C. Oper.',val:p.cOperacional}
+        ];
+        if(isPiloto(funcao)){
+          allCartoes.push({nome:'ILS CAT',val:p.ilsCat},{nome:'TAI Prova',val:p.taiProva},{nome:'TAI Voo',val:p.taiVoo});
+        }
+        html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">`;
+        html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
+        html+=`<span style="font-weight:900;color:var(--vc1);font-size:.9rem">${p.trigrama}</span>`;
+        html+=`<span style="color:var(--text2);font-size:.72rem">${p.nome} · ${p.aeronave||'—'}</span>`;
+        html+=`</div>`;
+        html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">`;
+        allCartoes.forEach(c=>{
+          if(!c.val||!c.val.raw||c.val.raw==='---'||c.val.raw==='')return;
+          const cor=cartaoColor(c.val,hoje);
+          const daysStr=cor.days!=null?(cor.days<0?`venc. ${Math.abs(cor.days)}d`:`${cor.days}d`):'';
+          html+=`<div style="display:flex;justify-content:space-between;padding:3px 6px;border-radius:4px;font-size:.68rem;background:${cor.bg};border:1px solid ${cor.color}30">`;
+          html+=`<span style="color:var(--text2)">${c.nome}</span>`;
+          html+=`<span style="color:${cor.color};font-weight:700">${cor.label} <span style="font-weight:400;font-size:.6rem">${daysStr}</span></span>`;
+          html+=`</div>`;
+        });
+        html+=`</div></div>`;
+      });
+    }else{
+      // Desktop: table
+      membros.forEach(p=>{
+        html+=`<tr style="border-bottom:1px solid var(--border)">`;
+        html+=`<td style="padding:4px 8px;font-weight:900;color:var(--vc1);border:1px solid var(--border)">${p.trigrama}</td>`;
+        html+=`<td style="padding:4px 8px;color:var(--text);border:1px solid var(--border);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nome}</td>`;
+        html+=`<td style="padding:4px 8px;text-align:center;color:var(--text2);border:1px solid var(--border)">${p.aeronave||'—'}</td>`;
+        html+=renderCartaoBadge(p.inspSaude,hoje,'Insp Saúde');
+        html+=renderCartaoBadge(p.crm,hoje,'CRM');
+        html+=renderCartaoBadge(p.cviRvsm,hoje,'CVI/RVSM');
+        html+=renderCartaoBadge(p.simulador,hoje,'Simulador');
+        html+=renderCartaoBadge(p.tdie,hoje,'TDIE');
+        html+=renderCartaoBadge(p.passaporte,hoje,'Passaporte');
+        html+=renderCartaoBadge(p.cOperacional,hoje,'C. Operacional');
+        if(isPiloto(funcao)){
+          html+=renderCartaoBadge(p.ilsCat,hoje,'ILS CAT II/III');
+          html+=renderCartaoBadge(p.taiProva,hoje,'TAI Prova');
+          html+=renderCartaoBadge(p.taiVoo,hoje,'TAI Voo');
+        }
+        html+=`</tr>`;
+      });
+      html+=`</table></div>`;
+    }
   }
   container.innerHTML=html;
 }
