@@ -137,6 +137,7 @@ h3{font-size:1.05rem;margin:16px 0 10px;color:var(--text2);border-bottom:1px sol
 .mission-date{text-align:right;min-width:110px;flex-shrink:0}
 .mission-date-main{font-size:.82rem;font-weight:700}
 .mission-date-range{font-size:.68rem;color:var(--text2)}
+.mission-tipo.pern{background:rgba(100,100,200,.12);color:#8888cc;border-color:rgba(100,100,200,.25)}
 .mission-tipo{padding:3px 8px;border-radius:4px;font-size:.7rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center;background:rgba(221,204,85,.12);color:#ddcc55;border:1px solid rgba(221,204,85,.25);min-width:60px;text-align:center;flex-shrink:0;white-space:nowrap;line-height:1}
 .mission-ongoing{animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
@@ -806,7 +807,7 @@ function renderScreen0(){
       html+=`<div class="mission-card">
         <div style="min-width:55px;text-align:center;font-weight:900;font-size:.95rem;color:var(--vc1)">${leg.dep}</div>
         <div class="mission-body"><div class="mission-title">${routeParts}</div><div class="mission-sub">${anvDisplay?'<span style="color:var(--vc1);font-weight:700">'+anvDisplay+'</span> · ':''}${leg.pilots.join('/')}${leg.fuel?' · '+leg.fuel+'t':''}</div></div>
-        <div><span class="mission-tipo">${leg.mission||'—'}</span></div></div>`;
+        <div><span class="mission-tipo${leg.mission==='PERN'?' pern':''}">${leg.mission==='PERN'?'🌙 PERN':leg.mission||'—'}</span></div></div>`;
     }
   }else{
     html+='<div class="no-data">Sem missões programadas para hoje.</div>';
@@ -1735,6 +1736,18 @@ function goFullscreen(){document.documentElement.requestFullscreen?.();}
 function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});}
 updateClock();setInterval(updateClock,1000);
 loadAllData();setInterval(loadAllData,300000);
+// Auto-update: verifica se o código mudou a cada 5min e recarrega
+let _codeHash='';
+async function checkCodeUpdate(){
+  try{
+    const r=await fetch(location.pathname+'?_ck='+Date.now(),{cache:'no-store',method:'HEAD'});
+    const len=r.headers.get('content-length')||'';const mod=r.headers.get('last-modified')||'';
+    const sig=len+'|'+mod;
+    if(!_codeHash){_codeHash=sig;return;}
+    if(sig!==_codeHash){console.log('SisGOP: nova versão detectada, recarregando...');location.reload();}
+  }catch(e){}
+}
+checkCodeUpdate();setInterval(checkCodeUpdate,300000);
 goScreen(0);
 </script>
 </body>
