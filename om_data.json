@@ -1,0 +1,73 @@
+[
+  {
+    "om": "94/GTE-1/2026",
+    "data": "2026-03-06",
+    "aeronave": "VC-2",
+    "fab": "FAB 2590",
+    "tripulacao": [
+      {"posto": "MJ", "nome": "IGOR", "trigrama": "IGO", "saram": "547.869"},
+      {"posto": "MJ", "nome": "LOTTI", "trigrama": "LTT", "saram": "553.264"},
+      {"posto": "MJ", "nome": "SOUZA", "trigrama": "SZA", "saram": "557.692"},
+      {"posto": "SO", "nome": "AMARAL", "saram": "483.523"},
+      {"posto": "2S", "nome": "SYLAS", "saram": "583.048"},
+      {"posto": "2S", "nome": "NOGUEIRA", "saram": "535.280"},
+      {"posto": "1S", "nome": "LORENA (PR)", "saram": "545.673"},
+      {"posto": "1S", "nome": "SANTIAGO (PR)", "saram": "525.328"},
+      {"posto": "2S", "nome": "NEVES", "saram": "543.527"}
+    ],
+    "pernas": [
+      {"origem": "SBBR", "destino": "SBGL", "etd": "06/03/26 16:20Z", "ete": "01:20", "eta": "06/03/26 17:40Z", "altn": "SBGR", "missao": "PR TLD/PR VER", "cmte": "IGO/LTT"},
+      {"origem": "SBGL", "destino": "SBBR", "etd": "06/03/26 22:10Z", "ete": "01:20", "eta": "06/03/26 23:30Z", "altn": "SBCF", "missao": "PR RES/PR ESCAV", "cmte": "SZA/IGO"}
+    ],
+    "gerado": "05/03/2026 21:03:08",
+    "gerado_por": "2S ALCANTARA"
+  },
+  {
+    "om": "95/GTE-1/2026",
+    "data": "2026-03-08",
+    "aeronave": "VC-2",
+    "fab": "FAB 2590",
+    "tripulacao": [
+      {"posto": "MJ", "nome": "MACHADO", "trigrama": "MAC", "saram": "502.537"},
+      {"posto": "MJ", "nome": "VASCONCELOS", "trigrama": "VAS", "saram": "552.888"},
+      {"posto": "CP", "nome": "ALEXANDRE", "trigrama": "ALX", "saram": "563.382"},
+      {"posto": "CP", "nome": "CASTRO", "trigrama": "CAS", "saram": "505.768"},
+      {"posto": "2S", "nome": "ZITO", "saram": "572.344"},
+      {"posto": "2S", "nome": "SYLAS", "saram": "583.048"},
+      {"posto": "1S", "nome": "MACÊDO", "saram": "522.897"},
+      {"posto": "1S", "nome": "PEREIRA (PR)", "saram": "527.615"},
+      {"posto": "2S", "nome": "JARDEL", "saram": "543.770"},
+      {"posto": "2S", "nome": "CELESTE", "saram": "569.985"},
+      {"posto": "2S", "nome": "LUDMYLLA (PR)", "saram": "582.959"}
+    ],
+    "pernas": [
+      {"origem": "SBBR", "destino": "SCVM", "etd": "08/03/26 13:00Z", "ete": "04:25", "eta": "08/03/26 17:25Z", "altn": "SCIE", "missao": "PR ESCAV"},
+      {"origem": "SCVM", "destino": "SBBR", "etd": "08/03/26 18:55Z", "ete": "04:20", "eta": "08/03/26 23:15Z", "altn": "SBCF", "missao": "PR TLD"}
+    ],
+    "gerado": "06/03/2026 16:03:31",
+    "gerado_por": "2S AGOSTINI",
+    "versao": 2,
+    "substitui": "OM 95 versão anterior (2S DA COSTA → 2S ZITO)"
+  },
+  {
+    "om": "96/GTE-1/2026",
+    "data": "2026-03-07",
+    "aeronave": "VC-2",
+    "fab": "FAB 2590",
+    "tripulacao": [
+      {"posto": "CP", "nome": "CASTRO", "trigrama": "CAS", "saram": "505.768"},
+      {"posto": "CP", "nome": "CAMPOS", "trigrama": "CPO", "saram": "563.414"},
+      {"posto": "2S", "nome": "ALCANTARA", "saram": "575.028"},
+      {"posto": "2S", "nome": "RONALDO", "saram": "540.297"},
+      {"posto": "1S", "nome": "L. RIBEIRO", "saram": "521.066"},
+      {"posto": "1S", "nome": "PEREIRA (PR)", "saram": "527.615"},
+      {"posto": "2S", "nome": "CELESTE", "saram": "569.985"}
+    ],
+    "pernas": [
+      {"origem": "SBBR", "destino": "SBGL", "etd": "07/03/26 00:35Z", "ete": "01:25", "eta": "07/03/26 02:00Z", "altn": "SBGR", "missao": "PR TLD", "cmte": "CAS/CPO"},
+      {"origem": "SBGL", "destino": "SBBR", "etd": "07/03/26 03:00Z", "ete": "01:25", "eta": "07/03/26 04:25Z", "altn": "SBCF", "missao": "PR ESCAV", "cmte": "CPO/CAS"}
+    ],
+    "gerado": "05/03/2026 21:03:19",
+    "gerado_por": "2S ALCANTARA"
+  }
+]

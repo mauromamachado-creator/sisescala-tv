@@ -381,6 +381,7 @@ let metarMulti={};
 let anualVC1={voadas:0,esforco:650}, anualVC2={voadas:0,esforco:1220};
 let escalaData={vc1:{consulta:'',raio:[]},vc2:{consulta:'',raio:[]}};
 let confirmaData=[];
+let omData=[];
 
 function parseCSV(text){
   const rows=[];let row=[],field='',inQ=false;
@@ -799,8 +800,31 @@ function renderScreen0(){
   const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
   html+=`<div class="panel-title"><span class="icon">📋</span> Missões de Hoje — ${todayStr} (${dayNames[td.getDay()]})</div>`;
   const todayDayNameDash=dayNames[td.getDay()];
+  const todayISO=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
+  const todayOM=omData.filter(o=>o.data===todayISO);
   const todayConfirmDash=confirmaData.filter(c=>c.dia.toUpperCase()===todayDayNameDash);
-  if(todayConfirmDash.length){
+  if(todayOM.length){
+    for(const om of todayOM){
+      const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
+      html+=`<div style="background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);border-radius:8px;padding:10px;margin-bottom:8px">`;
+      html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">`;
+      html+=`<span style="font-weight:900;color:${anvColor};font-size:.9rem">${om.aeronave} / ${om.fab}</span>`;
+      html+=`<span style="font-size:.7rem;background:var(--green);color:#000;padding:2px 8px;border-radius:4px;font-weight:700">OM ${om.om}</span></div>`;
+      for(const p of om.pernas){
+        html+=`<div style="display:flex;gap:8px;align-items:center;padding:4px 0;font-size:.78rem">`;
+        html+=`<span style="font-weight:700;min-width:40px">${p.origem}</span>`;
+        html+=`<span style="color:var(--text2)">→</span>`;
+        html+=`<span style="font-weight:700;min-width:40px">${p.destino}</span>`;
+        html+=`<span style="color:var(--text2);font-size:.7rem">${p.etd.split(' ')[1]||''}</span>`;
+        html+=`<span class="mission-tipo">${p.missao}</span>`;
+        html+=`</div>`;
+      }
+      const pilotos=om.tripulacao.filter(t=>t.trigrama).map(t=>`${t.posto} ${t.nome}`).join(' / ');
+      html+=`<div style="font-size:.7rem;color:var(--text2);margin-top:4px">👨‍✈️ ${pilotos}</div>`;
+      html+=`</div>`;
+    }
+    html+=`<div style="font-size:.72rem;color:var(--green);margin-top:4px">📋 Ordem de Missão oficial</div>`;
+  }else if(todayConfirmDash.length){
     for(const c of todayConfirmDash){
       const anvColor=c.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
       html+=`<div class="mission-card">
@@ -1583,8 +1607,26 @@ function renderScreenTV(){
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
   html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px;font-size:.78rem">✈️ MISSÕES DE HOJE — ${dayNames[td.getDay()]} ${todayStr}</div>`;
   const todayDayName=dayNames[td.getDay()];
+  const todayISOtv=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
+  const todayOMtv=omData.filter(o=>o.data===todayISOtv);
   const todayConfirm=confirmaData.filter(c=>c.dia.toUpperCase()===todayDayName);
-  if(todayConfirm.length){
+  if(todayOMtv.length){
+    for(const om of todayOMtv){
+      const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
+      html+=`<div style="font-size:.7rem;color:var(--green);font-weight:700;margin-bottom:4px">📋 OM ${om.om}</div>`;
+      html+=`<div style="font-size:.68rem;color:${anvColor};font-weight:700;margin-bottom:4px">${om.fab}</div>`;
+      for(const p of om.pernas){
+        html+=`<div style="display:flex;gap:4px;align-items:center;padding:2px 0;font-size:.72rem">`;
+        html+=`<span style="font-weight:700">${p.origem}→${p.destino}</span>`;
+        html+=`<span style="color:var(--text2);font-size:.65rem">${p.etd.split(' ')[1]||''}</span>`;
+        html+=`<span style="font-size:.65rem;color:var(--yellow)">${p.missao}</span>`;
+        html+=`</div>`;
+      }
+      const pilotos=om.tripulacao.filter(t=>t.trigrama).map(t=>t.trigrama).join('/');
+      html+=`<div style="font-size:.65rem;color:var(--text2);margin-top:2px">👨‍✈️ ${pilotos}</div>`;
+    }
+    html+=`<div style="font-size:.6rem;color:var(--green);margin-top:4px">📋 Ordem de Missão oficial</div>`;
+  }else if(todayConfirm.length){
     for(const c of todayConfirm){
       const anvColor=c.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
       html+=`<div style="display:flex;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.75rem">`;
@@ -1752,6 +1794,7 @@ async function loadAllData(){
     await metarFetch;
     await metarMultiFetch;
     await fetchAnual().catch(()=>{warnings.push('Horas Anual');});
+    await fetch('om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;}).catch(()=>{omData=[];});
     await fetchEscala().catch(()=>{warnings.push('Escala');});
     pilotData=parseDisponibilidade(dispRows);flights=parseLancamentos(lancRows);
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
