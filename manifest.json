@@ -1,6 +1,6 @@
 {
-  "name": "SisGOP",
-  "short_name": "SisGOP",
+  "name": "SisGOPA",
+  "short_name": "SisGOPA",
   "description": "Gestão de Operações Aéreas",
   "start_url": "./",
   "display": "standalone",

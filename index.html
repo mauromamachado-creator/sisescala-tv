@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SisGOP — Gestão de Operações Aéreas</title>
+<title>SisGOPA — Gestão de Operações Aéreas</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
@@ -310,10 +310,10 @@ footer a:hover{text-decoration:underline}
 <header>
   <div style="display:flex;align-items:center;gap:12px">
     <div style="width:44px;height:44px;background:rgba(0,212,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-      <img src="logo-sisgop-transp.png" alt="SisGOP" style="width:56px;height:56px;border-radius:10px;object-fit:cover">
+      <img src="logo-sisgop-transp.png" alt="SisGOPA" style="width:56px;height:56px;border-radius:10px;object-fit:cover">
     </div>
     <div style="display:flex;align-items:center;gap:8px">
-      <div style="font-size:1.2rem;font-weight:900;letter-spacing:1px">SisGOP</div>
+      <div style="font-size:1.2rem;font-weight:900;letter-spacing:1px">SisGOPA</div>
       <div style="font-size:.5rem;letter-spacing:1.5px;color:var(--vc1);text-transform:uppercase;white-space:nowrap">Gestão de Operações Aéreas</div>
     </div>
     <div id="kpi-box" style="display:flex;gap:24px;margin-left:24px">
@@ -363,7 +363,7 @@ footer a:hover{text-decoration:underline}
 </div>
 
 <footer>
-  <span>SisGOP v4.0 — Desenvolvido para o GTE — Major Machado</span>
+  <span>SisGOPA v4.0 — Desenvolvido para o GTE — Major Machado</span>
   <a onclick="loadAllData()">Atualizar dados</a>
 </footer>
 
@@ -1766,7 +1766,7 @@ async function checkCodeUpdate(){
     const len=r.headers.get('content-length')||'';const mod=r.headers.get('last-modified')||'';
     const sig=len+'|'+mod;
     if(!_codeHash){_codeHash=sig;return;}
-    if(sig!==_codeHash){console.log('SisGOP: nova versão detectada, recarregando...');location.reload();}
+    if(sig!==_codeHash){console.log('SisGOPA: nova versão detectada, recarregando...');location.reload();}
   }catch(e){}
 }
 checkCodeUpdate();setInterval(checkCodeUpdate,300000);
