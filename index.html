@@ -2560,7 +2560,8 @@ function setDiariaDownloaded(omId){const d=getDiariasDownloaded();d[omId]=Date.n
 function renderScreenDiarias(){
   const c=document.getElementById('screen13');
   let html=`<h2>💰 Diárias</h2>`;
-  html+=`<div style="color:var(--text2);font-size:.8rem;margin-bottom:16px">Solicitação de Pagamento de Diárias pré-preenchida a partir das Ordens de Missão.</div>`;
+  html+=`<div style="color:var(--text2);font-size:.8rem;margin-bottom:6px">Solicitação de Pagamento de Diárias pré-preenchida a partir das Ordens de Missão.</div>`;
+  html+=`<div style="font-size:.78rem;margin-bottom:16px;padding:8px 12px;background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.25);border-radius:8px;color:#ffaa00">⚠️ <b>Prazo:</b> 1 dia útil após o término da missão · <b>Responsável:</b> Operador de Comunicações</div>`;
   const done=getDiariasDownloaded();
   if(!omData||!omData.length){
     html+=`<div style="color:var(--text2);text-align:center;padding:40px">Nenhuma OM disponível</div>`;
@@ -2572,17 +2573,31 @@ function renderScreenDiarias(){
   const DIARIAS_MISSOES=['PR','RESERVA PR','ESCAV'];
   const temMissaoDiaria=om=>om.pernas.some(p=>{const m=(p.missao||'').toUpperCase().trim();return DIARIAS_MISSOES.some(d=>m===d);});
   const sorted=[...omData].filter(om=>isNacional(om)&&temMissaoDiaria(om)).sort((a,b)=>b.data.localeCompare(a.data));
+  // Calcula próximo dia útil após data
+  function nextBizDay(d){const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;}
+  const hoje=nowBRT();hoje.setHours(0,0,0,0);
   sorted.forEach(om=>{
     const isDone=done[om.om];
     const dateStr=new Date(om.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
     const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
     const rotas=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
-    html+=`<div style="background:${isDone?'rgba(0,255,136,.06)':'var(--bg2)'};border:1px solid ${isDone?'rgba(0,255,136,.3)':'var(--border)'};border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    // Prazo: 1 dia útil após término da missão
+    const omDate=new Date(om.data+'T23:59:00');
+    const prazo=nextBizDay(omDate);prazo.setHours(0,0,0,0);
+    const diffPrazo=Math.floor((prazo-hoje)/(86400000));
+    let prazoTag='';
+    if(!isDone){
+      if(diffPrazo<0)prazoTag='<span style="color:var(--red);font-size:.7rem;font-weight:700;margin-left:6px">⚠️ PRAZO VENCIDO</span>';
+      else if(diffPrazo===0)prazoTag='<span style="color:#ffaa00;font-size:.7rem;font-weight:700;margin-left:6px">⏰ VENCE HOJE</span>';
+      else if(diffPrazo===1)prazoTag='<span style="color:#ffaa00;font-size:.7rem;margin-left:6px">⏳ Vence amanhã</span>';
+    }
+    html+=`<div style="background:${isDone?'rgba(0,255,136,.06)':'var(--bg2)'};border:1px solid ${isDone?'rgba(0,255,136,.3)':diffPrazo<0&&!isDone?'rgba(255,68,68,.4)':'var(--border)'};border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
       <div style="flex:1;min-width:200px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
           ${isDone?'<span style="color:var(--green);font-size:1.1rem">✅</span>':'<span style="color:var(--yellow);font-size:1.1rem">📄</span>'}
           <span style="font-weight:700;font-size:.9rem">Diária - OM ${om.om}</span>
           <span style="font-size:.75rem;color:${anvColor};font-weight:600">${om.aeronave}</span>
+          ${prazoTag}
         </div>
         <div style="font-size:.78rem;color:var(--text2)">${dateStr} · ${rotas} · ${om.tripulacao.length} tripulantes</div>
       </div>
