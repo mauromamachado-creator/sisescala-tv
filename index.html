@@ -3208,16 +3208,13 @@ async function loadAllData(){
     flights=parseLancamentos(lancRows);
     await fetchPauDeSebo().then(()=>{sourceStatus.pauSebo='ok';}).catch(()=>{sourceStatus.pauSebo='fail';});
     fetchGlobalAirports(); // async, non-blocking
+    // Proxy health check — non-blocking, runs after render
+    proxyFetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw').then(r=>{sourceStatus.proxy=r?'ok':'fail';}).catch(()=>{sourceStatus.proxy='fail';}).finally(updateStatusPanel);
     calcAfastamentos();
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
     diarioData=parseDiario(planRows);
     acntData=parseACNT(acntRows);
     sourceStatus.brAirports=Object.keys(BR_AIRPORTS).length>0?'ok':'fail';
-    // Proxy health check — test if at least one proxy works
-    try{
-      const proxyTest=await proxyFetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw').catch(()=>'');
-      sourceStatus.proxy=proxyTest?'ok':'fail';
-    }catch(e){sourceStatus.proxy='fail';}
     lastLoadTime=Date.now();
     const nowTxt=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
     document.getElementById('lastUpdate').textContent='Atualizado '+nowTxt;
