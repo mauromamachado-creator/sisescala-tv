@@ -405,16 +405,12 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 
 <!-- ALERTAS POP-UP -->
 <div id="alertOverlay" style="display:none;position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .4s ease" onclick="dismissAlert()">
-<div id="alertToast" style="max-width:380px;width:calc(100% - 40px);background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #ff6b6b;border-left:4px solid #ff6b6b;border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(255,50,50,.3);cursor:pointer;font-family:inherit" onclick="event.stopPropagation()">
-  <div style="display:flex;align-items:flex-start;gap:10px">
-    <span style="font-size:24px" id="alertIcon">🚨</span>
-    <div style="flex:1;min-width:0">
-      <div style="font-weight:700;color:#ff6b6b;font-size:.85rem;margin-bottom:4px" id="alertTitle">ALERTA</div>
-      <div style="color:#e0e6f0;font-size:.8rem;line-height:1.4" id="alertBody"></div>
-      <div style="color:#8892a4;font-size:.7rem;margin-top:6px" id="alertMeta"></div>
-    </div>
+<div id="alertToast" style="max-width:420px;width:calc(100% - 40px);background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #ff6b6b;border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(255,50,50,.3);font-family:inherit;max-height:80vh;overflow-y:auto" onclick="event.stopPropagation()">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-weight:700;color:#ff6b6b;font-size:.95rem">🚨 Alertas</div>
     <span style="color:#8892a4;font-size:18px;cursor:pointer;padding:0 4px" onclick="dismissAlert()">✕</span>
   </div>
+  <div id="alertItems" style="display:flex;flex-direction:column;gap:8px"></div>
 </div>
 </div>
 <style>
@@ -4309,70 +4305,89 @@ async function checkCodeUpdate(){
 checkCodeUpdate();_codeInterval=setInterval(checkCodeUpdate,300000);
 
 // ═══════════════════════════════════════════════════
-// ALERTAS POP-UP - monitora alerts.json
+// ALERTAS POP-UP - agrega todos os alertas no mesmo popup
 // ═══════════════════════════════════════════════════
-let _alertQueue=[];let _alertDismissed=JSON.parse(localStorage.getItem('sisgopa_dismissed_alerts')||'{}');
-async function fetchAlerts(){
+let _alertDismissed=JSON.parse(localStorage.getItem('sisgopa_dismissed_alerts')||'{}');
+function getDiariasAlerts(){
+  const items=[];
   try{
-    const r=await fetchWithTimeout('alerts.json?v='+Date.now(),10000);
-    if(!r.ok)return;
-    const alerts=await r.json();
-    if(!Array.isArray(alerts))return;
-    const now=Date.now();
-    const fresh=alerts.filter(a=>{
-      const dismissedAt=_alertDismissed[a.id];
-      if(dismissedAt&&(Date.now()-dismissedAt)<3600000)return false; // hidden 1h
-      if(a.expires&&new Date(a.expires).getTime()<now)return false;
-      return true;
-    });
-    if(fresh.length)showAlert(fresh[0]);
-  }catch(e){}
-}
-function showAlert(a){
-  const toast=document.getElementById('alertToast');
-  const icons={viagem:'✈️🇧🇷',seguranca:'🔒',sistema:'⚙️',urgente:'🚨'};
-  document.getElementById('alertIcon').textContent=icons[a.type]||'🚨';
-  document.getElementById('alertTitle').textContent=a.title||'ALERTA';
-  document.getElementById('alertBody').innerHTML=a.body||'';
-  document.getElementById('alertMeta').textContent=a.source?`Fonte: ${a.source} • ${a.date||''}`:(a.date||'');
-  const ov=document.getElementById('alertOverlay');ov.style.display='flex';requestAnimationFrame(()=>requestAnimationFrame(()=>{ov.style.opacity='1';}));
-  toast.dataset.alertId=a.id;
-  // Auto-dismiss after 30s
-  setTimeout(()=>{if(toast.dataset.alertId===a.id)dismissAlert();},30000);
-}
-function dismissAlert(){
-  const toast=document.getElementById('alertToast');
-  const id=toast.dataset.alertId;
-  if(id){_alertDismissed[id]=Date.now();localStorage.setItem('sisgopa_dismissed_alerts',JSON.stringify(_alertDismissed));}
-  const ov=document.getElementById('alertOverlay');ov.style.opacity='0';setTimeout(()=>{ov.style.display='none';},400);
-}
-fetchAlerts();setInterval(fetchAlerts,600000); // check every 10 min
-
-// ALERTA DIÁRIAS VENCENDO
-function checkDiariasAlert(){
-  try{
-    if(!omData||!omData.length)return;
-    const conc=getDiariasConcluidas();const done=getDiariasDownloaded();
+    if(!omData||!omData.length)return items;
+    const conc=getDiariasConcluidas();
     const brP=['SB','SD','SN','SI','SS','SW'];const DM=['PR','RESERVA PR','ESCAV'];
     const list=omData.filter(om=>!conc[om.om]&&om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>DM.includes((p.missao||'').toUpperCase().trim())));
     const nBiz=d=>{const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;};
     const hj=nowBRT();hj.setHours(0,0,0,0);
-    const vencidas=list.filter(om=>{const p=nBiz(new Date(om.data+'T23:59:00'));p.setHours(0,0,0,0);return p<hj;});
-    const hoje=list.filter(om=>{const p=nBiz(new Date(om.data+'T23:59:00'));p.setHours(0,0,0,0);return Math.floor((p-hj)/86400000)===0;});
-    const urgentes=[...vencidas,...hoje];
-    if(!urgentes.length)return;
-    const alertId='diarias-prazo-'+hj.toISOString().slice(0,10);
-    const dismissedAt=_alertDismissed[alertId];
-    if(dismissedAt&&(Date.now()-dismissedAt)<3600000)return;
-    const oms=urgentes.map(om=>'OM '+om.om).join(', ');
-    const body=vencidas.length
-      ?`<b>${vencidas.length} diária(s) com prazo vencido!</b><br>${oms}<br><br><span style="font-size:.8rem">Responsável: Operador de Comunicações<br>A solicitação deve ser enviada à PR em até 1 dia útil após o término da missão.</span>`
-      :`<b>${hoje.length} diária(s) vencem hoje!</b><br>${oms}<br><br><span style="font-size:.8rem">Responsável: Operador de Comunicações</span>`;
-    showAlert({id:alertId,type:'urgente',title:vencidas.length?'DIÁRIAS — PRAZO VENCIDO':'DIÁRIAS — VENCE HOJE',body,source:'SisGOPA'});
+    list.forEach(om=>{
+      const p=nBiz(new Date(om.data+'T23:59:00'));p.setHours(0,0,0,0);
+      const diff=Math.floor((p-hj)/86400000);
+      if(diff<=0){
+        items.push({id:'diaria-'+om.om,icon:'💰',color:diff<0?'var(--red)':'#ffaa00',
+          title:diff<0?'DIÁRIA VENCIDA':'DIÁRIA VENCE HOJE',
+          body:`OM ${om.om} — ${om.pernas.map(p2=>p2.origem+'→'+p2.destino).join(' / ')}`,
+          sub:'Responsável: Operador de Comunicações'});
+      }
+    });
   }catch(e){}
+  return items;
 }
-// Check after data loads + every 10 min
-setTimeout(checkDiariasAlert,8000);setInterval(checkDiariasAlert,600000);
+async function fetchAllAlerts(){
+  const allItems=[];
+  // 1) alerts.json (viagens PR, etc)
+  try{
+    const r=await fetchWithTimeout('alerts.json?v='+Date.now(),10000);
+    if(r.ok){
+      const alerts=await r.json();
+      if(Array.isArray(alerts)){
+        const now=Date.now();
+        const icons={viagem:'✈️',seguranca:'🔒',sistema:'⚙️',urgente:'🚨'};
+        alerts.filter(a=>{
+          if(a.expires&&new Date(a.expires).getTime()<now)return false;
+          return true;
+        }).forEach(a=>{
+          allItems.push({id:a.id,icon:icons[a.type]||'🚨',color:'#ff6b6b',title:a.title||'ALERTA',body:a.body||'',sub:a.source?`Fonte: ${a.source} • ${a.date||''}`:(a.date||'')});
+        });
+      }
+    }
+  }catch(e){}
+  // 2) Diárias vencendo
+  getDiariasAlerts().forEach(a=>allItems.push(a));
+  // Filter dismissed (1h cooldown)
+  const fresh=allItems.filter(a=>{
+    const d=_alertDismissed[a.id];
+    return !d||(Date.now()-d)>3600000;
+  });
+  if(fresh.length)showAlerts(fresh);
+}
+function showAlerts(items){
+  const container=document.getElementById('alertItems');
+  let html='';
+  items.forEach(a=>{
+    html+=`<div data-alert-id="${a.id}" style="background:rgba(255,255,255,.04);border:1px solid ${a.color}30;border-left:3px solid ${a.color};border-radius:8px;padding:10px 12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:18px">${a.icon}</span>
+        <span style="font-weight:700;color:${a.color};font-size:.82rem">${a.title}</span>
+      </div>
+      <div style="color:#e0e6f0;font-size:.78rem;line-height:1.4">${a.body}</div>
+      ${a.sub?`<div style="color:#8892a4;font-size:.68rem;margin-top:4px">${a.sub}</div>`:''}
+    </div>`;
+  });
+  container.innerHTML=html;
+  const toast=document.getElementById('alertToast');
+  toast.dataset.alertIds=JSON.stringify(items.map(a=>a.id));
+  // Border color: red if any red, else yellow
+  const hasRed=items.some(a=>a.color==='var(--red)'||a.color==='#ff6b6b');
+  toast.style.borderColor=hasRed?'#ff6b6b':'#ffaa00';
+  const ov=document.getElementById('alertOverlay');ov.style.display='flex';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ov.style.opacity='1';}));
+  setTimeout(()=>dismissAlert(),45000);
+}
+function dismissAlert(){
+  const toast=document.getElementById('alertToast');
+  try{const ids=JSON.parse(toast.dataset.alertIds||'[]');ids.forEach(id=>{_alertDismissed[id]=Date.now();});}catch(e){}
+  localStorage.setItem('sisgopa_dismissed_alerts',JSON.stringify(_alertDismissed));
+  const ov=document.getElementById('alertOverlay');ov.style.opacity='0';setTimeout(()=>{ov.style.display='none';},400);
+}
+fetchAllAlerts();setInterval(fetchAllAlerts,600000);
 
 goScreen(0);
 </script>
