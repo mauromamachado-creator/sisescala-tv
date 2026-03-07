@@ -1591,9 +1591,10 @@ function renderScreenTV(){
   const td=nowBRT();const todayStr=`${String(td.getDate()).padStart(2,'0')}/${String(td.getMonth()+1).padStart(2,'0')}/${td.getFullYear()}`;
   const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
   const allPilots=[...pilotData.vc1,...pilotData.vc2];
-  const totalTrip=allPilots.filter(p=>p.grupo!=='OUT'&&String(p.grupo).toUpperCase()!=='EXT').length;
-  const totalDisp=allPilots.filter(p=>p.grupo!=='OUT'&&String(p.grupo).toUpperCase()!=='EXT').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
-  const totalIndisp=totalTrip-totalDisp;
+  const totalTrip=allPilots.filter(p=>p.grupo!=='OUT').length;
+  const totalExt=allPilots.filter(p=>String(p.grupo).toUpperCase()==='EXT'&&getPilotStatus(p,td).status==='EXTERNO').length;
+  const totalDisp=allPilots.filter(p=>p.grupo!=='OUT').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
+  const totalIndisp=totalTrip-totalDisp-totalExt;
   
   // Mini-header BI
   let html=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);margin-bottom:8px">`;
@@ -1817,8 +1818,8 @@ function renderScreenTV(){
 function renderAll(){
   document.getElementById('loadingMsg').style.display='none';
   const allPilots=[...pilotData.vc1,...pilotData.vc2];const td=nowBRT();
-  document.getElementById('kpi-trip').textContent=allPilots.filter(p=>p.grupo!=='OUT'&&String(p.grupo).toUpperCase()!=='EXT').length;
-  const totalAptos=allPilots.filter(p=>p.grupo!=='OUT'&&String(p.grupo).toUpperCase()!=='EXT').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
+  document.getElementById('kpi-trip').textContent=allPilots.filter(p=>p.grupo!=='OUT').length;
+  const totalAptos=allPilots.filter(p=>p.grupo!=='OUT').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
   document.getElementById('kpi-aptos').textContent=totalAptos;
   const currentYear=nowBRT().getFullYear();
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
