@@ -2717,32 +2717,30 @@ function botCodigo(){
   html+=`</div><div id="codResult" style="margin-top:12px"></div>`;
   botOut(html,false);
 }
-async function botExecCodigo(){
-  const query=(document.getElementById('codQuery')?.value||'').trim();
+function botExecCodigo(){
+  const query=(document.getElementById('codQuery')?.value||'').trim().toUpperCase();
   const result=document.getElementById('codResult');
   if(!query){result.innerHTML='<div style="color:var(--red)">Informe a busca</div>';return;}
-  result.innerHTML=`<div style="color:var(--vc1)">⏳ Buscando...</div>`;
-  try{
-    // Use aviationweather API to search
-    const raw=await proxyFetchRaw(`https://aviationweather.gov/api/data/airport?ids=${query.toUpperCase()}&format=json`);
-    let airports=[];
-    if(raw){try{airports=JSON.parse(raw);}catch(e){}}
-    // If no result by ICAO, try as text search (won't work via API, show fallback)
-    if(!airports.length){
-      result.innerHTML=`<div>❌ Nenhum aeroporto encontrado para <b>${query}</b>.</div>
-<div style="margin-top:6px;font-size:.78rem">Dica: use o código ICAO (4 letras) para busca direta, ou consulte no Bot Telegram com <code>/codigo ${query}</code></div>`;
-      return;
-    }
-    let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px">🔍 Resultados para '${query}'</div>`;
-    airports.slice(0,15).forEach(ap=>{
-      const iata=ap.iataId?` / ${ap.iataId}`:'';
-      html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;margin-bottom:6px">`;
-      html+=`<b>${ap.icaoId||''}</b>${iata} — ${ap.name||''}`;
-      if(ap.country)html+=`<div style="font-size:.72rem;color:var(--text2)">📍 ${ap.country}</div>`;
-      html+=`</div>`;
-    });
-    result.innerHTML=html;
-  }catch(e){result.innerHTML=`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`;}
+  // Search BR_AIRPORTS by ICAO, name, or municipality (same as bot)
+  const results=[];
+  for(const[icao,ap] of Object.entries(BR_AIRPORTS)){
+    const name=(ap.name||'').toUpperCase();
+    const city=(ap.municipality||'').toUpperCase();
+    if(query===icao){results.unshift({icao,...ap});} // exact ICAO match first
+    else if(name.includes(query)||city.includes(query)){results.push({icao,...ap});}
+  }
+  if(!results.length){
+    result.innerHTML=`<div>❌ Nenhum aeroporto encontrado para <b>${query}</b>.</div>`;
+    return;
+  }
+  let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px">🔍 Resultados para '${query}' (${Math.min(results.length,15)} de ${results.length})</div>`;
+  results.slice(0,15).forEach(ap=>{
+    html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;margin-bottom:6px">`;
+    html+=`<b>${ap.icao}</b> — ${ap.name||''}`;
+    if(ap.municipality||ap.region)html+=`<div style="font-size:.72rem;color:var(--text2)">📍 ${ap.municipality||''} ${ap.region?'/ '+ap.region:''}</div>`;
+    html+=`</div>`;
+  });
+  result.innerHTML=html;
 }
 
 // ---- Planejar Voo (multi-leg, same as bot /planejar) ----
