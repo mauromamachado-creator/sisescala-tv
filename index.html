@@ -4341,7 +4341,8 @@ async function fetchAllAlerts(){
           if(a.expires&&new Date(a.expires).getTime()<now)return false;
           return true;
         }).forEach(a=>{
-          allItems.push({id:a.id,icon:icons[a.type]||'🚨',color:'#ff6b6b',title:a.title||'ALERTA',body:a.body||'',sub:a.source?`Fonte: ${a.source} • ${a.date||''}`:(a.date||'')});
+          const colors={viagem:'#64b4ff',seguranca:'#ff6b6b',sistema:'#ffaa00',urgente:'#ff6b6b'};
+          allItems.push({id:a.id,icon:icons[a.type]||'🚨',color:colors[a.type]||'#ff6b6b',title:a.title||'ALERTA',body:a.body||'',sub:a.source?`Fonte: ${a.source} • ${a.date||''}`:(a.date||'')});
         });
       }
     }
