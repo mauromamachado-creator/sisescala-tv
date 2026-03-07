@@ -27,10 +27,18 @@ header{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 2
 .nav-btns button:hover,.nav-btns button.active{background:var(--vc1);color:var(--bg);border-color:var(--vc1)}
 .header-right{display:flex;align-items:center;gap:10px;font-size:.85rem;white-space:nowrap}
 .clock{color:var(--vc1);font-size:1rem;font-weight:800}
-.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:#444}
-.status-dot.ok{background:var(--green)}.status-dot.warn{background:var(--yellow)}.status-dot.err{background:var(--red)}
-.status-dot{cursor:help;position:relative}
-.status-dot:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a2233;color:var(--text);font-size:.7rem;padding:4px 8px;border-radius:4px;white-space:nowrap;border:1px solid var(--border);z-index:999;pointer-events:none}
+.status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;background:#444;cursor:pointer;position:relative;transition:background .3s}
+.status-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
+.status-dot.warn{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
+.status-dot.err{background:var(--red);box-shadow:0 0 6px var(--red);animation:dotPulse 1s ease-in-out infinite}
+.status-dot.loading{background:#888;animation:dotPulse 1s ease-in-out infinite}
+@keyframes dotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}
+.status-panel{display:none;position:absolute;bottom:calc(100% + 10px);right:0;background:#1a2233;color:var(--text);font-size:.72rem;padding:12px 16px;border-radius:8px;border:1px solid var(--border);z-index:9999;min-width:260px;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,.5);line-height:1.6}
+.status-panel.open{display:block}
+.status-panel .sp-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.status-panel .sp-row:last-child{border-bottom:none}
+.status-panel .sp-icon{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;flex-shrink:0}
+.status-panel .sp-ok{background:var(--green)}.status-panel .sp-fail{background:var(--red)}.status-panel .sp-na{background:#555}
 @keyframes tvBlink{0%,100%{opacity:1}50%{opacity:.2}}
 .tv-blink{animation:tvBlink 1s ease-in-out infinite}
 @keyframes horasGlow{0%,100%{text-shadow:0 0 10px rgba(0,212,255,.4),0 0 20px rgba(0,212,255,.2)}50%{text-shadow:0 0 20px rgba(0,212,255,.8),0 0 40px rgba(0,212,255,.4),0 0 60px rgba(0,255,136,.2)}}
@@ -345,7 +353,10 @@ footer a:hover{text-decoration:underline}
   </div>
   <div class="header-right">
     <span class="clock" id="clock"></span>
-    <span class="status-dot" id="statusDot"></span>
+    <span style="position:relative;display:inline-flex;align-items:center">
+      <span class="status-dot" id="statusDot" onclick="document.getElementById('statusPanel').classList.toggle('open')"></span>
+      <div class="status-panel" id="statusPanel"></div>
+    </span>
     <span id="lastUpdate" style="color:var(--text2);font-size:.75rem"></span>
     <button class="ctrl-btn" onclick="goFullscreen()">TELA CHEIA</button>
   </div>
@@ -2930,51 +2941,129 @@ async function botExecMsgPadrao(){
   }catch(e){result.innerHTML=`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`;}
 }
 
+// Robust status tracking
+const STATUS_SOURCES=[
+  {id:'disp',label:'Disponibilidade',critical:true},
+  {id:'lanc',label:'Lançamentos',critical:true},
+  {id:'ferias',label:'Férias',critical:false},
+  {id:'previsao',label:'Previsão Missões',critical:false},
+  {id:'plan',label:'Planejamento',critical:false},
+  {id:'acnt',label:'ACNT/ALTR',critical:false},
+  {id:'metar',label:'METAR',critical:false},
+  {id:'metarMulti',label:'METAR Multi',critical:false},
+  {id:'anual',label:'Horas Anual',critical:true},
+  {id:'om',label:'Ordens de Missão',critical:false},
+  {id:'escala',label:'Escala',critical:false},
+  {id:'cartoes',label:'Cartões',critical:false},
+  {id:'pauSebo',label:'Pau de Sebo',critical:false},
+  {id:'brAirports',label:'Aeroportos BR',critical:false},
+];
+let sourceStatus={};
+let lastLoadTime=null;
+function updateStatusPanel(){
+  const dot=document.getElementById('statusDot');
+  const panel=document.getElementById('statusPanel');
+  const total=STATUS_SOURCES.length;
+  const okCount=STATUS_SOURCES.filter(s=>sourceStatus[s.id]==='ok').length;
+  const failCount=STATUS_SOURCES.filter(s=>sourceStatus[s.id]==='fail').length;
+  const criticalFail=STATUS_SOURCES.filter(s=>s.critical&&sourceStatus[s.id]==='fail');
+  const nowTxt=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  // Determine dot color
+  if(criticalFail.length){
+    dot.className='status-dot err';
+  }else if(failCount>0){
+    dot.className='status-dot warn';
+  }else{
+    dot.className='status-dot ok';
+  }
+  // Build panel
+  let html=`<div style="font-weight:900;margin-bottom:8px;color:var(--vc1);font-size:.82rem">📊 Status do Sistema</div>`;
+  html+=`<div style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">`;
+  html+=`<span style="color:${failCount===0?'var(--green)':criticalFail.length?'var(--red)':'var(--yellow)'};font-weight:700">${okCount}/${total} fontes OK</span>`;
+  html+=`<span style="float:right;color:var(--text2)">${nowTxt}</span></div>`;
+  STATUS_SOURCES.forEach(s=>{
+    const st=sourceStatus[s.id]||'pending';
+    const icon=st==='ok'?'sp-ok':st==='fail'?'sp-fail':'sp-na';
+    const label=st==='ok'?'✅':st==='fail'?'❌':'⏳';
+    const crit=s.critical?'<span style="color:var(--red);font-size:.6rem;margin-left:4px">●</span>':'';
+    html+=`<div class="sp-row"><span><span class="sp-icon ${icon}"></span>${s.label}${crit}</span><span>${label}</span></div>`;
+  });
+  // Data quality checks
+  html+=`<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-weight:700;color:var(--vc1)">Integridade</div>`;
+  const checks=[];
+  if(pilotData&&pilotData.length)checks.push({ok:true,txt:`${pilotData.length} tripulantes`});
+  else checks.push({ok:false,txt:'0 tripulantes carregados'});
+  if(flights&&flights.length)checks.push({ok:true,txt:`${flights.length} voos registrados`});
+  else checks.push({ok:false,txt:'0 voos registrados'});
+  if(Object.keys(BR_AIRPORTS).length>0)checks.push({ok:true,txt:`${Object.keys(BR_AIRPORTS).length} aeroportos`});
+  else checks.push({ok:false,txt:'Base aeroportos não carregou'});
+  if(cartoesData&&cartoesData.length)checks.push({ok:true,txt:`${cartoesData.length} cartões`});
+  else if(cartoesFailed)checks.push({ok:false,txt:'Cartões indisponíveis'});
+  const metarCount=Object.keys(metarMulti||{}).length;
+  checks.push({ok:metarCount>=4,txt:`${metarCount}/4 METARs`});
+  checks.forEach(c=>{
+    html+=`<div class="sp-row"><span><span class="sp-icon ${c.ok?'sp-ok':'sp-fail'}"></span>${c.txt}</span></div>`;
+  });
+  // Stale data warning
+  if(lastLoadTime){
+    const ageMin=Math.round((Date.now()-lastLoadTime)/60000);
+    if(ageMin>6)html+=`<div style="margin-top:6px;color:var(--yellow);font-size:.7rem">⚠️ Dados com ${ageMin}min — próximo refresh automático em breve</div>`;
+  }
+  html+=`<div style="margin-top:8px;font-size:.6rem;color:var(--text2)">● = fonte crítica | Clique fora para fechar</div>`;
+  panel.innerHTML=html;
+}
+// Close panel on outside click
+document.addEventListener('click',e=>{
+  const panel=document.getElementById('statusPanel');
+  const dot=document.getElementById('statusDot');
+  if(panel&&!panel.contains(e.target)&&e.target!==dot)panel.classList.remove('open');
+});
 async function loadAllData(){
   document.getElementById('errorOverlay').style.display='none';
   document.getElementById('loadingMsg').style.display='block';
-  document.getElementById('statusDot').className='status-dot';
+  const dot=document.getElementById('statusDot');
+  dot.className='status-dot loading';
+  sourceStatus={};STATUS_SOURCES.forEach(s=>sourceStatus[s.id]='pending');
   try{
-    const warnings=[];
-    const metarFetch=fetchMetar().catch(()=>{warnings.push('METAR SBBR');});
-    const metarMultiFetch=fetchMetarMulti().catch(()=>{warnings.push('METAR Multi');});
-    const planFetch=fetchWithTimeout(planCsvUrl()).then(r=>r.ok?r.text():'').then(t=>t?parseCSV(t):[]).catch(()=>{warnings.push('Planejamento');return[];});
-    const acntFetch=fetchWithTimeout(`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv&gid=${GIDS.acnt}`).then(r=>r.ok?r.text():'').then(t=>t?parseCSV(t):[]).catch(()=>{warnings.push('ACNT');return[];});
+    // BR_AIRPORTS check
+    sourceStatus.brAirports=Object.keys(BR_AIRPORTS).length>0?'ok':'fail';
+    const metarFetch=fetchMetar().then(()=>{sourceStatus.metar='ok';}).catch(()=>{sourceStatus.metar='fail';});
+    const metarMultiFetch=fetchMetarMulti().then(()=>{sourceStatus.metarMulti='ok';}).catch(()=>{sourceStatus.metarMulti='fail';});
+    const planFetch=fetchWithTimeout(planCsvUrl()).then(r=>r.ok?r.text():'').then(t=>{sourceStatus.plan='ok';return t?parseCSV(t):[];}).catch(()=>{sourceStatus.plan='fail';return[];});
+    const acntFetch=fetchWithTimeout(`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv&gid=${GIDS.acnt}`).then(r=>r.ok?r.text():'').then(t=>{sourceStatus.acnt='ok';return t?parseCSV(t):[];}).catch(()=>{sourceStatus.acnt='fail';return[];});
     const[dispRows,lancRows,ferRows,prevRows,planRows,acntRows]=await Promise.all([
-      fetchCSV(GIDS.disp).catch(()=>{warnings.push('Disponibilidade');return[];}),
-      fetchCSV(GIDS.lanc).catch(()=>{warnings.push('Lançamentos');return[];}),
-      fetchCSVByName('Férias').catch(()=>{warnings.push('Férias');return[];}),
-      fetchCSV(GIDS.previsao).catch(()=>{warnings.push('Previsão');return[];}),
+      fetchCSV(GIDS.disp).then(r=>{sourceStatus.disp='ok';return r;}).catch(()=>{sourceStatus.disp='fail';return[];}),
+      fetchCSV(GIDS.lanc).then(r=>{sourceStatus.lanc='ok';return r;}).catch(()=>{sourceStatus.lanc='fail';return[];}),
+      fetchCSVByName('Férias').then(r=>{sourceStatus.ferias='ok';return r;}).catch(()=>{sourceStatus.ferias='fail';return[];}),
+      fetchCSV(GIDS.previsao).then(r=>{sourceStatus.previsao='ok';return r;}).catch(()=>{sourceStatus.previsao='fail';return[];}),
       planFetch,acntFetch]);
     await metarFetch;
     await metarMultiFetch;
     // Check individual METAR localities
     const expectedIcaos=['SBBR','SBCF','SBRJ','SBSP'];
     const missingIcaos=expectedIcaos.filter(i=>!metarMulti[i]);
-    if(missingIcaos.length)warnings.push('METAR '+missingIcaos.join(','));
-    await fetchAnual().catch(()=>{warnings.push('Horas Anual');});
-    await fetchWithTimeout('om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;}).catch(()=>{omData=[];});
-    await fetchEscala().catch(()=>{warnings.push('Escala');});
-    await fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);cartoesFailed=false;}).catch(()=>{warnings.push('Cartões');cartoesData=[];cartoesFailed=true;});
+    if(missingIcaos.length&&sourceStatus.metarMulti==='ok')sourceStatus.metarMulti='fail';
+    await fetchAnual().then(()=>{sourceStatus.anual='ok';}).catch(()=>{sourceStatus.anual='fail';});
+    await fetchWithTimeout('om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;sourceStatus.om='ok';}).catch(()=>{omData=[];sourceStatus.om='fail';});
+    await fetchEscala().then(()=>{sourceStatus.escala='ok';}).catch(()=>{sourceStatus.escala='fail';});
+    await fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);cartoesFailed=false;sourceStatus.cartoes='ok';}).catch(()=>{cartoesData=[];cartoesFailed=true;sourceStatus.cartoes='fail';});
     pilotData=parseDisponibilidade(dispRows);
     flights=parseLancamentos(lancRows);
-    await fetchPauDeSebo().catch(()=>{warnings.push('Pau de Sebo');});
+    await fetchPauDeSebo().then(()=>{sourceStatus.pauSebo='ok';}).catch(()=>{sourceStatus.pauSebo='fail';});
     calcAfastamentos();
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
     diarioData=parseDiario(planRows);
     acntData=parseACNT(acntRows);
-    const dot=document.getElementById('statusDot');
+    lastLoadTime=Date.now();
     const nowTxt=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
-    if(warnings.length===0){
-      dot.className='status-dot ok';dot.setAttribute('data-tip','✅ Todos os dados atualizados');
-    }else{
-      dot.className='status-dot warn';dot.setAttribute('data-tip','⚠️ Falha parcial: '+warnings.join(', '));
-    }
     document.getElementById('lastUpdate').textContent='Atualizado '+nowTxt;
+    updateStatusPanel();
     checklistData=parseChecklist(planRows);
     renderAll();
   }catch(e){
-    console.error(e);const dotE=document.getElementById('statusDot');dotE.className='status-dot err';dotE.setAttribute('data-tip','❌ Erro crítico ao carregar dados');
+    console.error(e);
+    dot.className='status-dot err';
+    updateStatusPanel();
     document.getElementById('errorOverlay').style.display='flex';
     document.getElementById('loadingMsg').style.display='none';
   }
