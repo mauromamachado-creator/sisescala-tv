@@ -1212,7 +1212,7 @@ function renderScreen0(){
 
   // --- TOP 3 VC-2 ---
   html+='<div class="dash-panel p-vc2">';
-  html+='<div class="panel-title"><span class="icon">🛩️</span> Top Voados - VC-2</div>';
+  html+='<div class="panel-title"><span class="icon">✈️</span> Top Voados - VC-2</div>';
   const vc2Sorted=pilotData.vc2.filter(p=>p.voadas!=null&&getPilotStatus(p,td).status!=='FORA').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
   for(let i=0;i<Math.min(3,vc2Sorted.length);i++){
     const p=vc2Sorted[i];const pct=p.pct||0;
