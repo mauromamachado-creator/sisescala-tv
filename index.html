@@ -387,15 +387,16 @@ async function fetchCSV(gid){const r=await fetch(csvUrl(gid),{cache:'no-store'})
 function parseHHMM(s){const m=String(s||'').match(/^(\d+):(\d+)/);return m?(parseInt(m[1])+parseInt(m[2])/60):0;}
 async function fetchAnual(){
   try{
-    const [vc1Rows,vc2Rows]=await Promise.all([fetchCSVByName('Aux Anual do Machado'),fetchCSVByName('Aux Anual')]);
-    // Row 0 has header: col7=ANV, col10=esforço (HH:MM:SS)
+    const [vc1Rows,vc2Rows]=await Promise.all([fetchCSVByName('Anual machado'),fetchCSVByName('Anual VC2')]);
     const parseSheet=(rows)=>{
-      const hdr=rows[0]||[];
-      const esforcoRaw=String(hdr[10]||'').replace(/:00$/,'');
-      const esforco=parseHHMM(esforcoRaw);
-      let lastVoadas=0;
-      for(let i=1;i<rows.length;i++){const v=String(rows[i][2]||'').trim();if(v&&v!=='0:00'&&v!=='0')lastVoadas=parseHHMM(v);}
-      return {voadas:lastVoadas,esforco:esforco||0};
+      let voadas=0,esforco=0;
+      for(const row of rows){
+        const label=String(row[6]||'').trim().toLowerCase();
+        const val=String(row[7]||'').trim();
+        if(label==='voadas')voadas=parseHHMM(val);
+        if(label.includes('esfor'))esforco=parseHHMM(val);
+      }
+      return {voadas,esforco};
     };
     anualVC1=parseSheet(vc1Rows);if(!anualVC1.esforco)anualVC1.esforco=650;
     anualVC2=parseSheet(vc2Rows);if(!anualVC2.esforco)anualVC2.esforco=1220;
