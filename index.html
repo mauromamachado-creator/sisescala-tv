@@ -287,10 +287,11 @@ footer a:hover{text-decoration:underline}
 .cal-nav button:hover{background:var(--bg3)}
 .cal-month{font-size:1.2rem;font-weight:900;min-width:200px;text-align:center}
 @media(max-width:768px){
-  .cal-grid{gap:1px;max-width:100%;overflow:hidden}
-  .cal-day{min-height:50px;padding:2px 2px;min-width:0;overflow:hidden}
-  .cal-day .day-num{font-size:.65rem}
-  .cal-event{font-size:.48rem!important;padding:1px 2px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+  .cal-grid{gap:1px;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;min-width:340px}
+  .cal-header{font-size:.55rem;padding:4px 0}
+  .cal-day{min-height:44px;padding:2px 1px;min-width:0;overflow:hidden}
+  .cal-day .day-num{font-size:.6rem;margin-bottom:2px}
+  .cal-event{font-size:.42rem!important;padding:1px 2px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
   .cal-month{font-size:1rem;min-width:auto}
 }
 
@@ -385,7 +386,7 @@ const planCsvUrl=()=>`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/expor
 
 let currentScreen=0;
 let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[], diarioData=[], acntData=[], checklistData=[], metarRaw='', metarDecoded={};
-let cartoesData=[];
+let cartoesData=[];let cartoesFailed=false;
 let metarMulti={};
 let anualVC1={voadas:0,esforco:650}, anualVC2={voadas:0,esforco:1220};
 let escalaData={vc1:{consulta:'',raio:[]},vc2:{consulta:'',raio:[]}};
@@ -410,7 +411,8 @@ function nowBRT(){return new Date(new Date().toLocaleString('en-US',{timeZone:'A
 function fmtDate(d){if(!d)return'';return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});}
 function fmtDateShort(d){if(!d)return'';return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',timeZone:'America/Sao_Paulo'}).replace('.','');}
 function fmtHours(h){if(h==null)return'—';const hh=Math.floor(h);const mm=Math.round((h-hh)*60);return `${hh}h${mm.toString().padStart(2,'0')}`;}
-async function fetchCSV(gid){const r=await fetch(csvUrl(gid),{cache:'no-store'});if(!r.ok)throw new Error('fetch failed');return parseCSV(await r.text());}
+function fetchWithTimeout(url,ms=15000){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);return fetch(url,{cache:'no-store',signal:c.signal}).finally(()=>clearTimeout(t));}
+async function fetchCSV(gid){const r=await fetchWithTimeout(csvUrl(gid));if(!r.ok)throw new Error('fetch failed');return parseCSV(await r.text());}
 function parseHHMM(s){const m=String(s||'').match(/^(\d+):(\d+)/);return m?(parseInt(m[1])+parseInt(m[2])/60):0;}
 async function fetchAnual(){
   try{
@@ -429,7 +431,7 @@ async function fetchAnual(){
     anualVC2=parseSheet(vc2Rows);if(!anualVC2.esforco)anualVC2.esforco=1220;
   }catch(e){console.warn('fetchAnual error',e);}
 }
-async function fetchCSVByName(sheetName){const url=`https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('fetch failed');return parseCSV(await r.text());}
+async function fetchCSVByName(sheetName){const url=`https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;const r=await fetchWithTimeout(url);if(!r.ok)throw new Error('fetch failed');return parseCSV(await r.text());}
 
 function calcAfastamentos(){
   // Calcula dias desde último voo para cada piloto usando flights[]
@@ -437,7 +439,8 @@ function calcAfastamentos(){
   td.setHours(0,0,0,0);
   const allP=[...pilotData.vc1,...pilotData.vc2];
   for(const p of allP){
-    const pilotFlights=flights.filter(f=>f.piloto&&f.piloto.toUpperCase().includes(p.trigrama)&&f.dataObj&&f.dataObj<=td);
+    const triRe=new RegExp('\\b'+p.trigrama+'\\b','i');
+    const pilotFlights=flights.filter(f=>f.piloto&&triRe.test(f.piloto)&&f.dataObj&&f.dataObj<=td);
     if(pilotFlights.length){
       const lastFlight=pilotFlights.reduce((a,b)=>a.dataObj>b.dataObj?a:b);
       const diffDays=Math.round((td-lastFlight.dataObj)/86400000);
@@ -706,7 +709,7 @@ async function proxyFetch(url){
     u=>'https://corsproxy.io/?'+encodeURIComponent(u)
   ];
   for(const mk of proxies){
-    try{const r=await fetch(mk(url),{cache:'no-store'});if(r.ok){const t=(await r.text()).trim();if(t&&(t.startsWith('METAR')||t.startsWith('SPECI')||t.match(/^SB\w{2}\s/)))return t;}}catch(e){}
+    try{const r=await fetchWithTimeout(mk(url),10000);if(r.ok){const t=(await r.text()).trim();if(t&&(t.startsWith('METAR')||t.startsWith('SPECI')||t.match(/^SB\w{2}\s/)))return t;}}catch(e){}
   }
   return '';
 }
@@ -760,6 +763,7 @@ function getPilotStatus(p,td){
     }
   }
   if(motivos.length)return{status:`INDISPONÍVEL (${motivos.join(', ')})`,cls:'st-inapto'};
+  if(cartoesFailed)return{status:'DISPONÍVEL',cls:'st-apto',alerta:'DADOS INCOMPLETOS'};
   return{status:'DISPONÍVEL',cls:'st-apto'};
 }
 
@@ -2169,8 +2173,8 @@ async function loadAllData(){
     const warnings=[];
     const metarFetch=fetchMetar().catch(()=>{warnings.push('METAR SBBR');});
     const metarMultiFetch=fetchMetarMulti().catch(()=>{warnings.push('METAR Multi');});
-    const planFetch=fetch(planCsvUrl(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>t?parseCSV(t):[]).catch(()=>{warnings.push('Planejamento');return[];});
-    const acntFetch=fetch(`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv&gid=${GIDS.acnt}`,{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>t?parseCSV(t):[]).catch(()=>{warnings.push('ACNT');return[];});
+    const planFetch=fetchWithTimeout(planCsvUrl()).then(r=>r.ok?r.text():'').then(t=>t?parseCSV(t):[]).catch(()=>{warnings.push('Planejamento');return[];});
+    const acntFetch=fetchWithTimeout(`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv&gid=${GIDS.acnt}`).then(r=>r.ok?r.text():'').then(t=>t?parseCSV(t):[]).catch(()=>{warnings.push('ACNT');return[];});
     const[dispRows,lancRows,ferRows,prevRows,planRows,acntRows]=await Promise.all([
       fetchCSV(GIDS.disp).catch(()=>{warnings.push('Disponibilidade');return[];}),
       fetchCSV(GIDS.lanc).catch(()=>{warnings.push('Lançamentos');return[];}),
@@ -2184,9 +2188,9 @@ async function loadAllData(){
     const missingIcaos=expectedIcaos.filter(i=>!metarMulti[i]);
     if(missingIcaos.length)warnings.push('METAR '+missingIcaos.join(','));
     await fetchAnual().catch(()=>{warnings.push('Horas Anual');});
-    await fetch('om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;}).catch(()=>{omData=[];});
+    await fetchWithTimeout('om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;}).catch(()=>{omData=[];});
     await fetchEscala().catch(()=>{warnings.push('Escala');});
-    await fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);}).catch(()=>{warnings.push('Cartões');cartoesData=[];});
+    await fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);cartoesFailed=false;}).catch(()=>{warnings.push('Cartões');cartoesData=[];cartoesFailed=true;});
     pilotData=parseDisponibilidade(dispRows);
     flights=parseLancamentos(lancRows);
     calcAfastamentos();
@@ -2230,8 +2234,9 @@ function goScreen(n){
 }
 function goFullscreen(){document.documentElement.requestFullscreen?.();}
 function updateClock(){const d=new Date();const opts={timeZone:'America/Sao_Paulo'};const wd=d.toLocaleDateString('pt-BR',{...opts,weekday:'long'});const day=d.toLocaleDateString('pt-BR',{...opts,day:'numeric'});const mon=d.toLocaleDateString('pt-BR',{...opts,month:'long'});const yr=d.toLocaleDateString('pt-BR',{...opts,year:'numeric'});const time=d.toLocaleTimeString('pt-BR',{...opts,hour:'2-digit',minute:'2-digit',second:'2-digit'});document.getElementById('clock').textContent=`${wd}, ${day} de ${mon} de ${yr} — ${time}`;}
-updateClock();setInterval(updateClock,1000);
-loadAllData();setInterval(loadAllData,300000);
+let _clockInterval,_dataInterval,_codeInterval;
+updateClock();_clockInterval=setInterval(updateClock,1000);
+loadAllData();_dataInterval=setInterval(loadAllData,300000);
 // Auto-update: verifica se o código mudou a cada 5min e recarrega
 let _codeHash='';
 async function checkCodeUpdate(){
@@ -2243,7 +2248,7 @@ async function checkCodeUpdate(){
     if(sig!==_codeHash){console.log('SisGOPA: nova versão detectada, recarregando...');location.reload();}
   }catch(e){}
 }
-checkCodeUpdate();setInterval(checkCodeUpdate,300000);
+checkCodeUpdate();_codeInterval=setInterval(checkCodeUpdate,300000);
 goScreen(0);
 </script>
 </body>
