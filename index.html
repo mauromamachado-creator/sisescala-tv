@@ -422,6 +422,28 @@ async function fetchAnual(){
 }
 async function fetchCSVByName(sheetName){const url=`https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('fetch failed');return parseCSV(await r.text());}
 
+async function fetchPauDeSebo(){
+  try{
+    const rows=await fetchCSVByName('pau de sebo');
+    const afMap={};
+    for(const row of rows){
+      const cols=Object.values(row);
+      const tri=(cols[2]||'').trim();
+      const af=(cols[5]||'').trim();
+      if(tri&&tri.length>=2&&tri.length<=4&&tri!=='Trig'&&tri!=='Aeronave'){
+        const num=parseInt(af,10);
+        if(!isNaN(num))afMap[tri]=num;
+      }
+    }
+    // Atualizar afastamento nos pilotData
+    const allP=[...pilotData.vc1,...pilotData.vc2];
+    for(const p of allP){
+      if(afMap[p.trigrama]!=null)p.afastamento=String(afMap[p.trigrama]);
+    }
+    console.log('Pau de sebo loaded:',Object.keys(afMap).length,'pilotos');
+  }catch(e){console.warn('fetchPauDeSebo error',e);}
+}
+
 function parseDisponibilidade(rows){
   function norm(x){return String(x||'').trim().toUpperCase();}
   let hdr=null,hdrRowIdx=-1;
@@ -1847,6 +1869,7 @@ async function loadAllData(){
     await metarFetch;
     await metarMultiFetch;
     await fetchAnual().catch(()=>{warnings.push('Horas Anual');});
+    await fetchPauDeSebo().catch(()=>{warnings.push('Pau de Sebo');});
     await fetch('om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;}).catch(()=>{omData=[];});
     await fetchEscala().catch(()=>{warnings.push('Escala');});
     pilotData=parseDisponibilidade(dispRows);flights=parseLancamentos(lancRows);
