@@ -1567,6 +1567,16 @@ function renderScreenTV(){
   const todayDayName=dayNames[td.getDay()];
   const todayConfirm=confirmaData.filter(c=>c.dia.toUpperCase()===todayDayName);
   if(todayConfirm.length){
+    // Pegar rotas do diário
+    const todayDiario=diarioData.find(d=>{const ds=d.date;return ds.getDate()===td.getDate()&&ds.getMonth()===td.getMonth()&&ds.getFullYear()===td.getFullYear();});
+    const mainRoute=todayDiario?todayDiario.legs.filter(l=>!l.isExtra).map(l=>(l.route||'').replace(/-/g,'→')).join(' / '):'';
+    const extraRoute=todayDiario?todayDiario.legs.filter(l=>l.isExtra).map(l=>(l.route||'').replace(/-/g,'→')).join(' / '):'';
+    if(mainRoute||extraRoute){
+      html+=`<div style="font-size:.72rem;color:var(--text);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.08)">`;
+      if(mainRoute)html+=`<div>🛫 ${mainRoute}</div>`;
+      if(extraRoute)html+=`<div style="color:var(--vc2)">🛫 ${extraRoute}</div>`;
+      html+=`</div>`;
+    }
     for(const c of todayConfirm){
       const anvColor=c.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
       html+=`<div style="display:flex;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.75rem">`;
