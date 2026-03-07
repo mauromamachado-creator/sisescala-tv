@@ -386,7 +386,7 @@ const planCsvUrl=()=>`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/expor
 
 let currentScreen=0;
 let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[], diarioData=[], acntData=[], checklistData=[], metarRaw='', metarDecoded={};
-let cartoesData=[];let cartoesFailed=false;
+let cartoesData=[];let cartoesFailed=false;let pauDeSeboData={};
 let metarMulti={};
 let anualVC1={voadas:0,esforco:650}, anualVC2={voadas:0,esforco:1220};
 let escalaData={vc1:{consulta:'',raio:[]},vc2:{consulta:'',raio:[]}};
@@ -433,29 +433,47 @@ async function fetchAnual(){
 }
 async function fetchCSVByName(sheetName){const url=`https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;const r=await fetchWithTimeout(url);if(!r.ok)throw new Error('fetch failed');return parseCSV(await r.text());}
 
+async function fetchPauDeSebo(){
+  try{
+    const rows=await fetchCSVByName('pau de sebo');
+    pauDeSeboData={};
+    for(const row of rows){
+      const tri=String(row[2]||'').trim().toUpperCase();
+      if(!tri||tri.length!==3||!/^[A-Z]{3}$/.test(tri))continue;
+      const horas=parseHHMM(row[4]);
+      const afst=String(row[5]||'').trim();
+      pauDeSeboData[tri]={horas,afst};
+    }
+    console.log('Pau de sebo:',Object.keys(pauDeSeboData).length,'pilotos');
+  }catch(e){console.warn('fetchPauDeSebo falhou, usando fallback',e);}
+}
 function calcAfastamentos(){
-  // Calcula dias desde último voo para cada piloto usando flights[]
+  // Fonte primária: pau de sebo. Fallback: flights[]
   const td=nowBRT();
   td.setHours(0,0,0,0);
   const allP=[...pilotData.vc1,...pilotData.vc2];
   for(const p of allP){
+    const pds=pauDeSeboData[p.trigrama];
     const triRe=new RegExp('\\b'+p.trigrama+'\\b','i');
     const pilotFlights=flights.filter(f=>f.piloto&&triRe.test(f.piloto)&&f.dataObj&&f.dataObj<=td);
-    if(pilotFlights.length){
+    // Horas voadas: pau de sebo (primário) → lançamentos (fallback)
+    if(pds&&pds.horas>0){
+      p.voadas=pds.horas;
+    }else if(p.voadas==null||p.voadas===0){
+      const totalH=pilotFlights.reduce((s,f)=>s+parseHHMM(f.tempo),0);
+      if(totalH>0)p.voadas=totalH;
+    }
+    // Afastamento: pau de sebo (primário) → flights (fallback)
+    if(pds&&pds.afst!==''){
+      p.afastamento=pds.afst;
+    }else if(pilotFlights.length){
       const lastFlight=pilotFlights.reduce((a,b)=>a.dataObj>b.dataObj?a:b);
-      const diffDays=Math.round((td-lastFlight.dataObj)/86400000);
-      p.afastamento=String(diffDays);
-      // Fallback: calcular horas voadas a partir dos flights[] se não veio da planilha
-      if(p.voadas==null){
-        const totalH=pilotFlights.reduce((s,f)=>s+parseHHMM(f.tempo),0);
-        if(totalH>0)p.voadas=totalH;
-      }
+      p.afastamento=String(Math.round((td-lastFlight.dataObj)/86400000));
     }else{
-      // Sem voos registrados — considerar máximo afastamento
       if(!p.afastamento||p.afastamento==='#N/A')p.afastamento='999';
     }
   }
-  console.log('Afastamentos calculados para',allP.length,'pilotos');
+  console.log('Afastamentos calculados para',allP.length,'pilotos (pau de sebo:',Object.keys(pauDeSeboData).length,')');
 }
 
 function parseDisponibilidade(rows){
@@ -2198,6 +2216,7 @@ async function loadAllData(){
     await fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);cartoesFailed=false;}).catch(()=>{warnings.push('Cartões');cartoesData=[];cartoesFailed=true;});
     pilotData=parseDisponibilidade(dispRows);
     flights=parseLancamentos(lancRows);
+    await fetchPauDeSebo().catch(()=>{warnings.push('Pau de Sebo');});
     calcAfastamentos();
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
     diarioData=parseDiario(planRows);
