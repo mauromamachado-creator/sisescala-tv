@@ -1593,7 +1593,7 @@ function renderScreenTV(){
       html+=`<span style="flex:1;font-size:.7rem">${c.escalados.join(' / ')}</span>`;
       html+=`</div>`;
     }
-    html+=`<div style="font-size:.65rem;color:var(--green);margin-top:6px">✅ Escala confirmada</div>`;
+    html+=`<div style="font-size:.65rem;color:var(--green);margin-top:6px">✅ SAVISO — Escala confirmada</div>`;
   }else{
     const todayData=diarioData.find(d=>{const ds=d.date;return ds.getDate()===td.getDate()&&ds.getMonth()===td.getMonth()&&ds.getFullYear()===td.getFullYear();});
     if(todayData&&todayData.legs.length){
