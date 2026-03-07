@@ -2625,90 +2625,136 @@ function gerarDiariaPDF(omId){
   const getVal=(f)=>{const el=modal.querySelector(`[data-field="${f}"]`);return el?el.value:'';};
   
   const pw=210,lm=20,rm=20,tw=pw-lm-rm;
-  let y=20;
+  let y=18;
+  const cx=pw/2;
   
-  // Header
-  doc.setFontSize(10);doc.setFont('helvetica','bold');
-  doc.text('MINISTÉRIO DA DEFESA',pw/2,y,{align:'center'});y+=5;
-  doc.text('COMANDO DA AERONÁUTICA',pw/2,y,{align:'center'});y+=5;
-  doc.text('GTE-1',pw/2,y,{align:'center'});y+=10;
+  // ═══ CABEÇALHO INSTITUCIONAL ═══
+  doc.setFont('times','normal');doc.setFontSize(11);
+  doc.text('MINISTÉRIO DA DEFESA',cx,y,{align:'center'});y+=5;
+  doc.text('COMANDO DA AERONÁUTICA',cx,y,{align:'center'});y+=5;
+  doc.text('GTE-1',cx,y,{align:'center'});y+=10;
   
-  doc.setFontSize(12);
-  doc.text('SOLICITAÇÃO DE PAGAMENTO DE DIÁRIAS',pw/2,y,{align:'center'});y+=10;
+  // ═══ TÍTULO (negrito + sublinhado) ═══
+  doc.setFont('times','bold');doc.setFontSize(12);
+  const titulo='SOLICITAÇÃO DE PAGAMENTO DE DIÁRIAS';
+  doc.text(titulo,cx,y,{align:'center'});
+  const tW=doc.getTextWidth(titulo);
+  doc.setLineWidth(0.4);doc.line(cx-tW/2,y+1,cx+tW/2,y+1);
+  y+=10;
   
-  doc.setFontSize(10);doc.setFont('helvetica','normal');
-  doc.text('Senhor Oficial de Transporte Aéreo,',lm,y);y+=6;
+  // ═══ VOCATIVO + INTRO ═══
+  doc.setFont('times','normal');doc.setFontSize(11);
+  doc.text('Senhor Oficial de Transporte Aéreo,',lm,y);y+=7;
   doc.text('Solicito as providências necessárias para o pagamento de diárias, nos termos das informações abaixo:',lm,y,{maxWidth:tw});y+=10;
   
-  // Fields 1-4
-  doc.setFont('helvetica','bold');
+  // ═══ CAMPOS 1-4 ═══
   doc.text(`1 – ORGANIZAÇÃO MILITAR: ${getVal('orgMil')}`,lm,y);y+=6;
   
   const tipo=getVal('tipoDiaria');
-  const nac=tipo==='NACIONAL'?'X':' ',intl=tipo==='INTERNACIONAL'?'X':' ',amb=tipo==='AMBAS'?'X':' ';
-  doc.text(`2 – TIPO DE DIÁRIA: ( ${nac} ) NACIONAL  ( ${intl} ) INTERNACIONAL  ( ${amb} ) AMBAS`,lm,y);y+=6;
+  const nac=tipo==='NACIONAL'?'X':'  ',intl=tipo==='INTERNACIONAL'?'X':'  ',amb=tipo==='AMBAS'?'X':'  ';
+  doc.text(`2 – TIPO DE DIÁRIA: ( ${nac} ) DIÁRIA NACIONAL    ( ${intl} ) DIÁRIA INTERNACIONAL    ( ${amb} ) AMBAS`,lm,y);y+=6;
   
   doc.text(`3 – NÚMERO DO EVENTO PRESIDENCIAL: ${getVal('numEvento')}`,lm,y);y+=6;
-  doc.text(`4 – MODELO E MATRÍCULA DA AERONAVE: ${getVal('aeronave')}`,lm,y);y+=8;
+  doc.text(`4 – MODELO E MATRÍCULA DA AERONAVE: ${getVal('aeronave')}.`,lm,y);y+=8;
   
-  // Section 5 — Trechos
+  // ═══ CAMPO 5 — TRECHOS ═══
   doc.text('5 – DESCRIÇÃO DOS TRECHOS DA MISSÃO:',lm,y);y+=6;
-  doc.setFont('helvetica','normal');doc.setFontSize(8);
   
-  // Table header
-  const cols5=[{w:45,t:'DATA/HORA DECOLAGEM'},{w:40,t:'ORIGEM'},{w:40,t:'DESTINO'},{w:45,t:'DATA/HORA POUSO'}];
-  let x=lm;
-  doc.setFillColor(220,220,220);doc.rect(lm,y-3,tw,6,'F');
-  cols5.forEach(c=>{doc.text(c.t,x+1,y);x+=c.w;});y+=5;
+  // Tabela trechos — bordas completas
+  const c5w=[35,45,50,40]; // larguras das 4 colunas = 170mm
+  const rh=10; // row height for header
+  const drh=8; // data row height
+  doc.setFontSize(9);doc.setLineWidth(0.3);
   
-  // Table rows
+  // Header row (2 lines each)
+  let x5=lm;
+  const headers5=[['DATA/HORA (GMT)','DECOLAGEM'],['ORIGEM','(AERÓDROMO E CIDADE/UF)'],['DESTINO','(AERÓDROMO E CIDADE/UF)'],['DATA/HORA (GMT)','POUSO']];
+  headers5.forEach((h,i)=>{
+    doc.rect(x5,y,c5w[i],rh);
+    doc.setFont('times','bold');
+    doc.text(h[0],x5+c5w[i]/2,y+4,{align:'center'});
+    doc.text(h[1],x5+c5w[i]/2,y+8,{align:'center'});
+    x5+=c5w[i];
+  });
+  y+=rh;
+  
+  // Data rows
+  doc.setFont('times','normal');
   const pernasTbody=document.getElementById('diariaPernasTbody');
   for(let i=0;i<pernasTbody.rows.length;i++){
     const etd=getVal(`perna_${i}_etd`),orig=getVal(`perna_${i}_origem`),dest=getVal(`perna_${i}_destino`),eta=getVal(`perna_${i}_eta`);
     if(!etd&&!orig)continue;
-    x=lm;
-    doc.text(etd,x+1,y);x+=45;
-    doc.text(orig,x+1,y);x+=40;
-    doc.text(dest,x+1,y);x+=40;
-    doc.text(eta,x+1,y);y+=5;
-    if(y>270){doc.addPage();y=20;}
+    x5=lm;
+    const vals=[etd,orig,dest,eta];
+    vals.forEach((v,j)=>{
+      doc.rect(x5,y,c5w[j],drh);
+      doc.text(v,x5+c5w[j]/2,y+5,{align:'center'});
+      x5+=c5w[j];
+    });
+    y+=drh;
+    if(y>265){doc.addPage();y=20;}
   }
-  y+=6;
+  y+=8;
   
-  // Section 6 — Militares
-  doc.setFontSize(10);doc.setFont('helvetica','bold');
+  // ═══ CAMPO 6 — MILITARES ═══
+  doc.setFontSize(11);doc.setFont('times','normal');
   doc.text('6 – MILITARES ESCALADOS PARA A MISSÃO',lm,y);y+=6;
-  doc.setFont('helvetica','normal');doc.setFontSize(8);
   
-  const cols6=[{w:25,t:'PST/GRAD'},{w:70,t:'NOME'},{w:40,t:'CPF'},{w:35,t:'FUNÇÃO'}];
-  x=lm;
-  doc.setFillColor(220,220,220);doc.rect(lm,y-3,tw,6,'F');
-  cols6.forEach(c=>{doc.text(c.t,x+1,y);x+=c.w;});y+=5;
+  // Tabela militares — bordas completas
+  const c6w=[22,58,32,33,25]; // 5 cols = 170mm
+  doc.setFontSize(9);
   
+  // Header
+  let x6=lm;
+  const headers6=[['PST/GRAD'],['NOME'],['CPF'],['FUNÇÃO'],['OPÇÃO DE','RECEBIMENTO']];
+  const rh6=headers6[4].length>1?10:7;
+  headers6.forEach((h,i)=>{
+    doc.rect(x6,y,c6w[i],rh6);
+    doc.setFont('times','bold');
+    if(h.length===2){
+      doc.text(h[0],x6+c6w[i]/2,y+4,{align:'center'});
+      doc.text(h[1],x6+c6w[i]/2,y+8,{align:'center'});
+    }else{
+      doc.text(h[0],x6+c6w[i]/2,y+rh6/2+1,{align:'center'});
+    }
+    x6+=c6w[i];
+  });
+  y+=rh6;
+  
+  // Data rows
+  doc.setFont('times','normal');
   const tripTbody=document.getElementById('diariaTripTbody');
   for(let i=0;i<tripTbody.rows.length;i++){
     const posto=getVal(`trip_${i}_posto`),nome=getVal(`trip_${i}_nome`),cpf=getVal(`trip_${i}_cpf`),funcao=getVal(`trip_${i}_funcao`);
     if(!nome)continue;
-    x=lm;
-    doc.text(posto+' (FAB)',x+1,y);x+=25;
-    doc.text(nome,x+1,y);x+=70;
-    doc.text(cpf,x+1,y);x+=40;
-    doc.text(funcao,x+1,y);y+=5;
-    if(y>270){doc.addPage();y=20;}
+    x6=lm;
+    const vals=[posto+' (FAB)',nome,cpf,funcao,'-'];
+    vals.forEach((v,j)=>{
+      doc.rect(x6,y,c6w[j],drh);
+      doc.text(v,x6+c6w[j]/2,y+5,{align:'center',maxWidth:c6w[j]-2});
+      x6+=c6w[j];
+    });
+    y+=drh;
+    if(y>265){doc.addPage();y=20;}
   }
-  y+=10;
+  y+=12;
   
-  // Footer
-  doc.setFontSize(10);
-  doc.text('Atenciosamente / Respeitosamente,',lm,y);y+=8;
-  doc.text(getVal('localData'),lm,y);y+=10;
+  // ═══ FECHAMENTO ═══
+  doc.setFontSize(11);doc.setFont('times','normal');
+  doc.text('Atenciosamente / Respeitosamente,',lm,y);y+=15;
   
+  // Local e data (à direita)
+  const localData=getVal('localData');
+  doc.text(localData.split(',')[0]+',',pw-rm,y,{align:'right'});y+=5;
+  doc.setFont('times','italic');
+  doc.text('na data da assinatura eletrônica.',pw-rm,y,{align:'right'});y+=18;
+  
+  // Assinante (centralizado)
+  doc.setFont('times','normal');
   const assinatura=getVal('assinatura');
   const parts=assinatura.split(' - ');
-  doc.setFont('helvetica','bold');
-  doc.text(parts[0]||'',pw/2,y,{align:'center'});y+=5;
-  if(parts[1])doc.text(parts[1],pw/2,y,{align:'center'});y+=5;
-  if(parts[2])doc.text(parts[2],pw/2,y,{align:'center'});
+  doc.text((parts[0]||'')+' '+(parts[1]||''),cx,y,{align:'center'});y+=5;
+  doc.text(parts[2]||'Comandante do GTE',cx,y,{align:'center'});
   
   // Save
   doc.save(`Diaria_OM_${omId.replace(/\//g,'-')}.pdf`);
