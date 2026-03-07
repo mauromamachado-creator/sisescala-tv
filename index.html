@@ -818,7 +818,7 @@ function renderScreen0(){
   html+='<div class="dash-panel p-vc1">';
   html+='<div class="panel-title"><span class="icon">✈️</span> Top Voados — VC-1</div>';
   const vc1Sorted=pilotData.vc1.filter(p=>p.voadas!=null&&getPilotStatus(p,td).status!=='FORA').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
-  const topColors=['#ffd700','#c0c0c0','#cd7f32']; // ouro, prata, bronze
+  const topColors=['var(--vc1)','var(--vc1)','var(--vc1)'];
   for(let i=0;i<Math.min(3,vc1Sorted.length);i++){
     const p=vc1Sorted[i];const pct=p.pct||0;
     const barColor=topColors[i]||'var(--vc1)';
