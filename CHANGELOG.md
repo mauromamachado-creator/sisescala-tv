@@ -1,4 +1,26 @@
-# SisGOP — Changelog
+# SisGOPA — Changelog
+
+## v4.2 — 06/03/2026
+### Novidades
+- 🏆 **TV: Top Horas GTE** — ranking unificado (VC-1 + VC-2 juntos), top 8 pilotos por horas voadas
+- 📊 **TV: Progresso Horas do Ano** — barras VC-1, VC-2 e Total GTE com marcador da meta anual
+- 🖼️ **Logo transparente** — sem bordas brancas, integrada ao tema dark
+- 📏 **Logo mobile ajustável** — 40px no celular, 56px no desktop
+- 📱 **Ícone PWA** — pode adicionar à tela inicial do iPhone/Android como app
+- 🌐 **Favicon** personalizado com logo SisGOPA
+
+### Correções
+- Marcador "meta de voo hoje" mais visível (branco, glow, maior)
+
+## v4.1 — 06/03/2026
+### Novidades
+- 🚦 **Status 3 cores**: verde (tudo OK), amarelo (falha parcial), vermelho (erro crítico)
+- 💬 **Tooltip no status dot**: passe o mouse/toque pra ver detalhes
+- 📝 **Renomeação**: SisGOP → **SisGOPA**
+
+### Correções
+- Formato de data: "sexta-feira, 6 de março de 2026 — HH:MM:SS"
+- METAR observação UTC não quebra mais linha no desktop (flex layout)
 
 ## v4.0 — 06/03/2026
 ### Novidades
