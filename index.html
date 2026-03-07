@@ -1098,7 +1098,7 @@ const CORS_PROXIES=[
 ];
 async function proxyFetch(url){
   for(const mk of CORS_PROXIES){
-    try{const r=await fetchWithTimeout(mk(url),10000);if(r.ok){const t=(await r.text()).trim();if(t&&(t.startsWith('METAR')||t.startsWith('SPECI')||t.match(/^SB\w{2}\s/)))return t;}}catch(e){}
+    try{const r=await fetchWithTimeout(mk(url),10000);if(r.ok){const t=(await r.text()).trim();if(t&&(t.startsWith('METAR')||t.startsWith('SPECI')||t.match(/^[A-Z]{4}\s/)))return t;}}catch(e){}
   }
   return '';
 }
@@ -1122,7 +1122,7 @@ async function fetchMetarMulti(){
     if(!text)throw new Error('Sem dados multi');
     const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
     for(const line of lines){
-      const m=line.match(/^(?:(?:METAR|SPECI)\s+)?(SB\w{2})\s/);
+      const m=line.match(/^(?:(?:METAR|SPECI)\s+)?([A-Z]{4})\s/);
       if(m)metarMulti[m[1]]=line;
     }
   }catch(e){console.warn('fetchMetarMulti error',e);}
@@ -2757,7 +2757,7 @@ function openDiariaForm(omId){
         <div class="diaria-label">5 - DESCRIÇÃO DOS TRECHOS DA MISSÃO</div>
         <div style="overflow-x:auto">
         <table class="diaria-table">
-          <thead><tr><th>DATA/HORA DECOLAGEM</th><th>ORIGEM</th><th>DESTINO</th><th>DATA/HORA POUSO</th></tr></thead>
+          <thead><tr><th>DATA/HORA DECOLAGEM</th><th>ORIGEM</th><th>DESTINO</th><th>DATA/HORA POUSO</th><th style="border:none;width:24px"></th></tr></thead>
           <tbody id="diariaPernasTbody">${pernaRows}</tbody>
         </table>
         </div>
@@ -2768,7 +2768,7 @@ function openDiariaForm(omId){
         <div class="diaria-label">6 - MILITARES ESCALADOS PARA A MISSÃO</div>
         <div style="overflow-x:auto">
         <table class="diaria-table">
-          <thead><tr><th>PST/GRAD</th><th>NOME</th><th>CPF</th><th>FUNÇÃO</th></tr></thead>
+          <thead><tr><th>PST/GRAD</th><th>NOME</th><th>CPF</th><th>FUNÇÃO</th><th style="border:none;width:24px"></th></tr></thead>
           <tbody id="diariaTripTbody">${tripRows}</tbody>
         </table>
         </div>
