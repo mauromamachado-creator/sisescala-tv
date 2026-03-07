@@ -1407,7 +1407,7 @@ function renderScreen0(){
   const future=missionsData.filter(m=>m.inicio&&m.inicio>td2).sort((a,b)=>(a.inicio?.getTime()||0)-(b.inicio?.getTime()||0));
   const undated=missionsData.filter(m=>!m.inicio);
   const totalMiss=ongoing.length+future.length+undated.length;
-  html+=`<div class="panel-title" style="flex-wrap:nowrap;white-space:nowrap"><span class="icon">🌎</span> Previsão de Missões Internacionais <span class="count">${totalMiss}</span></div>`;
+  html+=`<div class="panel-title"><span class="icon">🌎</span> Previsão Missões Int. <span class="count">${totalMiss}</span></div>`;
 
   if(ongoing.length){
     html+='<div style="margin-bottom:12px;font-size:.75rem;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700">Em andamento</div>';
