@@ -418,7 +418,58 @@ footer a:hover{text-decoration:underline}
 <footer>
   <span>SisGOPA v4.5 — Desenvolvido para o GTE — Major Machado</span>
   <a onclick="loadAllData()">Atualizar dados</a>
+  <a onclick="showNovidades()" style="cursor:pointer;text-decoration:underline;margin-left:8px">📋 Novidades</a>
 </footer>
+
+<!-- MODAL NOVIDADES -->
+<div id="novidadesModal" style="display:none;position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.85);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #2a3a5a;border-radius:16px;padding:20px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;color:#e0e6f0;font-family:inherit;position:relative">
+    <span style="position:absolute;top:12px;right:16px;font-size:22px;color:#8892a4;cursor:pointer" onclick="document.getElementById('novidadesModal').style.display='none'">✕</span>
+    <div style="font-size:1.1rem;font-weight:700;color:var(--green);margin-bottom:16px">📋 Novidades — SisGOPA</div>
+
+    <div style="margin-bottom:16px">
+      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.5 — 07/03/2026</div>
+      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:#c0c8d8">
+        <li>🚨 <b>Alertas Pop-up</b> — notificações automáticas (ex: viagens do PR)</li>
+        <li>📋 <b>Clique em "OM"</b> para ver tripulação completa + combustível de cada missão</li>
+        <li>👥 <b>Missões para todos</b> — mecânicos, comissários e demais tripulantes agora veem suas próximas missões na BUSCA</li>
+        <li>🤖 <b>Tela BOT</b> — METAR, TAF, NOTAMs, combustível, planejamento de voo e mais</li>
+        <li>📩 <b>Tela REPORTAR</b> — envie bugs ou sugestões direto do sistema</li>
+        <li>✈️ <b>Animação de loading</b> — avião SVG voando durante carregamento</li>
+        <li>🔍 <b>Decodificar METAR/TAF</b> — tradução completa em português</li>
+      </ul>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.4 — 07/03/2026</div>
+      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:#c0c8d8">
+        <li>💳 <b>Tela CARTÕES</b> — validade de documentos de todos os tripulantes</li>
+        <li>☰ <b>Menu hamburger</b> no celular</li>
+        <li>🔍 <b>Busca expandida</b> — encontra qualquer tripulante (não só pilotos)</li>
+        <li>⏱ <b>Timeout 15s</b> — sistema não trava mais se Google Sheets demorar</li>
+      </ul>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.3 — 07/03/2026</div>
+      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:#c0c8d8">
+        <li>📺 <b>TV melhorada</b> — alertas por prioridade, horas voadas com glow</li>
+        <li>🎖 <b>Missões Cumpridas</b> — KPI renomeado</li>
+        <li>💳 <b>CARTÕES</b> — nova tela com validade de todos os tripulantes</li>
+      </ul>
+    </div>
+
+    <div>
+      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">💡 Dicas</div>
+      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:#c0c8d8">
+        <li>Textos <u>sublinhados</u> são clicáveis</li>
+        <li>Clique em <u>📋 OM</u> para ver detalhes da missão (tripulação, combustível)</li>
+        <li>Use a <b>BUSCA</b> para encontrar qualquer tripulante por nome ou trigrama</li>
+        <li>O <b>ponto colorido</b> no topo mostra o status das fontes de dados (clique nele)</li>
+      </ul>
+    </div>
+  </div>
+</div>
 
 <!-- EMERGENCY ERROR REPORTER — runs independently of main script -->
 <div id="emergencyBtn" style="display:none;position:fixed;bottom:20px;right:20px;z-index:99999;background:#ff4444;color:#fff;border:none;padding:14px 20px;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;box-shadow:0 4px 20px rgba(255,0,0,.4);animation:emergPulse 2s ease-in-out infinite" onclick="showEmergencyReport()">🚨 Reportar Erro</div>
@@ -2385,6 +2436,7 @@ function showOMDetail(omId){
   document.getElementById('omModal').style.display='flex';
 }
 function closeOMModal(){document.getElementById('omModal').style.display='none';}
+function showNovidades(){document.getElementById('novidadesModal').style.display='flex';}
 
 function renderScreenReport(){
   const c=document.getElementById('screen12');
