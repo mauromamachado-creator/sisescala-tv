@@ -807,7 +807,15 @@ function renderScreen0(){
       html+=`<div class="mission-card">
         <div style="min-width:55px;text-align:center;font-weight:900;font-size:.95rem;color:var(--vc1)">${leg.dep}</div>
         <div class="mission-body"><div class="mission-title">${routeParts}</div><div class="mission-sub">${anvDisplay?'<span style="color:var(--vc1);font-weight:700">'+anvDisplay+'</span> · ':''}${leg.pilots.join('/')}${leg.fuel?' · '+leg.fuel+'t':''}</div></div>
-        <div><span class="mission-tipo${leg.mission==='PERN'?' pern':''}">${leg.mission==='PERN'?'🌙 PERN':leg.mission||'—'}</span></div></div>`;
+        <div>${(()=>{
+          let tipoLabel=leg.mission||'—';let cls='mission-tipo';
+          if(leg.mission==='PERN'){
+            cls+=' pern';
+            const intlToday=missionsData.find(m=>m.inicio&&m.fim&&m.inicio<=td&&td<=m.fim);
+            tipoLabel=intlToday?`${intlToday.tipo} 🌙`:'🌙 PERN';
+          }
+          return '<span class="'+cls+'">'+tipoLabel+'</span>';
+        })()}</div></div>`;
     }
   }else{
     html+='<div class="no-data">Sem missões programadas para hoje.</div>';
