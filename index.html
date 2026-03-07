@@ -727,14 +727,20 @@ function decodeMetar(raw){
   return d;
 }
 
+const CORS_PROXIES=[
+  u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u),
+  u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+  u=>'https://corsproxy.io/?'+encodeURIComponent(u)
+];
 async function proxyFetch(url){
-  const proxies=[
-    u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u),
-    u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
-    u=>'https://corsproxy.io/?'+encodeURIComponent(u)
-  ];
-  for(const mk of proxies){
+  for(const mk of CORS_PROXIES){
     try{const r=await fetchWithTimeout(mk(url),10000);if(r.ok){const t=(await r.text()).trim();if(t&&(t.startsWith('METAR')||t.startsWith('SPECI')||t.match(/^SB\w{2}\s/)))return t;}}catch(e){}
+  }
+  return '';
+}
+async function proxyFetchRaw(url){
+  for(const mk of CORS_PROXIES){
+    try{const r=await fetchWithTimeout(mk(url),10000);if(r.ok){const t=(await r.text()).trim();if(t)return t;}}catch(e){}
   }
   return '';
 }
@@ -2305,8 +2311,8 @@ function formatTime(h){const m=roundUp5(h*60);return `${Math.floor(m/60)}h${Stri
 
 async function getAirportInfo(icao){
   try{
-    const r=await fetchWithTimeout(`https://aviationweather.gov/api/data/airport?ids=${icao}&format=json`,10000);
-    if(!r.ok)return null;const d=await r.json();return d&&d.length?d[0]:null;
+    const raw=await proxyFetchRaw(`https://aviationweather.gov/api/data/airport?ids=${icao}&format=json`);
+    if(!raw)return null;const d=JSON.parse(raw);return d&&d.length?d[0]:null;
   }catch(e){return null;}
 }
 
@@ -2320,7 +2326,7 @@ async function getAirportCoords(icao){
 async function getAiswebData(icao){
   const empty={rwyLen:null,rwyWid:null,hasIfr:false,hasSid:false,hasStar:false,fireCat:null,pcn:null,oprType:null,hasNight:false,elevFt:null,adHr:null,hasTwr:false,runways:[]};
   try{
-    const raw=await proxyFetch(`https://aisweb.decea.mil.br/?i=aerodromos&codigo=${icao}`);
+    const raw=await proxyFetchRaw(`https://aisweb.decea.mil.br/?i=aerodromos&codigo=${icao}`);
     if(!raw)return empty;
     const clean=raw.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');
     // SID/STAR
@@ -2432,7 +2438,7 @@ async function botNotam(){
   botLoading('NOTAMs '+icao);
   try{
     // Try aviationweather (AISWEB POST won't work from browser due to CORS)
-    const raw=await proxyFetch(`https://aviationweather.gov/api/data/notam?ids=${icao}&format=raw`).catch(()=>'');
+    const raw=await proxyFetchRaw(`https://aviationweather.gov/api/data/notam?ids=${icao}&format=raw`).catch(()=>'');
     let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">📋 NOTAMs — ${icao}</div>`;
     if(raw&&raw.trim()){
       const notams=raw.trim().split(/\n{2,}/);
@@ -2717,7 +2723,7 @@ async function botExecMsgPadrao(){
     const tireCat=getPcnTireCat(destAis.pcn);
     // NOTAMs (runway filter)
     let notamAlert='NOTAM OK';
-    const notamRaw=await proxyFetch(`https://aviationweather.gov/api/data/notam?ids=${dest}&format=raw`).catch(()=>'');
+    const notamRaw=await proxyFetchRaw(`https://aviationweather.gov/api/data/notam?ids=${dest}&format=raw`).catch(()=>'');
     if(notamRaw){
       const rwyNotams=notamRaw.split(/\n{2,}/).filter(n=>/\b(?:RWY|RUNWAY|PISTA|CLSD|CLOSED|REDUCED)\b/i.test(n));
       if(rwyNotams.length)notamAlert=rwyNotams.map(n=>n.trim().substring(0,100)).join('; ');
