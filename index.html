@@ -1524,7 +1524,12 @@ function renderScreenTV(){
   const totalDisp=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
   const totalIndisp=totalTrip-totalDisp;
   
-  let html=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto 1fr 1fr;gap:12px;height:100%;max-height:calc(100vh - 100px);overflow:hidden;font-size:.82rem">`;
+  // Mini-header BI
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);margin-bottom:8px">`;
+  html+=`<div style="display:flex;align-items:center;gap:10px"><img src="logo-sisgop-transp.png" style="width:32px;height:32px;border-radius:6px"><span style="font-size:1rem;font-weight:900;color:var(--vc1)">SisGOPA</span><span style="font-size:.65rem;color:var(--text2);letter-spacing:2px">GESTÃO DE OPERAÇÕES AÉREAS</span></div>`;
+  html+=`<div style="display:flex;align-items:center;gap:12px"><span id="tvClock" style="font-size:.8rem;color:var(--text2)"></span><button onclick="goScreen(0)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:.7rem">✕ SAIR</button></div>`;
+  html+=`</div>`;
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto 1fr 1fr;gap:10px;height:calc(100vh - 60px);overflow:hidden;font-size:.82rem;padding:0 8px">`;
   
   // Row 1: KPIs
   html+=`<div style="grid-column:1/-1;display:flex;justify-content:center;gap:24px;padding:8px 0">`;
@@ -1701,6 +1706,9 @@ function renderScreenTV(){
   
   html+=`</div>`;
   document.getElementById('screen9').innerHTML=html;
+  // Relógio TV
+  const tvClockEl=document.getElementById('tvClock');
+  if(tvClockEl){const d=new Date();const opts={timeZone:'America/Sao_Paulo'};tvClockEl.textContent=d.toLocaleDateString('pt-BR',{...opts,weekday:'long',day:'numeric',month:'long',year:'numeric'})+' — '+d.toLocaleTimeString('pt-BR',{...opts,hour:'2-digit',minute:'2-digit',second:'2-digit'});}
 }
 
 function renderAll(){
@@ -1765,6 +1773,10 @@ function goScreen(n){
     escalaUnlocked=true;
   }
   currentScreen=n;document.querySelectorAll('.screen').forEach((s,i)=>s.classList.toggle('active',i===n));document.querySelectorAll('.nav-btns button').forEach((b,i)=>b.classList.toggle('active',i===n));
+  // Modo BI: esconde header/nav/footer na tela TV
+  const isTV=n===9;
+  document.querySelector('header').style.display=isTV?'none':'';
+  document.querySelector('footer').style.display=isTV?'none':'';
 }
 function goFullscreen(){document.documentElement.requestFullscreen?.();}
 function updateClock(){const d=new Date();const opts={timeZone:'America/Sao_Paulo'};const wd=d.toLocaleDateString('pt-BR',{...opts,weekday:'long'});const day=d.toLocaleDateString('pt-BR',{...opts,day:'numeric'});const mon=d.toLocaleDateString('pt-BR',{...opts,month:'long'});const yr=d.toLocaleDateString('pt-BR',{...opts,year:'numeric'});const time=d.toLocaleTimeString('pt-BR',{...opts,hour:'2-digit',minute:'2-digit',second:'2-digit'});document.getElementById('clock').textContent=`${wd}, ${day} de ${mon} de ${yr} — ${time}`;}
