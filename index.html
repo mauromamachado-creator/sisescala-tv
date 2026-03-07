@@ -543,7 +543,7 @@ window.addEventListener('beforeunload',function(){
 setInterval(function(){
   const now=new Date();const h=parseInt(now.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',hour12:false}));
   const m=parseInt(now.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',minute:'2-digit'}));
-  if(h===23&&m>=55){
+  if(h===19&&m>=50){
     const a=_getAnalytics();
     if(a.sessions>0&&!a._sent){a._sent=true;_saveAnalytics(a);_sendDailySummary(a);}
   }
