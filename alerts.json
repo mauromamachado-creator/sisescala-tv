@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": "cancela-20260306-eua",
+    "type": "viagem",
+    "title": "❌ VIAGEM PR CANCELADA",
+    "body": "Viagem de Lula aos <b>EUA</b> prevista para março/2026 foi <b>suspensa</b> em virtude do conflito no Irã. Fonte: Min. Fávaro (Agricultura).",
+    "source": "Estadão / CNN Brasil / InfoMoney",
+    "date": "06/03/2026",
+    "expires": "2026-03-20T00:00:00-03:00"
+  }
+]
