@@ -355,6 +355,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <button onclick="goScreen(8)" id="btn8">ESCALA</button>
     <button onclick="goScreen(10)" id="btn10">CARTÕES</button>
     <button onclick="goScreen(11)" id="btn11">BOT</button>
+    <button onclick="goScreen(13)" id="btn13">DIÁRIAS</button>
     <button onclick="goScreen(7)" id="btn7">🔍 BUSCA</button>
     <button onclick="goScreen(12)" id="btn12" style="color:#ff6b6b">REPORTAR</button>
     <button onclick="goScreen(9)" id="btn9" class="desktop-only">📺 TV</button>
@@ -384,6 +385,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
   <div class="screen" id="screen10"></div>
   <div class="screen" id="screen11"></div>
   <div class="screen" id="screen12"></div>
+  <div class="screen" id="screen13"></div>
   <div class="loading" id="loadingMsg">Carregando dados...</div>
 </main>
 
@@ -487,6 +489,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 <!-- EMERGENCY ERROR REPORTER — runs independently of main script -->
 <div id="emergencyBtn" style="display:none;position:fixed;bottom:20px;right:20px;z-index:99999;background:#ff4444;color:#fff;border:none;padding:14px 20px;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;box-shadow:0 4px 20px rgba(255,0,0,.4);animation:emergPulse 2s ease-in-out infinite" onclick="showEmergencyReport()">🚨 Reportar Erro</div>
 <style>@keyframes emergPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 // Error capture — runs before everything
 window._errorLog=[];window._maxErrors=50;
@@ -2461,6 +2464,257 @@ function showOMDetail(omId){
 function closeOMModal(){document.getElementById('omModal').style.display='none';}
 function showNovidades(){document.getElementById('novidadesModal').style.display='flex';}
 
+// ═══════════════════════════════════════════════════
+// TELA 13 — DIÁRIAS
+// ═══════════════════════════════════════════════════
+function getDiariasDownloaded(){return JSON.parse(localStorage.getItem('sisgopa_diarias_done')||'{}');}
+function setDiariaDownloaded(omId){const d=getDiariasDownloaded();d[omId]=Date.now();localStorage.setItem('sisgopa_diarias_done',JSON.stringify(d));}
+
+function renderScreenDiarias(){
+  const c=document.getElementById('screen13');
+  let html=`<h2>💰 Diárias</h2>`;
+  html+=`<div style="color:var(--text2);font-size:.8rem;margin-bottom:16px">Solicitação de Pagamento de Diárias pré-preenchida a partir das Ordens de Missão.</div>`;
+  const done=getDiariasDownloaded();
+  if(!omData||!omData.length){
+    html+=`<div style="color:var(--text2);text-align:center;padding:40px">Nenhuma OM disponível</div>`;
+    c.innerHTML=html;return;
+  }
+  html+=`<div style="display:flex;flex-direction:column;gap:8px">`;
+  const sorted=[...omData].sort((a,b)=>b.data.localeCompare(a.data));
+  sorted.forEach(om=>{
+    const isDone=done[om.om];
+    const dateStr=new Date(om.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
+    const rotas=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
+    html+=`<div style="background:${isDone?'rgba(0,255,136,.06)':'var(--bg2)'};border:1px solid ${isDone?'rgba(0,255,136,.3)':'var(--border)'};border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          ${isDone?'<span style="color:var(--green);font-size:1.1rem">✅</span>':'<span style="color:var(--yellow);font-size:1.1rem">📄</span>'}
+          <span style="font-weight:700;font-size:.9rem">Diária — OM ${om.om}</span>
+          <span style="font-size:.75rem;color:${anvColor};font-weight:600">${om.aeronave}</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--text2)">${dateStr} · ${rotas} · ${om.tripulacao.length} tripulantes</div>
+      </div>
+      <button onclick="openDiariaForm('${om.om}')" style="background:var(--vc1);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:.8rem;white-space:nowrap">${isDone?'↻ Gerar novamente':'📥 Gerar PDF'}</button>
+    </div>`;
+  });
+  html+=`</div>`;
+  c.innerHTML=html;
+}
+
+function openDiariaForm(omId){
+  const om=omData.find(o=>o.om===omId);
+  if(!om)return;
+  const dateStr=new Date(om.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  
+  let tripRows='';
+  om.tripulacao.forEach((t,i)=>{
+    const funcao=t.funcao||((['MJ','CP','TC','1T','2T'].includes(t.posto))?'Piloto':'');
+    tripRows+=`<tr>
+      <td><input type="text" value="${t.posto}" data-field="trip_${i}_posto" style="width:50px" class="diaria-input"></td>
+      <td><input type="text" value="${t.nome}" data-field="trip_${i}_nome" style="width:100%" class="diaria-input"></td>
+      <td><input type="text" value="" data-field="trip_${i}_cpf" placeholder="000.000.000-00" style="width:120px" class="diaria-input"></td>
+      <td><input type="text" value="${funcao}" data-field="trip_${i}_funcao" style="width:100px" class="diaria-input"></td>
+    </tr>`;
+  });
+  
+  let pernaRows='';
+  om.pernas.forEach((p,i)=>{
+    pernaRows+=`<tr>
+      <td><input type="text" value="${p.etd||''}" data-field="perna_${i}_etd" style="width:100%" class="diaria-input"></td>
+      <td><input type="text" value="${p.origem}" data-field="perna_${i}_origem" style="width:100%" class="diaria-input"></td>
+      <td><input type="text" value="${p.destino}" data-field="perna_${i}_destino" style="width:100%" class="diaria-input"></td>
+      <td><input type="text" value="${p.eta||''}" data-field="perna_${i}_eta" style="width:100%" class="diaria-input"></td>
+    </tr>`;
+  });
+  
+  const modalHtml=`
+  <div id="diariaModal" style="position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,.85);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto" onclick="if(event.target===this)this.remove()">
+    <div style="background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #2a3a5a;border-radius:16px;padding:20px;max-width:700px;width:100%;color:#e0e6f0;font-family:inherit;position:relative;margin:20px 0">
+      <span style="position:absolute;top:12px;right:16px;font-size:22px;color:#8892a4;cursor:pointer" onclick="document.getElementById('diariaModal').remove()">✕</span>
+      <div style="font-size:1rem;font-weight:700;color:var(--green);margin-bottom:4px">📄 Solicitação de Pagamento de Diárias</div>
+      <div style="font-size:.8rem;color:var(--text2);margin-bottom:16px">OM ${om.om} — ${om.aeronave} / ${om.fab}</div>
+      
+      <style>.diaria-input{background:#0d1220;border:1px solid #2a3a5a;color:#e0e6f0;padding:6px 8px;border-radius:4px;font-family:inherit;font-size:.78rem;box-sizing:border-box}
+      .diaria-input:focus{border-color:var(--vc1);outline:none}
+      .diaria-label{font-size:.75rem;color:var(--text2);margin-bottom:4px;font-weight:600}
+      .diaria-section{margin-bottom:16px}
+      .diaria-table{width:100%;border-collapse:collapse;font-size:.75rem}
+      .diaria-table th{background:#0a0f1a;padding:6px;text-align:left;color:var(--text2);font-weight:600;border:1px solid #1a2a40}
+      .diaria-table td{padding:4px;border:1px solid #1a2a40}</style>
+      
+      <div class="diaria-section">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><div class="diaria-label">Organização Militar</div><input class="diaria-input" style="width:100%" value="GTE" data-field="orgMil"></div>
+          <div><div class="diaria-label">Tipo de Diária</div>
+            <select data-field="tipoDiaria" class="diaria-input" style="width:100%">
+              <option value="NACIONAL" selected>Nacional</option>
+              <option value="INTERNACIONAL">Internacional</option>
+              <option value="AMBAS">Ambas</option>
+            </select>
+          </div>
+          <div><div class="diaria-label">Nº Evento Presidencial</div><input class="diaria-input" style="width:100%" value="" data-field="numEvento" placeholder="Ex: 24/2026"></div>
+          <div><div class="diaria-label">Aeronave / Matrícula</div><input class="diaria-input" style="width:100%" value="${om.aeronave} (${om.fab})" data-field="aeronave"></div>
+        </div>
+      </div>
+      
+      <div class="diaria-section">
+        <div class="diaria-label">5 — DESCRIÇÃO DOS TRECHOS DA MISSÃO</div>
+        <div style="overflow-x:auto">
+        <table class="diaria-table">
+          <thead><tr><th>DATA/HORA DECOLAGEM</th><th>ORIGEM</th><th>DESTINO</th><th>DATA/HORA POUSO</th></tr></thead>
+          <tbody id="diariaPernasTbody">${pernaRows}</tbody>
+        </table>
+        </div>
+        <button onclick="addDiariaPerna()" style="margin-top:6px;background:var(--bg3);color:var(--text);border:1px solid var(--border);padding:4px 10px;border-radius:4px;font-size:.7rem;cursor:pointer">+ Adicionar trecho</button>
+      </div>
+      
+      <div class="diaria-section">
+        <div class="diaria-label">6 — MILITARES ESCALADOS PARA A MISSÃO</div>
+        <div style="overflow-x:auto">
+        <table class="diaria-table">
+          <thead><tr><th>PST/GRAD</th><th>NOME</th><th>CPF</th><th>FUNÇÃO</th></tr></thead>
+          <tbody id="diariaTripTbody">${tripRows}</tbody>
+        </table>
+        </div>
+        <button onclick="addDiariaTrip()" style="margin-top:6px;background:var(--bg3);color:var(--text);border:1px solid var(--border);padding:4px 10px;border-radius:4px;font-size:.7rem;cursor:pointer">+ Adicionar militar</button>
+      </div>
+      
+      <div class="diaria-section">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><div class="diaria-label">Local / Data</div><input class="diaria-input" style="width:100%" value="Brasília/DF, ${dateStr}" data-field="localData"></div>
+          <div><div class="diaria-label">Assinatura (Nome/Posto)</div><input class="diaria-input" style="width:100%" value="GUSTAVO CARLOS GAMMERDINGER VERAS - Ten Cel (FAB) - Comandante do GTE" data-field="assinatura"></div>
+        </div>
+      </div>
+      
+      <button onclick="gerarDiariaPDF('${om.om}')" style="width:100%;padding:14px;border-radius:8px;border:none;background:var(--green);color:#000;font-weight:700;font-size:1rem;cursor:pointer">📥 BAIXAR PDF</button>
+    </div>
+  </div>`;
+  
+  document.body.insertAdjacentHTML('beforeend',modalHtml);
+}
+
+function addDiariaPerna(){
+  const tbody=document.getElementById('diariaPernasTbody');
+  const i=tbody.rows.length;
+  tbody.insertAdjacentHTML('beforeend',`<tr>
+    <td><input type="text" value="" data-field="perna_${i}_etd" style="width:100%" class="diaria-input" placeholder="DD/MM/AA HH:MMZ"></td>
+    <td><input type="text" value="" data-field="perna_${i}_origem" style="width:100%" class="diaria-input" placeholder="ICAO"></td>
+    <td><input type="text" value="" data-field="perna_${i}_destino" style="width:100%" class="diaria-input" placeholder="ICAO"></td>
+    <td><input type="text" value="" data-field="perna_${i}_eta" style="width:100%" class="diaria-input" placeholder="DD/MM/AA HH:MMZ"></td>
+  </tr>`);
+}
+
+function addDiariaTrip(){
+  const tbody=document.getElementById('diariaTripTbody');
+  const i=tbody.rows.length;
+  tbody.insertAdjacentHTML('beforeend',`<tr>
+    <td><input type="text" value="" data-field="trip_${i}_posto" style="width:50px" class="diaria-input"></td>
+    <td><input type="text" value="" data-field="trip_${i}_nome" style="width:100%" class="diaria-input"></td>
+    <td><input type="text" value="" data-field="trip_${i}_cpf" placeholder="000.000.000-00" style="width:120px" class="diaria-input"></td>
+    <td><input type="text" value="" data-field="trip_${i}_funcao" style="width:100px" class="diaria-input"></td>
+  </tr>`);
+}
+
+function gerarDiariaPDF(omId){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const modal=document.getElementById('diariaModal');
+  const getVal=(f)=>{const el=modal.querySelector(`[data-field="${f}"]`);return el?el.value:'';};
+  
+  const pw=210,lm=20,rm=20,tw=pw-lm-rm;
+  let y=20;
+  
+  // Header
+  doc.setFontSize(10);doc.setFont('helvetica','bold');
+  doc.text('MINISTÉRIO DA DEFESA',pw/2,y,{align:'center'});y+=5;
+  doc.text('COMANDO DA AERONÁUTICA',pw/2,y,{align:'center'});y+=5;
+  doc.text('GTE-1',pw/2,y,{align:'center'});y+=10;
+  
+  doc.setFontSize(12);
+  doc.text('SOLICITAÇÃO DE PAGAMENTO DE DIÁRIAS',pw/2,y,{align:'center'});y+=10;
+  
+  doc.setFontSize(10);doc.setFont('helvetica','normal');
+  doc.text('Senhor Oficial de Transporte Aéreo,',lm,y);y+=6;
+  doc.text('Solicito as providências necessárias para o pagamento de diárias, nos termos das informações abaixo:',lm,y,{maxWidth:tw});y+=10;
+  
+  // Fields 1-4
+  doc.setFont('helvetica','bold');
+  doc.text(`1 – ORGANIZAÇÃO MILITAR: ${getVal('orgMil')}`,lm,y);y+=6;
+  
+  const tipo=getVal('tipoDiaria');
+  const nac=tipo==='NACIONAL'?'X':' ',intl=tipo==='INTERNACIONAL'?'X':' ',amb=tipo==='AMBAS'?'X':' ';
+  doc.text(`2 – TIPO DE DIÁRIA: ( ${nac} ) NACIONAL  ( ${intl} ) INTERNACIONAL  ( ${amb} ) AMBAS`,lm,y);y+=6;
+  
+  doc.text(`3 – NÚMERO DO EVENTO PRESIDENCIAL: ${getVal('numEvento')}`,lm,y);y+=6;
+  doc.text(`4 – MODELO E MATRÍCULA DA AERONAVE: ${getVal('aeronave')}`,lm,y);y+=8;
+  
+  // Section 5 — Trechos
+  doc.text('5 – DESCRIÇÃO DOS TRECHOS DA MISSÃO:',lm,y);y+=6;
+  doc.setFont('helvetica','normal');doc.setFontSize(8);
+  
+  // Table header
+  const cols5=[{w:45,t:'DATA/HORA DECOLAGEM'},{w:40,t:'ORIGEM'},{w:40,t:'DESTINO'},{w:45,t:'DATA/HORA POUSO'}];
+  let x=lm;
+  doc.setFillColor(220,220,220);doc.rect(lm,y-3,tw,6,'F');
+  cols5.forEach(c=>{doc.text(c.t,x+1,y);x+=c.w;});y+=5;
+  
+  // Table rows
+  const pernasTbody=document.getElementById('diariaPernasTbody');
+  for(let i=0;i<pernasTbody.rows.length;i++){
+    const etd=getVal(`perna_${i}_etd`),orig=getVal(`perna_${i}_origem`),dest=getVal(`perna_${i}_destino`),eta=getVal(`perna_${i}_eta`);
+    if(!etd&&!orig)continue;
+    x=lm;
+    doc.text(etd,x+1,y);x+=45;
+    doc.text(orig,x+1,y);x+=40;
+    doc.text(dest,x+1,y);x+=40;
+    doc.text(eta,x+1,y);y+=5;
+    if(y>270){doc.addPage();y=20;}
+  }
+  y+=6;
+  
+  // Section 6 — Militares
+  doc.setFontSize(10);doc.setFont('helvetica','bold');
+  doc.text('6 – MILITARES ESCALADOS PARA A MISSÃO',lm,y);y+=6;
+  doc.setFont('helvetica','normal');doc.setFontSize(8);
+  
+  const cols6=[{w:25,t:'PST/GRAD'},{w:70,t:'NOME'},{w:40,t:'CPF'},{w:35,t:'FUNÇÃO'}];
+  x=lm;
+  doc.setFillColor(220,220,220);doc.rect(lm,y-3,tw,6,'F');
+  cols6.forEach(c=>{doc.text(c.t,x+1,y);x+=c.w;});y+=5;
+  
+  const tripTbody=document.getElementById('diariaTripTbody');
+  for(let i=0;i<tripTbody.rows.length;i++){
+    const posto=getVal(`trip_${i}_posto`),nome=getVal(`trip_${i}_nome`),cpf=getVal(`trip_${i}_cpf`),funcao=getVal(`trip_${i}_funcao`);
+    if(!nome)continue;
+    x=lm;
+    doc.text(posto+' (FAB)',x+1,y);x+=25;
+    doc.text(nome,x+1,y);x+=70;
+    doc.text(cpf,x+1,y);x+=40;
+    doc.text(funcao,x+1,y);y+=5;
+    if(y>270){doc.addPage();y=20;}
+  }
+  y+=10;
+  
+  // Footer
+  doc.setFontSize(10);
+  doc.text('Atenciosamente / Respeitosamente,',lm,y);y+=8;
+  doc.text(getVal('localData'),lm,y);y+=10;
+  
+  const assinatura=getVal('assinatura');
+  const parts=assinatura.split(' - ');
+  doc.setFont('helvetica','bold');
+  doc.text(parts[0]||'',pw/2,y,{align:'center'});y+=5;
+  if(parts[1])doc.text(parts[1],pw/2,y,{align:'center'});y+=5;
+  if(parts[2])doc.text(parts[2],pw/2,y,{align:'center'});
+  
+  // Save
+  doc.save(`Diaria_OM_${omId.replace(/\//g,'-')}.pdf`);
+  setDiariaDownloaded(omId);
+  document.getElementById('diariaModal').remove();
+  renderScreenDiarias();
+}
+
 function renderScreenReport(){
   const c=document.getElementById('screen12');
   let html=`<div style="max-width:600px;margin:0 auto;padding:20px">
@@ -2544,7 +2798,7 @@ function renderAll(){
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
   const uniqueOMs=new Set(flightsThisYear.map(f=>f.om).filter(Boolean));
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
-  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();renderScreenTV();renderScreenCartoes();renderScreenBot();renderScreenReport();
+  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();renderScreenTV();renderScreenCartoes();renderScreenBot();renderScreenDiarias();renderScreenReport();
 }
 
 // ===== CARTÕES =====
