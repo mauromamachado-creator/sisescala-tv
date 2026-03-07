@@ -1282,6 +1282,8 @@ function renderScreenSearch(query){
         return `${fmt(f.inicio)} — ${fmt(f.fim)}`;
       }).join(', ');
       html+=`<div class="sc-item"><div class="sc-item-label">Férias</div><div class="sc-item-value" style="font-size:.82rem">🏖 ${ferTxt}</div></div>`;
+    }else{
+      html+=`<div class="sc-item"><div class="sc-item-label">Férias</div><div class="sc-item-value" style="font-size:.82rem;color:var(--text2)">Sem férias agendadas</div></div>`;
     }
     
     // Missões
