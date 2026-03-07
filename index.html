@@ -1371,17 +1371,18 @@ function renderScreen0(){
           const dayPernas=om.pernas.filter(p=>{const m=p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(!m)return true;const pd='20'+m[3]+'-'+m[2]+'-'+m[1];return pd===isoDate;});
           const pernas=dayPernas.length?dayPernas:om.pernas;
           html+=`<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-              <div style="font-weight:900;color:var(--text);font-size:.82rem">${dateStr}</div>
-              <div style="font-size:.72rem;color:var(--text2)">${dayName}</div>
-              <div style="font-size:.8rem;color:${anvColor};font-weight:700">${om.fab}</div>
-              <div style="margin-left:auto;font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</div>
-            </div>`;
+            <div style="display:flex;align-items:center;gap:10px">
+              <div>
+                <div style="font-size:.8rem;color:${anvColor};font-weight:700">${om.fab}</div>
+                <div style="font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline;margin-top:2px" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</div>
+              </div>
+              <div style="flex:1">
+                <div style="display:flex;gap:8px;margin-bottom:2px"><span style="font-weight:900;color:var(--text);font-size:.82rem">${dateStr}</span><span style="font-size:.72rem;color:var(--text2)">${dayName}</span></div>`;
           for(const p of pernas){
             const h=(p.etd.split(' ')[1]||'').replace(':','');
-            html+=`<div style="padding-left:16px;font-size:.75rem;line-height:1.6"><span style="color:var(--text2)">${h}</span> <span>${p.origem}-${p.destino}</span> <span style="color:var(--yellow)">${p.missao||''}</span></div>`;
+            html+=`<div style="font-size:.75rem;line-height:1.6"><span style="color:var(--text2)">${h}</span> ${p.origem}-${p.destino} <span style="color:var(--yellow)">${p.missao||''}</span></div>`;
           }
-          html+=`</div>`;
+          html+=`</div></div></div>`;
         }
       }else if(dayDiario){
         // Sem OM - mostra diário (rascunho)
