@@ -2249,19 +2249,24 @@ function renderCartoesNaBusca(trigrama,funcao){
 }
 
 // ===== BOT (screen 11) =====
+const DISCLAIMER='⚠️ Os dados aqui apresentados são apenas referências. Embase seus planejamentos em fontes oficiais.';
+const CELOG_CSV='https://docs.google.com/spreadsheets/d/1qF75o4R4FuM0_uBo5lxcsLK1aJAmMhCPNRiIru3wobQ/export?format=csv';
+
 function renderScreenBot(){
   const container=document.getElementById('screen11');
   let html=`<h2>🤖 Central de Operações</h2>`;
   html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px">`;
   const btns=[
     {icon:'🌤️',label:'METAR',fn:'botMetar'},
-    {icon:'📋',label:'TAF',fn:'botTaf'},
-    {icon:'⚠️',label:'NOTAMs',fn:'botNotam'},
-    {icon:'🛫',label:'Aeródromo',fn:'botAerodrome'},
+    {icon:'🌦️',label:'TAF',fn:'botTaf'},
+    {icon:'📋',label:'NOTAMs',fn:'botNotam'},
+    {icon:'🏢',label:'Aeródromo',fn:'botAerodrome'},
+    {icon:'✈️',label:'Tempo de Voo',fn:'botTempo'},
     {icon:'⛽',label:'Combustível',fn:'botFuel'},
     {icon:'🗺️',label:'SkyVector',fn:'botSkyvector'},
     {icon:'🛰️',label:'Satélite',fn:'botSat'},
-    {icon:'✈️',label:'Planejar Voo',fn:'botPlan'}
+    {icon:'📝',label:'Planejar Voo',fn:'botPlan'},
+    {icon:'📄',label:'Msg Padrão',fn:'botMsgPadrao'}
   ];
   btns.forEach(b=>{
     html+=`<div onclick="${b.fn}()" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:.2s" onmouseover="this.style.borderColor='var(--vc1)'" onmouseout="this.style.borderColor='var(--border)'">
@@ -2270,178 +2275,485 @@ function renderScreenBot(){
     </div>`;
   });
   html+=`</div>`;
-  // Input ICAO
   html+=`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">`;
-  html+=`<input id="botIcao" type="text" placeholder="Código ICAO (ex: SBBR)" maxlength="4" style="background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:10px 14px;border-radius:6px;font-family:inherit;font-size:.9rem;text-transform:uppercase;width:180px" oninput="this.value=this.value.toUpperCase()">`;
+  html+=`<input id="botIcao" type="text" placeholder="ICAO (ex: SBBR SBGL)" style="background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:10px 14px;border-radius:6px;font-family:inherit;font-size:.9rem;text-transform:uppercase;flex:1;min-width:200px" oninput="this.value=this.value.toUpperCase()">`;
   html+=`</div>`;
-  // Resultado
-  html+=`<div id="botResult" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;min-height:100px;font-size:.82rem;white-space:pre-wrap;line-height:1.6"></div>`;
+  html+=`<div id="botResult" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;min-height:100px;font-size:.82rem;line-height:1.6"></div>`;
   container.innerHTML=html;
 }
 
-function getBotIcao(){
+function getBotIcaos(){
   const v=(document.getElementById('botIcao')?.value||'').trim().toUpperCase();
-  if(!v||v.length<4){botOut('⚠️ Digite um código ICAO válido (ex: SBBR)');return null;}
-  return v;
+  if(!v){botOut('⚠️ Informe o(s) código(s) ICAO (ex: SBBR SBGL)');return null;}
+  return v.split(/[\s,]+/).filter(x=>x.length>=2);
+}
+function getBotIcao(){
+  const arr=getBotIcaos();if(!arr)return null;return arr[0];
 }
 function botOut(txt){document.getElementById('botResult').innerHTML=txt;}
 function botLoading(label){botOut(`<div style="color:var(--vc1)">⏳ Buscando ${label}...</div>`);}
 
+// Haversine (NM)
+function haversine(lat1,lon1,lat2,lon2){
+  const R=3440.065,toRad=Math.PI/180;
+  const dLat=(lat2-lat1)*toRad,dLon=(lon2-lon1)*toRad;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*toRad)*Math.cos(lat2*toRad)*Math.sin(dLon/2)**2;
+  return R*2*Math.asin(Math.sqrt(a));
+}
+function roundUp5(min){return Math.ceil(min/5)*5;}
+function formatTime(h){const m=roundUp5(h*60);return `${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}min`;}
+
+async function getAirportInfo(icao){
+  try{
+    const r=await fetchWithTimeout(`https://aviationweather.gov/api/data/airport?ids=${icao}&format=json`,10000);
+    if(!r.ok)return null;const d=await r.json();return d&&d.length?d[0]:null;
+  }catch(e){return null;}
+}
+
+async function getAirportCoords(icao){
+  const info=await getAirportInfo(icao);
+  if(info)return{lat:info.lat,lon:info.lon};
+  return null;
+}
+
+// Fetch AISWEB page and scrape data
+async function getAiswebData(icao){
+  const empty={rwyLen:null,rwyWid:null,hasIfr:false,hasSid:false,hasStar:false,fireCat:null,pcn:null,oprType:null,hasNight:false,elevFt:null,adHr:null,hasTwr:false,runways:[]};
+  try{
+    const raw=await proxyFetch(`https://aisweb.decea.mil.br/?i=aerodromos&codigo=${icao}`);
+    if(!raw)return empty;
+    const clean=raw.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');
+    // SID/STAR
+    empty.hasSid=/\bSID\b/i.test(clean);
+    empty.hasStar=/\bSTAR\b/i.test(clean);
+    // IFR
+    empty.hasIfr=/\bIFR\b/i.test(clean);
+    // VFR only
+    if(/VFR\s+somente|somente\s+VFR/i.test(clean))empty.oprType='VFR';
+    else if(empty.hasIfr)empty.oprType='VFR/IFR';
+    // Night ops
+    empty.hasNight=/noturno|ilumina/i.test(clean);
+    // Tower
+    empty.hasTwr=/\bTWR\b/i.test(clean);
+    // Runway dimensions
+    const rwyMatch=clean.match(/(\d{3,4})\s*x\s*(\d{2,3})/);
+    if(rwyMatch){empty.rwyLen=parseInt(rwyMatch[1]);empty.rwyWid=parseInt(rwyMatch[2]);}
+    // PCN
+    const pcnMatch=clean.match(/PCN\s+([^\s,]+(?:\/[^\s,]+)*)/i);
+    if(pcnMatch)empty.pcn=pcnMatch[1];
+    // Fire category
+    const fireMatch=clean.match(/(?:CAT|categoria)[^0-9]*(\d+)/i);
+    if(fireMatch)empty.fireCat=fireMatch[1];
+    // Elevation
+    const elevMatch=clean.match(/(\d{1,5})\s*(?:FT|ft|pés)/);
+    if(elevMatch)empty.elevFt=elevMatch[1];
+    return empty;
+  }catch(e){return empty;}
+}
+
+// Check REC needed (same criteria as bot)
+function checkRecNeeded(len,wid,hasIfr,oprType){
+  const reasons=[];
+  if(len!=null&&len<=1800)reasons.push(`Pista com ${len}m (≤ 1.800m)`);
+  if(wid!=null&&wid<45)reasons.push(`Largura ${wid}m (< 45m)`);
+  if(!hasIfr)reasons.push('Sem procedimentos IFR');
+  if(oprType&&!/IFR/i.test(oprType)&&!reasons.includes('Sem procedimentos IFR'))reasons.push('Aeródromo somente VFR');
+  return{needed:reasons.length>0,reasons};
+}
+
+// PCN tire pressure category
+function getPcnTireCat(pcn){
+  if(!pcn)return null;
+  const m=pcn.replace(/\s/g,'').toUpperCase().match(/\d+\/[FR]\/[ABCD]\/([WXYZ])\/[TURS]/);
+  if(m)return m[1];
+  const parts=pcn.toUpperCase().replace(/\s/g,'').split('/');
+  if(parts.length>=4&&'WXYZ'.includes(parts[3]))return parts[3];
+  return null;
+}
+
+// Fetch FAB fuel from CELOG planilha
+async function fetchFabFuel(icao){
+  try{
+    const r=await fetchWithTimeout(CELOG_CSV,10000);
+    if(!r.ok)return{hasFuel:false,text:'Consulta indisponível'};
+    const csv=await r.text();
+    const rows=parseCSV(csv);
+    const found=rows.filter(row=>(row[0]||'').trim().toUpperCase()===icao);
+    if(found.length){
+      const suspended=found.some(r=>(r[5]||'').toUpperCase().includes('SUSPENSO'));
+      if(suspended)return{hasFuel:false,text:'Contrato FAB temporariamente suspenso',rows:found};
+      return{hasFuel:true,text:'Possui contrato FAB para abastecimento',rows:found};
+    }
+    return{hasFuel:false,text:'Não possui contrato FAB para abastecimento'};
+  }catch(e){return{hasFuel:false,text:'Consulta indisponível'};}
+}
+
+// ---- METAR (multi ICAO, same as bot) ----
 async function botMetar(){
-  const icao=getBotIcao();if(!icao)return;
-  botLoading('METAR '+icao);
+  const icaos=getBotIcaos();if(!icaos)return;
+  botLoading('METAR');
   try{
-    const raw=await proxyFetch(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=raw`);
-    if(!raw)throw new Error('Sem dados');
-    const decoded=decodeMetar(raw);
-    let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">🌤️ METAR — ${icao}</div>`;
-    html+=`<div style="font-family:monospace;background:var(--bg);padding:8px;border-radius:4px;margin-bottom:12px;color:var(--vc1);word-break:break-all">${raw}</div>`;
-    if(decoded.time)html+=`<div>🕐 Observação: ${decoded.time}</div>`;
-    if(decoded.wind)html+=`<div>💨 Vento: ${decoded.wind}</div>`;
-    if(decoded.vis)html+=`<div>👁 Visibilidade: ${decoded.vis}</div>`;
-    if(decoded.temp)html+=`<div>🌡 Temperatura: ${decoded.temp}</div>`;
-    if(decoded.dewpoint)html+=`<div>💧 Ponto de orvalho: ${decoded.dewpoint}</div>`;
-    if(decoded.qnh)html+=`<div>📊 QNH: ${decoded.qnh}</div>`;
-    if(decoded.wx.length)html+=`<div>⛅ Tempo: ${decoded.wx.join(', ')}</div>`;
-    if(decoded.clouds.length)html+=`<div>☁️ Nuvens: ${decoded.clouds.join(', ')}</div>`;
+    let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">🌤 METAR</div>`;
+    for(const icao of icaos.slice(0,10)){
+      const raw=await proxyFetch(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=raw`).catch(()=>'');
+      if(raw&&raw.trim()&&raw.includes(icao)){
+        html+=`<div style="margin-bottom:10px">📍 <b>${icao}</b><br><code style="color:var(--green)">${raw.trim()}</code></div>`;
+      }else{
+        html+=`<div style="margin-bottom:10px">📍 <b>${icao}</b><br>❌ METAR não disponível<br>🔗 <a href="https://redemet.decea.mil.br/" target="_blank" style="color:var(--vc1)">REDEMET</a> | <a href="https://aisweb.decea.mil.br/?i=aerodromos&codigo=${icao}" target="_blank" style="color:var(--vc1)">AISWEB</a></div>`;
+      }
+    }
+    html+=`<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
     botOut(html);
-  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro ao buscar METAR: ${e.message}</div>`);}
+  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`);}
 }
 
+// ---- TAF (multi ICAO) ----
 async function botTaf(){
-  const icao=getBotIcao();if(!icao)return;
-  botLoading('TAF '+icao);
+  const icaos=getBotIcaos();if(!icaos)return;
+  botLoading('TAF');
   try{
-    const raw=await proxyFetch(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=raw`);
-    if(!raw)throw new Error('Sem dados');
-    let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">📋 TAF — ${icao}</div>`;
-    html+=`<div style="font-family:monospace;background:var(--bg);padding:8px;border-radius:4px;color:var(--green);word-break:break-all;line-height:1.8">${raw.replace(/\n/g,'<br>')}</div>`;
+    let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">🌦 TAF</div>`;
+    for(const icao of icaos.slice(0,10)){
+      const raw=await proxyFetch(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=raw`).catch(()=>'');
+      if(raw&&raw.trim()&&raw.includes(icao)){
+        html+=`<div style="margin-bottom:10px">📍 <b>${icao}</b><br><code style="color:var(--green)">${raw.trim()}</code></div>`;
+      }else{
+        html+=`<div style="margin-bottom:10px">📍 <b>${icao}</b><br>❌ TAF não disponível<br>🔗 <a href="https://redemet.decea.mil.br/" target="_blank" style="color:var(--vc1)">REDEMET</a></div>`;
+      }
+    }
+    html+=`<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
     botOut(html);
-  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro ao buscar TAF: ${e.message}</div>`);}
+  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`);}
 }
 
+// ---- NOTAMs (AISWEB scrape, same as bot) ----
 async function botNotam(){
   const icao=getBotIcao();if(!icao)return;
   botLoading('NOTAMs '+icao);
   try{
-    const url=`https://aisweb.decea.mil.br/api/?apiKey=&apiPass=&area=notam&IcaoCode=${icao}`;
-    const raw=await proxyFetch(url);
-    if(!raw)throw new Error('Sem dados ou API indisponível');
-    let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">⚠️ NOTAMs — ${icao}</div>`;
-    // Try to parse XML
-    try{
-      const parser=new DOMParser();
-      const doc=parser.parseFromString(raw,'text/xml');
-      const items=doc.querySelectorAll('notam,item,NOTAM');
-      if(items.length){
-        items.forEach(n=>{
-          const text=n.textContent||n.innerHTML||'';
-          html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;margin-bottom:6px;border-left:3px solid var(--yellow);font-size:.75rem">${text.trim()}</div>`;
-        });
-      }else{
-        html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;font-size:.75rem;word-break:break-all">${raw.substring(0,2000)}</div>`;
-      }
-    }catch(pe){
-      html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;font-size:.75rem;word-break:break-all">${raw.substring(0,2000)}</div>`;
+    // Try aviationweather (AISWEB POST won't work from browser due to CORS)
+    const raw=await proxyFetch(`https://aviationweather.gov/api/data/notam?ids=${icao}&format=raw`).catch(()=>'');
+    let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">📋 NOTAMs — ${icao}</div>`;
+    if(raw&&raw.trim()){
+      const notams=raw.trim().split(/\n{2,}/);
+      notams.forEach(n=>{
+        html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;margin-bottom:6px;border-left:3px solid var(--yellow);font-size:.75rem;white-space:pre-wrap">${n.trim()}</div>`;
+      });
+    }else{
+      html+=`<div>✅ Nenhum NOTAM encontrado ou serviço indisponível.</div>`;
+      html+=`<div style="margin-top:4px">🔗 <a href="https://aisweb.decea.mil.br/?i=notam" target="_blank" style="color:var(--vc1)">Consultar AISWEB</a> | <a href="https://www.notams.faa.gov/" target="_blank" style="color:var(--vc1)">FAA NOTAMs</a></div>`;
     }
-    botOut(html);
-  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro ao buscar NOTAMs: ${e.message}</div>`);}
-}
-
-async function botAerodrome(){
-  const icao=getBotIcao();if(!icao)return;
-  botLoading('info aeródromo '+icao);
-  try{
-    const url=`https://aisweb.decea.mil.br/api/?apiKey=&apiPass=&area=aerodromos&IcaoCode=${icao}`;
-    const raw=await proxyFetch(url);
-    if(!raw)throw new Error('Sem dados');
-    let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">🛫 Aeródromo — ${icao}</div>`;
-    html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;font-size:.75rem;word-break:break-all">${raw.substring(0,3000)}</div>`;
+    html+=`<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
     botOut(html);
   }catch(e){botOut(`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`);}
 }
 
+// ---- Aeródromo (same as bot) ----
+async function botAerodrome(){
+  const icao=getBotIcao();if(!icao)return;
+  botLoading('aeródromo '+icao);
+  try{
+    const info=await getAirportInfo(icao);
+    let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">🏢 Aeroporto ${icao}</div>`;
+    if(info){
+      html+=`<div>📍 Nome: <b>${info.name||'N/A'}</b></div>`;
+      if(info.city||info.state)html+=`<div>🏙 Cidade: ${info.city||''} ${info.state?'/ '+info.state:''}</div>`;
+      html+=`<div>📐 Coordenadas: ${info.lat}, ${info.lon}</div>`;
+      if(info.elev!=null)html+=`<div>⬆️ Elevação: ${info.elev} ft</div>`;
+    }else{
+      html+=`<div>❌ Aeroporto <b>${icao}</b> não encontrado.</div>`;
+      html+=`<div>🔗 <a href="https://aisweb.decea.mil.br/?i=aerodromos&codigo=${icao}" target="_blank" style="color:var(--vc1)">AISWEB</a> | <a href="https://skyvector.com/airport/${icao}" target="_blank" style="color:var(--vc1)">SkyVector</a></div>`;
+    }
+    html+=`<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
+    botOut(html);
+  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`);}
+}
+
+// ---- Tempo de Voo (same as bot /tempo) ----
+async function botTempo(){
+  const icaos=getBotIcaos();
+  if(!icaos||icaos.length<2){
+    botOut(`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px">✈️ Tempo de Voo</div>
+<div>Informe: ORIGEM DESTINO [velocidade]<br>Exemplo: <code>SBBR SBGL</code><br>Exemplo: <code>SBBR KMIA 450</code></div>`);
+    return;
+  }
+  const orig=icaos[0],dest=icaos[1];
+  let speed=450;if(icaos[2]&&/^\d{2,3}$/.test(icaos[2]))speed=parseInt(icaos[2]);
+  botLoading(`${orig} → ${dest}`);
+  try{
+    const[c1,c2]=await Promise.all([getAirportCoords(orig),getAirportCoords(dest)]);
+    if(!c1){botOut(`❌ Aeroporto <b>${orig}</b> não encontrado.`);return;}
+    if(!c2){botOut(`❌ Aeroporto <b>${dest}</b> não encontrado.`);return;}
+    // Check international
+    const brPfx=['SB','SD','SN','SS','SW','SI','SJ'];
+    const isIntl=!brPfx.some(p=>orig.startsWith(p))||!brPfx.some(p=>dest.startsWith(p));
+    const dist=haversine(c1.lat,c1.lon,c2.lat,c2.lon);
+    if(isIntl){
+      botOut(`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px">🌍 Localidade Internacional</div>
+<div>🛫 ${orig} → 🛬 ${dest}<br>📏 Distância direta: <b>${dist.toFixed(0)} NM</b><br><br>⚠️ <i>Localidade internacional. Favor solicitar que a Subseção de Navegação do Primeiro Esquadrão utilize o ARINC para maiores informações.</i></div>`);
+      return;
+    }
+    const cruiseH=dist/speed;
+    const[origData,destData]=await Promise.all([getAiswebData(orig),getAiswebData(dest)]);
+    const depAdd=origData.hasSid?10/60:0;
+    const arrAdd=destData.hasStar?10/60:0;
+    const totalH=cruiseH+depAdd+arrAdd;
+    let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">✈️ Tempo de Voo</div>`;
+    html+=`<div>🛫 Origem: <b>${orig}</b></div>`;
+    html+=`<div>🛬 Destino: <b>${dest}</b></div>`;
+    html+=`<div>📏 Distância: <b>${dist.toFixed(0)} NM</b> (${(dist*1.852).toFixed(0)} km)</div>`;
+    html+=`<div>⚡ Velocidade: <b>${speed} kt</b></div>`;
+    html+=`<div>⏱ Tempo estimado: <b>${formatTime(totalH)}</b></div>`;
+    html+=`<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
+    botOut(html);
+  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`);}
+}
+
+// ---- Combustível (CELOG planilha, same as bot) ----
 async function botFuel(){
   const icao=getBotIcao();if(!icao)return;
   botLoading('combustível '+icao);
   try{
-    const url=`https://www.celog.aer.mil.br/consulta-abastecimento/`;
-    let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">⛽ Combustível — ${icao}</div>`;
-    html+=`<div style="color:var(--text2)">Consulta CELOG requer acesso direto. <a href="https://www.celog.aer.mil.br" target="_blank" style="color:var(--vc1)">Abrir CELOG ↗</a></div>`;
-    html+=`<div style="margin-top:8px;color:var(--text2);font-size:.75rem">Dica: use o Bot Telegram para consulta automatizada de combustível.</div>`;
+    const fuel=await fetchFabFuel(icao);
+    let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">⛽ Abastecimento FAB — ${icao}</div>`;
+    const info=await getAirportInfo(icao);
+    if(info&&info.name)html+=`<div style="margin-bottom:8px">📍 ${info.name}</div>`;
+    html+=`<div style="${fuel.hasFuel?'color:var(--green)':'color:var(--red)'}">${fuel.text}</div>`;
+    if(fuel.rows&&fuel.rows.length){
+      html+=`<div style="margin-top:8px">`;
+      fuel.rows.forEach(r=>{
+        const tipo=r[1]||'',empresa=r[2]||'',preco=r[3]||'',obs=r[5]||'';
+        html+=`<div style="background:var(--bg);padding:6px 8px;border-radius:4px;margin-bottom:4px;font-size:.75rem">`;
+        if(tipo)html+=`Tipo: <b>${tipo}</b> `;
+        if(empresa)html+=`| Empresa: ${empresa} `;
+        if(preco)html+=`| Preço: ${preco} `;
+        if(obs)html+=`<br><span style="color:var(--text2)">${obs}</span>`;
+        html+=`</div>`;
+      });
+      html+=`</div>`;
+    }
     botOut(html);
   }catch(e){botOut(`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`);}
 }
 
+// ---- SkyVector (multi-point, same as bot) ----
 function botSkyvector(){
-  const icao=getBotIcao();if(!icao)return;
-  const url=`https://skyvector.com/airport/${icao}`;
-  let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">🗺️ SkyVector — ${icao}</div>`;
-  html+=`<a href="${url}" target="_blank" style="color:var(--green);font-size:1rem">📍 Abrir ${icao} no SkyVector ↗</a>`;
-  html+=`<div style="margin-top:12px"><iframe src="${url}" style="width:100%;height:400px;border:1px solid var(--border);border-radius:6px" sandbox="allow-scripts allow-same-origin"></iframe></div>`;
+  const icaos=getBotIcaos();
+  if(!icaos||icaos.length<2){
+    botOut(`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px">🗺 SkyVector</div>
+<div>Informe as localidades:<br>Exemplo: <code>SBBR SBGL</code></div>`);
+    return;
+  }
+  const route=icaos.join('%20');
+  const url=`https://skyvector.com/?fpl=${route}`;
+  let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">🗺 SkyVector</div>`;
+  html+=`<div>Rota: <b>${icaos.join(' → ')}</b></div>`;
+  html+=`<div style="margin-top:8px">🔗 <a href="${url}" target="_blank" style="color:var(--green);font-size:1rem">Abrir no SkyVector ↗</a></div>`;
+  html+=`<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
   botOut(html);
 }
 
-async function botSat(){
-  botLoading('imagem de satélite');
-  try{
-    const url='https://satelite.cptec.inpe.br/repositoriogoes/goes16/goes16_web/ams_ret_gt_ch13_brt/BR/CMD/latest.png';
-    let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:8px">🛰️ Satélite — Brasil</div>`;
-    html+=`<img src="${url}" style="width:100%;max-width:600px;border-radius:6px;border:1px solid var(--border)" onerror="this.outerHTML='<div style=color:var(--red)>Imagem indisponível</div>'">`;
-    html+=`<div style="margin-top:6px;font-size:.7rem;color:var(--text2)">Fonte: CPTEC/INPE — GOES-16</div>`;
-    botOut(html);
-  }catch(e){botOut(`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`);}
+// ---- Satélite (GOES-16, same as bot) ----
+function botSat(){
+  const url='https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/ssa/GEOCOLOR/latest.jpg';
+  let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">🛰 Imagem de Satélite GOES-16</div>`;
+  html+=`<div style="color:var(--text2);margin-bottom:8px">América do Sul — Última disponível</div>`;
+  html+=`<img src="${url}" style="width:100%;max-width:700px;border-radius:6px;border:1px solid var(--border)" onerror="this.outerHTML='<div style=color:var(--red)>❌ Não foi possível obter a imagem de satélite.</div>'">`;
+  html+=`<div style="margin-top:8px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
+  botOut(html);
 }
 
+// ---- Planejar Voo (multi-leg, same as bot /planejar) ----
 function botPlan(){
-  const icao=document.getElementById('botIcao')?.value||'';
-  let html=`<div style="color:var(--vc1);font-weight:900;margin-bottom:12px">✈️ Planejar Voo</div>`;
-  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">`;
-  html+=`<div><label style="font-size:.72rem;color:var(--text2)">Origem</label><input id="planOrig" type="text" maxlength="4" value="${icao}" placeholder="SBBR" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:8px;border-radius:4px;font-family:inherit;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>`;
-  html+=`<div><label style="font-size:.72rem;color:var(--text2)">Destino</label><input id="planDest" type="text" maxlength="4" placeholder="SBCF" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:8px;border-radius:4px;font-family:inherit;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>`;
-  html+=`<div><label style="font-size:.72rem;color:var(--text2)">Alternativa</label><input id="planAlt" type="text" maxlength="4" placeholder="SBRJ" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:4px;font-family:inherit;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>`;
-  html+=`<div><label style="font-size:.72rem;color:var(--text2)">Aeronave</label><select id="planAnv" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:4px;font-family:inherit"><option value="VC-1">VC-1 (FAB 2101)</option><option value="VC-2">VC-2 (FAB 2590)</option></select></div>`;
+  let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">📝 Planejar Voo</div>`;
+  html+=`<div style="font-size:.78rem;color:var(--text2);margin-bottom:12px">Informe as localidades (e tempos de solo opcionais):<br>
+  <code>SBBR SBGL</code><br>
+  <code>SBBR SBGL SBBR</code><br>
+  <code>SBBR SBGL 01:30 SBBR</code><br>
+  <code>SBBR SBGL 02:00 SBCF 01:00 SBBR 450</code><br>
+  <i>Solo padrão: 1:00h | Velocidade padrão: 450 kt</i></div>`;
+  html+=`<div style="display:flex;gap:8px;flex-wrap:wrap">`;
+  html+=`<input id="planRoute" type="text" placeholder="SBBR SBGL SBBR" style="flex:1;min-width:250px;background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:10px 14px;border-radius:6px;font-family:inherit;font-size:.9rem;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">`;
+  html+=`<button onclick="botExecPlan()" style="background:var(--vc1);color:var(--bg);border:none;padding:10px 20px;border-radius:6px;font-family:inherit;font-weight:900;cursor:pointer;white-space:nowrap">🔍 CONSULTAR</button>`;
   html+=`</div>`;
-  html+=`<button onclick="botExecPlan()" style="background:var(--vc1);color:var(--bg);border:none;padding:12px 24px;border-radius:6px;font-family:inherit;font-weight:900;font-size:.9rem;cursor:pointer;width:100%">🔍 CONSULTAR INFORMAÇÕES</button>`;
   html+=`<div id="planResult" style="margin-top:16px"></div>`;
   botOut(html);
 }
 
+function parsePlanArgs(input){
+  const items=input.trim().toUpperCase().split(/\s+/);
+  let speed=450;
+  if(items.length&&/^\d{2,3}$/.test(items[items.length-1])){speed=parseInt(items.pop());}
+  const icaos=[],groundTimes=[];
+  for(const item of items){
+    const tm=item.match(/^(\d{1,2}):(\d{2})$/);
+    if(tm){
+      const h=parseInt(tm[1])+parseInt(tm[2])/60;
+      if(groundTimes.length)groundTimes[groundTimes.length-1]=h;
+    }else{
+      icaos.push(item);
+      groundTimes.push(1.0);
+    }
+  }
+  return{icaos,groundTimes,speed};
+}
+
 async function botExecPlan(){
-  const orig=(document.getElementById('planOrig')?.value||'').trim().toUpperCase();
-  const dest=(document.getElementById('planDest')?.value||'').trim().toUpperCase();
-  const alt=(document.getElementById('planAlt')?.value||'').trim().toUpperCase();
-  if(!orig||!dest){document.getElementById('planResult').innerHTML='<div style="color:var(--red)">Preencha origem e destino</div>';return;}
+  const input=(document.getElementById('planRoute')?.value||'').trim();
+  if(!input){document.getElementById('planResult').innerHTML='<div style="color:var(--red)">Preencha as localidades</div>';return;}
   const result=document.getElementById('planResult');
-  result.innerHTML='<div style="color:var(--vc1)">⏳ Buscando dados para '+orig+' → '+dest+'...</div>';
+  const{icaos,groundTimes,speed}=parsePlanArgs(input);
+  if(icaos.length<2){result.innerHTML='<div style="color:var(--red)">Informe pelo menos 2 localidades.</div>';return;}
+  // Check international
+  const brPfx=['SB','SD','SN','SS','SW','SI','SJ'];
+  const intlIcaos=icaos.filter(ic=>!brPfx.some(p=>ic.startsWith(p)));
+  if(intlIcaos.length){
+    result.innerHTML=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px">🌍 Localidade Internacional Detectada</div>
+<div>✈️ Rota: ${icaos.join(' → ')}<br>🔸 Internacional: ${intlIcaos.join(', ')}<br><br>⚠️ <i>Localidade internacional. Favor solicitar que a Subseção de Navegação do Primeiro Esquadrão utilize o ARINC para maiores informações.</i></div>`;
+    return;
+  }
+  result.innerHTML='<div style="color:var(--vc1)">📝 Planejando voo... aguarde.</div>';
   try{
-    const icaos=[orig,dest];if(alt)icaos.push(alt);
-    const unique=[...new Set(icaos)];
-    // Buscar METAR e TAF em paralelo
-    const metarPromises=unique.map(i=>proxyFetch(`https://aviationweather.gov/api/data/metar?ids=${i}&format=raw`).catch(()=>''));
-    const tafPromises=unique.map(i=>proxyFetch(`https://aviationweather.gov/api/data/taf?ids=${i}&format=raw`).catch(()=>''));
-    const[metars,tafs]=await Promise.all([Promise.all(metarPromises),Promise.all(tafPromises)]);
-    let html='';
-    unique.forEach((icao,idx)=>{
-      html+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:10px">`;
-      html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:6px">${icao=== orig?'🛫 ORIGEM':icao===dest?'🛬 DESTINO':'🔄 ALTERNATIVA'} — ${icao}</div>`;
-      if(metars[idx]){
-        const d=decodeMetar(metars[idx]);
-        html+=`<div style="font-size:.75rem;margin-bottom:4px"><span style="color:var(--text2)">METAR:</span> <span style="color:var(--green)">${metars[idx]}</span></div>`;
-        if(d.wind)html+=`<div style="font-size:.75rem">💨 ${d.wind}</div>`;
-        if(d.vis)html+=`<div style="font-size:.75rem">👁 ${d.vis}</div>`;
-        if(d.temp)html+=`<div style="font-size:.75rem">🌡 ${d.temp}</div>`;
-        if(d.qnh)html+=`<div style="font-size:.75rem">📊 ${d.qnh}</div>`;
-      }else{html+=`<div style="font-size:.75rem;color:var(--yellow)">METAR indisponível</div>`;}
-      if(tafs[idx]){
-        html+=`<div style="font-size:.72rem;margin-top:6px;color:var(--text2)">TAF:</div>`;
-        html+=`<div style="font-family:monospace;font-size:.68rem;color:var(--green);line-height:1.6;word-break:break-all">${tafs[idx].replace(/\n/g,'<br>')}</div>`;
-      }
-      html+=`</div>`;
+    // Get all coords
+    const coordsArr=await Promise.all(icaos.map(ic=>getAirportCoords(ic)));
+    for(let i=0;i<icaos.length;i++){
+      if(!coordsArr[i]){result.innerHTML=`❌ Aeroporto <b>${icaos[i]}</b> não encontrado.`;return;}
+    }
+    // Calculate legs
+    const legs=[];let totalFlightH=0,totalGroundH=0,totalDist=0;
+    for(let i=0;i<icaos.length-1;i++){
+      const c1=coordsArr[i],c2=coordsArr[i+1];
+      const dist=haversine(c1.lat,c1.lon,c2.lat,c2.lon);
+      const cruiseH=dist/speed;
+      const[oData,dData]=await Promise.all([getAiswebData(icaos[i]),getAiswebData(icaos[i+1])]);
+      const depAdd=oData.hasSid?10/60:0;
+      const arrAdd=dData.hasStar?10/60:0;
+      const flightH=cruiseH+depAdd+arrAdd;
+      const gndH=i<icaos.length-2?groundTimes[i+1]:0;
+      legs.push({orig:icaos[i],dest:icaos[i+1],dist,flightH,gndH});
+      totalFlightH+=flightH;totalGroundH+=gndH;totalDist+=dist;
+    }
+    const totalH=totalFlightH+totalGroundH;
+    // Build output
+    let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px">📝 PLANEJAMENTO DE VOO</div>`;
+    html+=`<div style="border-top:2px solid var(--border);padding-top:8px">`;
+    html+=`<div>✈️ <b>ROTA:</b> ${icaos.join(' → ')}</div>`;
+    html+=`<div>⚡ Velocidade: <b>${speed} kt</b></div><br>`;
+    html+=`<div><b>PERNAS:</b></div>`;
+    legs.forEach(l=>{
+      html+=`<div>&nbsp;&nbsp;✈️ ${l.orig} → ${l.dest}: <b>${formatTime(l.flightH)}</b> (${l.dist.toFixed(0)} NM)</div>`;
+      if(l.gndH>0)html+=`<div>&nbsp;&nbsp;🔄 Solo em ${l.dest}: ${formatTime(l.gndH)}</div>`;
     });
-    // SkyVector link
-    html+=`<div style="margin-top:8px"><a href="https://skyvector.com/?fpl=${orig}%20${dest}" target="_blank" style="color:var(--vc1);font-size:.85rem">🗺️ Ver rota no SkyVector ↗</a></div>`;
+    html+=`<br><div>📏 Distância total: <b>${totalDist.toFixed(0)} NM</b> (${(totalDist*1.852).toFixed(0)} km)</div>`;
+    html+=`<div>⏱ Voo total: <b>${formatTime(totalFlightH)}</b></div>`;
+    html+=`<div>🔄 Solo total: <b>${formatTime(totalGroundH)}</b></div>`;
+    html+=`<div>✅ <b>Tempo total: ${formatTime(totalH)}</b></div>`;
+    html+=`</div>`;
+    // METAR + TAF
+    const uniqueIcaos=[...new Set(icaos)];
+    html+=`<div style="border-top:2px solid var(--border);margin-top:12px;padding-top:8px">`;
+    html+=`<div style="font-weight:900;margin-bottom:6px">🌤 METAR</div>`;
+    for(const ic of uniqueIcaos){
+      const m=await proxyFetch(`https://aviationweather.gov/api/data/metar?ids=${ic}&format=raw`).catch(()=>'');
+      if(m&&m.trim()&&m.includes(ic)){
+        html+=`<div style="margin-bottom:6px">📍 <b>${ic}</b><br><code style="color:var(--green)">${m.trim()}</code></div>`;
+      }else{
+        html+=`<div style="margin-bottom:6px">📍 <b>${ic}</b><br><i>METAR indisponível</i> 🔗 <a href="https://redemet.decea.mil.br/" target="_blank" style="color:var(--vc1)">REDEMET</a></div>`;
+      }
+    }
+    html+=`</div><div style="border-top:2px solid var(--border);margin-top:12px;padding-top:8px">`;
+    html+=`<div style="font-weight:900;margin-bottom:6px">🌦 TAF</div>`;
+    for(const ic of uniqueIcaos){
+      const t=await proxyFetch(`https://aviationweather.gov/api/data/taf?ids=${ic}&format=raw`).catch(()=>'');
+      if(t&&t.trim()&&t.includes(ic)){
+        html+=`<div style="margin-bottom:6px">📍 <b>${ic}</b><br><code style="color:var(--green)">${t.trim()}</code></div>`;
+      }else{
+        html+=`<div style="margin-bottom:6px">📍 <b>${ic}</b><br><i>TAF indisponível</i> 🔗 <a href="https://redemet.decea.mil.br/" target="_blank" style="color:var(--vc1)">REDEMET</a></div>`;
+      }
+    }
+    html+=`</div>`;
+    // SkyVector
+    const svRoute=icaos.join('%20');
+    html+=`<div style="border-top:2px solid var(--border);margin-top:12px;padding-top:8px">🗺 <a href="https://skyvector.com/?fpl=${svRoute}" target="_blank" style="color:var(--vc1)">Abrir rota no SkyVector ↗</a></div>`;
+    html+=`<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
     result.innerHTML=html;
+  }catch(e){result.innerHTML=`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`;}
+}
+
+// ---- Msg Padrão (same as bot /planejamento — SBBR round trip) ----
+function botMsgPadrao(){
+  let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">📄 Mensagem Padrão</div>`;
+  html+=`<div style="font-size:.78rem;color:var(--text2);margin-bottom:12px">Informe o destino (origem fixa: SBBR):<br><code>SBZM</code> ou <code>SBZM 450</code></div>`;
+  html+=`<div style="display:flex;gap:8px;flex-wrap:wrap">`;
+  html+=`<input id="msgDest" type="text" placeholder="SBZM" maxlength="4" style="width:120px;background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:10px 14px;border-radius:6px;font-family:inherit;font-size:.9rem;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">`;
+  html+=`<input id="msgSpeed" type="number" placeholder="450" value="450" style="width:80px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;font-family:inherit;font-size:.9rem">`;
+  html+=`<button onclick="botExecMsgPadrao()" style="background:var(--vc1);color:var(--bg);border:none;padding:10px 20px;border-radius:6px;font-family:inherit;font-weight:900;cursor:pointer">🔍 CONSULTAR</button>`;
+  html+=`</div>`;
+  html+=`<div id="msgResult" style="margin-top:16px"></div>`;
+  botOut(html);
+}
+
+async function botExecMsgPadrao(){
+  const dest=(document.getElementById('msgDest')?.value||'').trim().toUpperCase();
+  const speed=parseInt(document.getElementById('msgSpeed')?.value||'450')||450;
+  const orig='SBBR';
+  if(!dest||dest.length<4){document.getElementById('msgResult').innerHTML='<div style="color:var(--red)">Informe o ICAO do destino</div>';return;}
+  const result=document.getElementById('msgResult');
+  result.innerHTML='<div style="color:var(--vc1)">Processando planejamento... aguarde.</div>';
+  try{
+    const[c1,c2]=await Promise.all([getAirportCoords(orig),getAirportCoords(dest)]);
+    if(!c2){result.innerHTML=`Aeroporto <b>${dest}</b> não encontrado.`;return;}
+    const dist=haversine(c1.lat,c1.lon,c2.lat,c2.lon);
+    const cruiseH=dist/speed;
+    // AISWEB data
+    const[origAis,destAis]=await Promise.all([getAiswebData(orig),getAiswebData(dest)]);
+    const idaH=cruiseH+(origAis.hasSid?10/60:0)+(destAis.hasStar?10/60:0);
+    const voltaH=cruiseH+(destAis.hasSid?10/60:0)+(origAis.hasStar?10/60:0);
+    // Fuel
+    const fuel=await fetchFabFuel(dest);
+    // REC
+    const rec=checkRecNeeded(destAis.rwyLen,destAis.rwyWid,destAis.hasIfr,destAis.oprType);
+    // PCN tire pressure
+    const tireCat=getPcnTireCat(destAis.pcn);
+    // NOTAMs (runway filter)
+    let notamAlert='NOTAM OK';
+    const notamRaw=await proxyFetch(`https://aviationweather.gov/api/data/notam?ids=${dest}&format=raw`).catch(()=>'');
+    if(notamRaw){
+      const rwyNotams=notamRaw.split(/\n{2,}/).filter(n=>/\b(?:RWY|RUNWAY|PISTA|CLSD|CLOSED|REDUCED)\b/i.test(n));
+      if(rwyNotams.length)notamAlert=rwyNotams.map(n=>n.trim().substring(0,100)).join('; ');
+    }
+    // Build message
+    let lines=[];
+    lines.push(`<b>Operação em ${dest}</b>`);
+    lines.push('');
+    lines.push(`${orig}-${dest}: ${formatTime(idaH)}`);
+    lines.push(`${dest}-${orig}: ${formatTime(voltaH)}`);
+    lines.push('');
+    // Pista
+    if(destAis.rwyLen)lines.push(`- Pista: ${destAis.rwyLen}x${destAis.rwyWid}${destAis.pcn?' (PCN '+destAis.pcn+')':''}`);
+    else lines.push(`- Pista: dados não encontrados (<a href="https://aisweb.decea.mil.br/?i=aerodromos&codigo=${dest}" target="_blank" style="color:var(--vc1)">AISWEB</a>)`);
+    if(destAis.elevFt)lines.push(`- Altitude ${destAis.elevFt}FT`);
+    if(destAis.fireCat)lines.push(`- Categoria Contra Incêndio: CAT ${destAis.fireCat}`);
+    else lines.push(`- Categoria Contra Incêndio: não encontrado`);
+    if(destAis.adHr)lines.push(`- ${destAis.adHr}`);
+    lines.push(destAis.hasTwr?'- Possui torre (TWR)':'- Não possui rádio/torre');
+    lines.push(`- Operação: ${destAis.oprType||'VFR'}`);
+    lines.push(destAis.hasNight?'- Opera diurno e noturno':'- Opera somente diurno (sem iluminação de pista)');
+    lines.push(`- ${fuel.text}`);
+    lines.push(`- ${notamAlert}`);
+    lines.push(rec.needed?`- Necessita missão de REC (${rec.reasons.join('; ')})`:'- Não necessita missão de REC');
+    // VC-1
+    lines.push('');lines.push('<b>VC-1</b>');lines.push('');
+    lines.push(rec.needed?'- Necessita missão de REC':'- Não necessita missão de REC');
+    if(tireCat&&tireCat!=='W'&&tireCat!=='X')lines.push(`- Não opera VC-1 devido pressão dos pneus (categoria ${tireCat})`);
+    const pcnNum=destAis.pcn?parseInt(destAis.pcn):null;
+    if(pcnNum&&pcnNum<=30)lines.push(`- PCN BAIXO ATENÇÃO! (PCN ${pcnNum})`);
+    // VC-2
+    lines.push('');lines.push('<b>VC-2</b>');lines.push('');
+    lines.push(rec.needed?'- Necessita missão de REC':'- Não necessita missão de REC');
+
+    result.innerHTML=`<div style="white-space:pre-line;line-height:1.7">${lines.join('\n')}</div>
+<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
   }catch(e){result.innerHTML=`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`;}
 }
 
