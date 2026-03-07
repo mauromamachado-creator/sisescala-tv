@@ -324,6 +324,7 @@ footer a:hover{text-decoration:underline}
     <button onclick="goScreen(6)" id="btn6">CALENDÁRIO</button>
     <button onclick="goScreen(7)" id="btn7">🔍 BUSCA</button>
     <button onclick="goScreen(8)" id="btn8">ESCALA</button>
+    <button onclick="goScreen(9)" id="btn9">📺 TV</button>
   </div>
   <div class="header-right">
     <span class="clock" id="clock"></span>
@@ -343,6 +344,7 @@ footer a:hover{text-decoration:underline}
   <div class="screen" id="screen6"></div>
   <div class="screen" id="screen7"></div>
   <div class="screen" id="screen8"></div>
+  <div class="screen" id="screen9"></div>
   <div class="loading" id="loadingMsg">Carregando dados...</div>
 </main>
 
@@ -907,7 +909,6 @@ function renderScreen1(){
 
 // ===== HORAS DE VOO =====
 function renderScreen2(){
-  const medals=['🥇','🥈','🥉'];
   const renderCol=(title,pilots,h2Class)=>{
     const active=pilots.filter(p=>p.meta!=null&&p.voadas!=null);
     const sorted=[...active].sort((a,b)=>(b.pct??0)-(a.pct??0));
@@ -916,8 +917,9 @@ function renderScreen2(){
       const p=sorted[i];const pct=(p.pct??0);
       const total=sorted.length;
       const barColor=i<3?'var(--green)':i>=total-1?'var(--red)':i>=total-3?'#ff8c42':'var(--yellow)';
-      const rank=i<3?`<span style="display:inline-block;width:34px;text-align:center;font-size:1.1rem;flex-shrink:0">${medals[i]}</span>`:`<span style="display:inline-block;width:34px;text-align:right;font-size:.82rem;color:#667;flex-shrink:0;padding-right:4px">${i+1}º</span>`;
-      const borderColor=i<3?(i===0?'#ffd700':i===1?'#c0c0c0':'#cd7f32'):i>=total-1?'var(--red)':'transparent';
+      const rankColor=i===0?'#ffd700':i===1?'#c0c0c0':i===2?'#cd7f32':'#667';
+      const borderColor=i<3?rankColor:i>=total-1?'var(--red)':'transparent';
+      const rank=`<span style="display:inline-block;width:34px;text-align:right;font-size:.82rem;color:${rankColor};flex-shrink:0;padding-right:6px;font-weight:${i<3?'900':'400'}">${i+1}º</span>`;
       html+=`<div class="bar-row" style="border-left:3px solid ${borderColor};padding-left:6px">${rank}<span class="bar-label">${p.trigrama}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.min(Math.max(pct,0),100)}%;background:${barColor}"></div></div><span class="bar-pct" style="color:${barColor}">${pct.toFixed(1)}%</span><span class="bar-hours">${fmtHours(p.voadas)}/${Math.round(p.meta)}h</span></div>`;
     }
     const others=pilots.filter(p=>p.meta==null||p.voadas==null);
@@ -1472,6 +1474,127 @@ function renderScreenEscala(){
   document.getElementById('screen8').innerHTML=html;
 }
 
+function renderScreenTV(){
+  const td=nowBRT();const todayStr=`${String(td.getDate()).padStart(2,'0')}/${String(td.getMonth()+1).padStart(2,'0')}/${td.getFullYear()}`;
+  const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
+  const allPilots=[...pilotData.vc1,...pilotData.vc2];
+  const totalTrip=allPilots.filter(p=>p.grupo!=='OUT').length;
+  const totalDisp=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
+  const totalIndisp=totalTrip-totalDisp;
+  
+  let html=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto 1fr 1fr;gap:12px;height:100%;max-height:calc(100vh - 100px);overflow:hidden;font-size:.82rem">`;
+  
+  // Row 1: KPIs
+  html+=`<div style="grid-column:1/-1;display:flex;justify-content:center;gap:24px;padding:8px 0">`;
+  html+=`<div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:var(--vc1)">${totalTrip}</div><div style="font-size:.7rem;color:var(--text2)">TRIPULANTES</div></div>`;
+  html+=`<div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:var(--green)">${totalDisp}</div><div style="font-size:.7rem;color:var(--text2)">DISPONÍVEIS</div></div>`;
+  html+=`<div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:var(--red)">${totalIndisp}</div><div style="font-size:.7rem;color:var(--text2)">INDISPONÍVEIS</div></div>`;
+  const currentYear=td.getFullYear();const flightsYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
+  const uniqueOMs=new Set(flightsYear.map(f=>f.om).filter(Boolean));
+  html+=`<div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:var(--yellow)">${uniqueOMs.size}</div><div style="font-size:.7rem;color:var(--text2)">MISSÕES ${currentYear}</div></div>`;
+  html+=`</div>`;
+  
+  // Row 2 Col 1: Missões de Hoje
+  const todayData=diarioData.find(d=>{const ds=d.date;return ds.getDate()===td.getDate()&&ds.getMonth()===td.getMonth()&&ds.getFullYear()===td.getFullYear();});
+  html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
+  html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px;font-size:.78rem">✈️ MISSÕES DE HOJE — ${dayNames[td.getDay()]} ${todayStr}</div>`;
+  if(todayData&&todayData.legs.length){
+    for(const leg of todayData.legs){
+      const anvTxt=todayData.aeronave&&todayData.aeronave!=='AERONAVE'?todayData.aeronave:'';
+      const anvDisplay=leg.isExtra?'FAB 2590':anvTxt;
+      html+=`<div style="display:flex;gap:6px;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.75rem">`;
+      html+=`<span style="font-weight:900;color:var(--vc1);min-width:40px">${leg.dep}</span>`;
+      html+=`<span>${leg.route.replace(/-/g,'→')}</span>`;
+      html+=`<span style="color:var(--text2);font-size:.68rem">${anvDisplay}</span>`;
+      html+=`<span style="margin-left:auto;background:rgba(0,255,255,.1);color:var(--vc1);padding:1px 6px;border-radius:3px;font-size:.65rem;font-weight:700">${leg.mission||'—'}</span>`;
+      html+=`</div>`;
+    }
+  }else{html+=`<div style="color:var(--text2)">Sem missões hoje.</div>`;}
+  html+=`</div>`;
+  
+  // Row 2 Col 2: Top 5 Horas VC-1
+  html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
+  html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px;font-size:.78rem">🏆 TOP HORAS VC-1</div>`;
+  const vc1sorted=[...pilotData.vc1].filter(p=>p.voadas!=null).sort((a,b)=>(b.pct??0)-(a.pct??0));
+  for(let i=0;i<Math.min(5,vc1sorted.length);i++){
+    const p=vc1sorted[i];
+    html+=`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:.75rem">`;
+    html+=`<span style="width:22px;text-align:right;color:${i<3?'#ffd700':'#667'};font-weight:700">${i+1}º</span>`;
+    html+=`<span style="font-weight:900;min-width:36px">${p.trigrama}</span>`;
+    html+=`<div style="flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden"><div style="height:100%;width:${p.pct||0}%;background:var(--green);border-radius:4px"></div></div>`;
+    html+=`<span style="color:var(--green);font-weight:700;min-width:40px;text-align:right">${(p.pct||0).toFixed(0)}%</span>`;
+    html+=`</div>`;
+  }
+  // Progresso esforço aéreo
+  const vc1pct=anualVC1.esforco>0?(anualVC1.voadas/anualVC1.esforco*100):0;
+  html+=`<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-size:.72rem">`;
+  html+=`<div style="color:var(--text2)">Esforço Aéreo: <span style="color:var(--vc1);font-weight:900">${fmtHours(anualVC1.voadas)}</span> / ${anualVC1.esforco}h (${vc1pct.toFixed(1)}%)</div>`;
+  html+=`</div></div>`;
+  
+  // Row 2 Col 3: Top 5 Horas VC-2
+  html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
+  html+=`<div style="font-weight:900;color:var(--vc2);margin-bottom:8px;font-size:.78rem">🏆 TOP HORAS VC-2</div>`;
+  const vc2sorted=[...pilotData.vc2].filter(p=>p.voadas!=null).sort((a,b)=>(b.pct??0)-(a.pct??0));
+  for(let i=0;i<Math.min(5,vc2sorted.length);i++){
+    const p=vc2sorted[i];
+    html+=`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:.75rem">`;
+    html+=`<span style="width:22px;text-align:right;color:${i<3?'#ffd700':'#667'};font-weight:700">${i+1}º</span>`;
+    html+=`<span style="font-weight:900;min-width:36px">${p.trigrama}</span>`;
+    html+=`<div style="flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden"><div style="height:100%;width:${p.pct||0}%;background:var(--vc2);border-radius:4px"></div></div>`;
+    html+=`<span style="color:var(--vc2);font-weight:700;min-width:40px;text-align:right">${(p.pct||0).toFixed(0)}%</span>`;
+    html+=`</div>`;
+  }
+  const vc2pct=anualVC2.esforco>0?(anualVC2.voadas/anualVC2.esforco*100):0;
+  html+=`<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-size:.72rem">`;
+  html+=`<div style="color:var(--text2)">Esforço Aéreo: <span style="color:var(--vc2);font-weight:900">${fmtHours(anualVC2.voadas)}</span> / ${anualVC2.esforco}h (${vc2pct.toFixed(1)}%)</div>`;
+  html+=`</div></div>`;
+  
+  // Row 3 Col 1: METAR
+  html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
+  html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:6px;font-size:.78rem">🌤 METAR SBBR</div>`;
+  if(metarRaw){
+    html+=`<div style="font-size:.68rem;color:var(--text2);word-break:break-all;margin-bottom:6px">${metarRaw}</div>`;
+    if(metarDecoded.vento)html+=`<div style="font-size:.72rem">💨 ${metarDecoded.vento}</div>`;
+    if(metarDecoded.visibilidade)html+=`<div style="font-size:.72rem">👁 ${metarDecoded.visibilidade}</div>`;
+    if(metarDecoded.teto)html+=`<div style="font-size:.72rem">☁️ ${metarDecoded.teto}</div>`;
+    if(metarDecoded.temperatura)html+=`<div style="font-size:.72rem">🌡 ${metarDecoded.temperatura}</div>`;
+  }else{html+=`<div style="color:var(--text2)">Sem dados METAR.</div>`;}
+  html+=`</div>`;
+  
+  // Row 3 Col 2: Alertas
+  html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
+  html+=`<div style="font-weight:900;color:var(--yellow);margin-bottom:6px;font-size:.78rem">⚠️ ALERTAS</div>`;
+  const alerts=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status!=='DISPONÍVEL'&&s.status!=='FERIAS'&&p.grupo!=='OUT';});
+  if(alerts.length){
+    for(const p of alerts.slice(0,6)){
+      const s=getPilotStatus(p,td);
+      html+=`<div style="font-size:.72rem;padding:2px 0"><span style="font-weight:700">${p.trigrama}</span> <span style="color:var(--text2)">${s.motivo||s.status}</span></div>`;
+    }
+    if(alerts.length>6)html+=`<div style="color:var(--text2);font-size:.68rem">+${alerts.length-6} mais...</div>`;
+  }else{html+=`<div style="color:var(--green);font-size:.75rem">✅ Sem alertas</div>`;}
+  html+=`</div>`;
+  
+  // Row 3 Col 3: Próximos dias
+  html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
+  html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:6px;font-size:.78rem">📅 PRÓXIMOS DIAS</div>`;
+  const weekDays=diarioData.filter(d=>{const diff=(d.date-td)/86400000;return diff>0&&diff<=5&&d.legs.length>0;});
+  if(weekDays.length){
+    for(const day of weekDays){
+      const anvLabel=day.aeronave&&day.aeronave!=='AERONAVE'?day.aeronave:'';
+      html+=`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem">`;
+      html+=`<span style="font-weight:900;min-width:40px">${day.dateStr}</span>`;
+      html+=`<span style="color:var(--text2);min-width:28px">${day.dayName}</span>`;
+      html+=`<span style="color:var(--vc1)">${anvLabel}</span>`;
+      html+=`<span style="margin-left:auto;color:var(--text2)">${day.legs.length} trecho(s)</span>`;
+      html+=`</div>`;
+    }
+  }else{html+=`<div style="color:var(--text2)">Sem voos programados.</div>`;}
+  html+=`</div>`;
+  
+  html+=`</div>`;
+  document.getElementById('screen9').innerHTML=html;
+}
+
 function renderAll(){
   document.getElementById('loadingMsg').style.display='none';
   const allPilots=[...pilotData.vc1,...pilotData.vc2];const td=nowBRT();
@@ -1482,7 +1605,7 @@ function renderAll(){
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
   const uniqueOMs=new Set(flightsThisYear.map(f=>f.om).filter(Boolean));
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
-  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();
+  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();renderScreenTV();
 }
 
 async function loadAllData(){
