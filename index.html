@@ -2741,15 +2741,17 @@ function gerarDiariaPDF(omId){
     const inputs=pernasTbody.rows[i].querySelectorAll('input');
     const etd=(inputs[0]||{}).value||'',orig=(inputs[1]||{}).value||'',dest=(inputs[2]||{}).value||'',eta=(inputs[3]||{}).value||'';
     if(!etd&&!orig)continue;
+    const valsP=[etd,orig,dest,eta];
+    let rowHP=drh;
+    valsP.forEach((v,j)=>{const lines=doc.splitTextToSize(v,c5w[j]-2);rowHP=Math.max(rowHP,lines.length*4+4);});
+    if(y+rowHP>270){doc.addPage();y=20;}
     x5=lm;
-    const vals=[etd,orig,dest,eta];
-    vals.forEach((v,j)=>{
-      doc.rect(x5,y,c5w[j],drh);
-      doc.text(v,x5+c5w[j]/2,y+5,{align:'center'});
+    valsP.forEach((v,j)=>{
+      doc.rect(x5,y,c5w[j],rowHP);
+      doc.text(v,x5+c5w[j]/2,y+rowHP/2+1,{align:'center'});
       x5+=c5w[j];
     });
-    y+=drh;
-    if(y>265){doc.addPage();y=20;}
+    y+=rowHP;
   }
   y+=8;
 
@@ -2785,15 +2787,20 @@ function gerarDiariaPDF(omId){
     const inputs=tripTbody.rows[i].querySelectorAll('input');
     const posto=(inputs[0]||{}).value||'',nome=(inputs[1]||{}).value||'',cpf=(inputs[2]||{}).value||'',funcao=(inputs[3]||{}).value||'';
     if(!nome)continue;
-    x6=lm;
+    // calc row height based on longest text
     const vals=[posto+' (FAB)',nome,cpf,funcao,'-'];
+    let rowH=drh;
+    vals.forEach((v,j)=>{const lines=doc.splitTextToSize(v,c6w[j]-2);rowH=Math.max(rowH,lines.length*4+4);});
+    if(y+rowH>270){doc.addPage();y=20;}
+    x6=lm;
     vals.forEach((v,j)=>{
-      doc.rect(x6,y,c6w[j],drh);
-      doc.text(v,x6+c6w[j]/2,y+5,{align:'center',maxWidth:c6w[j]-2});
+      doc.rect(x6,y,c6w[j],rowH);
+      const lines=doc.splitTextToSize(v,c6w[j]-2);
+      const startY=y+(rowH-lines.length*4)/2+3;
+      lines.forEach((ln,li)=>{doc.text(ln,x6+c6w[j]/2,startY+li*4,{align:'center'});});
       x6+=c6w[j];
     });
-    y+=drh;
-    if(y>265){doc.addPage();y=20;}
+    y+=rowH;
   }
   y+=12;
 
