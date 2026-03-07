@@ -714,7 +714,7 @@ function renderScreen0(){
     html+='<div class="dash-panel" style="grid-column:1/-1;border-top:3px solid var(--vc1)">';
     html+='<div class="panel-title"><span class="icon">🌤️</span> METAR — SBBR (Brasília)</div>';
     html+=`<div style="font-family:monospace;font-size:.78rem;color:var(--vc1);background:var(--bg);padding:8px 12px;border-radius:6px;margin-bottom:12px;word-break:break-all">${metarDecoded.raw}</div>`;
-    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;font-size:.82rem">';
+    html+='<div style="display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.82rem">';
     if(metarDecoded.time)html+=`<div>🕐 <span style="color:var(--text2)">Observação:</span> ${metarDecoded.time}</div>`;
     if(metarDecoded.wind)html+=`<div>💨 <span style="color:var(--text2)">Vento:</span> ${metarDecoded.wind}</div>`;
     if(metarDecoded.vis)html+=`<div>👁 <span style="color:var(--text2)">Visibilidade:</span> ${metarDecoded.vis}</div>`;
@@ -722,7 +722,7 @@ function renderScreen0(){
     if(metarDecoded.dewpoint)html+=`<div>💧 <span style="color:var(--text2)">Ponto de orvalho:</span> ${metarDecoded.dewpoint}</div>`;
     if(metarDecoded.qnh)html+=`<div>📊 <span style="color:var(--text2)">QNH:</span> ${metarDecoded.qnh}</div>`;
     if(metarDecoded.wx.length)html+=`<div>⛅ <span style="color:var(--text2)">Tempo:</span> ${metarDecoded.wx.join(', ')}</div>`;
-    if(metarDecoded.clouds.length)html+=`<div style="grid-column:1/-1">☁️ <span style="color:var(--text2)">Nuvens:</span> ${metarDecoded.clouds.join(' | ')}</div>`;
+    if(metarDecoded.clouds.length)html+=`<div style="flex-basis:100%">☁️ <span style="color:var(--text2)">Nuvens:</span> ${metarDecoded.clouds.join(' | ')}</div>`;
     html+='</div></div>';
   }
 
