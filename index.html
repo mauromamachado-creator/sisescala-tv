@@ -2754,28 +2754,54 @@ function botCodigo(){
   botOut(html,false);
 }
 function removeAccents(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+let GLOBAL_AIRPORTS=[];
+async function fetchGlobalAirports(){
+  try{
+    const r=await fetchWithTimeout('global_airports.json?v='+Date.now(),15000);
+    GLOBAL_AIRPORTS=await r.json();
+  }catch(e){console.warn('Global airports load failed',e);}
+}
 function botExecCodigo(){
   const rawQuery=(document.getElementById('codQuery')?.value||'').trim();
   const result=document.getElementById('codResult');
   if(!rawQuery){result.innerHTML='<div style="color:var(--red)">Informe a busca</div>';return;}
   const query=removeAccents(rawQuery).toUpperCase();
-  // Search BR_AIRPORTS by ICAO, name, or municipality (same as bot)
+  const BR_PREFIXES=['SB','SD','SN','SS','SW','SI','SJ'];
   const results=[];
+  // Search GLOBAL_AIRPORTS (medium+large worldwide) — identical to bot
+  for(const ap of GLOBAL_AIRPORTS){
+    const icao=(ap.icao||'').toUpperCase();
+    const iata=(ap.iata||'').toUpperCase();
+    const name=removeAccents(ap.name||'').toUpperCase();
+    const city=removeAccents(ap.city||'').toUpperCase();
+    if(query===icao||query===iata){results.unshift(ap);}
+    else if(name.includes(query)||city.includes(query)){results.push(ap);}
+  }
+  // Also search BR_AIRPORTS for small Brazilian airfields (exact ICAO or name/city match)
   for(const[icao,ap] of Object.entries(BR_AIRPORTS)){
+    if(results.some(r=>(r.icao||'').toUpperCase()===icao))continue; // skip duplicates
     const name=removeAccents(ap.name||'').toUpperCase();
     const city=removeAccents(ap.municipality||'').toUpperCase();
-    if(query===icao){results.unshift({icao,...ap});} // exact ICAO match first
-    else if(name.includes(query)||city.includes(query)){results.push({icao,...ap});}
+    if(query===icao){results.unshift({icao,name:ap.name,city:ap.municipality,country:'Brasil',type:'small_airport'});}
+    else if(name.includes(query)||city.includes(query)){results.push({icao,name:ap.name,city:ap.municipality,country:'Brasil',type:'small_airport'});}
   }
   if(!results.length){
-    result.innerHTML=`<div>❌ Nenhum aeroporto encontrado para <b>${query}</b>.</div>`;
+    result.innerHTML=`<div>❌ Nenhum aeroporto encontrado para <b>${rawQuery}</b>.</div>`;
     return;
   }
-  let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px">🔍 Resultados para '${query}' (${Math.min(results.length,15)} de ${results.length})</div>`;
+  let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px">🔍 Resultados para '${rawQuery}' (${Math.min(results.length,15)} de ${results.length})</div>`;
   results.slice(0,15).forEach(ap=>{
+    const icao=ap.icao||'';
+    const iata=ap.iata?` / ${ap.iata}`:'';
+    const isBr=BR_PREFIXES.some(p=>icao.startsWith(p));
+    let tag='';
+    if(!isBr){
+      if(ap.type==='large_airport')tag=' ✈️ Internacional';
+      else if(ap.type==='medium_airport')tag=' 🛩 Regional';
+    }
     html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;margin-bottom:6px">`;
-    html+=`<b>${ap.icao}</b> — ${ap.name||''}`;
-    if(ap.municipality||ap.region)html+=`<div style="font-size:.72rem;color:var(--text2)">📍 ${ap.municipality||''} ${ap.region?'/ '+ap.region:''}</div>`;
+    html+=`<b>${icao}</b>${iata} — ${ap.name||''}${tag}`;
+    if(ap.city||ap.country)html+=`<div style="font-size:.72rem;color:var(--text2)">📍 ${ap.city||''}, ${ap.country||''}</div>`;
     html+=`</div>`;
   });
   result.innerHTML=html;
@@ -3123,6 +3149,7 @@ async function loadAllData(){
     pilotData=parseDisponibilidade(dispRows);
     flights=parseLancamentos(lancRows);
     await fetchPauDeSebo().then(()=>{sourceStatus.pauSebo='ok';}).catch(()=>{sourceStatus.pauSebo='fail';});
+    fetchGlobalAirports(); // async, non-blocking
     calcAfastamentos();
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
     diarioData=parseDiario(planRows);
