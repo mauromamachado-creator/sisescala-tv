@@ -768,7 +768,7 @@ function renderScreen0(){
       const anvDisplay=leg.isExtra?'FAB 2590':anvTxt;
       html+=`<div class="mission-card">
         <div style="min-width:55px;text-align:center;font-weight:900;font-size:.95rem;color:var(--vc1)">${leg.dep}</div>
-        <div class="mission-body"><div class="mission-title">${routeParts}${extraTag}</div><div class="mission-sub">${anvDisplay?'<span style="color:var(--vc1);font-weight:700">'+anvDisplay+'</span> · ':''}${leg.pilots.join(' · ')}${leg.fuel?' · '+leg.fuel+'t':''}</div></div>
+        <div class="mission-body"><div class="mission-title">${routeParts}${extraTag}</div><div class="mission-sub">${anvDisplay?'<span style="color:var(--vc1);font-weight:700">'+anvDisplay+'</span> · ':''}${leg.pilots.join('/')}${leg.fuel?' · '+leg.fuel+'t':''}</div></div>
         <div><span class="mission-tipo">${leg.mission||'—'}</span></div></div>`;
     }
   }else{
