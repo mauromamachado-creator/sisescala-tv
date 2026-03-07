@@ -823,7 +823,7 @@ function renderScreen0(){
       html+=`<div style="font-size:.7rem;color:var(--text2);margin-top:4px">👨‍✈️ ${pilotos}</div>`;
       html+=`</div>`;
     }
-    html+=`<div style="font-size:.72rem;color:var(--green);margin-top:4px">📋 Ordem de Missão oficial</div>`;
+    html+=`<div style="font-size:.72rem;color:var(--green);margin-top:4px">📋 Ordem de Missão</div>`;
   }else if(todayConfirmDash.length){
     for(const c of todayConfirmDash){
       const anvColor=c.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
@@ -1654,7 +1654,7 @@ function renderScreenTV(){
       const pilotos=om.tripulacao.filter(t=>t.trigrama).map(t=>t.trigrama).join('/');
       html+=`<div style="font-size:.65rem;color:var(--text2);margin-top:2px">👨‍✈️ ${pilotos}</div>`;
     }
-    html+=`<div style="font-size:.6rem;color:var(--green);margin-top:4px">📋 Ordem de Missão oficial</div>`;
+    html+=`<div style="font-size:.6rem;color:var(--green);margin-top:4px">📋 Ordem de Missão</div>`;
   }else if(todayConfirm.length){
     for(const c of todayConfirm){
       const anvColor=c.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
