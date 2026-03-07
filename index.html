@@ -759,7 +759,7 @@ function renderScreen0(){
   const todayStr=`${String(td.getDate()).padStart(2,'0')}/${String(td.getMonth()+1).padStart(2,'0')}`;
   const todayData=diarioData.find(d=>{const ds=d.date;return ds.getDate()===td.getDate()&&ds.getMonth()===td.getMonth()&&ds.getFullYear()===td.getFullYear();});
   const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
-  html+=`<div class="panel-title"><span class="icon">📋</span> Missões de Hoje — ${todayStr} (${dayNames[td.getDay()]}) ${todayData&&todayData.aeronave&&todayData.aeronave!=='AERONAVE'?'<span style="margin-left:auto;color:var(--vc1);font-weight:900">'+todayData.aeronave+'</span>':''}</div>`;
+  html+=`<div class="panel-title"><span class="icon">📋</span> Missões de Hoje — ${todayStr} (${dayNames[td.getDay()]})</div>`;
   if(todayData&&todayData.legs.length){
     for(const leg of todayData.legs){
       const routeParts=leg.route.replace(/-/g,' → ');
