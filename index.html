@@ -1760,8 +1760,10 @@ let escalaUnlocked=false;
 function goScreen(n){
   if(n===8&&!escalaUnlocked){
     const pw=prompt('🔒 Área restrita. Digite a senha:');
-    if(pw!=='gte@macosv'){alert('Senha incorreta.');return;}
-    escalaUnlocked=true;
+    if(!pw){return;}
+    async function verifyPw(p){const enc=new TextEncoder().encode(p);const buf=await crypto.subtle.digest('SHA-256',enc);return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+    verifyPw(pw).then(h=>{if(h==='eb9eaaaaf29e9838c97791fbf68ac2483f2aa3f93c6dc39c6bf0162cc51a6322'){escalaUnlocked=true;goScreen(8);}else{alert('Senha incorreta.');}});
+    return;
   }
   currentScreen=n;document.querySelectorAll('.screen').forEach((s,i)=>s.classList.toggle('active',i===n));document.querySelectorAll('.nav-btns button').forEach((b,i)=>b.classList.toggle('active',i===n));
   // Modo BI: esconde header/nav/footer na tela TV
