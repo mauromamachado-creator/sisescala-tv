@@ -673,13 +673,23 @@ async function fetchMetar(){
 }
 async function fetchMetarMulti(){
   try{
-    const ids='SBBR,SBGF,SBRJ,SBSP';
-    const r=await fetch('https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent('https://aviationweather.gov/api/data/metar?ids='+ids+'&format=raw'),{cache:'no-store'});
-    if(!r.ok)return;
-    const text=(await r.text()).trim();
+    const ids='SBBR,SBGL,SBRJ,SBSP';
+    // Tenta direto primeiro, fallback pro proxy
+    let text='';
+    try{
+      const r=await fetch('https://aviationweather.gov/api/data/metar?ids='+ids+'&format=raw',{cache:'no-store'});
+      if(r.ok)text=(await r.text()).trim();
+    }catch(e){}
+    if(!text){
+      try{
+        const r=await fetch('https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent('https://aviationweather.gov/api/data/metar?ids='+ids+'&format=raw'),{cache:'no-store'});
+        if(r.ok)text=(await r.text()).trim();
+      }catch(e){}
+    }
+    if(!text)return;
     const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
     for(const line of lines){
-      const m=line.match(/^(SB\w{2})\s/);
+      const m=line.match(/^(?:METAR\s+)?(SB\w{2})\s/);
       if(m)metarMulti[m[1]]=line;
     }
   }catch(e){console.warn('fetchMetarMulti error',e);}
@@ -1597,8 +1607,8 @@ function renderScreenTV(){
   // Row 3 Col 1: METAR (múltiplos aeródromos)
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow-y:auto">`;
   html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:6px;font-size:.78rem">🌤 METAR</div>`;
-  const metarIcaos=['SBBR','SBGF','SBRJ','SBSP'];
-  const metarNames={SBBR:'Brasília',SBGF:'Galeão',SBRJ:'Santos Dumont',SBSP:'Congonhas'};
+  const metarIcaos=['SBBR','SBGL','SBRJ','SBSP'];
+  const metarNames={SBBR:'Brasília',SBGL:'Galeão',SBRJ:'Santos Dumont',SBSP:'Congonhas'};
   let hasMetar=false;
   for(const icao of metarIcaos){
     const raw=metarMulti[icao]||'';
