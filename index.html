@@ -369,6 +369,7 @@ const planCsvUrl=()=>`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/expor
 
 let currentScreen=0;
 let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[], diarioData=[], acntData=[], checklistData=[], metarRaw='', metarDecoded={};
+let metarMulti={};
 let anualVC1={voadas:0,esforco:650}, anualVC2={voadas:0,esforco:1220};
 let escalaData={vc1:{consulta:'',raio:[]},vc2:{consulta:'',raio:[]}};
 let confirmaData=[];
@@ -668,6 +669,15 @@ async function fetchMetar(){
     metarRaw=(await r.text()).trim();
     metarDecoded=decodeMetar(metarRaw);
   }catch(e){console.error('METAR fetch error',e);}
+}
+async function fetchMetarMulti(){
+  const icaos=['SBBR','SBGF','SBRJ','SBSP'];
+  await Promise.all(icaos.map(async id=>{
+    try{
+      const r=await fetch('https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent('https://aviationweather.gov/api/data/metar?ids='+id+'&format=raw'),{cache:'no-store'});
+      if(r.ok){const raw=(await r.text()).trim();metarMulti[id]=raw;}
+    }catch(e){}
+  }));
 }
 
 function isOnVacation(trigrama,date){const t=String(trigrama||'').toUpperCase();return feriasData.some(f=>f.trigrama===t&&f.inicio<=date&&date<=f.fim);}
@@ -1579,16 +1589,23 @@ function renderScreenTV(){
   html+=`<div style="color:var(--text2)">Esforço Aéreo: <span style="color:var(--vc2);font-weight:900">${fmtHours(anualVC2.voadas)}</span> / ${anualVC2.esforco}h (${vc2pct.toFixed(1)}%)</div>`;
   html+=`</div></div>`;
   
-  // Row 3 Col 1: METAR
-  html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
-  html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:6px;font-size:.78rem">🌤 METAR SBBR</div>`;
-  if(metarRaw){
-    html+=`<div style="font-size:.68rem;color:var(--text2);word-break:break-all;margin-bottom:6px">${metarRaw}</div>`;
-    if(metarDecoded.vento)html+=`<div style="font-size:.72rem">💨 ${metarDecoded.vento}</div>`;
-    if(metarDecoded.visibilidade)html+=`<div style="font-size:.72rem">👁 ${metarDecoded.visibilidade}</div>`;
-    if(metarDecoded.teto)html+=`<div style="font-size:.72rem">☁️ ${metarDecoded.teto}</div>`;
-    if(metarDecoded.temperatura)html+=`<div style="font-size:.72rem">🌡 ${metarDecoded.temperatura}</div>`;
-  }else{html+=`<div style="color:var(--text2)">Sem dados METAR.</div>`;}
+  // Row 3 Col 1: METAR (múltiplos aeródromos)
+  html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow-y:auto">`;
+  html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:6px;font-size:.78rem">🌤 METAR</div>`;
+  const metarIcaos=['SBBR','SBGF','SBRJ','SBSP'];
+  const metarNames={SBBR:'Brasília',SBGF:'Galeão',SBRJ:'Santos Dumont',SBSP:'Congonhas'};
+  let hasMetar=false;
+  for(const icao of metarIcaos){
+    const raw=metarMulti[icao]||'';
+    if(raw){
+      hasMetar=true;
+      html+=`<div style="margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.05)">`;
+      html+=`<div style="font-size:.68rem;font-weight:700;color:var(--vc1)">${icao} <span style="color:var(--text2);font-weight:400">${metarNames[icao]||''}</span></div>`;
+      html+=`<div style="font-size:.62rem;color:var(--text2);word-break:break-all">${raw}</div>`;
+      html+=`</div>`;
+    }
+  }
+  if(!hasMetar)html+=`<div style="color:var(--text2)">Sem dados METAR.</div>`;
   html+=`</div>`;
   
   // Row 3 Col 2: Alertas
@@ -1657,11 +1674,13 @@ async function loadAllData(){
   document.getElementById('statusDot').className='status-dot';
   try{
     const metarFetch=fetchMetar();
+    const metarMultiFetch=fetchMetarMulti();
     const planFetch=fetch(planCsvUrl(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>t?parseCSV(t):[]).catch(()=>[]);
     const acntFetch=fetch(`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv&gid=${GIDS.acnt}`,{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>t?parseCSV(t):[]).catch(()=>[]);
     const[dispRows,lancRows,ferRows,prevRows,planRows,acntRows]=await Promise.all([
       fetchCSV(GIDS.disp),fetchCSV(GIDS.lanc),fetchCSVByName('Férias'),fetchCSV(GIDS.previsao),planFetch,acntFetch]);
     await metarFetch;
+    await metarMultiFetch;
     await fetchAnual();
     await fetchEscala();
     pilotData=parseDisponibilidade(dispRows);flights=parseLancamentos(lancRows);
