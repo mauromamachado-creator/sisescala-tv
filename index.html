@@ -707,7 +707,7 @@ function isOnVacation(trigrama,date){const t=String(trigrama||'').toUpperCase();
 function getPilotStatus(p,td){
   if(feriasData.length&&isOnVacation(p.trigrama,td))return{status:'FERIAS',cls:'st-ferias'};
   if(String(p.grupo).toUpperCase()==='OUT')return{status:'FORA',cls:'st-out'};
-  if(String(p.grupo).toUpperCase()==='EXT')return{status:'EXTERNO',cls:'st-ext',isExt:true};
+  // EXT: continua avaliação normal (férias, CVI, etc). Se tudo ok → DISPONÍVEL
   const afNum=parseInt(String(p.afastamento||'').replace(/[^0-9\-]/g,''),10);
   if(!isNaN(afNum)&&afNum<=-35)return{status:'DESADAPTADO',cls:'st-afastado'};
   if(!isNaN(afNum)&&afNum<=-20)return{status:'AFASTADO PR',cls:'st-warning'};
@@ -1592,9 +1592,8 @@ function renderScreenTV(){
   const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
   const allPilots=[...pilotData.vc1,...pilotData.vc2];
   const totalTrip=allPilots.filter(p=>p.grupo!=='OUT').length;
-  const totalExt=allPilots.filter(p=>String(p.grupo).toUpperCase()==='EXT'&&getPilotStatus(p,td).status==='EXTERNO').length;
   const totalDisp=allPilots.filter(p=>p.grupo!=='OUT').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
-  const totalIndisp=totalTrip-totalDisp-totalExt;
+  const totalIndisp=totalTrip-totalDisp;
   
   // Mini-header BI
   let html=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);margin-bottom:8px">`;
