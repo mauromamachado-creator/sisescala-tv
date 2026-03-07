@@ -363,6 +363,7 @@ const planCsvUrl=()=>`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/expor
 
 let currentScreen=0;
 let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[], diarioData=[], acntData=[], checklistData=[], metarRaw='', metarDecoded={};
+let anualVC1={voadas:0,esforco:650}, anualVC2={voadas:0,esforco:1220};
 
 function parseCSV(text){
   const rows=[];let row=[],field='',inQ=false;
@@ -383,6 +384,23 @@ function fmtDate(d){if(!d)return'';return d.toLocaleDateString('pt-BR',{timeZone
 function fmtDateShort(d){if(!d)return'';return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',timeZone:'America/Sao_Paulo'}).replace('.','');}
 function fmtHours(h){if(h==null)return'—';const hh=Math.floor(h);const mm=Math.round((h-hh)*60);return `${hh}h${mm.toString().padStart(2,'0')}`;}
 async function fetchCSV(gid){const r=await fetch(csvUrl(gid),{cache:'no-store'});if(!r.ok)throw new Error('fetch failed');return parseCSV(await r.text());}
+function parseHHMM(s){const m=String(s||'').match(/^(\d+):(\d+)/);return m?(parseInt(m[1])+parseInt(m[2])/60):0;}
+async function fetchAnual(){
+  try{
+    const [vc1Rows,vc2Rows]=await Promise.all([fetchCSVByName('Aux Anual do Machado'),fetchCSVByName('Aux Anual')]);
+    // Row 0 has header: col7=ANV, col10=esforço (HH:MM:SS)
+    const parseSheet=(rows)=>{
+      const hdr=rows[0]||[];
+      const esforcoRaw=String(hdr[10]||'').replace(/:00$/,'');
+      const esforco=parseHHMM(esforcoRaw);
+      let lastVoadas=0;
+      for(let i=1;i<rows.length;i++){const v=String(rows[i][2]||'').trim();if(v&&v!=='0:00'&&v!=='0')lastVoadas=parseHHMM(v);}
+      return {voadas:lastVoadas,esforco:esforco||0};
+    };
+    anualVC1=parseSheet(vc1Rows);if(!anualVC1.esforco)anualVC1.esforco=650;
+    anualVC2=parseSheet(vc2Rows);if(!anualVC2.esforco)anualVC2.esforco=1220;
+  }catch(e){console.warn('fetchAnual error',e);}
+}
 async function fetchCSVByName(sheetName){const url=`https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('fetch failed');return parseCSV(await r.text());}
 
 function parseDisponibilidade(rows){
@@ -776,17 +794,15 @@ function renderScreen0(){
   const yearPct=((td-yearStart)/(yearEnd-yearStart)*100);
   html+=`<div style="font-size:.72rem;color:var(--text2);margin-bottom:12px">Progresso do ano: ${yearPct.toFixed(0)}% — Meta diagonal</div>`;
   
-  // VC-1 — Esforço aéreo anual: 650h (27d 2h)
-  const vc1Act=pilotData.vc1.filter(p=>p.voadas!=null&&p.grupo!=='OUT');
-  const vc1V=vc1Act.reduce((s,p)=>s+(p.voadas||0),0);const vc1M=650;
+  // VC-1 — Dados da aba Anual (Aux Anual do Machado)
+  const vc1V=anualVC1.voadas;const vc1M=anualVC1.esforco||650;
   const vc1Pct=vc1M>0?(vc1V/vc1M*100):0;const vc1C=vc1Pct<yearPct*0.8?'var(--red)':vc1Pct<yearPct?'var(--yellow)':'var(--green)';
   html+=`<div class="prog-section">
     <div class="prog-label"><span style="color:var(--vc1);font-weight:900">VC-1</span><span>${fmtHours(vc1V)} / ${fmtHours(vc1M)} <span style="color:${vc1C};font-weight:900">(${vc1Pct.toFixed(1)}%)</span></span></div>
     <div class="prog-track"><div class="prog-marker" style="left:${yearPct}%"></div><div class="prog-fill" style="width:${Math.min(vc1Pct,100)}%;background:linear-gradient(90deg,var(--vc1),${vc1C})" data-pct="${vc1Pct.toFixed(0)}%"></div></div></div>`;
 
-  // VC-2 — Esforço aéreo anual: 1220h (50d 20h)
-  const vc2Act=pilotData.vc2.filter(p=>p.voadas!=null&&p.grupo!=='OUT');
-  const vc2V=vc2Act.reduce((s,p)=>s+(p.voadas||0),0);const vc2M=1220;
+  // VC-2 — Dados da aba Anual (Aux Anual)
+  const vc2V=anualVC2.voadas;const vc2M=anualVC2.esforco||1220;
   const vc2Pct=vc2M>0?(vc2V/vc2M*100):0;const vc2C=vc2Pct<yearPct*0.8?'var(--red)':vc2Pct<yearPct?'var(--yellow)':'var(--green)';
   html+=`<div class="prog-section">
     <div class="prog-label"><span style="color:var(--vc2);font-weight:900">VC-2</span><span>${fmtHours(vc2V)} / ${fmtHours(vc2M)} <span style="color:${vc2C};font-weight:900">(${vc2Pct.toFixed(1)}%)</span></span></div>
@@ -1307,6 +1323,7 @@ async function loadAllData(){
     const[dispRows,lancRows,ferRows,prevRows,planRows,acntRows]=await Promise.all([
       fetchCSV(GIDS.disp),fetchCSV(GIDS.lanc),fetchCSVByName('Férias'),fetchCSV(GIDS.previsao),planFetch,acntFetch]);
     await metarFetch;
+    await fetchAnual();
     pilotData=parseDisponibilidade(dispRows);flights=parseLancamentos(lancRows);
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
     diarioData=parseDiario(planRows);
