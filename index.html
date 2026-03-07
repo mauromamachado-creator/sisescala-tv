@@ -725,7 +725,8 @@ function isOnVacation(trigrama,date){const t=String(trigrama||'').toUpperCase();
 
 function getPilotStatus(p,td){
   if(feriasData.length&&isOnVacation(p.trigrama,td))return{status:'FERIAS',cls:'st-ferias'};
-  if(String(p.grupo).toUpperCase()==='OUT')return{status:'FORA',cls:'st-out'};
+  const EXCLUIDOS=['BEH','SOZ'];
+  if(String(p.grupo).toUpperCase()==='OUT'||EXCLUIDOS.includes(p.trigrama))return{status:'FORA',cls:'st-out'};
   // EXT: continua avaliação normal (férias, CVI, etc). Se tudo ok → DISPONÍVEL
   const afRaw=String(p.afastamento||'').replace(/[^0-9\-]/g,'');
   const afNum=parseInt(afRaw,10);
