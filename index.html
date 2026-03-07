@@ -803,7 +803,7 @@ function renderScreen0(){
   html+='<div class="panel-title"><span class="icon">📊</span> Progresso Horas de Voo — Ano</div>';
   const yearStart=new Date(td.getFullYear(),0,1);const yearEnd=new Date(td.getFullYear(),11,31);
   const yearPct=((td-yearStart)/(yearEnd-yearStart)*100);
-  html+=`<div style="font-size:.72rem;color:var(--text2);margin-bottom:12px">Progresso do ano: ${yearPct.toFixed(0)}% — Meta diagonal</div>`;
+  html+=`<div style="font-size:.72rem;color:var(--text2);margin-bottom:12px">Progresso do ano: ${yearPct.toFixed(0)}% — Meta de voo hoje</div>`;
   
   // VC-1 — Dados da aba Anual (Aux Anual do Machado)
   const vc1V=anualVC1.voadas;const vc1M=anualVC1.esforco||650;
@@ -1492,24 +1492,44 @@ function renderScreenTV(){
   const currentYear=td.getFullYear();const flightsYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
   const uniqueOMs=new Set(flightsYear.map(f=>f.om).filter(Boolean));
   html+=`<div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:var(--yellow)">${uniqueOMs.size}</div><div style="font-size:.7rem;color:var(--text2)">MISSÕES ${currentYear}</div></div>`;
+  // Checklist diário
+  const totalCheck=checklistData.length;
+  const doneCheck=checklistData.filter(c=>c.done).length;
+  const checkPct=totalCheck>0?Math.round(doneCheck/totalCheck*100):0;
+  const checkColor=checkPct===100?'var(--green)':checkPct>=50?'var(--yellow)':'var(--red)';
+  html+=`<div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:${checkColor}">${checkPct}%</div><div style="font-size:.7rem;color:var(--text2)">DIÁRIO</div></div>`;
   html+=`</div>`;
   
-  // Row 2 Col 1: Missões de Hoje
-  const todayData=diarioData.find(d=>{const ds=d.date;return ds.getDate()===td.getDate()&&ds.getMonth()===td.getMonth()&&ds.getFullYear()===td.getFullYear();});
+  // Row 2 Col 1: Missões de Hoje (prioridade: confirmaData se disponível)
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
   html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px;font-size:.78rem">✈️ MISSÕES DE HOJE — ${dayNames[td.getDay()]} ${todayStr}</div>`;
-  if(todayData&&todayData.legs.length){
-    for(const leg of todayData.legs){
-      const anvTxt=todayData.aeronave&&todayData.aeronave!=='AERONAVE'?todayData.aeronave:'';
-      const anvDisplay=leg.isExtra?'FAB 2590':anvTxt;
-      html+=`<div style="display:flex;gap:6px;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.75rem">`;
-      html+=`<span style="font-weight:900;color:var(--vc1);min-width:40px">${leg.dep}</span>`;
-      html+=`<span>${leg.route.replace(/-/g,'→')}</span>`;
-      html+=`<span style="color:var(--text2);font-size:.68rem">${anvDisplay}</span>`;
-      html+=`<span style="margin-left:auto;background:rgba(0,255,255,.1);color:var(--vc1);padding:1px 6px;border-radius:3px;font-size:.65rem;font-weight:700">${leg.mission||'—'}</span>`;
+  const todayDayName=dayNames[td.getDay()];
+  const todayConfirm=confirmaData.filter(c=>c.dia.toUpperCase()===todayDayName);
+  if(todayConfirm.length){
+    for(const c of todayConfirm){
+      const anvColor=c.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
+      html+=`<div style="display:flex;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.75rem">`;
+      html+=`<span style="font-weight:900;color:${anvColor};min-width:36px;font-size:.7rem">${c.anv}</span>`;
+      html+=`<span style="font-weight:700">${c.letra})</span>`;
+      html+=`<span style="flex:1;font-size:.7rem">${c.escalados.join(' / ')}</span>`;
       html+=`</div>`;
     }
-  }else{html+=`<div style="color:var(--text2)">Sem missões hoje.</div>`;}
+    html+=`<div style="font-size:.65rem;color:var(--green);margin-top:6px">✅ Escala confirmada</div>`;
+  }else{
+    const todayData=diarioData.find(d=>{const ds=d.date;return ds.getDate()===td.getDate()&&ds.getMonth()===td.getMonth()&&ds.getFullYear()===td.getFullYear();});
+    if(todayData&&todayData.legs.length){
+      for(const leg of todayData.legs){
+        const anvTxt=todayData.aeronave&&todayData.aeronave!=='AERONAVE'?todayData.aeronave:'';
+        const anvDisplay=leg.isExtra?'FAB 2590':anvTxt;
+        html+=`<div style="display:flex;gap:6px;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.75rem">`;
+        html+=`<span style="font-weight:900;color:var(--vc1);min-width:40px">${leg.dep}</span>`;
+        html+=`<span>${leg.route.replace(/-/g,'→')}</span>`;
+        html+=`<span style="color:var(--text2);font-size:.68rem">${anvDisplay}</span>`;
+        html+=`<span style="margin-left:auto;background:rgba(0,255,255,.1);color:var(--vc1);padding:1px 6px;border-radius:3px;font-size:.65rem;font-weight:700">${leg.mission||'—'}</span>`;
+        html+=`</div>`;
+      }
+    }else{html+=`<div style="color:var(--text2)">Sem missões hoje.</div>`;}
+  }
   html+=`</div>`;
   
   // Row 2 Col 2: Top 5 Horas VC-1
@@ -1581,11 +1601,15 @@ function renderScreenTV(){
   if(weekDays.length){
     for(const day of weekDays){
       const anvLabel=day.aeronave&&day.aeronave!=='AERONAVE'?day.aeronave:'';
+      // Extrair localidades únicas dos legs
+      const locs=new Set();
+      day.legs.forEach(l=>{const parts=(l.route||'').split('-');parts.forEach(p=>{const t=p.trim();if(t&&t!=='BR')locs.add(t);});});
+      const locStr=locs.size?[...locs].join('→'):'—';
       html+=`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem">`;
       html+=`<span style="font-weight:900;min-width:40px">${day.dateStr}</span>`;
       html+=`<span style="color:var(--text2);min-width:28px">${day.dayName}</span>`;
-      html+=`<span style="color:var(--vc1)">${anvLabel}</span>`;
-      html+=`<span style="margin-left:auto;color:var(--text2)">${day.legs.length} trecho(s)</span>`;
+      html+=`<span style="color:var(--vc1);font-size:.68rem">${anvLabel}</span>`;
+      html+=`<span style="margin-left:auto;color:var(--text)">${locStr}</span>`;
       html+=`</div>`;
     }
   }else{html+=`<div style="color:var(--text2)">Sem voos programados.</div>`;}
