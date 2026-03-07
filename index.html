@@ -2284,13 +2284,15 @@ function renderScreenBot(){
     </div>`;
   });
   html+=`</div>`;
-  html+=`<div id="botIcaoWrap" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">`;
-  html+=`<input id="botIcao" type="text" placeholder="ICAO (ex: SBBR SBGL)" style="background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:10px 14px;border-radius:6px;font-family:inherit;font-size:.9rem;text-transform:uppercase;flex:1;min-width:200px" oninput="this.value=this.value.toUpperCase()">`;
+  html+=`<div id="botIcaoWrap" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">`;
+  html+=`<input id="botIcao" type="text" placeholder="ICAO (ex: SBBR SBGL)" style="background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:10px 14px;border-radius:6px;font-family:inherit;font-size:.9rem;text-transform:uppercase;flex:1;min-width:200px" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter'&&botLastFn)botLastFn()">`;
+  html+=`<button id="botSearchBtn" onclick="if(botLastFn)botLastFn()" style="background:var(--vc1);color:var(--bg);border:none;padding:10px 18px;border-radius:6px;font-family:inherit;font-weight:900;cursor:pointer;font-size:.9rem;white-space:nowrap">🔍 BUSCAR</button>`;
   html+=`</div>`;
   html+=`<div id="botResult" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;min-height:100px;font-size:.82rem;line-height:1.6"></div>`;
   container.innerHTML=html;
 }
 
+let botLastFn=null;
 function getBotIcaos(){
   const v=(document.getElementById('botIcao')?.value||'').trim().toUpperCase();
   if(!v){botOut('⚠️ Informe o(s) código(s) ICAO (ex: SBBR SBGL)');return null;}
@@ -2411,7 +2413,7 @@ async function fetchFabFuel(icao){
 }
 
 // ---- METAR (multi ICAO, same as bot) ----
-async function botMetar(){
+async function botMetar(){botLastFn=botMetar;
   const icaos=getBotIcaos();if(!icaos)return;
   botLoading('METAR');
   try{
@@ -2430,7 +2432,7 @@ async function botMetar(){
 }
 
 // ---- TAF (multi ICAO) ----
-async function botTaf(){
+async function botTaf(){botLastFn=botTaf;
   const icaos=getBotIcaos();if(!icaos)return;
   botLoading('TAF');
   try{
@@ -2449,7 +2451,7 @@ async function botTaf(){
 }
 
 // ---- NOTAMs (AISWEB scrape, same as bot) ----
-async function botNotam(){
+async function botNotam(){botLastFn=botNotam;
   const icao=getBotIcao();if(!icao)return;
   botLoading('NOTAMs '+icao);
   try{
@@ -2471,7 +2473,7 @@ async function botNotam(){
 }
 
 // ---- Aeródromo (same as bot) ----
-async function botAerodrome(){
+async function botAerodrome(){botLastFn=botAerodrome;
   const icao=getBotIcao();if(!icao)return;
   botLoading('aeródromo '+icao);
   try{
@@ -2494,7 +2496,7 @@ async function botAerodrome(){
 }
 
 // ---- Tempo de Voo (same as bot /tempo) ----
-async function botTempo(){
+async function botTempo(){botLastFn=botTempo;
   const icaos=getBotIcaos();
   if(!icaos||icaos.length<2){
     botOut(`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px">✈️ Tempo de Voo</div>
@@ -2534,7 +2536,7 @@ async function botTempo(){
 }
 
 // ---- Combustível (CELOG planilha, same as bot) ----
-async function botFuel(){
+async function botFuel(){botLastFn=botFuel;
   const icao=getBotIcao();if(!icao)return;
   botLoading('combustível '+icao);
   try{
@@ -2561,7 +2563,7 @@ async function botFuel(){
 }
 
 // ---- SkyVector (multi-point, same as bot) ----
-function botSkyvector(){
+function botSkyvector(){botLastFn=botSkyvector;
   const icaos=getBotIcaos();
   if(!icaos||icaos.length<2){
     botOut(`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px">🗺 SkyVector</div>
@@ -2839,8 +2841,10 @@ async function botExecMsgPadrao(){
     lines.push('');lines.push('<b>VC-2</b>');lines.push('');
     lines.push(rec.needed?'- Necessita missão de REC':'- Não necessita missão de REC');
 
+    const plainText=lines.join('\n').replace(/<b>|<\/b>/g,'').replace(/<a[^>]*>([^<]*)<\/a>/g,'$1').replace(/<[^>]+>/g,'');
     result.innerHTML=`<div style="white-space:pre-line;line-height:1.7">${lines.join('\n')}</div>
-<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
+<button onclick="navigator.clipboard.writeText(this.dataset.txt).then(()=>{this.textContent='✅ Copiado!';setTimeout(()=>this.textContent='📋 COPIAR MENSAGEM',2000)})" data-txt="${plainText.replace(/"/g,'&quot;')}" style="margin-top:12px;background:var(--green);color:#fff;border:none;padding:10px 24px;border-radius:6px;font-family:inherit;font-weight:900;cursor:pointer;font-size:.85rem">📋 COPIAR MENSAGEM</button>
+<div style="margin-top:8px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
   }catch(e){result.innerHTML=`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`;}
 }
 
