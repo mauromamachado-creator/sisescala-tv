@@ -2292,6 +2292,60 @@ function renderScreenBot(){
   container.innerHTML=html;
 }
 
+// Decode WX field (same as bot _decode_wx_field)
+function decodeWxField(p){
+  const wm=p.match(/^(VRB|\d{3})(\d{2,3})(G(\d{2,3}))?KT$/);
+  if(wm){const d=wm[1]==='VRB'?'variável':wm[1]+'°';const g=wm[4]?` rajada ${wm[4]}kt`:'';return `💨 Vento: ${d} / ${wm[2]}kt${g}`;}
+  if(/^\d{4}$/.test(p)&&p!=='CAVOK'){const v=parseInt(p);return v>=9999?'👁 Visibilidade: 10km+':`👁 Visibilidade: ${v}m`;}
+  if(p==='CAVOK')return '👁 CAVOK (céu claro, vis 10km+)';
+  const cm=p.match(/^(FEW|SCT|BKN|OVC|VV)(\d{3})(CB|TCU)?$/);
+  if(cm){const cov={FEW:'Poucas',SCT:'Esparsas',BKN:'Nublado',OVC:'Encoberto',VV:'Vertical vis'};return `☁️ Nuvens: ${cov[cm[1]]||cm[1]} a ${parseInt(cm[2])*100}ft${cm[3]?' ('+cm[3]+')':''}`;}
+  if(p==='NSC')return '☁️ Sem nuvens significativas';
+  const wxCd={RA:'Chuva',DZ:'Chuvisco',SN:'Neve',GR:'Granizo',GS:'Granizo pequeno',PL:'Pelotas de gelo',SG:'Grãos de neve',TS:'Trovoada',FG:'Nevoeiro',BR:'Neblina',HZ:'Névoa seca',SH:'Pancada',FZ:'Congelante',MI:'Rasa',BC:'Bancos',BL:'Soprada',DR:'Rasteira',SA:'Areia',DU:'Poeira',FU:'Fumaça',VA:'Cinza vulcânica',SQ:'Rajada',FC:'Tornado',SS:'Temp. de areia',DS:'Temp. de poeira',PO:'Redemoinhos',UP:'Precip. desconhecida',IC:'Cristais de gelo'};
+  if(['RA','DZ','SN','GR','TS','FG','BR','HZ','SH','BL','DR','FZ','SA','DU','FU','VA','FC','SS','DS','PL','SG','GS','IC','UP'].some(c=>p.includes(c))){
+    const parts=[];let r=p;if(r[0]==='+'){parts.push('Forte');r=r.slice(1);}else if(r[0]==='-'){parts.push('Fraca');r=r.slice(1);}
+    if(r.startsWith('VC')){parts.push('Nas proximidades');r=r.slice(2);}
+    while(r.length>=2){const c=r.slice(0,2);if(wxCd[c])parts.push(wxCd[c]);r=r.slice(2);}
+    return parts.length?`⛈ Tempo: ${parts.join(' ')}`:null;
+  }
+  return null;
+}
+function decodeTaf(raw){
+  if(!raw||!raw.trim())return 'Indisponível';
+  const tokens=raw.trim().replace(/\n/g,' ').split(/\s+/);
+  const out=[];let i=0;
+  while(i<tokens.length){
+    const p=tokens[i];
+    if(['TAF','AMD','COR'].includes(p)){i++;continue;}
+    if(i<=2&&/^[A-Z]{4}$/.test(p)&&p!=='CAVOK'){i++;continue;}
+    if(/^\d{6}Z$/.test(p)){i++;continue;}
+    const vm=p.match(/^(\d{4})\/(\d{4})$/);
+    if(vm){out.push(`📅 Validade: dia ${vm[1].slice(0,2)} ${vm[1].slice(2)}Z até dia ${vm[2].slice(0,2)} ${vm[2].slice(2)}Z`);i++;continue;}
+    const fm=p.match(/^FM(\d{2})(\d{2})(\d{2})?$/);
+    if(fm){out.push(`\n📌 A partir de ${fm[1]}:${fm[2]}Z:`);i++;continue;}
+    if(p==='NSW'){out.push('  ✅ Sem tempo significativo');i++;continue;}
+    if(p==='BECMG'||p==='TEMPO'||p.startsWith('PROB')){
+      const ct={BECMG:'🔄 Mudança gradual',TEMPO:'⚡ Temporário'};const lbl=ct[p]||`📊 ${p}`;
+      if(i+1<tokens.length&&/^\d{4}\/\d{4}$/.test(tokens[i+1])){const pr=tokens[i+1];out.push(`\n${lbl} (dia ${pr.slice(0,2)} ${pr.slice(2,4)}Z a dia ${pr.slice(5,7)} ${pr.slice(7)}Z):`);i+=2;continue;}
+      out.push(`\n${lbl}:`);i++;continue;
+    }
+    if(p.startsWith('TX')||p.startsWith('TN')){out.push(`🌡 Temp. ${p.startsWith('TX')?'Máxima':'Mínima'}: ${p}`);i++;continue;}
+    const f=decodeWxField(p);if(f){out.push(`  ${f}`);i++;continue;}
+    i++;
+  }
+  return out.length?out.join('\n'):raw;
+}
+function formatDecodedMetar(d){
+  let lines=[];
+  if(d.time)lines.push(`📅 ${d.time}`);
+  if(d.wind)lines.push(`💨 Vento: ${d.wind}`);
+  if(d.vis)lines.push(`👁 Visibilidade: ${d.vis}`);
+  d.wx.forEach(w=>lines.push(`⛈ Tempo: ${w}`));
+  d.clouds.forEach(c=>lines.push(`☁️ Nuvens: ${c}`));
+  if(d.temp)lines.push(`🌡 Temperatura: ${d.temp} / Ponto de orvalho: ${d.dewpoint}`);
+  if(d.qnh)lines.push(`📊 QNH: ${d.qnh}`);
+  return lines.join('\n');
+}
 let botLastFn=null;
 function getBotIcaos(){
   const v=(document.getElementById('botIcao')?.value||'').trim().toUpperCase();
@@ -2418,15 +2472,19 @@ async function botMetar(){botLastFn=botMetar;
   botLoading('METAR');
   try{
     let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">🌤 METAR</div>`;
+    const raws={};
     for(const icao of icaos.slice(0,10)){
       const raw=await proxyFetch(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=raw`).catch(()=>'');
       if(raw&&raw.trim()&&raw.includes(icao)){
+        raws[icao]=raw.trim();
         html+=`<div style="margin-bottom:10px">📍 <b>${icao}</b><br><code style="color:var(--green)">${raw.trim()}</code></div>`;
       }else{
         html+=`<div style="margin-bottom:10px">📍 <b>${icao}</b><br>❌ METAR não disponível<br>🔗 <a href="https://redemet.decea.mil.br/" target="_blank" style="color:var(--vc1)">REDEMET</a> | <a href="https://aisweb.decea.mil.br/?i=aerodromos&codigo=${icao}" target="_blank" style="color:var(--vc1)">AISWEB</a></div>`;
       }
     }
+    if(Object.keys(raws).length)html+=`<button onclick="botDecodeMetarTaf('metar')" style="margin-top:8px;background:var(--bg2);border:1px solid var(--vc1);color:var(--vc1);padding:8px 16px;border-radius:6px;font-family:inherit;cursor:pointer;font-size:.8rem">📖 Decodificar METAR</button>`;
     html+=`<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
+    window._lastMetarRaws=raws;
     botOut(html);
   }catch(e){botOut(`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`);}
 }
@@ -2437,17 +2495,41 @@ async function botTaf(){botLastFn=botTaf;
   botLoading('TAF');
   try{
     let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">🌦 TAF</div>`;
+    const raws={};
     for(const icao of icaos.slice(0,10)){
       const raw=await proxyFetch(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=raw`).catch(()=>'');
       if(raw&&raw.trim()&&raw.includes(icao)){
+        raws[icao]=raw.trim();
         html+=`<div style="margin-bottom:10px">📍 <b>${icao}</b><br><code style="color:var(--green)">${raw.trim()}</code></div>`;
       }else{
         html+=`<div style="margin-bottom:10px">📍 <b>${icao}</b><br>❌ TAF não disponível<br>🔗 <a href="https://redemet.decea.mil.br/" target="_blank" style="color:var(--vc1)">REDEMET</a></div>`;
       }
     }
+    if(Object.keys(raws).length)html+=`<button onclick="botDecodeMetarTaf('taf')" style="margin-top:8px;background:var(--bg2);border:1px solid var(--vc1);color:var(--vc1);padding:8px 16px;border-radius:6px;font-family:inherit;cursor:pointer;font-size:.8rem">📖 Decodificar TAF</button>`;
     html+=`<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
+    window._lastTafRaws=raws;
     botOut(html);
   }catch(e){botOut(`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`);}
+}
+function botDecodeMetarTaf(type){
+  const raws=type==='metar'?window._lastMetarRaws:window._lastTafRaws;
+  if(!raws||!Object.keys(raws).length)return;
+  let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">📖 ${type==='metar'?'METAR':'TAF'} Decodificado</div>`;
+  for(const[icao,raw] of Object.entries(raws)){
+    html+=`<div style="border-top:2px solid var(--border);padding-top:8px;margin-top:8px">`;
+    html+=`<div style="font-weight:900;margin-bottom:4px">${type==='metar'?'🌤':'🌦'} <b>${icao}</b></div>`;
+    html+=`<code style="color:var(--green);font-size:.75rem">${raw}</code>`;
+    html+=`<div style="margin-top:6px;white-space:pre-line;font-size:.8rem;line-height:1.6">`;
+    if(type==='metar'){
+      const d=decodeMetar(raw);
+      html+=formatDecodedMetar(d);
+    }else{
+      html+=decodeTaf(raw);
+    }
+    html+=`</div></div>`;
+  }
+  html+=`<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
+  botOut(html);
 }
 
 // ---- NOTAMs (AISWEB scrape, same as bot) ----
