@@ -730,9 +730,11 @@ function getPilotStatus(p,td){
   if(feriasData.length&&isOnVacation(p.trigrama,td))return{status:'FERIAS',cls:'st-ferias'};
   if(String(p.grupo).toUpperCase()==='OUT')return{status:'FORA',cls:'st-out'};
   // EXT: continua avaliação normal (férias, CVI, etc). Se tudo ok → DISPONÍVEL
-  const afNum=parseInt(String(p.afastamento||'').replace(/[^0-9\-]/g,''),10);
-  if(!isNaN(afNum)&&afNum<=-35)return{status:'DESADAPTADO',cls:'st-afastado'};
-  if(!isNaN(afNum)&&afNum<=-20&&afNum>-35)return{status:'DISPONÍVEL',cls:'st-apto',alerta:'DESADAPTADO PR'};
+  const afRaw=String(p.afastamento||'').replace(/[^0-9\-]/g,'');
+  const afNum=parseInt(afRaw,10);
+  const afAbs=!isNaN(afNum)?Math.abs(afNum):NaN;
+  if(!isNaN(afAbs)&&afAbs>=35)return{status:'DESADAPTADO',cls:'st-afastado'};
+  if(!isNaN(afAbs)&&afAbs>=20&&afAbs<35)return{status:'DISPONÍVEL',cls:'st-apto',alerta:'DESADAPTADO PR'};
   if(p.cviDate&&p.cviDate<td)return{status:'INDISPONÍVEL (CVI)',cls:'st-inapto'};
   if(p.inspSauDate&&p.inspSauDate<td)return{status:'INDISPONÍVEL (INSP)',cls:'st-inapto'};
   return{status:'DISPONÍVEL',cls:'st-apto'};
@@ -1087,9 +1089,10 @@ function renderScreen3(){
     if(String(p.grupo).toUpperCase()==='OUT')continue;
     if(p.cviDate){if(p.cviDate<td)alerts.push({type:'danger',text:`${p.trigrama} — CVI vencido em ${p.cvi}`});else if(p.cviDate<in30)alerts.push({type:'warning',text:`${p.trigrama} — CVI vence em ${p.cvi}`});}
     if(p.inspSauDate){if(p.inspSauDate<td)alerts.push({type:'danger',text:`${p.trigrama} — INSP SAU vencido em ${p.inspSau}`});else if(p.inspSauDate<in30)alerts.push({type:'warning',text:`${p.trigrama} — INSP SAU vence em ${p.inspSau}`});}
-    const afNum=parseInt(String(p.afastamento||'').replace(/[^0-9\-]/g,''),10);
-    if(!isNaN(afNum)&&afNum<=-35)alerts.push({type:'danger',text:`${p.trigrama} — DESADAPTADO (${afNum} dias)`});
-    else if(!isNaN(afNum)&&afNum<=-20)alerts.push({type:'warning',text:`${p.trigrama} — Afastado PR (${afNum} dias)`});
+    const afNum2=parseInt(String(p.afastamento||'').replace(/[^0-9\-]/g,''),10);
+    const afAbs2=!isNaN(afNum2)?Math.abs(afNum2):NaN;
+    if(!isNaN(afAbs2)&&afAbs2>=35)alerts.push({type:'danger',text:`${p.trigrama} — DESADAPTADO (${afAbs2} dias)`});
+    else if(!isNaN(afAbs2)&&afAbs2>=20)alerts.push({type:'warning',text:`${p.trigrama} — Desadaptado PR (${afAbs2} dias)`});
   }
   html+='<div class="alert-section"><h3>Alertas (30 dias)</h3>';
   if(alerts.length){for(const a of alerts){const color=a.type==='danger'?'var(--red)':'var(--yellow)';html+=`<div class="alert-card ${a.type}"><div class="alert-icon" style="color:${color}">!</div><div>${a.text}</div></div>`;}}
