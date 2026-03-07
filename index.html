@@ -517,10 +517,9 @@ async function _sendDailySummary(a){
   msg+=`  ${secEmoji} Score: ${secScore}/100\n\n`;
   msg+=`${sysEmoji} *Saúde do sistema:* ${sysScore}/100\n`;
   if(sysScore<90)msg+=`⚠️ Ações recomendadas em andamento\n`;
-  const tgUrl=`https://api.telegram.org/bot${_ANALYTICS_BOT}/sendMessage`;
-  const tgBody=JSON.stringify({chat_id:_ANALYTICS_CHAT,text:msg,parse_mode:'Markdown',disable_notification:true});
-  const px=[u=>u,u=>'https://corsproxy.io/?'+encodeURIComponent(u),u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u)];
-  for(const mk of px){try{const r=await fetch(mk(tgUrl),{method:'POST',headers:{'Content-Type':'application/json'},body:tgBody});if(r.ok)break;}catch(e){}}
+  const tgGet=`https://api.telegram.org/bot${_ANALYTICS_BOT}/sendMessage?chat_id=${_ANALYTICS_CHAT}&parse_mode=Markdown&disable_notification=true&text=${encodeURIComponent(msg)}`;
+  const px=[u=>'https://corsproxy.io/?'+encodeURIComponent(u),u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u),u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u)];
+  for(const mk of px){try{const r=await fetch(mk(tgGet));if(r.ok)break;}catch(e){}}
 }
 // XSS detection for inputs
 function _sanitizeInput(val){
@@ -608,27 +607,16 @@ async function _sendReport(type,desc,diagnostics){
     diagnostics.forEach(d=>{msg+=`• ${d}\n`;});
   }
   msg+=`\n🌐 ${diag.url}\n📱 ${diag.userAgent.substring(0,80)}`;
-  const tgUrl='https://api.telegram.org/bot'+_ANALYTICS_BOT+'/sendMessage';
-  const tgBody=JSON.stringify({chat_id:_ANALYTICS_CHAT,text:msg,parse_mode:'Markdown'});
-  const proxies=[
-    url=>url, // direct
-    url=>'https://corsproxy.io/?'+encodeURIComponent(url),
-    url=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(url)
-  ];
   let sent=false;
+  // Telegram API GET via CORS proxy (POST blocked by most proxies)
+  const tgGet=`https://api.telegram.org/bot${_ANALYTICS_BOT}/sendMessage?chat_id=${_ANALYTICS_CHAT}&parse_mode=Markdown&text=${encodeURIComponent(msg)}`;
+  const proxies=[
+    url=>'https://corsproxy.io/?'+encodeURIComponent(url),
+    url=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(url),
+    url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url)
+  ];
   for(const mk of proxies){
-    try{
-      const r=await fetch(mk(tgUrl),{method:'POST',headers:{'Content-Type':'application/json'},body:tgBody});
-      if(r.ok){sent=true;break;}
-    }catch(e){}
-  }
-  // Fallback: GET request via URL encoding (no CORS needed for img)
-  if(!sent){
-    try{
-      const getUrl=`https://api.telegram.org/bot${_ANALYTICS_BOT}/sendMessage?chat_id=${_ANALYTICS_CHAT}&text=${encodeURIComponent(msg)}`;
-      const img=new Image();img.src='https://corsproxy.io/?'+encodeURIComponent(getUrl);
-      sent=true; // best effort
-    }catch(e){}
+    try{const r=await fetch(mk(tgGet));if(r.ok){sent=true;break;}}catch(e){}
   }
   if(sent){
     if(status)status.innerHTML='<span style="color:#4ecdc4">✅ Reporte enviado! Ravi vai analisar.</span>';
