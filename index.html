@@ -1216,13 +1216,13 @@ function renderScreen0(){
   const vc2Sorted=pilotData.vc2.filter(p=>p.voadas!=null&&getPilotStatus(p,td).status!=='FORA').sort((a,b)=>(b.voadas||0)-(a.voadas||0));
   for(let i=0;i<Math.min(3,vc2Sorted.length);i++){
     const p=vc2Sorted[i];const pct=p.pct||0;
-    const barColor=topColors[i]||'var(--vc2)';
+    const barColor2='var(--vc2)';
     html+=`<div class="top-pilot">
       <span class="top-rank">${i+1}º</span>
       <div class="top-info"><div class="top-tri" style="color:var(--vc2)">${p.trigrama}</div><div class="top-name">${p.name||''}</div></div>
-      <div class="top-stat"><div class="top-hours" style="color:${barColor}">${fmtHours(p.voadas)}</div>
+      <div class="top-stat"><div class="top-hours" style="color:${barColor2}">${fmtHours(p.voadas)}</div>
         <div style="font-size:.65rem;color:var(--text2)">${pct.toFixed(0)}% da meta</div>
-        <div class="top-bar"><div class="top-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div>
+        <div class="top-bar"><div class="top-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor2}"></div></div>
       </div></div>`;
   }
   if(!vc2Sorted.length)html+='<div class="no-data">Sem dados</div>';
