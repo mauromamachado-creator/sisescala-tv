@@ -2982,6 +2982,7 @@ const STATUS_SOURCES=[
   {id:'cartoes',label:'Cartões',critical:false},
   {id:'pauSebo',label:'Pau de Sebo',critical:false},
   {id:'brAirports',label:'Aeroportos BR',critical:false},
+  {id:'proxy',label:'Proxy CORS',critical:false},
 ];
 let sourceStatus={};
 let lastLoadTime=null;
@@ -3078,6 +3079,11 @@ async function loadAllData(){
     diarioData=parseDiario(planRows);
     acntData=parseACNT(acntRows);
     sourceStatus.brAirports=Object.keys(BR_AIRPORTS).length>0?'ok':'fail';
+    // Proxy health check — test if at least one proxy works
+    try{
+      const proxyTest=await proxyFetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw').catch(()=>'');
+      sourceStatus.proxy=proxyTest?'ok':'fail';
+    }catch(e){sourceStatus.proxy='fail';}
     lastLoadTime=Date.now();
     const nowTxt=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
     document.getElementById('lastUpdate').textContent='Atualizado '+nowTxt;
