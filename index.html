@@ -1460,13 +1460,17 @@ function renderScreenSearch(query){
   
   const q=query.toUpperCase();
   const pilotResults=allPilots.filter(p=>{
-    return (p.trigrama&&p.trigrama.toUpperCase().includes(q))||
-           (p.name&&p.name.toUpperCase().includes(q));
+    if((p.trigrama&&p.trigrama.toUpperCase().includes(q))||(p.name&&p.name.toUpperCase().includes(q)))return true;
+    // Buscar também pelo nome nos cartões (pode ser diferente da aba disponibilidade)
+    const ct=(cartoesData||[]).find(c=>c.trigrama===p.trigrama);
+    if(ct&&ct.nome&&ct.nome.toUpperCase().includes(q))return true;
+    return false;
   });
   // Buscar também em cartoesData (demais tripulantes não-pilotos)
   const pilotTris=new Set(allPilots.map(p=>p.trigrama));
   const outrosResults=(cartoesData||[]).filter(ct=>{
-    if(pilotTris.has(ct.trigrama))return false;
+    if(pilotTris.has(ct.trigrama)&&(ct.funcao||'').toLowerCase().includes('piloto'))return false; // já aparece como piloto
+    if(pilotTris.has(ct.trigrama))return false; // mesmo trigrama, função diferente — já coberto pelo piloto
     return (ct.trigrama&&ct.trigrama.toUpperCase().includes(q))||
            (ct.nome&&ct.nome.toUpperCase().includes(q));
   });
