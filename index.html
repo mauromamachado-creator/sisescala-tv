@@ -763,7 +763,7 @@ function renderScreen0(){
   if(todayData&&todayData.legs.length){
     for(const leg of todayData.legs){
       const routeParts=leg.route.replace(/-/g,' → ');
-      const extraTag=leg.isExtra?'<span style="background:rgba(142,163,255,.15);color:#8ea3ff;border:1px solid rgba(142,163,255,.3);padding:1px 6px;border-radius:3px;font-size:.65rem;margin-left:6px">2ª ANV</span>':'';
+      const extraTag='';
       const anvTxt=todayData.aeronave&&todayData.aeronave!=='AERONAVE'?todayData.aeronave:'';
       const anvDisplay=leg.isExtra?'FAB 2590':anvTxt;
       html+=`<div class="mission-card">
