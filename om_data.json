@@ -78,7 +78,6 @@
   },
   {
     "om": "92/GTE-1/2026",
-    "data_om": "06/03/2026",
     "aeronave": "VC-1",
     "fab": "FAB 2101",
     "tripulacao": [
@@ -208,7 +207,8 @@
     ],
     "comandante": "Gustavo Carlos Gammerdinger Veras - Ten Cel Av",
     "assinante": "Mauro Martins Alves Machado - Maj Av - Comandante do 1° Esquadrão",
-    "ordens_especiais": "Santiago atua como tripulante apenas nos trechos SBBR-SBSC-SBGL e retorna a bordo da aeronave VC-2 2590."
+    "ordens_especiais": "Santiago atua como tripulante apenas nos trechos SBBR-SBSC-SBGL e retorna a bordo da aeronave VC-2 2590.",
+    "data": "2026-03-06"
   },
   {
     "om": "94/GTE-1/2026",
