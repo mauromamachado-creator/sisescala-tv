@@ -768,15 +768,25 @@ function renderScreen0(){
   const todayData=diarioData.find(d=>{const ds=d.date;return ds.getDate()===td.getDate()&&ds.getMonth()===td.getMonth()&&ds.getFullYear()===td.getFullYear();});
   const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
   html+=`<div class="panel-title"><span class="icon">📋</span> Missões de Hoje — ${todayStr} (${dayNames[td.getDay()]})</div>`;
-  if(todayData&&todayData.legs.length){
+  const todayDayNameDash=dayNames[td.getDay()];
+  const todayConfirmDash=confirmaData.filter(c=>c.dia.toUpperCase()===todayDayNameDash);
+  if(todayConfirmDash.length){
+    for(const c of todayConfirmDash){
+      const anvColor=c.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
+      html+=`<div class="mission-card">
+        <div style="min-width:55px;text-align:center;font-weight:900;font-size:.95rem;color:${anvColor}">${c.anv}</div>
+        <div class="mission-body"><div class="mission-title">SAVISO ${c.dia} — Missão ${c.letra}</div><div class="mission-sub">${c.escalados.join(' / ')}</div></div>
+        </div>`;
+    }
+    html+='<div style="font-size:.72rem;color:var(--green);margin-top:6px">✅ Escala confirmada (SAVISO)</div>';
+  }else if(todayData&&todayData.legs.length){
     for(const leg of todayData.legs){
       const routeParts=leg.route.replace(/-/g,' → ');
-      const extraTag='';
       const anvTxt=todayData.aeronave&&todayData.aeronave!=='AERONAVE'?todayData.aeronave:'';
       const anvDisplay=leg.isExtra?'FAB 2590':anvTxt;
       html+=`<div class="mission-card">
         <div style="min-width:55px;text-align:center;font-weight:900;font-size:.95rem;color:var(--vc1)">${leg.dep}</div>
-        <div class="mission-body"><div class="mission-title">${routeParts}${extraTag}</div><div class="mission-sub">${anvDisplay?'<span style="color:var(--vc1);font-weight:700">'+anvDisplay+'</span> · ':''}${leg.pilots.join('/')}${leg.fuel?' · '+leg.fuel+'t':''}</div></div>
+        <div class="mission-body"><div class="mission-title">${routeParts}</div><div class="mission-sub">${anvDisplay?'<span style="color:var(--vc1);font-weight:700">'+anvDisplay+'</span> · ':''}${leg.pilots.join('/')}${leg.fuel?' · '+leg.fuel+'t':''}</div></div>
         <div><span class="mission-tipo">${leg.mission||'—'}</span></div></div>`;
     }
   }else{
@@ -793,7 +803,7 @@ function renderScreen0(){
         <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${day.dayName}</div>
         <div style="min-width:80px;font-size:.82rem;color:var(--vc1)">${anvLabel}</div>
         <div style="flex:1;font-size:.82rem">${day.legs.map(l=>'<span style="margin-right:12px">'+l.dep+' '+l.route.replace(/-/g,'→')+'</span>').join('')}</div>
-        <div style="font-size:.72rem;color:var(--text2)">${day.legs.length} trecho(s)</div></div>`;
+        </div>`;
     }
   }
   html+='</div>';
