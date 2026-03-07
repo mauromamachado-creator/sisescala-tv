@@ -2712,20 +2712,22 @@ function botCodigo(){
   let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">🔎 Busca de Código ICAO/IATA</div>`;
   html+=`<div style="font-size:.78rem;color:var(--text2);margin-bottom:12px">Informe nome da cidade, ICAO ou IATA:<br><code>miami</code> · <code>GRU</code> · <code>guarulhos</code></div>`;
   html+=`<div style="display:flex;gap:8px">`;
-  html+=`<input id="codQuery" type="text" placeholder="miami" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:10px;border-radius:6px;font-family:inherit;font-size:.9rem">`;
+  html+=`<input id="codQuery" type="text" placeholder="Brasília, SBBR, miami..." style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--vc1);padding:10px;border-radius:6px;font-family:inherit;font-size:.85rem" onkeydown="if(event.key==='Enter')botExecCodigo()">`;
   html+=`<button onclick="botExecCodigo()" style="background:var(--vc1);color:var(--bg);border:none;padding:10px 20px;border-radius:6px;font-family:inherit;font-weight:900;cursor:pointer">🔍</button>`;
   html+=`</div><div id="codResult" style="margin-top:12px"></div>`;
   botOut(html,false);
 }
+function removeAccents(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 function botExecCodigo(){
-  const query=(document.getElementById('codQuery')?.value||'').trim().toUpperCase();
+  const rawQuery=(document.getElementById('codQuery')?.value||'').trim();
   const result=document.getElementById('codResult');
-  if(!query){result.innerHTML='<div style="color:var(--red)">Informe a busca</div>';return;}
+  if(!rawQuery){result.innerHTML='<div style="color:var(--red)">Informe a busca</div>';return;}
+  const query=removeAccents(rawQuery).toUpperCase();
   // Search BR_AIRPORTS by ICAO, name, or municipality (same as bot)
   const results=[];
   for(const[icao,ap] of Object.entries(BR_AIRPORTS)){
-    const name=(ap.name||'').toUpperCase();
-    const city=(ap.municipality||'').toUpperCase();
+    const name=removeAccents(ap.name||'').toUpperCase();
+    const city=removeAccents(ap.municipality||'').toUpperCase();
     if(query===icao){results.unshift({icao,...ap});} // exact ICAO match first
     else if(name.includes(query)||city.includes(query)){results.push({icao,...ap});}
   }
