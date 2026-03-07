@@ -2833,6 +2833,16 @@ function botExecCodigo(){
     if(query===icao){results.unshift({icao,name:ap.name,city:ap.municipality,country:'Brasil',type:'small_airport'});}
     else if(name.includes(query)||city.includes(query)){results.push({icao,name:ap.name,city:ap.municipality,country:'Brasil',type:'small_airport'});}
   }
+  // If exact ICAO (4 letters) not found, try API fallback (same as bot for small airports)
+  if(!results.length&&/^[A-Z]{4}$/.test(query)){
+    try{
+      const raw=await proxyFetchRaw(`https://aviationweather.gov/api/data/airport?ids=${query}&format=json`);
+      if(raw){const arr=JSON.parse(raw);if(arr.length){
+        const a=arr[0];
+        results.push({icao:a.icaoId||query,iata:a.iataId||'',name:a.name||'',city:a.city||'',country:a.country||'',type:'small_airport'});
+      }}
+    }catch(e){}
+  }
   if(!results.length){
     result.innerHTML=`<div>❌ Nenhum aeroporto encontrado para <b>${rawQuery}</b>.</div>`;
     return;
