@@ -1306,7 +1306,7 @@ function renderScreenSearch(query){
     if(p.voadas!=null&&p.meta>0){const pctMeta=(p.voadas/p.meta)*100;html+=`<div class="sc-item"><div class="sc-item-label">% da Meta</div><div class="sc-item-value">${pctMeta.toFixed(1)}%</div></div>`;}
     
     // Férias
-    const pilotFerias=feriasData.filter(f=>f.trigrama===p.trigrama);
+    const pilotFerias=feriasData.filter(f=>f.trigrama===p.trigrama&&f.fim>=td);
     if(pilotFerias.length){
       const ferTxt=pilotFerias.map(f=>{
         const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
