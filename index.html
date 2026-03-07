@@ -891,7 +891,7 @@ function renderScreen2(){
       const p=sorted[i];const pct=(p.pct??0);
       const total=sorted.length;
       const barColor=i<3?'var(--green)':i>=total-1?'var(--red)':i>=total-3?'#ff8c42':'var(--yellow)';
-      const rank=i<3?`<span style="font-size:1.3rem;margin-right:4px">${medals[i]}</span>`:`<span style="display:inline-block;width:28px;text-align:center;font-size:.85rem;color:#667;margin-right:4px">${i+1}º</span>`;
+      const rank=i<3?`<span style="display:inline-block;width:28px;text-align:center;font-size:1.3rem;flex-shrink:0">${medals[i]}</span>`:`<span style="display:inline-block;width:28px;text-align:center;font-size:.85rem;color:#667;flex-shrink:0">${i+1}º</span>`;
       const highlight=i<3?'border-left:3px solid '+(i===0?'#ffd700':i===1?'#c0c0c0':'#cd7f32')+';padding-left:8px;':i>=total-1?'border-left:3px solid var(--red);padding-left:8px;':'';
       html+=`<div class="bar-row" style="${highlight}">${rank}<span class="bar-label">${p.trigrama}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.min(Math.max(pct,0),100)}%;background:${barColor}"></div></div><span class="bar-pct" style="color:${barColor}">${pct.toFixed(1)}%</span><span class="bar-hours">${fmtHours(p.voadas)}/${Math.round(p.meta)}h</span></div>`;
     }
