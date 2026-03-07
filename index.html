@@ -1370,17 +1370,19 @@ function renderScreen0(){
           // Filtrar pernas deste dia (pela data no ETD)
           const dayPernas=om.pernas.filter(p=>{const m=p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(!m)return true;const pd='20'+m[3]+'-'+m[2]+'-'+m[1];return pd===isoDate;});
           const pernas=dayPernas.length?dayPernas:om.pernas;
-          const icaos=pernas.map(p=>p.origem).concat([pernas[pernas.length-1].destino]);
-          const rota=icaos.map(c=>c.slice(-2)).join('→');
+          const rota=pernas.map(p=>p.origem).concat([pernas[pernas.length-1].destino]).join('→');
           const horaDep=pernas[0].etd.split(' ')[1]||'';
           const missoes=pernas[0].missao||'';
-          html+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-            <div style="min-width:50px;font-weight:900;color:var(--text);font-size:.82rem">${dateStr}</div>
-            <div style="min-width:28px;font-size:.7rem;color:var(--text2)">${dayName}</div>
-            <div style="font-size:.78rem;color:${anvColor};white-space:nowrap">${om.fab}</div>
-            <div style="flex:1;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rota} <span style="color:var(--text2);font-size:.68rem">${horaDep}</span> <span style="color:var(--yellow);font-size:.68rem">${missoes}</span></div>
-            <div style="font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline;white-space:nowrap" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</div>
-            </div>`;
+          html+=`<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="min-width:42px;font-weight:900;color:var(--text);font-size:.82rem">${dateStr}</div>
+              <div style="min-width:28px;font-size:.72rem;color:var(--text2)">${dayName}</div>
+              <div style="font-size:.8rem;color:${anvColor};font-weight:700;white-space:nowrap">${om.fab}</div>
+              <div style="font-size:.8rem;white-space:nowrap">${rota}</div>
+              <div style="margin-left:auto;font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline;white-space:nowrap" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</div>
+            </div>
+            <div style="padding-left:80px;font-size:.72rem;margin-top:2px"><span style="color:var(--text2)">${horaDep}</span> <span style="color:var(--yellow);font-weight:600">${missoes}</span></div>
+          </div>`;
         }
       }else if(dayDiario){
         // Sem OM - mostra diário (rascunho)
