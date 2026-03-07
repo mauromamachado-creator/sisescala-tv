@@ -2508,8 +2508,8 @@ async function botTaf(){botLastFn=botTaf;
     let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">🌦 TAF</div>`;
     const raws={};
     for(const icao of icaos.slice(0,10)){
-      const raw=await proxyFetch(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=raw`).catch(()=>'');
-      if(raw&&raw.trim()&&raw.includes(icao)){
+      const raw=await proxyFetchRaw(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=raw`).catch(()=>'');
+      if(raw&&raw.trim()&&(raw.includes('TAF')||raw.includes(icao))){
         raws[icao]=raw.trim();
         html+=`<div style="margin-bottom:10px">📍 <b>${icao}</b><br><code style="color:var(--green)">${raw.trim()}</code></div>`;
       }else{
@@ -2831,13 +2831,15 @@ async function botExecPlan(){
     html+=`<div>🔄 Solo total: <b>${formatTime(totalGroundH)}</b></div>`;
     html+=`<div>✅ <b>Tempo total: ${formatTime(totalH)}</b></div>`;
     html+=`</div>`;
-    // METAR + TAF
+    // METAR + TAF (usando proxyFetchRaw para TAF)
     const uniqueIcaos=[...new Set(icaos)];
+    const planMetars={},planTafs={};
     html+=`<div style="border-top:2px solid var(--border);margin-top:12px;padding-top:8px">`;
     html+=`<div style="font-weight:900;margin-bottom:6px">🌤 METAR</div>`;
     for(const ic of uniqueIcaos){
       const m=await proxyFetch(`https://aviationweather.gov/api/data/metar?ids=${ic}&format=raw`).catch(()=>'');
       if(m&&m.trim()&&m.includes(ic)){
+        planMetars[ic]=m.trim();
         html+=`<div style="margin-bottom:6px">📍 <b>${ic}</b><br><code style="color:var(--green)">${m.trim()}</code></div>`;
       }else{
         html+=`<div style="margin-bottom:6px">📍 <b>${ic}</b><br><i>METAR indisponível</i> 🔗 <a href="https://redemet.decea.mil.br/" target="_blank" style="color:var(--vc1)">REDEMET</a></div>`;
@@ -2846,14 +2848,20 @@ async function botExecPlan(){
     html+=`</div><div style="border-top:2px solid var(--border);margin-top:12px;padding-top:8px">`;
     html+=`<div style="font-weight:900;margin-bottom:6px">🌦 TAF</div>`;
     for(const ic of uniqueIcaos){
-      const t=await proxyFetch(`https://aviationweather.gov/api/data/taf?ids=${ic}&format=raw`).catch(()=>'');
+      const t=await proxyFetchRaw(`https://aviationweather.gov/api/data/taf?ids=${ic}&format=raw`).catch(()=>'');
       if(t&&t.trim()&&t.includes(ic)){
+        planTafs[ic]=t.trim();
         html+=`<div style="margin-bottom:6px">📍 <b>${ic}</b><br><code style="color:var(--green)">${t.trim()}</code></div>`;
       }else{
         html+=`<div style="margin-bottom:6px">📍 <b>${ic}</b><br><i>TAF indisponível</i> 🔗 <a href="https://redemet.decea.mil.br/" target="_blank" style="color:var(--vc1)">REDEMET</a></div>`;
       }
     }
     html+=`</div>`;
+    // Botão decodificar
+    if(Object.keys(planMetars).length||Object.keys(planTafs).length){
+      window._planMetars=planMetars;window._planTafs=planTafs;
+      html+=`<button onclick="botDecodePlan()" style="margin-top:8px;background:var(--bg2);border:1px solid var(--vc1);color:var(--vc1);padding:8px 16px;border-radius:6px;font-family:inherit;cursor:pointer;font-size:.8rem">📖 Decodificar METAR/TAF</button>`;
+    }
     // SkyVector
     const svRoute=icaos.join('%20');
     html+=`<div style="border-top:2px solid var(--border);margin-top:12px;padding-top:8px">🗺 <a href="https://skyvector.com/?fpl=${svRoute}" target="_blank" style="color:var(--vc1)">Abrir rota no SkyVector ↗</a></div>`;
@@ -2862,6 +2870,25 @@ async function botExecPlan(){
   }catch(e){result.innerHTML=`<div style="color:var(--red)">❌ Erro: ${e.message}</div>`;}
 }
 
+function botDecodePlan(){
+  const metars=window._planMetars||{};const tafs=window._planTafs||{};
+  const result=document.getElementById('planResult');
+  let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">📖 METAR/TAF Decodificados</div>`;
+  for(const[ic,raw] of Object.entries(metars)){
+    html+=`<div style="border-top:2px solid var(--border);padding-top:8px;margin-top:8px">`;
+    html+=`<div style="font-weight:900;margin-bottom:4px">🌤 <b>METAR ${ic}</b></div>`;
+    html+=`<code style="color:var(--green);font-size:.75rem">${raw}</code>`;
+    html+=`<div style="margin-top:6px;white-space:pre-line;font-size:.8rem;line-height:1.6">${formatDecodedMetar(decodeMetar(raw))}</div></div>`;
+  }
+  for(const[ic,raw] of Object.entries(tafs)){
+    html+=`<div style="border-top:2px solid var(--border);padding-top:8px;margin-top:8px">`;
+    html+=`<div style="font-weight:900;margin-bottom:4px">🌦 <b>TAF ${ic}</b></div>`;
+    html+=`<code style="color:var(--green);font-size:.75rem">${raw}</code>`;
+    html+=`<div style="margin-top:6px;white-space:pre-line;font-size:.8rem;line-height:1.6">${decodeTaf(raw)}</div></div>`;
+  }
+  html+=`<div style="margin-top:12px;font-size:.72rem;color:var(--text2)">${DISCLAIMER}</div>`;
+  result.innerHTML=html;
+}
 // ---- Msg Padrão (same as bot /planejamento — SBBR round trip) ----
 function botMsgPadrao(){
   let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">📄 Mensagem Padrão</div>`;
