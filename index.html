@@ -2582,8 +2582,22 @@ function getDiariasDownloaded(){return JSON.parse(localStorage.getItem('sisgopa_
 function setDiariaDownloaded(omId){const d=getDiariasDownloaded();d[omId]=Date.now();localStorage.setItem('sisgopa_diarias_done',JSON.stringify(d));}
 function getDiariasConcluidas(){return JSON.parse(localStorage.getItem('sisgopa_diarias_concluidas')||'{}');}
 function setDiariaConcluida(omId){
-  if(!confirm('A solicitação de diária da OM '+omId+' foi assinada e enviada à PR?\n\nAo confirmar, ela será arquivada como concluída.'))return;
-  const d=getDiariasConcluidas();d[omId]=Date.now();localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .3s ease';
+  ov.innerHTML=`<div style="max-width:380px;width:calc(100% - 40px);background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #64b4ff;border-radius:12px;padding:20px;box-shadow:0 8px 32px rgba(100,180,255,.2);font-family:inherit" onclick="event.stopPropagation()">
+    <div style="font-size:1.1rem;font-weight:700;color:#64b4ff;margin-bottom:12px">📤 Concluir Diária</div>
+    <div style="color:#c0c8d8;font-size:.85rem;line-height:1.6;margin-bottom:20px">A solicitação de diária da <b style="color:var(--vc1)">OM ${omId}</b> foi assinada e enviada à PR?<br><br><span style="color:var(--text2);font-size:.78rem">Ao confirmar, ela será arquivada como concluída.</span></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button id="_dcCancel" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);padding:8px 18px;border-radius:6px;cursor:pointer;font-size:.82rem">Cancelar</button>
+      <button id="_dcConfirm" style="background:#64b4ff;color:#000;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:700">Confirmar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ov.style.opacity='1';}));
+  const close=()=>{ov.style.opacity='0';setTimeout(()=>ov.remove(),300);};
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+  ov.querySelector('#_dcCancel').onclick=close;
+  ov.querySelector('#_dcConfirm').onclick=()=>{close();const d=getDiariasConcluidas();d[omId]=Date.now();localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();};
 }
 function undoDiariaConcluida(omId){const d=getDiariasConcluidas();delete d[omId];localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();}
 function exportDiariasCSV(){
