@@ -1,5 +1,30 @@
 # CHANGELOG — SisGOPA
 
+## v4.6 — 07/03/2026
+### Novidades
+- **Alertas Pop-up**: notificações automáticas de viagens internacionais do PR (confirmadas e canceladas), com validade configurável
+- **Modal detalhe OM**: clicar em "📋 OM" mostra tripulação completa + combustível + pernas de voo
+- **Missões para todos**: mecânicos, comissários, op.comms e médicos veem suas próximas missões na BUSCA (via dados das OMs)
+- **Novidades no rodapé**: link com changelog e dicas de uso
+- **Safari/Chrome mobile**: barra de endereço minimiza ao rolar (scroll nativo)
+- **Links clicáveis com underline**: padrão visual para indicar interatividade
+- **"Previsão Missões Int."**: título renomeado no dashboard
+
+### Correções
+- Scroll infinito no mobile corrigido (telas inativas com display:none)
+- Footer visível no Android (100dvh)
+- Pop-up centralizado na tela
+
+## v4.5 — 07/03/2026
+### Novidades
+- **Tela BOT** (screen 11): METAR, TAF, NOTAMs, combustível, planejamento de voo, Código ICAO e mais
+- **Tela REPORTAR** (screen 12): envio de bugs/sugestões direto do sistema
+- **Animação loading**: avião SVG azul com rastro pontilhado
+- **Decodificar METAR/TAF**: tradução completa em português
+- **Status monitor**: 15 fontes rastreadas individualmente com painel clicável
+- **BOT Combustível**: double check CELOG site + planilha
+- **BOT Código ICAO**: 5259 aeroportos mundiais + fallback API
+
 ## v4.4 — 07/03/2026
 ### Novidades
 - **Cartões mobile**: layout em cards (grid 2 colunas) em vez de tabela
