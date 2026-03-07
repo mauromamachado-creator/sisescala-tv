@@ -349,6 +349,7 @@ footer a:hover{text-decoration:underline}
     <button onclick="goScreen(8)" id="btn8">ESCALA</button>
     <button onclick="goScreen(10)" id="btn10">CARTÕES</button>
     <button onclick="goScreen(11)" id="btn11">BOT</button>
+    <button onclick="goScreen(12)" id="btn12" style="color:#ff6b6b">REPORTAR</button>
     <button onclick="goScreen(9)" id="btn9" class="desktop-only">📺 TV</button>
   </div>
   <div class="header-right">
@@ -375,6 +376,7 @@ footer a:hover{text-decoration:underline}
   <div class="screen" id="screen9"></div>
   <div class="screen" id="screen10"></div>
   <div class="screen" id="screen11"></div>
+  <div class="screen" id="screen12"></div>
   <div class="loading" id="loadingMsg">Carregando dados...</div>
 </main>
 
@@ -388,6 +390,101 @@ footer a:hover{text-decoration:underline}
   <span>SisGOPA v4.4 — Desenvolvido para o GTE — Major Machado</span>
   <a onclick="loadAllData()">Atualizar dados</a>
 </footer>
+
+<!-- EMERGENCY ERROR REPORTER — runs independently of main script -->
+<div id="emergencyBtn" style="display:none;position:fixed;bottom:20px;right:20px;z-index:99999;background:#ff4444;color:#fff;border:none;padding:14px 20px;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;box-shadow:0 4px 20px rgba(255,0,0,.4);animation:emergPulse 2s ease-in-out infinite" onclick="showEmergencyReport()">🚨 Reportar Erro</div>
+<style>@keyframes emergPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}</style>
+<script>
+// Error capture — runs before everything
+window._errorLog=[];window._maxErrors=50;
+window.onerror=function(msg,src,line,col,err){
+  if(window._errorLog.length<window._maxErrors)window._errorLog.push({t:Date.now(),msg:String(msg),src:String(src),line,col,stack:err?.stack||''});
+};
+window.addEventListener('unhandledrejection',function(e){
+  if(window._errorLog.length<window._maxErrors)window._errorLog.push({t:Date.now(),msg:'UnhandledRejection: '+String(e.reason),stack:e.reason?.stack||''});
+});
+// Emergency mode — if main script crashes, show floating button after 15s
+setTimeout(function(){
+  if(typeof loadAllData==='undefined'){
+    document.getElementById('emergencyBtn').style.display='block';
+  }
+},15000);
+function showEmergencyReport(){
+  // Minimal inline report form that works even with broken main script
+  const d=document.createElement('div');d.id='emergOverlay';
+  d.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;padding:20px';
+  d.innerHTML=`<div style="background:#1a1f2e;border-radius:16px;padding:24px;max-width:500px;width:100%;color:#e0e6f0;font-family:system-ui">
+    <h2 style="margin:0 0 8px;color:#ff6b6b">🚨 Reporte de Erro</h2>
+    <p style="color:#8892a4;margin:0 0 16px;font-size:.85rem">O sistema não carregou corretamente. Descreva o que aconteceu.</p>
+    <select id="emType" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2a3040;background:#0d1220;color:#e0e6f0;margin-bottom:12px;font-size:.9rem">
+      <option value="bug">🐛 Bug / Erro</option><option value="sugestao">💡 Sugestão</option></select>
+    <textarea id="emDesc" placeholder="Descreva o problema..." style="width:100%;min-height:100px;padding:10px;border-radius:8px;border:1px solid #2a3040;background:#0d1220;color:#e0e6f0;resize:vertical;font-size:.9rem;box-sizing:border-box"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button onclick="sendEmergencyReport()" style="flex:1;padding:12px;border-radius:8px;border:none;background:#ff6b6b;color:#fff;font-weight:700;cursor:pointer">ENVIAR</button>
+      <button onclick="document.getElementById('emergOverlay').remove()" style="padding:12px 20px;border-radius:8px;border:1px solid #2a3040;background:transparent;color:#8892a4;cursor:pointer">FECHAR</button>
+    </div>
+    <div id="emStatus" style="margin-top:8px;font-size:.8rem;color:#8892a4"></div>
+  </div>`;
+  document.body.appendChild(d);
+}
+async function sendEmergencyReport(){
+  const type=document.getElementById('emType')?.value||'bug';
+  const desc=document.getElementById('emDesc')?.value||'(sem descrição)';
+  const status=document.getElementById('emStatus');
+  if(status)status.textContent='Enviando...';
+  await _sendReport(type,desc,[]);
+}
+async function _sendReport(type,desc,diagnostics){
+  const status=document.getElementById('emStatus')||document.getElementById('reportStatus');
+  const diag={
+    tipo:type,descricao:desc,
+    timestamp:new Date().toISOString(),
+    url:location.href,
+    userAgent:navigator.userAgent,
+    tela:window.innerWidth+'x'+window.innerHeight,
+    telaAtual:typeof currentScreen!=='undefined'?currentScreen:'N/A',
+    errosCapturados:window._errorLog.slice(-10),
+    fontes:typeof sourceStatus!=='undefined'?JSON.stringify(sourceStatus):'N/A',
+    ultimoLoad:typeof lastLoadTime!=='undefined'?new Date(lastLoadTime).toISOString():'N/A',
+    pilotos:typeof pilotData!=='undefined'?pilotData.length:'N/A',
+    diagnosticos:diagnostics||[]
+  };
+  const emoji=type==='bug'?'🐛':'💡';
+  const label=type==='bug'?'BUG REPORT':'SUGESTÃO';
+  let msg=`${emoji} *${label} — SisGOPA*\n\n`;
+  msg+=`📝 *Descrição:* ${desc}\n\n`;
+  msg+=`📊 *Diagnóstico:*\n`;
+  msg+=`• Horário: ${diag.timestamp}\n`;
+  msg+=`• Tela: ${diag.tela} | Screen: ${diag.telaAtual}\n`;
+  msg+=`• Pilotos: ${diag.pilotos}\n`;
+  msg+=`• Último load: ${diag.ultimoLoad}\n`;
+  msg+=`• Fontes: ${diag.fontes}\n`;
+  if(diag.errosCapturados.length){
+    msg+=`\n⚠️ *Erros capturados (últimos ${diag.errosCapturados.length}):*\n`;
+    diag.errosCapturados.forEach((e,i)=>{msg+=`${i+1}. ${e.msg}${e.line?' (L'+e.line+')':''}\n`;});
+  }
+  if(diagnostics.length){
+    msg+=`\n🔍 *Checks:*\n`;
+    diagnostics.forEach(d=>{msg+=`• ${d}\n`;});
+  }
+  msg+=`\n🌐 ${diag.url}\n📱 ${diag.userAgent.substring(0,80)}`;
+  try{
+    const r=await fetch('https://api.telegram.org/bot8622080128:AAGmCjyAtDpbxNUmzJdojTMQzKsJhfWuPdM/sendMessage',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:673591486,text:msg,parse_mode:'Markdown'})
+    });
+    if(r.ok){
+      if(status)status.innerHTML='<span style="color:#4ecdc4">✅ Reporte enviado! Ravi vai analisar.</span>';
+      const ta=document.getElementById('emDesc')||document.getElementById('reportDesc');
+      if(ta)ta.value='';
+    }else{
+      if(status)status.innerHTML='<span style="color:#ff6b6b">❌ Falha ao enviar. Tente novamente.</span>';
+    }
+  }catch(e){
+    if(status)status.innerHTML='<span style="color:#ff6b6b">❌ Sem conexão. Tente novamente.</span>';
+  }
+}
+</script>
 
 <script>
 const SHEET='1gwkeV2iA_JPTZ3rp0wf1PvXUI0TiOzNg3Xd4DhWwpao';
@@ -2012,6 +2109,77 @@ function renderScreenTV(){
   if(tvClockEl){const d=new Date();const opts={timeZone:'America/Sao_Paulo'};tvClockEl.textContent=d.toLocaleDateString('pt-BR',{...opts,weekday:'long',day:'numeric',month:'long',year:'numeric'})+' — '+d.toLocaleTimeString('pt-BR',{...opts,hour:'2-digit',minute:'2-digit',second:'2-digit'});}
 }
 
+function renderScreenReport(){
+  const c=document.getElementById('screen12');
+  let html=`<div style="max-width:600px;margin:0 auto;padding:20px">
+    <h2 style="color:#ff6b6b;margin:0 0 4px">🚨 Reportar Erro / Sugestão</h2>
+    <p style="color:var(--text2);margin:0 0 20px;font-size:.85rem">Descreva o problema ou sugestão. Um diagnóstico automático será incluído no envio.</p>
+    <div style="margin-bottom:16px">
+      <label style="color:var(--text2);font-size:.8rem">Tipo do reporte:</label>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button id="repTypeBug" onclick="setReportType('bug')" style="flex:1;padding:10px;border-radius:8px;border:2px solid #ff6b6b;background:#ff6b6b22;color:#ff6b6b;font-weight:700;cursor:pointer">🐛 Bug / Erro</button>
+        <button id="repTypeSug" onclick="setReportType('sugestao')" style="flex:1;padding:10px;border-radius:8px;border:2px solid #2a3040;background:transparent;color:var(--text2);font-weight:700;cursor:pointer">💡 Sugestão</button>
+      </div>
+    </div>
+    <textarea id="reportDesc" placeholder="Descreva o que aconteceu ou sua sugestão..." style="width:100%;min-height:120px;padding:12px;border-radius:8px;border:1px solid #2a3040;background:#0d1220;color:var(--text1);resize:vertical;font-size:.9rem;box-sizing:border-box;font-family:inherit"></textarea>
+    <button onclick="submitReport()" style="width:100%;padding:14px;border-radius:8px;border:none;background:#ff6b6b;color:#fff;font-weight:700;font-size:1rem;cursor:pointer;margin-top:12px">ENVIAR REPORTE</button>
+    <div id="reportStatus" style="margin-top:8px;font-size:.85rem;text-align:center"></div>
+    <div style="margin-top:24px;padding:16px;border-radius:8px;background:#0d1220;border:1px solid #1a2030">
+      <h3 style="color:var(--text2);margin:0 0 8px;font-size:.85rem">📊 Diagnóstico automático (será incluído)</h3>
+      <div id="reportDiag" style="font-size:.75rem;color:var(--text2);font-family:monospace;line-height:1.6"></div>
+    </div>
+    <div style="margin-top:16px;padding:12px;border-radius:8px;background:#1a2a1a;border:1px solid #2a4a2a">
+      <p style="color:#4ecdc4;margin:0;font-size:.8rem">🤖 <b>Bugs</b> serão verificados e corrigidos automaticamente pelo Ravi (sem alterar funcionalidades).<br>
+      💡 <b>Sugestões</b> serão compiladas em relatório para aprovação do Major Machado.</p>
+    </div>
+  </div>`;
+  c.innerHTML=html;
+  updateReportDiag();
+}
+let _reportType='bug';
+function setReportType(t){
+  _reportType=t;
+  const bugBtn=document.getElementById('repTypeBug'),sugBtn=document.getElementById('repTypeSug');
+  if(t==='bug'){
+    bugBtn.style.borderColor='#ff6b6b';bugBtn.style.background='#ff6b6b22';bugBtn.style.color='#ff6b6b';
+    sugBtn.style.borderColor='#2a3040';sugBtn.style.background='transparent';sugBtn.style.color='var(--text2)';
+  }else{
+    sugBtn.style.borderColor='#4ecdc4';sugBtn.style.background='#4ecdc422';sugBtn.style.color='#4ecdc4';
+    bugBtn.style.borderColor='#2a3040';bugBtn.style.background='transparent';bugBtn.style.color='var(--text2)';
+  }
+}
+function updateReportDiag(){
+  const d=document.getElementById('reportDiag');if(!d)return;
+  const checks=[];
+  const pilotsOk=typeof pilotData!=='undefined'&&(pilotData.vc1?.length+pilotData.vc2?.length)>0;
+  checks.push(`Pilotos: ${pilotsOk?'✅ '+(pilotData.vc1.length+pilotData.vc2.length)+' carregados':'❌ não carregados'}`);
+  const flightsOk=typeof flights!=='undefined'&&flights.length>0;
+  checks.push(`Voos: ${flightsOk?'✅ '+flights.length+' registros':'❌ não carregados'}`);
+  const metarOk=typeof metarMulti!=='undefined'&&Object.keys(metarMulti).length>0;
+  checks.push(`METAR: ${metarOk?'✅ '+Object.keys(metarMulti).join(', '):'⚠️ sem dados'}`);
+  const cartoesOk=typeof cartoesData!=='undefined'&&cartoesData.length>0;
+  checks.push(`Cartões: ${cartoesOk?'✅ '+cartoesData.length+' registros':(typeof cartoesFailed!=='undefined'&&cartoesFailed?'❌ falhou':'⚠️ sem dados')}`);
+  checks.push(`Último load: ${typeof lastLoadTime!=='undefined'?new Date(lastLoadTime).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'}):'N/A'}`);
+  if(typeof sourceStatus!=='undefined'){
+    const failed=Object.entries(sourceStatus).filter(([k,v])=>v==='fail').map(([k])=>k);
+    checks.push(`Fontes com falha: ${failed.length?'⚠️ '+failed.join(', '):'✅ nenhuma'}`);
+  }
+  checks.push(`Erros JS: ${window._errorLog.length?'⚠️ '+window._errorLog.length+' erros':'✅ 0'}`);
+  checks.push(`Tela: ${window.innerWidth}×${window.innerHeight}`);
+  d.innerHTML=checks.map(c=>`<div>${c}</div>`).join('');
+  return checks;
+}
+async function submitReport(){
+  const desc=document.getElementById('reportDesc')?.value;
+  if(!desc||!desc.trim()){
+    document.getElementById('reportStatus').innerHTML='<span style="color:#ff6b6b">Escreva uma descrição antes de enviar.</span>';
+    return;
+  }
+  document.getElementById('reportStatus').textContent='Enviando...';
+  const checks=updateReportDiag();
+  await _sendReport(_reportType,desc.trim(),checks);
+}
+
 function renderAll(){
   document.getElementById('loadingMsg').style.display='none';
   const allPilots=[...pilotData.vc1,...pilotData.vc2];const td=nowBRT();
@@ -2022,7 +2190,7 @@ function renderAll(){
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
   const uniqueOMs=new Set(flightsThisYear.map(f=>f.om).filter(Boolean));
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
-  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();renderScreenTV();renderScreenCartoes();renderScreenBot();
+  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();renderScreenTV();renderScreenCartoes();renderScreenBot();renderScreenReport();
 }
 
 // ===== CARTÕES =====
