@@ -368,6 +368,7 @@ let currentScreen=0;
 let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[], diarioData=[], acntData=[], checklistData=[], metarRaw='', metarDecoded={};
 let anualVC1={voadas:0,esforco:650}, anualVC2={voadas:0,esforco:1220};
 let escalaData={vc1:{consulta:'',raio:[]},vc2:{consulta:'',raio:[]}};
+let confirmaData=[];
 
 function parseCSV(text){
   const rows=[];let row=[],field='',inQ=false;
@@ -1313,9 +1314,10 @@ async function fetchEscalaCSV(sheetName){
 }
 async function fetchEscala(){
   try{
-    const [c1,c2,r1,r2]=await Promise.all([
+    const [c1,c2,r1,r2,sav]=await Promise.all([
       fetchEscalaCSV('Consulta VC-1'),fetchEscalaCSV('Consulta VC-2'),
-      fetchEscalaCSV('Raio Final VC-1'),fetchEscalaCSV('Raio Final VC-2')]);
+      fetchEscalaCSV('Raio Final VC-1'),fetchEscalaCSV('Raio Final VC-2'),
+      fetchEscalaCSV('SAVISO')]);
     escalaData.vc1.consulta=c1.length?String(c1[0][0]||''):'';
     escalaData.vc2.consulta=c2.length?String(c2[0][0]||''):'';
     const parseRaio=(rows)=>{
@@ -1348,11 +1350,48 @@ async function fetchEscala(){
     };
     escalaData.vc1.missions=getMissions(r1);
     escalaData.vc2.missions=getMissions(r2);
+    // Parse SAVISO (confirmed missions)
+    confirmaData=[];
+    if(sav.length>1){
+      for(let i=1;i<sav.length;i++){
+        const row=sav[i];
+        const dia=String(row[0]||'').trim();if(!dia)continue;
+        const escalados=String(row[1]||'').trim().split('\n').map(s=>s.trim()).filter(Boolean);
+        const anv=String(row[7]||'').trim();
+        const num=String(row[8]||'').trim();
+        const letra=String(row[9]||'').trim();
+        confirmaData.push({dia,escalados,anv,num,letra});
+      }
+    }
   }catch(e){console.warn('fetchEscala error',e);}
 }
 
 function renderScreenEscala(){
   let html='<h2>📋 Escalação de Missões</h2>';
+  
+  // Escala Confirmada
+  if(confirmaData.length){
+    html+=`<div style="margin-bottom:24px;padding:16px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.25);border-radius:10px">`;
+    html+=`<div style="font-size:.9rem;font-weight:900;color:var(--green);margin-bottom:12px">✅ ESCALA ENCERRADA — TRIPULAÇÕES CONFIRMADAS</div>`;
+    // Extract dates from consultas
+    const dateInfo=[];
+    [escalaData.vc1.consulta,escalaData.vc2.consulta].forEach(c=>{
+      if(!c)return;const m=c.match(/dias?\s+([\d,\s]+e?\s*\d*)\s+de\s+(\w+)/i);
+      if(m)dateInfo.push(m[0]);
+    });
+    if(dateInfo.length)html+=`<div style="font-size:.78rem;color:var(--text2);margin-bottom:10px">📅 ${dateInfo[0]}</div>`;
+    
+    for(const conf of confirmaData){
+      const anvColor=conf.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
+      html+=`<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">`;
+      html+=`<div style="min-width:36px;font-weight:900;color:${anvColor};font-size:.8rem">${conf.anv}</div>`;
+      html+=`<div style="min-width:28px;font-weight:900;color:var(--text);font-size:.8rem">${conf.letra})</div>`;
+      html+=`<div style="min-width:50px;font-size:.78rem;color:var(--text2)">SAVISO ${conf.dia}</div>`;
+      html+=`<div style="font-size:.8rem;font-weight:700">${conf.escalados.join(' / ')}</div>`;
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  }
   
   const renderAnv=(label,data,colorVar)=>{
     html+=`<div style="margin-bottom:24px">`;
