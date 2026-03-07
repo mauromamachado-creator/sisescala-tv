@@ -4256,6 +4256,7 @@ async function loadAllData(){
     updateStatusPanel();
     checklistData=parseChecklist(planRows);
     renderAll();
+    fetchAllAlerts();
   }catch(e){
     console.error(e);
     dot.className='status-dot err';
@@ -4385,7 +4386,7 @@ function dismissAlert(){
   localStorage.setItem('sisgopa_dismissed_alerts',JSON.stringify(_alertDismissed));
   const ov=document.getElementById('alertOverlay');ov.style.opacity='0';setTimeout(()=>{ov.style.display='none';},400);
 }
-fetchAllAlerts();setInterval(fetchAllAlerts,600000);
+setInterval(fetchAllAlerts,600000);
 
 goScreen(0);
 </script>
