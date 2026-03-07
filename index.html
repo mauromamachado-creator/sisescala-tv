@@ -1410,11 +1410,7 @@ function renderScreenSearch(query){
     // Grupo
     if(p.grupo)html+=`<div class="sc-item"><div class="sc-item-label">Grupo</div><div class="sc-item-value">${p.grupo}</div></div>`;
     
-    // CVI
-    if(p.cvi)html+=`<div class="sc-item"><div class="sc-item-label">CVI</div><div class="sc-item-value">${p.cvi}</div></div>`;
-    
-    // INSP Saúde
-    if(p.inspSau)html+=`<div class="sc-item"><div class="sc-item-label">Inspeção Saúde</div><div class="sc-item-value">${p.inspSau}</div></div>`;
+    // CVI e Inspeção Saúde agora vêm dos Cartões (abaixo)
     
     // Porcentagem
     if(p.voadas!=null&&p.meta>0){const pctMeta=(p.voadas/p.meta)*100;html+=`<div class="sc-item"><div class="sc-item-label">% da Meta</div><div class="sc-item-value">${pctMeta.toFixed(1)}%</div></div>`;}
@@ -2018,20 +2014,20 @@ function renderCartoesNaBusca(trigrama){
   if(!p)return'';
   const hoje=nowBRT();
   const cartoes=[
-    {nome:'Insp. Saúde',val:p.inspSaude},{nome:'CRM',val:p.crm},{nome:'CVI/RVSM',val:p.cviRvsm},
+    {nome:'Insp. Saúde',val:p.inspSaude},{nome:'CVI/RVSM',val:p.cviRvsm},{nome:'CRM',val:p.crm},
     {nome:'Simulador',val:p.simulador},{nome:'TDIE',val:p.tdie},{nome:'Passaporte',val:p.passaporte},
     {nome:'C. Operacional',val:p.cOperacional},{nome:'ILS CAT II/III',val:p.ilsCat},
     {nome:'TAI Prova',val:p.taiProva},{nome:'TAI Voo',val:p.taiVoo},
     {nome:'Est. Fisiológico',val:p.estFisio},{nome:'ICAO',val:p.icao}
   ];
-  let html=`<div class="sc-item" style="grid-column:1/-1"><div class="sc-item-label">📋 Cartões</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">`;
+  let html='';
   cartoes.forEach(c=>{
     if(!c.val||(!c.val.raw&&!c.val.date))return;
-    if(c.val.raw==='---')return;
+    if(c.val.raw==='---'||c.val.raw==='')return;
     const cor=cartaoColor(c.val,hoje);
-    html+=`<div style="background:${cor.bg};border:1px solid ${cor.color};color:${cor.color};padding:3px 8px;border-radius:4px;font-size:.72rem;font-weight:700" title="${cor.days!=null?(cor.days<0?'Vencido há '+Math.abs(cor.days)+'d':cor.days+'d restantes'):''}"><span style="color:var(--text2);font-weight:400">${c.nome}:</span> ${cor.label}</div>`;
+    const daysStr=cor.days!=null?(cor.days<0?`(vencido ${Math.abs(cor.days)}d)`:`(${cor.days}d)`):'';
+    html+=`<div class="sc-item"><div class="sc-item-label">${c.nome}</div><div class="sc-item-value" style="color:${cor.color}">${cor.label} <span style="font-size:.68rem;color:var(--text2)">${daysStr}</span></div></div>`;
   });
-  html+=`</div></div>`;
   return html;
 }
 
