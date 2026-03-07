@@ -135,7 +135,7 @@ h3{font-size:1.05rem;margin:16px 0 10px;color:var(--text2);border-bottom:1px sol
 .mission-date{text-align:right;min-width:110px;flex-shrink:0}
 .mission-date-main{font-size:.82rem;font-weight:700}
 .mission-date-range{font-size:.68rem;color:var(--text2)}
-.mission-tipo{padding:2px 6px;border-radius:3px;font-size:.68rem;font-weight:900;display:inline-block;background:rgba(221,204,85,.12);color:#ddcc55;border:1px solid rgba(221,204,85,.25);min-width:36px;text-align:center;flex-shrink:0}
+.mission-tipo{padding:2px 6px;border-radius:3px;font-size:.68rem;font-weight:900;display:inline-block;background:rgba(221,204,85,.12);color:#ddcc55;border:1px solid rgba(221,204,85,.25);min-width:60px;text-align:center;flex-shrink:0}
 .mission-ongoing{animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 
@@ -310,8 +310,8 @@ footer a:hover{text-decoration:underline}
     </div>
     <div id="kpi-box" style="display:flex;gap:24px;margin-left:24px">
       <div style="text-align:center"><div id="kpi-trip" style="font-size:1.5rem;font-weight:900;color:var(--vc1)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Tripulantes</div></div>
-      <div style="text-align:center"><div id="kpi-miss" style="font-size:1.5rem;font-weight:900;color:var(--vc2)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Missoes</div></div>
       <div style="text-align:center"><div id="kpi-aptos" style="font-size:1.5rem;font-weight:900;color:var(--green)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Disponíveis</div></div>
+      <div style="text-align:center"><div id="kpi-miss" style="font-size:1.5rem;font-weight:900;color:var(--vc2)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Missoes</div></div>
     </div>
   </div>
   <div class="nav-btns">
@@ -690,6 +690,23 @@ function renderScreen0(){
   const medals=['🥇','🥈','🥉'];
   let html='<div class="dash-layout">';
 
+  // --- METAR SBBR (primeiro painel) ---
+  if(metarDecoded.station){
+    html+='<div class="dash-panel" style="grid-column:1/-1;border-top:3px solid var(--vc1)">';
+    html+='<div class="panel-title"><span class="icon">🌤️</span> METAR — SBBR (Brasília)</div>';
+    html+=`<div style="font-family:monospace;font-size:.78rem;color:var(--vc1);background:var(--bg);padding:8px 12px;border-radius:6px;margin-bottom:12px;word-break:break-all">${metarDecoded.raw}</div>`;
+    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;font-size:.82rem">';
+    if(metarDecoded.time)html+=`<div>🕐 <span style="color:var(--text2)">Observação:</span> ${metarDecoded.time}</div>`;
+    if(metarDecoded.wind)html+=`<div>💨 <span style="color:var(--text2)">Vento:</span> ${metarDecoded.wind}</div>`;
+    if(metarDecoded.vis)html+=`<div>👁 <span style="color:var(--text2)">Visibilidade:</span> ${metarDecoded.vis}</div>`;
+    if(metarDecoded.temp)html+=`<div>🌡 <span style="color:var(--text2)">Temperatura:</span> ${metarDecoded.temp}</div>`;
+    if(metarDecoded.dewpoint)html+=`<div>💧 <span style="color:var(--text2)">Ponto de orvalho:</span> ${metarDecoded.dewpoint}</div>`;
+    if(metarDecoded.qnh)html+=`<div>📊 <span style="color:var(--text2)">QNH:</span> ${metarDecoded.qnh}</div>`;
+    if(metarDecoded.wx.length)html+=`<div>⛅ <span style="color:var(--text2)">Tempo:</span> ${metarDecoded.wx.join(', ')}</div>`;
+    if(metarDecoded.clouds.length)html+=`<div style="grid-column:1/-1">☁️ <span style="color:var(--text2)">Nuvens:</span> ${metarDecoded.clouds.join(' | ')}</div>`;
+    html+='</div></div>';
+  }
+
   // --- TOP 3 VC-1 ---
   html+='<div class="dash-panel p-vc1">';
   html+='<div class="panel-title"><span class="icon">✈️</span> Top Voados — VC-1</div>';
@@ -744,23 +761,6 @@ function renderScreen0(){
     html+='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:8px"><div style="font-size:2rem">✅</div><div style="color:var(--green);font-weight:700">Todos disponíveis</div></div>';
   }
   html+='</div>';
-
-  // --- METAR SBBR ---
-  if(metarDecoded.station){
-    html+='<div class="dash-panel" style="grid-column:1/-1;border-top:3px solid var(--vc1)">';
-    html+='<div class="panel-title"><span class="icon">🌤️</span> METAR — SBBR (Brasília)</div>';
-    html+=`<div style="font-family:monospace;font-size:.78rem;color:var(--vc1);background:var(--bg);padding:8px 12px;border-radius:6px;margin-bottom:12px;word-break:break-all">${metarDecoded.raw}</div>`;
-    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;font-size:.82rem">';
-    if(metarDecoded.time)html+=`<div>🕐 <span style="color:var(--text2)">Observação:</span> ${metarDecoded.time}</div>`;
-    if(metarDecoded.wind)html+=`<div>💨 <span style="color:var(--text2)">Vento:</span> ${metarDecoded.wind}</div>`;
-    if(metarDecoded.vis)html+=`<div>👁 <span style="color:var(--text2)">Visibilidade:</span> ${metarDecoded.vis}</div>`;
-    if(metarDecoded.temp)html+=`<div>🌡 <span style="color:var(--text2)">Temperatura:</span> ${metarDecoded.temp}</div>`;
-    if(metarDecoded.dewpoint)html+=`<div>💧 <span style="color:var(--text2)">Ponto de orvalho:</span> ${metarDecoded.dewpoint}</div>`;
-    if(metarDecoded.qnh)html+=`<div>📊 <span style="color:var(--text2)">QNH:</span> ${metarDecoded.qnh}</div>`;
-    if(metarDecoded.wx.length)html+=`<div>⛅ <span style="color:var(--text2)">Tempo:</span> ${metarDecoded.wx.join(', ')}</div>`;
-    if(metarDecoded.clouds.length)html+=`<div style="grid-column:1/-1">☁️ <span style="color:var(--text2)">Nuvens:</span> ${metarDecoded.clouds.join(' | ')}</div>`;
-    html+='</div></div>';
-  }
 
   // --- MISSÕES DE HOJE ---
   html+='<div class="dash-panel p-miss" style="grid-column:1/-1">';
@@ -1599,7 +1599,7 @@ function renderAll(){
   document.getElementById('loadingMsg').style.display='none';
   const allPilots=[...pilotData.vc1,...pilotData.vc2];const td=nowBRT();
   document.getElementById('kpi-trip').textContent=allPilots.filter(p=>p.grupo!=='OUT').length;
-  const totalAptos=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
+  const totalAptos=allPilots.filter(p=>p.grupo!=='OUT').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
   document.getElementById('kpi-aptos').textContent=totalAptos;
   const currentYear=nowBRT().getFullYear();
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
