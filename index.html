@@ -668,8 +668,7 @@ function decodeMetar(raw){
 async function fetchMetar(){
   try{
     let text='';
-    try{const r=await fetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw',{cache:'no-store'});if(r.ok)text=(await r.text()).trim();}catch(e){}
-    if(!text){try{const r=await fetch('https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw'),{cache:'no-store'});if(r.ok)text=(await r.text()).trim();}catch(e){}}
+    try{const r=await fetch('https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw'),{cache:'no-store'});if(r.ok)text=(await r.text()).trim();}catch(e){}
     if(!text)return;
     metarRaw=text;metarDecoded=decodeMetar(metarRaw);
   }catch(e){console.error('METAR fetch error',e);}
@@ -677,18 +676,11 @@ async function fetchMetar(){
 async function fetchMetarMulti(){
   try{
     const ids='SBBR,SBCF,SBRJ,SBSP';
-    // Tenta direto primeiro, fallback pro proxy
     let text='';
     try{
-      const r=await fetch('https://aviationweather.gov/api/data/metar?ids='+ids+'&format=raw',{cache:'no-store'});
+      const r=await fetch('https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent('https://aviationweather.gov/api/data/metar?ids='+ids+'&format=raw'),{cache:'no-store'});
       if(r.ok)text=(await r.text()).trim();
     }catch(e){}
-    if(!text){
-      try{
-        const r=await fetch('https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent('https://aviationweather.gov/api/data/metar?ids='+ids+'&format=raw'),{cache:'no-store'});
-        if(r.ok)text=(await r.text()).trim();
-      }catch(e){}
-    }
     if(!text)return;
     const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
     for(const line of lines){
@@ -742,7 +734,7 @@ function renderScreen0(){
     const p=vc1Sorted[i];const pct=p.pct||0;
     const barColor=pct<50?'var(--red)':pct<75?'var(--yellow)':'var(--green)';
     html+=`<div class="top-pilot">
-      <span class="top-rank">${medals[i]}</span>
+      <span class="top-rank">${i+1}º</span>
       <div class="top-info"><div class="top-tri" style="color:var(--vc1)">${p.trigrama}</div><div class="top-name">${p.name||''}</div></div>
       <div class="top-stat"><div class="top-hours" style="color:${barColor}">${fmtHours(p.voadas)}</div>
         <div style="font-size:.65rem;color:var(--text2)">${pct.toFixed(0)}% da meta</div>
@@ -760,7 +752,7 @@ function renderScreen0(){
     const p=vc2Sorted[i];const pct=p.pct||0;
     const barColor=pct<50?'var(--red)':pct<75?'var(--yellow)':'var(--green)';
     html+=`<div class="top-pilot">
-      <span class="top-rank">${medals[i]}</span>
+      <span class="top-rank">${i+1}º</span>
       <div class="top-info"><div class="top-tri" style="color:var(--vc2)">${p.trigrama}</div><div class="top-name">${p.name||''}</div></div>
       <div class="top-stat"><div class="top-hours" style="color:${barColor}">${fmtHours(p.voadas)}</div>
         <div style="font-size:.65rem;color:var(--text2)">${pct.toFixed(0)}% da meta</div>
