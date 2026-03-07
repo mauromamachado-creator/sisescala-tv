@@ -1588,43 +1588,55 @@ function renderScreenTV(){
   }
   html+=`</div>`;
   
-  // Row 2 Col 2: Top 5 Horas VC-1
+  // Row 2 Col 2: Top Horas GTE (ranking unificado)
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
-  html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px;font-size:.78rem">🏆 TOP HORAS VC-1</div>`;
-  const vc1sorted=[...pilotData.vc1].filter(p=>p.voadas!=null).sort((a,b)=>(b.pct??0)-(a.pct??0));
-  for(let i=0;i<Math.min(5,vc1sorted.length);i++){
-    const p=vc1sorted[i];
+  html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px;font-size:.78rem">🏆 TOP HORAS GTE</div>`;
+  const allSorted=[...pilotData.vc1.map(p=>({...p,anvType:'VC-1'})),...pilotData.vc2.map(p=>({...p,anvType:'VC-2'}))].filter(p=>p.voadas!=null&&p.voadas>0).sort((a,b)=>b.voadas-a.voadas);
+  for(let i=0;i<Math.min(8,allSorted.length);i++){
+    const p=allSorted[i];
+    const anvColor=p.anvType==='VC-1'?'var(--vc1)':'var(--vc2)';
     html+=`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:.75rem">`;
     html+=`<span style="width:22px;text-align:right;color:${i<3?'#ffd700':'#667'};font-weight:700">${i+1}º</span>`;
     html+=`<span style="font-weight:900;min-width:36px">${p.trigrama}</span>`;
-    html+=`<div style="flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden"><div style="height:100%;width:${p.pct||0}%;background:var(--green);border-radius:4px"></div></div>`;
-    html+=`<span style="color:var(--green);font-weight:700;min-width:40px;text-align:right">${(p.pct||0).toFixed(0)}%</span>`;
+    html+=`<span style="font-size:.6rem;color:${anvColor};min-width:28px">${p.anvType}</span>`;
+    html+=`<div style="flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden"><div style="height:100%;width:${Math.min(p.pct||0,100)}%;background:${anvColor};border-radius:4px"></div></div>`;
+    html+=`<span style="color:${anvColor};font-weight:700;min-width:50px;text-align:right;font-size:.72rem">${fmtHours(p.voadas)}</span>`;
     html+=`</div>`;
   }
-  // Progresso esforço aéreo
+  html+=`</div>`;
+
+  // Row 2 Col 3: Progresso Horas do Ano
+  html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
+  html+=`<div style="font-weight:900;color:var(--yellow);margin-bottom:10px;font-size:.78rem">📊 PROGRESSO HORAS DO ANO</div>`;
+  const yearStart=new Date(td.getFullYear(),0,1);const yearEnd=new Date(td.getFullYear(),11,31);
+  const yearPctTV=((td-yearStart)/(yearEnd-yearStart)*100);
+  html+=`<div style="font-size:.68rem;color:var(--text2);margin-bottom:10px">Progresso do ano: <span style="color:var(--text);font-weight:700">${yearPctTV.toFixed(0)}%</span></div>`;
   const vc1pct=anualVC1.esforco>0?(anualVC1.voadas/anualVC1.esforco*100):0;
-  html+=`<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-size:.72rem">`;
-  html+=`<div style="color:var(--text2)">Esforço Aéreo: <span style="color:var(--vc1);font-weight:900">${fmtHours(anualVC1.voadas)}</span> / ${anualVC1.esforco}h (${vc1pct.toFixed(1)}%)</div>`;
+  const vc1Color=vc1pct<yearPctTV*0.8?'var(--red)':vc1pct<yearPctTV?'var(--yellow)':'var(--green)';
+  html+=`<div style="margin-bottom:12px">`;
+  html+=`<div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:4px"><span style="color:var(--vc1);font-weight:900">VC-1</span><span style="color:${vc1Color};font-weight:700">${fmtHours(anualVC1.voadas)} / ${anualVC1.esforco}h (${vc1pct.toFixed(1)}%)</span></div>`;
+  html+=`<div style="height:14px;background:var(--bg3);border-radius:4px;position:relative;overflow:visible">`;
+  html+=`<div style="height:100%;width:${Math.min(vc1pct,100)}%;background:linear-gradient(90deg,var(--vc1),${vc1Color});border-radius:4px"></div>`;
+  html+=`<div style="position:absolute;top:-3px;bottom:-3px;left:${yearPctTV}%;width:3px;background:#fff;border-radius:2px;opacity:.9;box-shadow:0 0 6px rgba(255,255,255,.6)"></div>`;
   html+=`</div></div>`;
-  
-  // Row 2 Col 3: Top 5 Horas VC-2
-  html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
-  html+=`<div style="font-weight:900;color:var(--vc2);margin-bottom:8px;font-size:.78rem">🏆 TOP HORAS VC-2</div>`;
-  const vc2sorted=[...pilotData.vc2].filter(p=>p.voadas!=null).sort((a,b)=>(b.pct??0)-(a.pct??0));
-  for(let i=0;i<Math.min(5,vc2sorted.length);i++){
-    const p=vc2sorted[i];
-    html+=`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:.75rem">`;
-    html+=`<span style="width:22px;text-align:right;color:${i<3?'#ffd700':'#667'};font-weight:700">${i+1}º</span>`;
-    html+=`<span style="font-weight:900;min-width:36px">${p.trigrama}</span>`;
-    html+=`<div style="flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden"><div style="height:100%;width:${p.pct||0}%;background:var(--vc2);border-radius:4px"></div></div>`;
-    html+=`<span style="color:var(--vc2);font-weight:700;min-width:40px;text-align:right">${(p.pct||0).toFixed(0)}%</span>`;
-    html+=`</div>`;
-  }
   const vc2pct=anualVC2.esforco>0?(anualVC2.voadas/anualVC2.esforco*100):0;
-  html+=`<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-size:.72rem">`;
-  html+=`<div style="color:var(--text2)">Esforço Aéreo: <span style="color:var(--vc2);font-weight:900">${fmtHours(anualVC2.voadas)}</span> / ${anualVC2.esforco}h (${vc2pct.toFixed(1)}%)</div>`;
+  const vc2Color=vc2pct<yearPctTV*0.8?'var(--red)':vc2pct<yearPctTV?'var(--yellow)':'var(--green)';
+  html+=`<div style="margin-bottom:12px">`;
+  html+=`<div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:4px"><span style="color:var(--vc2);font-weight:900">VC-2</span><span style="color:${vc2Color};font-weight:700">${fmtHours(anualVC2.voadas)} / ${anualVC2.esforco}h (${vc2pct.toFixed(1)}%)</span></div>`;
+  html+=`<div style="height:14px;background:var(--bg3);border-radius:4px;position:relative;overflow:visible">`;
+  html+=`<div style="height:100%;width:${Math.min(vc2pct,100)}%;background:linear-gradient(90deg,var(--vc2),${vc2Color});border-radius:4px"></div>`;
+  html+=`<div style="position:absolute;top:-3px;bottom:-3px;left:${yearPctTV}%;width:3px;background:#fff;border-radius:2px;opacity:.9;box-shadow:0 0 6px rgba(255,255,255,.6)"></div>`;
   html+=`</div></div>`;
-  
+  const totalVoadas=anualVC1.voadas+anualVC2.voadas;const totalEsforco=anualVC1.esforco+anualVC2.esforco;
+  const totalPct=totalEsforco>0?(totalVoadas/totalEsforco*100):0;
+  const totalColor=totalPct<yearPctTV*0.8?'var(--red)':totalPct<yearPctTV?'var(--yellow)':'var(--green)';
+  html+=`<div style="padding-top:8px;border-top:1px solid var(--border)">`;
+  html+=`<div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:4px"><span style="color:var(--text);font-weight:900">TOTAL GTE</span><span style="color:${totalColor};font-weight:700">${fmtHours(totalVoadas)} / ${totalEsforco}h (${totalPct.toFixed(1)}%)</span></div>`;
+  html+=`<div style="height:14px;background:var(--bg3);border-radius:4px;position:relative;overflow:visible">`;
+  html+=`<div style="height:100%;width:${Math.min(totalPct,100)}%;background:linear-gradient(90deg,#00d4ff,${totalColor});border-radius:4px"></div>`;
+  html+=`<div style="position:absolute;top:-3px;bottom:-3px;left:${yearPctTV}%;width:3px;background:#fff;border-radius:2px;opacity:.9;box-shadow:0 0 6px rgba(255,255,255,.6)"></div>`;
+  html+=`</div></div>`;
+  html+=`</div>`;
   // Row 3 Col 1: METAR (múltiplos aeródromos)
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow-y:auto">`;
   html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:6px;font-size:.78rem">🌤 METAR</div>`;
