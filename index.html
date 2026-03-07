@@ -402,7 +402,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 </div>
 
 <!-- ALERTAS POP-UP -->
-<div id="alertToast" style="display:none;position:fixed;top:20px;right:20px;z-index:99998;max-width:380px;width:calc(100% - 40px);background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #ff6b6b;border-left:4px solid #ff6b6b;border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(255,50,50,.3);animation:toastSlideIn .5s ease-out;cursor:pointer;font-family:inherit" onclick="dismissAlert()">
+<div id="alertToast" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99998;max-width:380px;width:calc(100% - 40px);background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #ff6b6b;border-left:4px solid #ff6b6b;border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(255,50,50,.3);animation:toastSlideIn .5s ease-out;cursor:pointer;font-family:inherit" onclick="dismissAlert()">
   <div style="display:flex;align-items:flex-start;gap:10px">
     <span style="font-size:24px" id="alertIcon">🚨</span>
     <div style="flex:1;min-width:0">
@@ -414,8 +414,8 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
   </div>
 </div>
 <style>
-@keyframes toastSlideIn{0%{transform:translateX(100%);opacity:0}100%{transform:translateX(0);opacity:1}}
-@keyframes toastSlideOut{0%{transform:translateX(0);opacity:1}100%{transform:translateX(100%);opacity:0}}
+@keyframes toastSlideIn{0%{transform:translate(-50%,-50%) scale(.8);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+@keyframes toastSlideOut{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(.8);opacity:0}}
 </style>
 
 <footer>
