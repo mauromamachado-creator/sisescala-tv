@@ -1459,12 +1459,20 @@ function renderScreenSearch(query){
   }
   
   const q=query.toUpperCase();
-  const results=allPilots.filter(p=>{
+  const pilotResults=allPilots.filter(p=>{
     return (p.trigrama&&p.trigrama.toUpperCase().includes(q))||
            (p.name&&p.name.toUpperCase().includes(q));
   });
+  // Buscar também em cartoesData (demais tripulantes não-pilotos)
+  const pilotTris=new Set(allPilots.map(p=>p.trigrama));
+  const outrosResults=(cartoesData||[]).filter(ct=>{
+    if(pilotTris.has(ct.trigrama))return false;
+    return (ct.trigrama&&ct.trigrama.toUpperCase().includes(q))||
+           (ct.nome&&ct.nome.toUpperCase().includes(q));
+  });
+  const results=[...pilotResults];
   
-  if(!results.length){
+  if(!results.length&&!outrosResults.length){
     html+=`<div style="color:var(--text2);text-align:center;padding:40px">Nenhum tripulante encontrado para "${query}"</div>`;
     container.innerHTML=html;const _inp=document.getElementById('searchInput');if(_inp&&query){_inp.focus();_inp.setSelectionRange(query.length,query.length);};return;
   }
@@ -1523,6 +1531,33 @@ function renderScreenSearch(query){
     // Cartões
     html+=renderCartoesNaBusca(p.trigrama);
     
+    html+=`</div></div>`;
+  });
+  // Demais tripulantes (cartões, não-pilotos)
+  outrosResults.forEach(ct=>{
+    const criticos=[{k:'inspSaude',nome:'INSP SAÚDE'},{k:'cviRvsm',nome:'CVI/RVSM',pilotoOnly:true},{k:'crm',nome:'CRM'}];
+    const isPil=(ct.funcao||'').toLowerCase().includes('piloto');
+    const venc=criticos.filter(c=>{if(c.pilotoOnly&&!isPil)return false;return ct[c.k]&&ct[c.k].date&&ct[c.k].date<td;}).map(c=>c.nome);
+    const stLabel=venc.length?`INDISPONÍVEL (${venc.join(', ')})`:'DISPONÍVEL';
+    const stColor=venc.length?'var(--red)':'var(--green)';
+    const stBg=venc.length?'rgba(255,80,80,.12)':'rgba(0,255,136,.12)';
+    html+=`<div class="search-card">`;
+    html+=`<div class="sc-header">`;
+    html+=`<div class="sc-tri">${ct.trigrama||'?'}</div>`;
+    html+=`<div><div style="font-weight:700">${ct.nome||'—'}</div><div class="sc-name">${ct.funcao||''} · ${ct.anv||''}</div></div>`;
+    html+=`<div class="sc-status" style="background:${stBg};color:${stColor};border:1px solid ${stColor}">${stLabel}</div>`;
+    html+=`</div>`;
+    html+=`<div class="sc-grid">`;
+    html+=`<div class="sc-item"><div class="sc-item-label">Função</div><div class="sc-item-value">${ct.funcao||'—'}</div></div>`;
+    html+=`<div class="sc-item"><div class="sc-item-label">Aeronave</div><div class="sc-item-value">${ct.anv||'—'}</div></div>`;
+    // Férias
+    const ctFerias=feriasData.filter(f=>f.trigrama===ct.trigrama&&f.fim>=td);
+    if(ctFerias.length){
+      const ferTxt=ctFerias.map(f=>{const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;return `${fmt(f.inicio)} — ${fmt(f.fim)}`;}).join(', ');
+      html+=`<div class="sc-item"><div class="sc-item-label">Férias</div><div class="sc-item-value" style="font-size:.82rem">🏖 ${ferTxt}</div></div>`;
+    }
+    // Cartões
+    html+=renderCartoesNaBusca(ct.trigrama);
     html+=`</div></div>`;
   });
   html+='</div>';
