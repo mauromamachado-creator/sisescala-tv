@@ -423,7 +423,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 </style>
 
 <footer>
-  <span>SisGOPA v4.6 - Desenvolvido para o GTE por Major Machado</span>
+  <span>SisGOPA v4.7 - Desenvolvido para o GTE por Major Machado</span>
   <a onclick="loadAllData()">Atualizar dados</a>
   <a onclick="showNovidades()" style="cursor:pointer;text-decoration:underline;margin-left:8px">Novidades</a>
 </footer>
@@ -433,6 +433,16 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
   <div style="background:linear-gradient(135deg,#1a2040,#0d1220);border:1px solid #2a3a5a;border-radius:16px;padding:20px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;color:#e0e6f0;font-family:inherit;position:relative">
     <span style="position:absolute;top:12px;right:16px;font-size:22px;color:#8892a4;cursor:pointer" onclick="document.getElementById('novidadesModal').style.display='none'">✕</span>
     <div style="font-size:1.1rem;font-weight:700;color:var(--green);margin-bottom:16px">📋 Novidades - SisGOPA</div>
+
+    <div style="margin-bottom:16px">
+      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.7 - 07/03/2026</div>
+      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:#c0c8d8">
+        <li>📞 <b>Telefone e e-mail</b> na busca de tripulantes (clicáveis)</li>
+        <li>📋 <b>DIÁRIAS</b> só para missões PR, Reserva PR ou ESCAV</li>
+        <li>⚡ <b>Cache de status</b> — carregamento mais rápido</li>
+        <li>🌤️ <b>Proxy METAR dedicado</b> via Cloudflare Worker (mais estável)</li>
+      </ul>
+    </div>
 
     <div style="margin-bottom:16px">
       <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.6 - 07/03/2026</div>
@@ -1083,7 +1093,9 @@ function decodeMetar(raw){
   return d;
 }
 
+const METAR_WORKER=''; // URL do Cloudflare Worker quando deployado, ex: 'https://metar-proxy.seu-user.workers.dev'
 const CORS_PROXIES=[
+  ...(METAR_WORKER?[u=>{try{const p=new URL(u);return METAR_WORKER+'?ids='+(p.searchParams.get('ids')||'SBBR')+'&format='+(p.searchParams.get('format')||'raw');}catch(e){return METAR_WORKER+'?url='+encodeURIComponent(u);}}]:[]),
   u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u),
   u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
   u=>'https://corsproxy.io/?'+encodeURIComponent(u)
@@ -1122,7 +1134,14 @@ async function fetchMetarMulti(){
 
 function isOnVacation(trigrama,date){const t=String(trigrama||'').toUpperCase();return feriasData.some(f=>f.trigrama===t&&f.inicio<=date&&date<=f.fim);}
 
+let _pilotStatusCache={};let _pilotStatusCacheTime=0;
 function getPilotStatus(p,td){
+  const now=Date.now();if(now-_pilotStatusCacheTime>30000){_pilotStatusCache={};_pilotStatusCacheTime=now;}
+  const cKey=p.trigrama+'|'+(p.anv||'')+'|'+td.toDateString();
+  if(_pilotStatusCache[cKey])return _pilotStatusCache[cKey];
+  const _r=_getPilotStatusInner(p,td);_pilotStatusCache[cKey]=_r;return _r;
+}
+function _getPilotStatusInner(p,td){
   if(feriasData.length&&isOnVacation(p.trigrama,td))return{status:'FERIAS',cls:'st-ferias'};
   const EXCLUIDOS=['BEH','SOZ'];
   if(String(p.grupo).toUpperCase()==='OUT'||EXCLUIDOS.includes(p.trigrama))return{status:'FORA',cls:'st-out'};
@@ -1907,6 +1926,13 @@ function renderScreenSearch(query){
     // Grupo
     if(p.grupo)html+=`<div class="sc-item"><div class="sc-item-label">Grupo</div><div class="sc-item-value">${p.grupo}</div></div>`;
 
+    // Contato (telefone e email)
+    const _dp=findDadosPessoais(p.trigrama)||findDadosPessoais(p.name||'');
+    if(_dp){
+      if(_dp.celular)html+=`<div class="sc-item"><div class="sc-item-label">Telefone</div><div class="sc-item-value" style="font-size:.82rem"><a href="tel:${_dp.celular}" style="color:var(--vc1);text-decoration:underline">📞 ${_dp.celular}</a></div></div>`;
+      if(_dp.email)html+=`<div class="sc-item"><div class="sc-item-label">E-mail</div><div class="sc-item-value" style="font-size:.78rem"><a href="mailto:${_dp.email}" style="color:var(--vc1);text-decoration:underline">📧 ${_dp.email}</a></div></div>`;
+    }
+
     // CVI e Inspeção Saúde agora vêm dos Cartões (abaixo)
 
     // Porcentagem
@@ -1962,6 +1988,12 @@ function renderScreenSearch(query){
     html+=`<div class="sc-grid">`;
     html+=`<div class="sc-item"><div class="sc-item-label">Função</div><div class="sc-item-value">${ct.funcao||'-'}</div></div>`;
     html+=`<div class="sc-item"><div class="sc-item-label">Aeronave</div><div class="sc-item-value">${ct.anv||'-'}</div></div>`;
+    // Contato
+    const _dpC=findDadosPessoais(ct.trigrama)||findDadosPessoais(ct.nome||'');
+    if(_dpC){
+      if(_dpC.celular)html+=`<div class="sc-item"><div class="sc-item-label">Telefone</div><div class="sc-item-value" style="font-size:.82rem"><a href="tel:${_dpC.celular}" style="color:var(--vc1);text-decoration:underline">📞 ${_dpC.celular}</a></div></div>`;
+      if(_dpC.email)html+=`<div class="sc-item"><div class="sc-item-label">E-mail</div><div class="sc-item-value" style="font-size:.78rem"><a href="mailto:${_dpC.email}" style="color:var(--vc1);text-decoration:underline">📧 ${_dpC.email}</a></div></div>`;
+    }
     // Férias - filtrar por aeronave quando trigrama duplicado
     const ctTriDup=cartoesData.filter(c=>c.trigrama===ct.trigrama).length>1;
     const ctAnv=(ct.aeronave||ct.anv||'').replace('-','').toUpperCase();
@@ -2472,15 +2504,17 @@ function parseDadosPessoais(rows){
   const map={};
   rows.forEach(r=>{
     const nome=r[22]||'';const tri=r[23]||'';const cpf=r[34]||'';const posto=r[20]||'';const nomeCompleto=r[21]||'';
-    if(!nomeCompleto||!cpf)return;
+    const celular=r[26]||'';const email=r[30]||'';
+    if(!nomeCompleto)return;
+    const obj={cpf,posto,nomeCompleto,trigrama:tri,celular,email};
     // Key by nome guerra (uppercase) and by trigrama
     const key=nome.toUpperCase().trim();
-    if(key)map[key]={cpf,posto,nomeCompleto,trigrama:tri};
+    if(key)map[key]=obj;
     const tKey=(tri||'').toUpperCase().trim();
-    if(tKey)map['TRI_'+tKey]={cpf,posto,nomeCompleto,trigrama:tri};
+    if(tKey)map['TRI_'+tKey]=obj;
     // Also key by full name fragments for OM matching
     const nUp=nomeCompleto.toUpperCase().trim();
-    if(nUp)map['FULL_'+nUp]={cpf,posto,nomeCompleto,trigrama:tri};
+    if(nUp)map['FULL_'+nUp]=obj;
   });
   return map;
 }
@@ -2497,6 +2531,16 @@ function findCPF(nome){
     if(k.startsWith('FULL_')&&k.includes(n))return dadosPessoais[k].cpf;
   }
   return '';
+}
+function findDadosPessoais(nome){
+  if(!dadosPessoais||!Object.keys(dadosPessoais).length)return null;
+  const n=nome.toUpperCase().trim();
+  if(dadosPessoais[n])return dadosPessoais[n];
+  if(dadosPessoais['TRI_'+n])return dadosPessoais['TRI_'+n];
+  for(const k of Object.keys(dadosPessoais)){
+    if(k.startsWith('FULL_')&&k.includes(n))return dadosPessoais[k];
+  }
+  return null;
 }
 
 function findNomeCompleto(nome){
