@@ -677,25 +677,25 @@ async function proxyFetch(url){
     u=>'https://corsproxy.io/?'+encodeURIComponent(u)
   ];
   for(const mk of proxies){
-    try{const r=await fetch(mk(url),{cache:'no-store'});if(r.ok){const t=(await r.text()).trim();if(t&&t.startsWith('METAR')||t.match(/^SB\w{2}\s/))return t;}}catch(e){}
+    try{const r=await fetch(mk(url),{cache:'no-store'});if(r.ok){const t=(await r.text()).trim();if(t&&(t.startsWith('METAR')||t.startsWith('SPECI')||t.match(/^SB\w{2}\s/)))return t;}}catch(e){}
   }
   return '';
 }
 async function fetchMetar(){
   try{
     const text=await proxyFetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw');
-    if(!text)return;
+    if(!text)throw new Error('Sem dados');
     metarRaw=text;metarDecoded=decodeMetar(metarRaw);
-  }catch(e){console.error('METAR fetch error',e);}
+  }catch(e){console.error('METAR fetch error',e);throw e;}
 }
 async function fetchMetarMulti(){
   try{
     const ids='SBBR,SBCF,SBRJ,SBSP';
     const text=await proxyFetch('https://aviationweather.gov/api/data/metar?ids='+ids+'&format=raw');
-    if(!text)return;
+    if(!text)throw new Error('Sem dados multi');
     const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
     for(const line of lines){
-      const m=line.match(/^(?:METAR\s+)?(SB\w{2})\s/);
+      const m=line.match(/^(?:(?:METAR|SPECI)\s+)?(SB\w{2})\s/);
       if(m)metarMulti[m[1]]=line;
     }
   }catch(e){console.warn('fetchMetarMulti error',e);}
