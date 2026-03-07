@@ -710,7 +710,7 @@ function getPilotStatus(p,td){
   // EXT: continua avaliação normal (férias, CVI, etc). Se tudo ok → DISPONÍVEL
   const afNum=parseInt(String(p.afastamento||'').replace(/[^0-9\-]/g,''),10);
   if(!isNaN(afNum)&&afNum<=-35)return{status:'DESADAPTADO',cls:'st-afastado'};
-  if(!isNaN(afNum)&&afNum<=-20)return{status:'AFASTADO PR',cls:'st-warning'};
+  if(!isNaN(afNum)&&afNum<=-20&&afNum>-35)return{status:'DISPONÍVEL',cls:'st-apto',alerta:'DESADAPTADO PR'};
   if(p.cviDate&&p.cviDate<td)return{status:'INDISPONÍVEL (CVI)',cls:'st-inapto'};
   if(p.inspSauDate&&p.inspSauDate<td)return{status:'INDISPONÍVEL (INSP)',cls:'st-inapto'};
   return{status:'DISPONÍVEL',cls:'st-apto'};
@@ -776,17 +776,18 @@ function renderScreen0(){
 
   // --- DESADAPTADOS / ALERTAS ---
   html+='<div class="dash-panel p-red">';
-  const problemPilots=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status==='DESADAPTADO'||s.status==='AFASTADO PR'||s.status.startsWith('INDISPONÍVEL');});
+  const problemPilots=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status==='DESADAPTADO'||s.alerta||s.status.startsWith('INDISPONÍVEL');});
   html+=`<div class="panel-title"><span class="icon">⚠️</span> Alertas Tripulantes <span class="count">${problemPilots.length}</span></div>`;
   if(problemPilots.length){
     for(const p of problemPilots){
       const st=getPilotStatus(p,td);const anvColor=p.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
+      const alertLabel=st.alerta||st.status;
       const bdgCls=st.status==='DESADAPTADO'||st.status.startsWith('INDISPONÍVEL')?'badge-danger':'badge-warning';
       html+=`<div class="desadapt-item">
         <span class="desadapt-tri" style="color:${anvColor}">${p.trigrama}</span>
         <span style="font-size:.72rem;color:var(--text2);flex:1">${p.name||''}</span>
         <span style="font-size:.68rem;color:${anvColor}">${p.anv}</span>
-        <span class="desadapt-badge ${bdgCls}">${st.status}</span></div>`;
+        <span class="desadapt-badge ${bdgCls}">${alertLabel}</span></div>`;
     }
   }else{
     html+='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:8px"><div style="font-size:2rem">✅</div><div style="color:var(--green);font-weight:700">Todos disponíveis</div></div>';
