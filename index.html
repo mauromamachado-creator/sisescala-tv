@@ -3603,7 +3603,7 @@ checkCodeUpdate();_codeInterval=setInterval(checkCodeUpdate,300000);
 // ═══════════════════════════════════════════════════
 // ALERTAS POP-UP — monitora alerts.json
 // ═══════════════════════════════════════════════════
-let _alertQueue=[];let _alertDismissed=JSON.parse(localStorage.getItem('sisgopa_dismissed_alerts')||'[]');
+let _alertQueue=[];let _alertDismissed=JSON.parse(localStorage.getItem('sisgopa_dismissed_alerts')||'{}');
 async function fetchAlerts(){
   try{
     const r=await fetchWithTimeout('alerts.json?v='+Date.now(),10000);
@@ -3612,7 +3612,8 @@ async function fetchAlerts(){
     if(!Array.isArray(alerts))return;
     const now=Date.now();
     const fresh=alerts.filter(a=>{
-      if(_alertDismissed.includes(a.id))return false;
+      const dismissedAt=_alertDismissed[a.id];
+      if(dismissedAt&&(Date.now()-dismissedAt)<3600000)return false; // hidden 1h
       if(a.expires&&new Date(a.expires).getTime()<now)return false;
       return true;
     });
@@ -3634,7 +3635,7 @@ function showAlert(a){
 function dismissAlert(){
   const toast=document.getElementById('alertToast');
   const id=toast.dataset.alertId;
-  if(id){_alertDismissed.push(id);localStorage.setItem('sisgopa_dismissed_alerts',JSON.stringify(_alertDismissed.slice(-50)));}
+  if(id){_alertDismissed[id]=Date.now();localStorage.setItem('sisgopa_dismissed_alerts',JSON.stringify(_alertDismissed));}
   toast.style.animation='toastSlideOut .3s ease-in forwards';
   setTimeout(()=>{toast.style.display='none';},300);
 }
