@@ -2990,17 +2990,20 @@ async function botExecMsgPadrao(){
     else lines.push(`- Categoria Contra Incêndio: não encontrado`);
     if(destAis.adHr)lines.push(`- ${destAis.adHr}`);
     lines.push(destAis.hasTwr?'- Possui torre (TWR)':'- Não possui rádio/torre');
-    lines.push(`- Operação: ${destAis.oprType||'VFR'}`);
+    // Operação — fallback igual bot
+    if(destAis.oprType)lines.push(`- Operação: ${destAis.oprType}`);
+    else if(destAis.hasIfr)lines.push('- Operação: VFR/IFR');
+    else lines.push('- Operação: somente VFR');
     lines.push(destAis.hasNight?'- Opera diurno e noturno':'- Opera somente diurno (sem iluminação de pista)');
     lines.push(`- ${fuel.text}`);
     lines.push(`- ${notamAlert}`);
     lines.push(rec.needed?`- Necessita missão de REC (${rec.reasons.join('; ')})`:'- Não necessita missão de REC');
-    // VC-1
+    // VC-1 — checar TODOS os PCNs de todas as pistas (igual bot)
     lines.push('');lines.push('<b>VC-1</b>');lines.push('');
     lines.push(rec.needed?'- Necessita missão de REC':'- Não necessita missão de REC');
-    if(tireCat&&tireCat!=='W'&&tireCat!=='X')lines.push(`- Não opera VC-1 devido pressão dos pneus (categoria ${tireCat})`);
-    const pcnNum=destAis.pcn?parseInt(destAis.pcn):null;
-    if(pcnNum&&pcnNum<=30)lines.push(`- PCN BAIXO ATENÇÃO! (PCN ${pcnNum})`);
+    const allPcns=(destAis.runways&&destAis.runways.length)?destAis.runways.map(r=>r.pcn).filter(Boolean):(destAis.pcn?[destAis.pcn]:[]);
+    for(const p of allPcns){const tc=getPcnTireCat(p);if(tc&&tc!=='W'&&tc!=='X'){lines.push(`- Não opera VC-1 devido pressão dos pneus (categoria ${tc})`);break;}}
+    for(const p of allPcns){const pm=p.match(/^(\d+)/);if(pm&&parseInt(pm[1])<=30){lines.push(`- PCN BAIXO ATENÇÃO! (PCN ${pm[1]})`);break;}}
     // VC-2
     lines.push('');lines.push('<b>VC-2</b>');lines.push('');
     lines.push(rec.needed?'- Necessita missão de REC':'- Não necessita missão de REC');
