@@ -707,7 +707,7 @@ function isOnVacation(trigrama,date){const t=String(trigrama||'').toUpperCase();
 function getPilotStatus(p,td){
   if(feriasData.length&&isOnVacation(p.trigrama,td))return{status:'FERIAS',cls:'st-ferias'};
   if(String(p.grupo).toUpperCase()==='OUT')return{status:'FORA',cls:'st-out'};
-  if(String(p.grupo).toUpperCase()==='EXT')return{status:'EXTERNO',cls:'st-ext'};
+  if(String(p.grupo).toUpperCase()==='EXT')return{status:'EXTERNO',cls:'st-ext',isExt:true};
   const afNum=parseInt(String(p.afastamento||'').replace(/[^0-9\-]/g,''),10);
   if(!isNaN(afNum)&&afNum<=-35)return{status:'DESADAPTADO',cls:'st-afastado'};
   if(!isNaN(afNum)&&afNum<=-20)return{status:'AFASTADO PR',cls:'st-warning'};
@@ -1591,8 +1591,8 @@ function renderScreenTV(){
   const td=nowBRT();const todayStr=`${String(td.getDate()).padStart(2,'0')}/${String(td.getMonth()+1).padStart(2,'0')}/${td.getFullYear()}`;
   const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
   const allPilots=[...pilotData.vc1,...pilotData.vc2];
-  const totalTrip=allPilots.filter(p=>p.grupo!=='OUT').length;
-  const totalDisp=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
+  const totalTrip=allPilots.filter(p=>p.grupo!=='OUT'&&String(p.grupo).toUpperCase()!=='EXT').length;
+  const totalDisp=allPilots.filter(p=>p.grupo!=='OUT'&&String(p.grupo).toUpperCase()!=='EXT').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
   const totalIndisp=totalTrip-totalDisp;
   
   // Mini-header BI
@@ -1744,7 +1744,7 @@ function renderScreenTV(){
   // Row 3 Col 2: Alertas
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
   html+=`<div style="font-weight:900;color:var(--yellow);margin-bottom:6px;font-size:.78rem">⚠️ ALERTAS</div>`;
-  const alerts=allPilots.filter(p=>{if(p.grupo==='OUT')return false;const s=getPilotStatus(p,td);return s.status.startsWith('INDISPONÍVEL')||s.status==='FERIAS'||isOnVacation(p.trigrama,td);});
+  const alerts=allPilots.filter(p=>{if(p.grupo==='OUT')return false;const s=getPilotStatus(p,td);if(String(p.grupo).toUpperCase()==='EXT'&&s.status==='EXTERNO')return false;return s.status.startsWith('INDISPONÍVEL')||s.status==='FERIAS'||isOnVacation(p.trigrama,td);});
   if(alerts.length){
     for(const p of alerts.slice(0,6)){
       const s=getPilotStatus(p,td);
@@ -1817,8 +1817,8 @@ function renderScreenTV(){
 function renderAll(){
   document.getElementById('loadingMsg').style.display='none';
   const allPilots=[...pilotData.vc1,...pilotData.vc2];const td=nowBRT();
-  document.getElementById('kpi-trip').textContent=allPilots.filter(p=>p.grupo!=='OUT').length;
-  const totalAptos=allPilots.filter(p=>p.grupo!=='OUT').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
+  document.getElementById('kpi-trip').textContent=allPilots.filter(p=>p.grupo!=='OUT'&&String(p.grupo).toUpperCase()!=='EXT').length;
+  const totalAptos=allPilots.filter(p=>p.grupo!=='OUT'&&String(p.grupo).toUpperCase()!=='EXT').filter(p=>{const s=getPilotStatus(p,td);return s.status==='DISPONÍVEL';}).length;
   document.getElementById('kpi-aptos').textContent=totalAptos;
   const currentYear=nowBRT().getFullYear();
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
