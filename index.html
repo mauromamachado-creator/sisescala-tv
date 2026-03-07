@@ -1370,7 +1370,7 @@ function renderScreen0(){
           const dayPernas=om.pernas.filter(p=>{const m=p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(!m)return true;const pd='20'+m[3]+'-'+m[2]+'-'+m[1];return pd===isoDate;});
           const pernas=dayPernas.length?dayPernas:om.pernas;
           for(let pi=0;pi<pernas.length;pi++){
-            const p=pernas[pi];const h=(p.etd.split(' ')[1]||'');
+            const p=pernas[pi];const hm=p.etd.match(/(\d{2}:\d{2})/);const h=hm?hm[1]:'';
             html+=`<div style="${rowStyle}">
               <span style="font-weight:900;color:var(--text)">${pi===0?dateStr:''}</span>
               <span style="color:var(--text2);font-size:.7rem">${pi===0?dayName:''}</span>
