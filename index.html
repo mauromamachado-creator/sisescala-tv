@@ -1769,13 +1769,15 @@ function renderScreenTV(){
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
   html+=`<div style="font-weight:900;color:var(--yellow);margin-bottom:6px;font-size:.78rem">⚠️ ALERTAS</div>`;
   const alerts=allPilots.filter(p=>{if(p.grupo==='OUT')return false;const s=getPilotStatus(p,td);if(s.status==='FORA')return false;return s.status==='DESADAPTADO'||s.alerta==='DESADAPTADO PR'||s.status.startsWith('INDISPONÍVEL')||s.status==='FERIAS'||isOnVacation(p.trigrama,td);});
+  // Ordenar: DESADAPTADO > INDISPONÍVEL > DESADAPTADO PR > FÉRIAS
+  alerts.sort((a,b)=>{const sa=getPilotStatus(a,td),sb=getPilotStatus(b,td);const pri=s=>s.status==='DESADAPTADO'?0:s.status.startsWith('INDISPONÍVEL')?1:s.alerta?2:3;return pri(sa)-pri(sb);});
   if(alerts.length){
-    for(const p of alerts.slice(0,6)){
+    for(const p of alerts){
       const s=getPilotStatus(p,td);
       const lbl=s.status==='DESADAPTADO'?`DESADAPTADO (${p.afastamento}d)`:s.alerta?`${s.alerta} (${p.afastamento}d)`:s.motivo||s.status;
-      html+=`<div style="font-size:.72rem;padding:2px 0"><span style="font-weight:700">${p.trigrama}</span> <span style="color:var(--text2)">${lbl}</span></div>`;
+      const clr=s.status==='DESADAPTADO'||s.status.startsWith('INDISPONÍVEL')?'var(--red)':s.alerta?'var(--yellow)':'var(--text2)';
+      html+=`<div style="font-size:.72rem;padding:2px 0"><span style="font-weight:700">${p.trigrama}</span> <span style="color:${clr}">${lbl}</span></div>`;
     }
-    if(alerts.length>6)html+=`<div style="color:var(--text2);font-size:.68rem">+${alerts.length-6} mais...</div>`;
   }else{html+=`<div style="color:var(--green);font-size:.75rem">✅ Sem alertas</div>`;}
   html+=`</div>`;
   
