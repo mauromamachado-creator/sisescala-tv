@@ -1768,11 +1768,12 @@ function renderScreenTV(){
   // Row 3 Col 2: Alertas
   html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;overflow:hidden">`;
   html+=`<div style="font-weight:900;color:var(--yellow);margin-bottom:6px;font-size:.78rem">⚠️ ALERTAS</div>`;
-  const alerts=allPilots.filter(p=>{if(p.grupo==='OUT')return false;const s=getPilotStatus(p,td);if(String(p.grupo).toUpperCase()==='EXT'&&s.status==='EXTERNO')return false;return s.status.startsWith('INDISPONÍVEL')||s.status==='FERIAS'||isOnVacation(p.trigrama,td);});
+  const alerts=allPilots.filter(p=>{if(p.grupo==='OUT')return false;const s=getPilotStatus(p,td);if(s.status==='FORA')return false;return s.status==='DESADAPTADO'||s.alerta==='DESADAPTADO PR'||s.status.startsWith('INDISPONÍVEL')||s.status==='FERIAS'||isOnVacation(p.trigrama,td);});
   if(alerts.length){
     for(const p of alerts.slice(0,6)){
       const s=getPilotStatus(p,td);
-      html+=`<div style="font-size:.72rem;padding:2px 0"><span style="font-weight:700">${p.trigrama}</span> <span style="color:var(--text2)">${s.motivo||s.status}</span></div>`;
+      const lbl=s.status==='DESADAPTADO'?`DESADAPTADO (${p.afastamento}d)`:s.alerta?`${s.alerta} (${p.afastamento}d)`:s.motivo||s.status;
+      html+=`<div style="font-size:.72rem;padding:2px 0"><span style="font-weight:700">${p.trigrama}</span> <span style="color:var(--text2)">${lbl}</span></div>`;
     }
     if(alerts.length>6)html+=`<div style="color:var(--text2);font-size:.68rem">+${alerts.length-6} mais...</div>`;
   }else{html+=`<div style="color:var(--green);font-size:.75rem">✅ Sem alertas</div>`;}
