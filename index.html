@@ -1133,19 +1133,22 @@ function renderScreen1(){
 // ===== HORAS DE VOO =====
 function renderScreen2(){
   const renderCol=(title,pilots,h2Class)=>{
-    const active=pilots.filter(p=>p.meta!=null&&p.voadas!=null);
-    const sorted=[...active].sort((a,b)=>(b.pct??0)-(a.pct??0));
+    const withHours=pilots.filter(p=>p.voadas!=null&&p.voadas>0);
+    const sorted=[...withHours].sort((a,b)=>(b.voadas||0)-(a.voadas||0));
     let html=`<div><h2 class="${h2Class}">${title}</h2>`;
     for(let i=0;i<sorted.length;i++){
-      const p=sorted[i];const pct=(p.pct??0);
+      const p=sorted[i];const pct=(p.pct??0);const hasMeta=p.meta!=null&&p.meta>0;
       const total=sorted.length;
       const barColor=i<3?'var(--green)':i>=total-1?'var(--red)':i>=total-3?'#ff8c42':'var(--yellow)';
       const rankColor=i===0?'#ffd700':i===1?'#c0c0c0':i===2?'#cd7f32':'#667';
       const borderColor=i<3?rankColor:i>=total-1?'var(--red)':'transparent';
       const rank=`<span style="display:inline-block;width:34px;text-align:right;font-size:.82rem;color:${rankColor};flex-shrink:0;padding-right:6px;font-weight:${i<3?'900':'400'}">${i+1}º</span>`;
-      html+=`<div class="bar-row" style="border-left:3px solid ${borderColor};padding-left:6px">${rank}<span class="bar-label">${p.trigrama}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.min(Math.max(pct,0),100)}%;background:${barColor}"></div></div><span class="bar-pct" style="color:${barColor}">${pct.toFixed(1)}%</span><span class="bar-hours">${fmtHours(p.voadas)}/${Math.round(p.meta)}h</span></div>`;
+      const pctLabel=hasMeta?`${pct.toFixed(1)}%`:'—';
+      const hoursLabel=hasMeta?`${fmtHours(p.voadas)}/${Math.round(p.meta)}h`:fmtHours(p.voadas);
+      const barWidth=hasMeta?Math.min(Math.max(pct,0),100):0;
+      html+=`<div class="bar-row" style="border-left:3px solid ${borderColor};padding-left:6px">${rank}<span class="bar-label">${p.trigrama}</span><div class="bar-track"><div class="bar-fill" style="width:${barWidth}%;background:${barColor}"></div></div><span class="bar-pct" style="color:${barColor}">${pctLabel}</span><span class="bar-hours">${hoursLabel}</span></div>`;
     }
-    const others=pilots.filter(p=>p.meta==null||p.voadas==null);
+    const others=pilots.filter(p=>p.voadas==null||p.voadas===0);
     if(others.length){html+='<h3 style="font-size:.85rem;color:#556;">Sem dados de horas</h3>';for(const p of others)html+=`<div class="bar-row"><span class="bar-label" style="color:#667">${p.trigrama}</span><span class="bar-name" style="color:#556">${p.name||''}</span><span style="color:#556;font-size:.8rem">${p.grupo||''}</span></div>`;}
     return html+'</div>';
   };
