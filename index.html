@@ -1461,16 +1461,17 @@ function renderScreenSearch(query){
   const q=query.toUpperCase();
   const pilotResults=allPilots.filter(p=>{
     if((p.trigrama&&p.trigrama.toUpperCase().includes(q))||(p.name&&p.name.toUpperCase().includes(q)))return true;
-    // Buscar também pelo nome nos cartões (pode ser diferente da aba disponibilidade)
-    const ct=(cartoesData||[]).find(c=>c.trigrama===p.trigrama);
-    if(ct&&ct.nome&&ct.nome.toUpperCase().includes(q))return true;
+    // Buscar também pelo nome nos cartões do MESMO piloto (match por nome similar)
+    const cts=(cartoesData||[]).filter(c=>c.trigrama===p.trigrama&&(c.funcao||'').toLowerCase().includes('piloto'));
+    if(cts.some(c=>c.nome&&c.nome.toUpperCase().includes(q)))return true;
     return false;
   });
-  // Buscar também em cartoesData (demais tripulantes não-pilotos)
-  const pilotTris=new Set(allPilots.map(p=>p.trigrama));
+  // Buscar em cartoesData — demais tripulantes (não-pilotos OU trigrama igual mas pessoa diferente)
+  const pilotNames=new Set(allPilots.map(p=>(p.name||'').toUpperCase()));
   const outrosResults=(cartoesData||[]).filter(ct=>{
-    if(pilotTris.has(ct.trigrama)&&(ct.funcao||'').toLowerCase().includes('piloto'))return false; // já aparece como piloto
-    if(pilotTris.has(ct.trigrama))return false; // mesmo trigrama, função diferente — já coberto pelo piloto
+    // Se é piloto E o nome bate com um piloto do pilotData → já mostrado acima
+    if((ct.funcao||'').toLowerCase().includes('piloto'))return false;
+    // É outra função (mesmo trigrama = pessoa diferente)
     return (ct.trigrama&&ct.trigrama.toUpperCase().includes(q))||
            (ct.nome&&ct.nome.toUpperCase().includes(q));
   });
@@ -1533,7 +1534,7 @@ function renderScreenSearch(query){
     }
     
     // Cartões
-    html+=renderCartoesNaBusca(p.trigrama);
+    html+=renderCartoesNaBusca(p.trigrama,'Piloto');
     
     html+=`</div></div>`;
   });
@@ -1561,7 +1562,7 @@ function renderScreenSearch(query){
       html+=`<div class="sc-item"><div class="sc-item-label">Férias</div><div class="sc-item-value" style="font-size:.82rem">🏖 ${ferTxt}</div></div>`;
     }
     // Cartões
-    html+=renderCartoesNaBusca(ct.trigrama);
+    html+=renderCartoesNaBusca(ct.trigrama,ct.funcao);
     html+=`</div></div>`;
   });
   html+='</div>';
@@ -2206,11 +2207,12 @@ function filterCartoes(f){
     el.style.display=(cartoesFiltro==='todos'||s===cartoesFiltro)?'':'none';
   });
 }
-function getCartoesTripulante(trigrama){
+function getCartoesTripulante(trigrama,funcao){
+  if(funcao)return cartoesData.find(c=>c.trigrama===trigrama.toUpperCase()&&(c.funcao||'').toLowerCase()===funcao.toLowerCase());
   return cartoesData.find(c=>c.trigrama===trigrama.toUpperCase());
 }
-function renderCartoesNaBusca(trigrama){
-  const p=getCartoesTripulante(trigrama);
+function renderCartoesNaBusca(trigrama,funcao){
+  const p=getCartoesTripulante(trigrama,funcao);
   if(!p)return'';
   const hoje=nowBRT();
   const cartoes=[
