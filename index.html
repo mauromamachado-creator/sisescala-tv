@@ -1363,40 +1363,36 @@ function renderScreen0(){
       const dayName=dayNames[dObj.getDay()];
       const dayOMs=omData.filter(o=>getOMDates(o).includes(isoDate));
       const dayDiario=weekDays.find(d=>{const di=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');return di===isoDate;});
+      const rowStyle='display:grid;grid-template-columns:42px 30px 72px 1fr auto;align-items:center;gap:4px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.78rem';
       if(dayOMs.length){
         for(const om of dayOMs){
           const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
           const dayPernas=om.pernas.filter(p=>{const m=p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(!m)return true;const pd='20'+m[3]+'-'+m[2]+'-'+m[1];return pd===isoDate;});
           const pernas=dayPernas.length?dayPernas:om.pernas;
-          const rotaFull=pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
-          html+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);flex-wrap:wrap">
-            <span style="font-weight:900;color:var(--text);font-size:.82rem;white-space:nowrap">${dateStr}</span>
-            <span style="font-size:.72rem;color:var(--text2)">${dayName}</span>
-            <span style="font-size:.78rem;color:${anvColor};font-weight:700">${om.fab}</span>
-            <span style="flex:1;font-size:.75rem;min-width:0;overflow:hidden;text-overflow:ellipsis">${rotaFull}</span>
-            <span style="font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline;white-space:nowrap" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</span>
-          </div>`;
+          for(let pi=0;pi<pernas.length;pi++){
+            const p=pernas[pi];const h=(p.etd.split(' ')[1]||'');
+            html+=`<div style="${rowStyle}">
+              <span style="font-weight:900;color:var(--text)">${pi===0?dateStr:''}</span>
+              <span style="color:var(--text2);font-size:.7rem">${pi===0?dayName:''}</span>
+              <span style="color:${anvColor};font-weight:700">${pi===0?om.fab:''}</span>
+              <span>${h} ${p.origem}→${p.destino} <span style="color:var(--yellow)">${p.missao||''}</span></span>
+              <span>${pi===0?`<span style="font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</span>`:''}</span>
+            </div>`;
+          }
         }
       }else if(dayDiario){
         const anvLabel=dayDiario.aeronave&&dayDiario.aeronave!=='AERONAVE'?dayDiario.aeronave:'A DEFINIR';
         const mainLegs=dayDiario.legs.filter(l=>!l.isExtra);
         const extraLegs=dayDiario.legs.filter(l=>l.isExtra);
-        const mainRoute=mainLegs.map(l=>l.dep+' '+l.route.replace(/-/g,'→')).join(' / ');
-        if(mainLegs.length){
-          html+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);flex-wrap:wrap">
-            <span style="font-weight:900;color:var(--text);font-size:.82rem;white-space:nowrap">${dateStr}</span>
-            <span style="font-size:.72rem;color:var(--text2)">${dayName}</span>
-            <span style="font-size:.78rem;color:var(--vc1);font-weight:700">${anvLabel}</span>
-            <span style="flex:1;font-size:.75rem;min-width:0;overflow:hidden;text-overflow:ellipsis">${mainRoute}</span>
-          </div>`;
-        }
-        if(extraLegs.length){
-          const extraRoute=extraLegs.map(l=>l.dep+' '+l.route.replace(/-/g,'→')).join(' / ');
-          html+=`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);flex-wrap:wrap">
-            <span style="min-width:42px"></span>
-            <span style="min-width:28px"></span>
-            <span style="font-size:.78rem;color:var(--vc2);font-weight:700">FAB 2590</span>
-            <span style="flex:1;font-size:.75rem;color:var(--vc2);min-width:0;overflow:hidden;text-overflow:ellipsis">${extraRoute}</span>
+        const allLegs=[...mainLegs.map(l=>({...l,anv:anvLabel,anvC:'var(--vc1)'})),...extraLegs.map(l=>({...l,anv:'FAB 2590',anvC:'var(--vc2)'}))];
+        for(let li=0;li<allLegs.length;li++){
+          const l=allLegs[li];const showAnv=li===0||allLegs[li-1].anv!==l.anv;
+          html+=`<div style="${rowStyle}">
+            <span style="font-weight:900;color:var(--text)">${li===0?dateStr:''}</span>
+            <span style="color:var(--text2);font-size:.7rem">${li===0?dayName:''}</span>
+            <span style="color:${l.anvC};font-weight:700">${showAnv?l.anv:''}</span>
+            <span>${l.dep} ${l.route.replace(/-/g,'→')}</span>
+            <span></span>
           </div>`;
         }
       }
