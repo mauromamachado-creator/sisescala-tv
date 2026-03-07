@@ -836,12 +836,24 @@ function renderScreen0(){
     html+='<div style="margin-top:16px;font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">Próximos Dias</div>';
     for(const day of weekDays){
       const anvLabel=day.aeronave&&day.aeronave!=='AERONAVE'?day.aeronave:'A DEFINIR';
-      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-        <div style="min-width:70px;font-weight:900;color:var(--text)">${day.dateStr}</div>
-        <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${day.dayName}</div>
-        <div style="min-width:80px;font-size:.82rem;color:var(--vc1)">${anvLabel}</div>
-        <div style="flex:1;font-size:.82rem">${day.legs.map(l=>'<span style="margin-right:12px">'+l.dep+' '+l.route.replace(/-/g,'→')+'</span>').join('')}</div>
-        </div>`;
+      const mainLegs=day.legs.filter(l=>!l.isExtra);
+      const extraLegs=day.legs.filter(l=>l.isExtra);
+      if(mainLegs.length){
+        html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+          <div style="min-width:70px;font-weight:900;color:var(--text)">${day.dateStr}</div>
+          <div style="min-width:36px;font-size:.75rem;color:var(--text2)">${day.dayName}</div>
+          <div style="min-width:80px;font-size:.82rem;color:var(--vc1)">${anvLabel}</div>
+          <div style="flex:1;font-size:.82rem">${mainLegs.map(l=>'<span style="margin-right:12px">'+l.dep+' '+l.route.replace(/-/g,'→')+'</span>').join('')}</div>
+          </div>`;
+      }
+      if(extraLegs.length){
+        html+=`<div style="display:flex;align-items:center;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+          <div style="min-width:70px"></div>
+          <div style="min-width:36px"></div>
+          <div style="min-width:80px;font-size:.82rem;color:var(--vc2)">FAB 2590</div>
+          <div style="flex:1;font-size:.82rem;color:var(--vc2)">${extraLegs.map(l=>'<span style="margin-right:12px">'+l.dep+' '+l.route.replace(/-/g,'→')+'</span>').join('')}</div>
+          </div>`;
+      }
     }
   }
   html+='</div>';
