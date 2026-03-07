@@ -1370,12 +1370,12 @@ function renderScreen0(){
           const dayPernas=om.pernas.filter(p=>{const m=p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(!m)return true;const pd='20'+m[3]+'-'+m[2]+'-'+m[1];return pd===isoDate;});
           const pernas=dayPernas.length?dayPernas:om.pernas;
           for(let pi=0;pi<pernas.length;pi++){
-            const p=pernas[pi];const hm=p.etd.match(/(\d{2}:\d{2})/);const h=hm?hm[1]:'';
+            const p=pernas[pi];
             html+=`<div style="${rowStyle}">
               <span style="font-weight:900;color:var(--text)">${pi===0?dateStr:''}</span>
               <span style="color:var(--text2);font-size:.7rem">${pi===0?dayName:''}</span>
               <span style="color:${anvColor};font-weight:700">${pi===0?om.fab:''}</span>
-              <span>${h} ${p.origem}→${p.destino} <span style="color:var(--yellow)">${p.missao||''}</span></span>
+              <span>${p.origem}→${p.destino} <span style="color:var(--yellow)">${p.missao||''}</span></span>
               <span>${pi===0?`<span style="font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</span>`:''}</span>
             </div>`;
           }
