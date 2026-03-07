@@ -819,7 +819,16 @@ function renderScreen0(){
   // --- DESADAPTADOS / ALERTAS ---
   html+='<div class="dash-panel p-red">';
   const problemPilots=allPilots.filter(p=>{const s=getPilotStatus(p,td);return s.status==='DESADAPTADO'||s.alerta||s.status.startsWith('INDISPONÍVEL');});
-  html+=`<div class="panel-title"><span class="icon">⚠️</span> Alertas Tripulantes <span class="count">${problemPilots.length}</span></div>`;
+  // Contar outros tripulantes com cartões vencidos
+  let outrosVencCount=0;
+  if(typeof cartoesData!=='undefined'&&cartoesData.length){
+    const pilotTrisSet=new Set(allPilots.map(p=>p.trigrama));
+    outrosVencCount=cartoesData.filter(ct=>{
+      if(pilotTrisSet.has(ct.trigrama))return false;
+      return ['inspSaude','cviRvsm','crm'].some(k=>ct[k]&&ct[k].date&&ct[k].date<td);
+    }).length;
+  }
+  html+=`<div class="panel-title"><span class="icon">⚠️</span> Alertas Tripulantes <span class="count">${problemPilots.length+outrosVencCount}</span></div>`;
   if(problemPilots.length){
     for(const p of problemPilots){
       const st=getPilotStatus(p,td);const anvColor=p.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
@@ -831,7 +840,28 @@ function renderScreen0(){
         <span style="font-size:.68rem;color:${anvColor}">${p.anv}</span>
         <span class="desadapt-badge ${bdgCls}">${alertLabel}</span></div>`;
     }
-  }else{
+  }
+  // Alertas de cartões vencidos para TODOS os tripulantes (não-pilotos)
+  if(typeof cartoesData!=='undefined'&&cartoesData.length){
+    const pilotTris=new Set(allPilots.map(p=>p.trigrama));
+    const criticos=[{k:'inspSaude',nome:'INSP SAÚDE'},{k:'cviRvsm',nome:'CVI/RVSM'},{k:'crm',nome:'CRM'}];
+    const outrosTripVenc=cartoesData.filter(ct=>{
+      if(pilotTris.has(ct.trigrama))return false;
+      return criticos.some(c=>ct[c.k]&&ct[c.k].date&&ct[c.k].date<td);
+    });
+    if(outrosTripVenc.length){
+      html+=`<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;font-size:.68rem;color:var(--text2);margin-bottom:4px">Demais Tripulantes</div>`;
+      for(const ct of outrosTripVenc){
+        const venc=criticos.filter(c=>ct[c.k]&&ct[c.k].date&&ct[c.k].date<td).map(c=>c.nome);
+        html+=`<div class="desadapt-item">
+          <span class="desadapt-tri" style="color:var(--yellow)">${ct.trigrama}</span>
+          <span style="font-size:.72rem;color:var(--text2);flex:1">${ct.nome||''}</span>
+          <span style="font-size:.68rem;color:var(--text2)">${ct.funcao||''}</span>
+          <span class="desadapt-badge badge-danger">${venc.join(', ')}</span></div>`;
+      }
+    }
+  }
+  if(!problemPilots.length&&(!cartoesData.length||!cartoesData.some(ct=>{const pilotTris=new Set(allPilots.map(p=>p.trigrama));if(pilotTris.has(ct.trigrama))return false;const criticos=['inspSaude','cviRvsm','crm'];return criticos.some(k=>ct[k]&&ct[k].date&&ct[k].date<td);}))){
     html+='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:8px"><div style="font-size:2rem">✅</div><div style="color:var(--green);font-weight:700">Todos disponíveis</div></div>';
   }
   html+='</div>';
