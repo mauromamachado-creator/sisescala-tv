@@ -3333,30 +3333,244 @@ function s3RenderEscalaV2(container){
 // CONSULTA — Interface principal do SisGOPA
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ─── Estado global das missões da consulta ──────────────────────────────────
+var consultaMissoes=[{tipo:'batepronto',trecho:'',dataDia:'',horario:'',descricao:'',obs:'',savisoDia:'SAB'}];
+var consultaVC='vc1';
+var consultaDias='';
+var consultaMes='';
+var consultaAno='2025';
+var consultaPrazo='sem';
+var _consultaDebounce=null;
+
+// Meses em português
+var MESES_PT=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+// ─── Gerar texto da consulta a partir dos campos ────────────────────────────
+function consultaGerarTexto(){
+  var vcLabel=consultaVC==='vc1'?'VC-1':'VC-2';
+  // Montar frase de datas
+  var diasArr=consultaDias.split(',').map(function(d){return d.trim();}).filter(Boolean);
+  var mesNome=consultaMes||'';
+  var fraseData='';
+  if(diasArr.length===0){
+    fraseData='os dias (preencher)';
+  } else if(diasArr.length===1){
+    fraseData='o dia '+diasArr[0]+' de '+mesNome;
+  } else {
+    // Ex: "os dias 28 de fevereiro, 01 e 02 de março"
+    var parts=[];
+    for(var i=0;i<diasArr.length;i++){
+      if(i===diasArr.length-1&&i>0) parts.push(' e '+diasArr[i]);
+      else if(i>0) parts.push(', '+diasArr[i]);
+      else parts.push(diasArr[i]);
+    }
+    fraseData='os dias '+parts.join('')+' de '+mesNome;
+  }
+
+  var texto='Senhores, bom dia. Consulta para '+fraseData+', '+vcLabel+':\n';
+
+  consultaMissoes.forEach(function(m,idx){
+    var letra=String.fromCharCode(65+idx);
+    texto+='\n';
+    if(m.tipo==='saviso'){
+      texto+=letra+') SAVISO '+(m.savisoDia||'')+'\n';
+    } else {
+      var parts=[letra+')'];
+      if(m.trecho) parts.push(m.trecho);
+      if(m.dataDia) parts.push(m.dataDia);
+      if(m.horario) parts.push(m.horario);
+      if(m.descricao) parts.push(m.descricao);
+      texto+=parts.join(' ')+'\n';
+      if(m.obs&&m.obs.trim()){
+        texto+='\nOBS:\n'+m.obs.trim()+'\n';
+      }
+    }
+  });
+
+  return texto;
+}
+
+// ─── Adicionar missão ───────────────────────────────────────────────────────
+function consultaAddMissao(){
+  consultaMissoes.push({tipo:'batepronto',trecho:'',dataDia:'',horario:'',descricao:'',obs:'',savisoDia:'SAB'});
+  consultaRerenderForm();
+}
+
+// ─── Remover missão ─────────────────────────────────────────────────────────
+function consultaRemoveMissao(idx){
+  if(consultaMissoes.length<=1) return;
+  consultaMissoes.splice(idx,1);
+  consultaRerenderForm();
+}
+
+// ─── Salvar estado dos campos antes de re-render ────────────────────────────
+function consultaSalvarEstadoCampos(){
+  // Salva dados dos inputs nos objetos consultaMissoes
+  consultaMissoes.forEach(function(m,idx){
+    var prefix='cmissao-'+idx+'-';
+    var tipoEl=document.getElementById(prefix+'tipo');
+    if(tipoEl) m.tipo=tipoEl.value;
+    var trechoEl=document.getElementById(prefix+'trecho');
+    if(trechoEl) m.trecho=trechoEl.value;
+    var dataDiaEl=document.getElementById(prefix+'dataDia');
+    if(dataDiaEl) m.dataDia=dataDiaEl.value;
+    var horarioEl=document.getElementById(prefix+'horario');
+    if(horarioEl) m.horario=horarioEl.value;
+    var descEl=document.getElementById(prefix+'descricao');
+    if(descEl) m.descricao=descEl.value;
+    var obsEl=document.getElementById(prefix+'obs');
+    if(obsEl) m.obs=obsEl.value;
+    var savDiaEl=document.getElementById(prefix+'savisoDia');
+    if(savDiaEl) m.savisoDia=savDiaEl.value;
+  });
+  // Salva campos globais
+  var diasEl=document.getElementById('consulta-dias');
+  if(diasEl) consultaDias=diasEl.value;
+  var mesEl=document.getElementById('consulta-mes');
+  if(mesEl) consultaMes=mesEl.value;
+  var anoEl=document.getElementById('consulta-ano');
+  if(anoEl) consultaAno=anoEl.value;
+  var vcEl=document.querySelector('input[name="consulta-vc-type"]:checked');
+  if(vcEl) consultaVC=vcEl.value;
+  var prazoEl=document.querySelector('input[name="consulta-prazo"]:checked');
+  if(prazoEl) consultaPrazo=prazoEl.value;
+}
+
+// ─── Atualizar prévia ao vivo ───────────────────────────────────────────────
+function consultaAtualizarPrevia(){
+  consultaSalvarEstadoCampos();
+  var prevEl=document.getElementById('consulta-live-preview');
+  if(prevEl) prevEl.textContent=consultaGerarTexto();
+}
+
+// ─── Debounce para prévia ───────────────────────────────────────────────────
+function consultaOnInput(){
+  clearTimeout(_consultaDebounce);
+  _consultaDebounce=setTimeout(consultaAtualizarPrevia,300);
+}
+
+// ─── Renderizar apenas o formulário de missões ──────────────────────────────
+function consultaRerenderForm(){
+  consultaSalvarEstadoCampos();
+  var el=document.getElementById('consulta-missoes-container');
+  if(el) el.innerHTML=consultaBuildMissoesHTML();
+  consultaBindInputs();
+  consultaAtualizarPrevia();
+}
+
+// ─── Gerar HTML dos cards de missão ─────────────────────────────────────────
+function consultaBuildMissoesHTML(){
+  var h='';
+  var diasSemana=['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+  var tipos=[['batepronto','Bate Pronto'],['pernoite','Pernoite'],['manutencao','Manutenção'],['saviso','SAVISO']];
+
+  consultaMissoes.forEach(function(m,idx){
+    var letra=String.fromCharCode(65+idx);
+    var prefix='cmissao-'+idx+'-';
+    h+='<div style="border:1px solid var(--cyan,#00e5ff);border-radius:10px;padding:14px;margin-bottom:12px;background:rgba(0,229,255,.04);position:relative">';
+    // Letra em destaque
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+    h+='<span style="font-size:1.5rem;font-weight:900;color:var(--cyan,#00e5ff)">'+letra+'</span>';
+    if(consultaMissoes.length>1){
+      h+='<button class="consulta-btn-danger" style="padding:4px 10px;font-size:.8rem" onclick="consultaRemoveMissao('+idx+')">🗑</button>';
+    }
+    h+='</div>';
+    // Tipo
+    h+='<div class="consulta-row"><span class="consulta-label">Tipo:</span>';
+    h+='<select class="consulta-input" id="'+prefix+'tipo" onchange="consultaOnTipoChange('+idx+')" style="max-width:200px">';
+    tipos.forEach(function(t){
+      h+='<option value="'+t[0]+'"'+(m.tipo===t[0]?' selected':'')+'>'+t[1]+'</option>';
+    });
+    h+='</select></div>';
+
+    if(m.tipo==='saviso'){
+      // SAVISO: só dia da semana
+      h+='<div class="consulta-row"><span class="consulta-label">Dia da semana:</span>';
+      h+='<select class="consulta-input cmissao-input" id="'+prefix+'savisoDia" style="max-width:120px">';
+      diasSemana.forEach(function(d){
+        h+='<option value="'+d+'"'+(m.savisoDia===d?' selected':'')+'>'+d+'</option>';
+      });
+      h+='</select></div>';
+    } else {
+      // Missão normal: trecho, data/dia, horário, descrição, obs
+      h+='<div class="consulta-row"><span class="consulta-label">Trecho:</span>';
+      h+='<input class="consulta-input cmissao-input" id="'+prefix+'trecho" placeholder="BR-ZM-BR" value="'+(m.trecho||'').replace(/"/g,'&quot;')+'" style="max-width:200px"></div>';
+      h+='<div class="consulta-row"><span class="consulta-label">Data e dia:</span>';
+      h+='<input class="consulta-input cmissao-input" id="'+prefix+'dataDia" placeholder="28 SAB" value="'+(m.dataDia||'').replace(/"/g,'&quot;')+'" style="max-width:160px"></div>';
+      h+='<div class="consulta-row"><span class="consulta-label">Horário:</span>';
+      h+='<input class="consulta-input cmissao-input" id="'+prefix+'horario" placeholder="1245/1945" value="'+(m.horario||'').replace(/"/g,'&quot;')+'" style="max-width:160px"></div>';
+      h+='<div class="consulta-row"><span class="consulta-label">Descrição:</span>';
+      h+='<input class="consulta-input cmissao-input" id="'+prefix+'descricao" placeholder="RTRLD/RESCAV" value="'+(m.descricao||'').replace(/"/g,'&quot;')+'"></div>';
+      h+='<div class="consulta-row"><span class="consulta-label">OBS (opcional):</span>';
+      h+='<textarea class="consulta-textarea cmissao-input" id="'+prefix+'obs" rows="2" placeholder="Observações...">'+(m.obs||'').replace(/</g,'&lt;')+'</textarea></div>';
+    }
+    h+='</div>';
+  });
+  return h;
+}
+
+// ─── Quando muda tipo de missão ─────────────────────────────────────────────
+function consultaOnTipoChange(idx){
+  consultaSalvarEstadoCampos();
+  consultaRerenderForm();
+}
+
+// ─── Bind inputs para atualizar prévia ──────────────────────────────────────
+function consultaBindInputs(){
+  document.querySelectorAll('.cmissao-input, #consulta-dias, #consulta-mes, #consulta-ano').forEach(function(el){
+    el.removeEventListener('input',consultaOnInput);
+    el.removeEventListener('change',consultaOnInput);
+    el.addEventListener('input',consultaOnInput);
+    el.addEventListener('change',consultaOnInput);
+  });
+}
+
 function s3RenderConsultaV2(container){
   container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
   fetchConsultasJson().then(function(data){
     var h='<h2 style="color:var(--vc1)">📨 Consulta de Escalação</h2>';
 
-    // ─── 1. CRIAR CONSULTA ──────────────────────────────────────────────
+    // ─── 1. CRIAR CONSULTA (formulário estruturado) ─────────────────────
     h+='<div class="consulta-card" id="consulta-create-section">';
     h+='<h3>📝 Nova Consulta</h3>';
+
     // Tipo VC
     h+='<div class="consulta-row"><span class="consulta-label">Tipo:</span>';
-    h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-vc-type" value="vc1" '+(data.vc1?'disabled':' checked')+'>  VC-1'+(data.vc1?' (em uso)':'')+'</label>&nbsp;&nbsp;';
-    h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-vc-type" value="vc2" '+(data.vc2?'disabled':(!data.vc1?' checked':''))+'>  VC-2'+(data.vc2?' (em uso)':'')+'</label></div>';
-    // Mensagem
-    h+='<div class="consulta-row"><span class="consulta-label">Mensagem da consulta:</span></div>';
-    h+='<textarea class="consulta-textarea" id="consulta-msg-input" rows="8" placeholder="Cole aqui a mensagem completa da consulta...\n\nExemplo:\nA) BR-RJ-BR 04 QUA 0700/1040 ESCAV / TRLD\nB) SAVISO QUA\nC) RJ-SP 04 QUA 1200/1400"></textarea>';
+    h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-vc-type" value="vc1" '+(data.vc1?'disabled':(consultaVC==='vc1'?'checked':''))+' onchange="consultaVC=this.value;consultaOnInput()">  VC-1'+(data.vc1?' (em uso)':'')+'</label>&nbsp;&nbsp;';
+    h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-vc-type" value="vc2" '+(data.vc2?'disabled':(consultaVC==='vc2'?'checked':''))+' onchange="consultaVC=this.value;consultaOnInput()">  VC-2'+(data.vc2?' (em uso)':'')+'</label></div>';
+
+    // Datas: dia(s), mês, ano
+    h+='<div class="consulta-row" style="flex-wrap:wrap;gap:8px"><span class="consulta-label">Datas:</span>';
+    h+='<input class="consulta-input" id="consulta-dias" placeholder="28, 01, 02" value="'+consultaDias.replace(/"/g,'&quot;')+'" style="max-width:160px">';
+    h+='<span class="consulta-label" style="margin-left:4px">de</span>';
+    h+='<select class="consulta-input" id="consulta-mes" style="max-width:160px">';
+    h+='<option value="">-- mês --</option>';
+    MESES_PT.forEach(function(m){h+='<option value="'+m+'"'+(consultaMes===m?' selected':'')+'>'+m+'</option>';});
+    h+='</select>';
+    h+='<span class="consulta-label" style="margin-left:4px">de</span>';
+    h+='<select class="consulta-input" id="consulta-ano" style="max-width:100px">';
+    ['2025','2026','2027'].forEach(function(a){h+='<option value="'+a+'"'+(consultaAno===a?' selected':'')+'>'+a+'</option>';});
+    h+='</select></div>';
+
+    // Missões
+    h+='<div class="consulta-row"><span class="consulta-label" style="font-weight:900;font-size:.9rem">Missões:</span></div>';
+    h+='<div id="consulta-missoes-container">'+consultaBuildMissoesHTML()+'</div>';
+    h+='<div style="margin-top:8px"><button class="consulta-btn" onclick="consultaAddMissao()" style="font-size:.85rem">＋ Adicionar Missão</button></div>';
+
     // Prazo
-    h+='<div class="consulta-row"><span class="consulta-label">Prazo:</span>';
+    h+='<div class="consulta-row" style="margin-top:14px"><span class="consulta-label">Prazo:</span>';
     ['3','6','9','12','24'].forEach(function(v){
-      h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer;margin-right:8px"><input type="radio" name="consulta-prazo" value="'+v+'"> '+v+'h</label>';
+      h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer;margin-right:8px"><input type="radio" name="consulta-prazo" value="'+v+'"'+(consultaPrazo===v?' checked':'')+' onchange="consultaPrazo=this.value"> '+v+'h</label>';
     });
-    h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-prazo" value="sem" checked> Sem prazo</label></div>';
+    h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-prazo" value="sem"'+(consultaPrazo==='sem'?' checked':'')+' onchange="consultaPrazo=this.value"> Sem prazo</label></div>';
+
+    // Prévia ao vivo
+    h+='<div style="margin-top:14px"><span class="consulta-label" style="font-weight:900;font-size:.9rem">📄 Prévia do texto:</span></div>';
+    h+='<pre id="consulta-live-preview" style="background:var(--bg3);padding:12px;border-radius:8px;font-size:.8rem;color:var(--text);white-space:pre-wrap;border:1px solid var(--border);max-height:300px;overflow-y:auto;margin-top:6px">'+consultaGerarTexto().replace(/</g,'&lt;')+'</pre>';
+
     // Botões
     h+='<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">';
-    h+='<button class="consulta-btn" id="consulta-preview-btn">👁 PRÉVIA</button>';
+    h+='<button class="consulta-btn" id="consulta-preview-btn">👁 PRÉVIA (popup)</button>';
     h+='<button class="consulta-btn-primary" id="consulta-send-btn">📤 CRIAR E ENVIAR</button></div>';
     h+='<div class="consulta-preview" id="consulta-preview-box"></div>';
     h+='<div id="consulta-send-status" style="margin-top:10px"></div>';
@@ -3530,22 +3744,23 @@ function s3RenderConsultaV2(container){
     container.innerHTML=h;
 
     // ─── Event bindings ─────────────────────────────────────────────────
-    // Prévia
+    // Bind inputs das missões para prévia ao vivo
+    consultaBindInputs();
+
+    // Prévia popup
     var prevBtn=document.getElementById('consulta-preview-btn');
     var prevBox=document.getElementById('consulta-preview-box');
     if(prevBtn)prevBtn.addEventListener('click',function(){
-      var msgArea=document.getElementById('consulta-msg-input');
-      var text=msgArea?msgArea.value:'';
-      var parsed=parseConsultaMessageJS(text);
-      var vcType=(document.querySelector('input[name="consulta-vc-type"]:checked')||{}).value||'vc1';
-      var vcLabel=vcType==='vc1'?'VC-1':'VC-2';
-      var prazoVal=(document.querySelector('input[name="consulta-prazo"]:checked')||{}).value||'sem';
-      var preview='🛩️ CONSULTA '+vcLabel+'\n\n'+text+'\n\nMissões: '+(parsed.missoes.length?parsed.missoes.map(function(m){return m.letra;}).join(', '):'Nenhuma detectada');
-      if(prazoVal!=='sem'){
-        var dl=new Date(Date.now()+parseInt(prazoVal)*3600000);
+      consultaSalvarEstadoCampos();
+      var text=consultaGerarTexto();
+      var vcLabel=consultaVC==='vc1'?'VC-1':'VC-2';
+      var missoesList=consultaMissoes.map(function(_,i){return String.fromCharCode(65+i);}).join(', ');
+      var preview='🛩️ CONSULTA '+vcLabel+'\n\n'+text+'\n\nMissões: '+missoesList;
+      if(consultaPrazo!=='sem'){
+        var dl=new Date(Date.now()+parseInt(consultaPrazo)*3600000);
         preview+='\n⏰ Prazo: '+dl.toLocaleString('pt-BR');
       }
-      preview+='\n\nDestinatários: '+(vcType==='vc1'?CONSULTA_RECIPIENTS_VC1:CONSULTA_RECIPIENTS_VC2).map(function(r){return r.rank+' '+r.name;}).join(', ');
+      preview+='\n\nDestinatários: '+(consultaVC==='vc1'?CONSULTA_RECIPIENTS_VC1:CONSULTA_RECIPIENTS_VC2).map(function(r){return r.rank+' '+r.name;}).join(', ');
       prevBox.textContent=preview;
       prevBox.style.display=prevBox.style.display==='block'?'none':'block';
     });
@@ -3554,32 +3769,34 @@ function s3RenderConsultaV2(container){
     var sendBtn=document.getElementById('consulta-send-btn');
     if(sendBtn)sendBtn.addEventListener('click',async function(){
       var statusEl=document.getElementById('consulta-send-status');
-      var msgArea=document.getElementById('consulta-msg-input');
-      var text=(msgArea?msgArea.value:'').trim();
-      if(!text){statusEl.innerHTML='<span style="color:var(--red)">❌ Cole a mensagem da consulta</span>';return;}
+      consultaSalvarEstadoCampos();
+      var text=consultaGerarTexto().trim();
 
-      var vcType=(document.querySelector('input[name="consulta-vc-type"]:checked')||{}).value;
+      var vcType=consultaVC;
       if(!vcType){statusEl.innerHTML='<span style="color:var(--red)">❌ Selecione VC-1 ou VC-2</span>';return;}
+
+      // Validações básicas
+      if(!consultaDias.trim()||!consultaMes){statusEl.innerHTML='<span style="color:var(--red)">❌ Preencha as datas</span>';return;}
 
       // Confirmar
       if(!confirm('Enviar consulta '+(vcType==='vc1'?'VC-1':'VC-2')+'?')) return;
 
       sendBtn.disabled=true;sendBtn.textContent='⏳ Enviando...';statusEl.innerHTML='';
 
-      var parsed=parseConsultaMessageJS(text);
-      var missions=parsed.missoes.length?parsed.missoes:[];
-      if(!missions.length){
-        // Tentar extrair letras simples
-        var simpleLetters=text.match(/\b([A-Z])\b/g);
-        if(simpleLetters){
-          var unique=[...new Set(simpleLetters)].slice(0,8);
-          missions=unique.map(function(l){return{letra:l,descricao:'',trechos:[],is_saviso:false,escalados:[],om:null,cientes:[]};});
+      // Montar missões no formato esperado pelo backend
+      var missions=consultaMissoes.map(function(m,idx){
+        var letra=String.fromCharCode(65+idx);
+        if(m.tipo==='saviso'){
+          return{letra:letra,descricao:'SAVISO '+m.savisoDia,trechos:[],is_saviso:true,saviso_dia:m.savisoDia,escalados:[],om:null,cientes:[]};
         }
-      }
+        var trechos=m.trecho?m.trecho.split('-').reduce(function(acc,v,i,arr){
+          if(i<arr.length-1) acc.push('SB'+arr[i]+'/SB'+arr[i+1]);return acc;
+        },[]):[];
+        return{letra:letra,descricao:m.descricao||'',trechos:trechos,is_saviso:false,escalados:[],om:null,cientes:[]};
+      });
 
-      var prazoVal=(document.querySelector('input[name="consulta-prazo"]:checked')||{}).value||'sem';
       var deadline=null;
-      if(prazoVal!=='sem'){deadline=new Date(Date.now()+parseInt(prazoVal)*3600000).toISOString();}
+      if(consultaPrazo!=='sem'){deadline=new Date(Date.now()+parseInt(consultaPrazo)*3600000).toISOString();}
 
       var recipients=vcType==='vc1'?CONSULTA_RECIPIENTS_VC1:CONSULTA_RECIPIENTS_VC2;
       var recipientsList=recipients.map(function(r){return{chat_id:r.chatId,name:r.name,rank:r.rank};});
@@ -3596,6 +3813,9 @@ function s3RenderConsultaV2(container){
         if(result.ok){
           statusEl.innerHTML='<span style="color:var(--green)">✅ Consulta criada: '+result.id+'</span>';
           consultasJsonLastFetch=0;
+          // Reset do formulário
+          consultaMissoes=[{tipo:'batepronto',trecho:'',dataDia:'',horario:'',descricao:'',obs:'',savisoDia:'SAB'}];
+          consultaDias='';consultaMes='';consultaPrazo='sem';
           setTimeout(function(){s3RenderConsultaV2(container);},1500);
         } else {
           statusEl.innerHTML='<span style="color:var(--red)">❌ '+result.error+'</span>';
