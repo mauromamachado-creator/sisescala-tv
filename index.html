@@ -2716,8 +2716,11 @@ function openDiariaForm(omId){
   om.tripulacao.forEach((t,i)=>{
     let funcao=t.funcao||'';
     if(!funcao){
-      const ct=(cartoesData||[]).find(c=>c.trigrama===(t.trigrama||'').toUpperCase());
-      funcao=ct?ct.funcao:((['MJ','CP','TC','1T','2T'].includes(t.posto))?'Piloto':'');
+      let ct=null;
+      if(t.trigrama)ct=(cartoesData||[]).find(c=>c.trigrama===(t.trigrama).toUpperCase());
+      if(!ct&&t.nome)ct=(cartoesData||[]).find(c=>c.nome&&c.nome.toUpperCase().includes((t.nome).toUpperCase()));
+      if(ct&&ct.funcao)funcao=ct.funcao;
+      else if(['MJ','CP','TC','1T','2T'].includes(t.posto))funcao='Piloto';
     }
     const cpfAuto=findCPF(t.nome)||findCPF(t.trigrama||'')||'';
     const nomeCompleto=findNomeCompleto(t.nome);
