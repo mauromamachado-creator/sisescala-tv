@@ -3802,26 +3802,54 @@ function s3RenderConsultaV2(container){
       var recipientsList=recipients.map(function(r){return{chat_id:r.chatId,name:r.name,rank:r.rank};});
 
       try{
+        // 1. Salvar consulta localmente (e tentar API se disponível)
+        var missionLetters=missions.map(function(m){return m.letra;});
         var result=await consultaApiPost({
           action:'create',
           vc:vcType,
           text:text,
-          missions:missions,
+          missions:missionLetters,
           deadline:deadline,
           recipients:recipientsList
         });
-        if(result.ok){
-          statusEl.innerHTML='<span style="color:var(--green)">✅ Consulta criada: '+result.id+'</span>';
-          consultasJsonLastFetch=0;
-          // Reset do formulário
-          consultaMissoes=[{tipo:'batepronto',trecho:'',dataDia:'',horario:'',descricao:'',obs:'',savisoDia:'SAB'}];
-          consultaDias='';consultaMes='';consultaPrazo='sem';
-          setTimeout(function(){s3RenderConsultaV2(container);},1500);
-        } else {
-          statusEl.innerHTML='<span style="color:var(--red)">❌ '+result.error+'</span>';
+
+        // 2. Enviar via Telegram Bot API DIRETO do frontend
+        var tgBase='https://api.telegram.org/bot'+CONSULTA_TOKEN;
+        var buttons=[];
+        missions.forEach(function(m){
+          if(!m.is_saviso){
+            buttons.push([{text:'✅ '+m.letra+') DISPONÍVEL',callback_data:'toggle|'+vcType+'|'+m.letra}]);
+          }
+        });
+        buttons.push([{text:'❌ INDISPONÍVEL TODAS',callback_data:'allno|'+vcType}]);
+        buttons.push([{text:'📨 CONFIRMAR RESPOSTA',callback_data:'confirm|'+vcType}]);
+
+        var enviados=0,falhas=0;
+        for(var ri=0;ri<recipients.length;ri++){
+          var r=recipients[ri];
+          try{
+            var tgResp=await fetch(tgBase+'/sendMessage',{
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({
+                chat_id:r.chatId,
+                text:text,
+                reply_markup:{inline_keyboard:buttons}
+              })
+            });
+            var tgData=await tgResp.json();
+            if(tgData.ok){enviados++;}else{falhas++;console.warn('Telegram erro para '+r.name+':',tgData);}
+          }catch(tgErr){falhas++;console.error('Erro Telegram '+r.name+':',tgErr);}
         }
+
+        statusEl.innerHTML='<span style="color:var(--green)">✅ Consulta criada! Enviada para '+enviados+' tripulante(s).'+(falhas?' <span style="color:var(--yellow)">⚠️ '+falhas+' falha(s).</span>':'')+'</span>';
+        consultasJsonLastFetch=0;
+        // Reset do formulário
+        consultaMissoes=[{tipo:'batepronto',trecho:'',dataDia:'',horario:'',descricao:'',obs:'',savisoDia:'SAB'}];
+        consultaDias='';consultaMes='';consultaPrazo='sem';
+        setTimeout(function(){s3RenderConsultaV2(container);},2000);
       }catch(e){
-        statusEl.innerHTML='<span style="color:var(--red)">❌ Erro de conexão com o bot: '+e.message+'</span>';
+        statusEl.innerHTML='<span style="color:var(--red)">❌ Erro: '+e.message+'</span>';
       }
       sendBtn.disabled=false;sendBtn.textContent='📤 CRIAR E ENVIAR';
     });
