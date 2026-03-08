@@ -3150,27 +3150,45 @@ var CONSULTA_RECIPIENTS_VC2 = [{name:'Major Machado', chatId:'673591486', rank:'
 var consultasJsonCache=null;
 var consultasJsonLastFetch=0;
 
+function _consultaLocalLoad(){try{return JSON.parse(localStorage.getItem('sisgopa_consultas_v2'))||{vc1:null,vc2:null,archive:[]};}catch(e){return{vc1:null,vc2:null,archive:[]};}}
+function _consultaLocalSave(d){localStorage.setItem('sisgopa_consultas_v2',JSON.stringify(d));}
+
 async function fetchConsultasJson(){
   if(consultasJsonCache && Date.now()-consultasJsonLastFetch<5000) return consultasJsonCache;
   try{
-    const r=await fetch(CONSULTA_API+'/api/consultas?t='+Date.now(),{cache:'no-store'});
-    if(r.ok){consultasJsonCache=await r.json();consultasJsonLastFetch=Date.now();}
-  }catch(e){
-    // Fallback: tentar arquivo local
-    try{
-      const r2=await fetch('/sisescala/data/consultas.json?t='+Date.now(),{cache:'no-store'});
-      if(r2.ok){consultasJsonCache=await r2.json();consultasJsonLastFetch=Date.now();}
-    }catch(e2){console.warn('Erro ao carregar consultas',e2);}
-  }
-  return consultasJsonCache||{vc1:null,vc2:null,archive:[]};
+    const r=await fetch(CONSULTA_API+'/api/consultas?t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(3000)});
+    if(r.ok){consultasJsonCache=await r.json();consultasJsonLastFetch=Date.now();_consultaLocalSave(consultasJsonCache);return consultasJsonCache;}
+  }catch(e){}
+  // Fallback: localStorage
+  consultasJsonCache=_consultaLocalLoad();consultasJsonLastFetch=Date.now();
+  return consultasJsonCache;
 }
 
 // Helper: POST para API do bot
 async function consultaApiPost(body){
-  var r=await fetch(CONSULTA_API+'/api/consulta',{
-    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+  try{var r=await fetch(CONSULTA_API+'/api/consulta',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),
+    signal:AbortSignal.timeout(3000)
   });
   return r.json();
+  }catch(e){
+    // Fallback: processar localmente no localStorage
+    return consultaApiLocal(body);
+  }
+}
+function consultaApiLocal(body){
+  var data=_consultaLocalLoad();
+  var vc=body.vc||'vc1';
+  if(body.action==='create'){
+    data[vc]={id:vc+'-'+Date.now(),created_at:new Date().toISOString(),text:body.text||'',missions:body.missions||[],deadline:body.deadline||null,status:'active',locked:false,archived:false,recipients:(body.recipients||[]).map(function(r){return{chat_id:r.chatId,name:r.name,rank:r.rank,message_id:null,delivered:false,responses:{},confirmed:false};})};
+    _consultaLocalSave(data);return{ok:true,mode:'local'};
+  }
+  if(body.action==='lock'&&data[vc]){data[vc].locked=true;data[vc].status='locked';_consultaLocalSave(data);return{ok:true};}
+  if(body.action==='archive'&&data[vc]){if(!data.archive)data.archive=[];data.archive.push(Object.assign({},data[vc],{archivedAt:new Date().toISOString()}));data[vc]=null;_consultaLocalSave(data);return{ok:true};}
+  if(body.action==='update_om'&&data[vc]){var m=(data[vc].missions||[]).find(function(x){return x.letra===body.missao;});if(m)m.om=body.om;_consultaLocalSave(data);return{ok:true};}
+  if(body.action==='update_saviso'&&data[vc]){var m2=(data[vc].missions||[]).find(function(x){return x.letra===body.missao;});if(m2)m2.escalados=body.escalados;_consultaLocalSave(data);return{ok:true};}
+  if(body.action==='update_escalados'&&data[vc]){var m3=(data[vc].missions||[]).find(function(x){return x.letra===body.missao;});if(m3)m3.escalados=body.escalados;_consultaLocalSave(data);return{ok:true};}
+  return{ok:false,error:'Ação desconhecida'};
 }
 
 // Parser JS equivalente ao parse_consulta_message do Python
