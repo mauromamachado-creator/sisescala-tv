@@ -1,2 +1,3 @@
 index_backup_*.html
 index_backup_*.html
+__pycache__/

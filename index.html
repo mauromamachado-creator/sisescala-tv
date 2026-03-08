@@ -3104,6 +3104,7 @@ function renderScreenS3(){
   html+='<button class="'+(s3ActiveTab==='escala'?'active':'')+'" onclick="s3SwitchTab(\'escala\')">ESCALA</button>';
   html+='<button class="'+(s3ActiveTab==='diario'?'active':'')+'" onclick="s3SwitchTab(\'diario\')">DIÁRIO</button>';
   html+='<button class="'+(s3ActiveTab==='consulta'?'active':'')+'" onclick="s3SwitchTab(\'consulta\')">CONSULTA</button>';
+  html+='<button class="'+(s3ActiveTab==='escalav2'?'active':'')+'" onclick="s3SwitchTab(\'escalav2\')">ESCALA V2</button>';
   html+='</div>';
   html+='<div id="s3-content"></div>';
   document.getElementById('screen14').innerHTML=html;
@@ -3122,7 +3123,8 @@ function s3RenderActiveTab(){
   if(!container)return;
   if(s3ActiveTab==='escala'){s3RenderEscala(container);}
   else if(s3ActiveTab==='diario'){s3RenderDiario(container);}
-  else if(s3ActiveTab==='consulta'){s3RenderConsulta(container);}
+  else if(s3ActiveTab==='consulta'){s3RenderConsultaV2(container);}
+  else if(s3ActiveTab==='escalav2'){s3RenderEscalaV2(container);}
 }
 function s3RenderEscala(container){
   renderScreenEscala();
@@ -3134,154 +3136,525 @@ function s3RenderDiario(container){
   var src=document.getElementById('screen4');
   if(src) container.innerHTML=src.innerHTML;
 }
-var CONSULTA_TOKEN='8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU';
-var CONSULTA_RECIPIENTS=[{name:'Major Machado',chatId:'673591486',label:'✅ Major Machado (TESTE)'}];
-function consultaLoadState(){try{return JSON.parse(localStorage.getItem('sisgopa_consulta'))||{active:null,archive:[]};}catch(e){return{active:null,archive:[]};}}
-function consultaSaveState(st){localStorage.setItem('sisgopa_consulta',JSON.stringify(st));}
-function consultaTemplate(missions,prazo){return '📋 CONSULTA DE ESCALAÇÃO - GTE\n\nPrezados Oficiais,\n\nSolicito manifestação de disponibilidade para as missões abaixo:\n\n'+missions.map(function(m){return '• Missão '+m;}).join('\n')+'\n\nFavor responder utilizando os botões abaixo.\nResposta até: '+(prazo||'Sem prazo definido')+'\n\nAtenciosamente,\nS3/GTE';}
-async function sendConsultaTelegram(chatId,text,missions){
-  var keyboard=missions.map(function(m){return[{text:m,callback_data:'toggle_'+m}];});
-  keyboard.push([{text:'✅ CONFIRMAR',callback_data:'confirm'}]);
-  keyboard.push([{text:'❌ INDISPONÍVEL TODAS',callback_data:'unavail_all'}]);
-  var resp=await fetch('https://api.telegram.org/bot'+CONSULTA_TOKEN+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:text,parse_mode:'Markdown',reply_markup:{inline_keyboard:keyboard}})});
-  return resp.json();
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONFIG CONSULTA — API e Destinatários
+// ═══════════════════════════════════════════════════════════════════════════════
+var CONSULTA_API = 'http://localhost:8085';
+var CONSULTA_TOKEN = '8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU';
+var CONSULTA_RECIPIENTS_VC1 = [{name:'Major Machado', chatId:'673591486', rank:'MJ'}];
+var CONSULTA_RECIPIENTS_VC2 = [{name:'Major Machado', chatId:'673591486', rank:'MJ'}];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ESCALA V2 - Lê do JSON via API do bot
+// ═══════════════════════════════════════════════════════════════════════════════
+var consultasJsonCache=null;
+var consultasJsonLastFetch=0;
+
+async function fetchConsultasJson(){
+  if(consultasJsonCache && Date.now()-consultasJsonLastFetch<5000) return consultasJsonCache;
+  try{
+    const r=await fetch(CONSULTA_API+'/api/consultas?t='+Date.now(),{cache:'no-store'});
+    if(r.ok){consultasJsonCache=await r.json();consultasJsonLastFetch=Date.now();}
+  }catch(e){
+    // Fallback: tentar arquivo local
+    try{
+      const r2=await fetch('/sisescala/data/consultas.json?t='+Date.now(),{cache:'no-store'});
+      if(r2.ok){consultasJsonCache=await r2.json();consultasJsonLastFetch=Date.now();}
+    }catch(e2){console.warn('Erro ao carregar consultas',e2);}
+  }
+  return consultasJsonCache||{vc1:null,vc2:null,archive:[]};
 }
-function s3RenderConsulta(container){
-  var st=consultaLoadState();
-  var h='<h2 style="color:var(--vc1)">📨 Consulta de Escalação <span class="consulta-badge">MODO TESTE</span></h2>';
-  // Section 1: Create new
-  h+='<div class="consulta-card" id="consulta-create">';
-  h+='<h3>📝 Nova Consulta</h3>';
-  h+='<div class="consulta-row"><span class="consulta-label">Missões:</span><input type="text" class="consulta-input" id="consulta-missions" placeholder="A,B,C,D" value="A,B,C,D" style="max-width:220px"></div>';
-  h+='<div class="consulta-row"><span class="consulta-label">Prazo:</span>';
-  h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-prazo" value="sem" checked> Sem prazo</label>&nbsp;&nbsp;';
-  h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-prazo" value="com"> Com prazo</label>&nbsp;';
-  h+='<input type="datetime-local" class="consulta-input" id="consulta-deadline" style="max-width:220px;display:none"></div>';
-  h+='<div class="consulta-row"><span class="consulta-label">Mensagem:</span></div>';
-  h+='<textarea class="consulta-textarea" id="consulta-msg">'+consultaTemplate(['A','B','C','D'],'Sem prazo definido')+'</textarea>';
-  h+='<div class="consulta-row"><span class="consulta-label">Destinatários:</span></div>';
-  CONSULTA_RECIPIENTS.forEach(function(r,i){h+='<div style="margin-bottom:4px"><label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="checkbox" class="consulta-recip" data-idx="'+i+'" checked> '+r.label+'</label></div>';});
-  h+='<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">';
-  h+='<button class="consulta-btn" id="consulta-preview-btn">👁 PRÉVIA</button>';
-  h+='<button class="consulta-btn-primary" id="consulta-send-btn">📤 ENVIAR CONSULTA</button></div>';
-  h+='<div class="consulta-preview" id="consulta-preview-box"></div>';
-  h+='<div id="consulta-send-status" style="margin-top:10px"></div>';
-  h+='</div>';
-  // Section 2: Active consultation
-  h+='<div class="consulta-card" id="consulta-active-section">';
-  h+='<h3>📊 Consulta Ativa</h3>';
-  if(st.active){
-    h+='<div style="font-size:.82rem;color:var(--text2);white-space:pre-wrap;background:var(--bg3);padding:10px;border-radius:6px;margin-bottom:10px">'+st.active.text.replace(/</g,'&lt;')+'</div>';
-    h+='<div style="font-size:.78rem;color:var(--text2)">Enviada em: '+st.active.sentAt+' | Missões: '+st.active.missions.join(', ')+'</div>';
-    h+='<table class="consulta-matrix"><tr><th>Destinatário</th>';
-    st.active.missions.forEach(function(m){h+='<th>'+m+'</th>';});
-    h+='<th>Status</th></tr>';
-    (st.active.recipients||[]).forEach(function(r){
-      h+='<tr><td style="text-align:left;color:var(--text)">'+r.name+'</td>';
-      st.active.missions.forEach(function(m){
-        var resp=r.responses&&r.responses[m];
-        h+='<td>'+(resp==='yes'?'✅':resp==='no'?'❌':'⏳')+'</td>';
-      });
-      h+='<td>'+(r.confirmed?'<span style="color:var(--green)">✅ Confirmado</span>':r.unavailAll?'<span style="color:var(--red)">❌ Indisponível</span>':'<span style="color:var(--text2)">⏳ Aguardando</span>')+'</td></tr>';
+
+// Helper: POST para API do bot
+async function consultaApiPost(body){
+  var r=await fetch(CONSULTA_API+'/api/consulta',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+  });
+  return r.json();
+}
+
+// Parser JS equivalente ao parse_consulta_message do Python
+function parseConsultaMessageJS(text){
+  var result={tipo:null,datas:[],missoes:[],observacoes:'',texto_original:text};
+  // Tipo VC
+  var vcMatch=text.match(/VC[-\s]?([12])/i);
+  if(vcMatch) result.tipo='VC-'+vcMatch[1];
+  // Datas
+  var dateMatch=text.match(/dias?\s+([\d]+(?:\s*[,e]\s*\d+)*)\s+de\s+(\w+)/i);
+  if(dateMatch){
+    var meses={janeiro:1,fevereiro:2,'março':3,marco:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+    var dias=dateMatch[1].match(/\d+/g)||[];
+    var mesNum=meses[dateMatch[2].toLowerCase().trim()]||0;
+    var ano=new Date().getFullYear();
+    dias.forEach(function(d){result.datas.push(('0'+parseInt(d)).slice(-2)+'/'+('0'+mesNum).slice(-2)+'/'+ano);});
+  }
+  // Missões: "A)" seguido de descrição
+  var missaoRe=/([A-Z])\s*\)\s*([\s\S]*?)(?=\n[A-Z]\s*\)|$)/g;
+  var m;
+  while((m=missaoRe.exec(text))!==null){
+    var letra=m[1];var descricao=m[2].trim();
+    var missao={letra:letra,descricao:descricao,trechos:[],is_saviso:false,escalados:[],om:null,cientes:[]};
+    if(/SAVISO/i.test(descricao)){
+      missao.is_saviso=true;
+      var diaSemana=descricao.match(/SAVISO\s+(\w+)/i);
+      if(diaSemana) missao.saviso_dia=diaSemana[1];
+    } else {
+      missao.trechos=descricao.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+    }
+    result.missoes.push(missao);
+  }
+  // Observações
+  var obsMatch=text.match(/OBS[:\s]+([\s\S]*?)$/i);
+  if(obsMatch) result.observacoes=obsMatch[1].trim();
+  return result;
+}
+
+// Auto-refresh timer
+var consultaRefreshTimer=null;
+function consultaStartAutoRefresh(){
+  if(consultaRefreshTimer) clearInterval(consultaRefreshTimer);
+  consultaRefreshTimer=setInterval(function(){
+    if(s3ActiveTab==='consulta'||s3ActiveTab==='escalav2'){
+      consultasJsonLastFetch=0; // Forçar refresh
+      s3RenderActiveTab();
+    }
+  },10000);
+}
+consultaStartAutoRefresh();
+
+function s3RenderEscalaV2(container){
+  container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
+  fetchConsultasJson().then(function(data){
+    var html='<h2>📋 Escalação V2 — Acompanhamento</h2>';
+    ['vc1','vc2'].forEach(function(vcKey){
+      var consulta=data[vcKey];
+      var vcLabel=vcKey==='vc1'?'VC-1':'VC-2';
+      var colorVar=vcKey==='vc1'?'--vc1':'--vc2';
+      var emoji=vcKey==='vc1'?'🔵':'🟢';
+      html+='<div style="margin-bottom:24px">';
+      html+='<h3 style="color:var('+colorVar+');border-bottom:2px solid var('+colorVar+');padding-bottom:6px">'+emoji+' '+vcLabel+'</h3>';
+      if(!consulta){html+='<div class="no-data">Nenhuma consulta ativa.</div></div>';return;}
+      // Info
+      html+='<div style="display:flex;gap:12px;margin-bottom:10px;font-size:.78rem;color:var(--text2);flex-wrap:wrap">';
+      html+='<span>📋 ID: '+consulta.id+'</span>';
+      html+='<span>📅 Criada: '+(consulta.created_at||'').substring(0,16)+'</span>';
+      html+='<span>🔹 Status: '+(consulta.locked?'🔒 Encerrada':'🟢 Ativa')+'</span>';
+      // Deadline timer
+      if(consulta.deadline&&!consulta.locked){
+        try{var dl=new Date(consulta.deadline);var now=new Date();var diff=dl-now;
+          if(diff>0){var h2=Math.floor(diff/3600000);var m2=Math.floor((diff%3600000)/60000);
+            html+='<span style="color:var(--yellow)">⏰ Prazo: '+h2+'h'+('0'+m2).slice(-2)+'m</span>';
+          }else{html+='<span style="color:var(--red)">⏰ Prazo expirado</span>';}
+        }catch(e){}
+      }
+      html+='</div>';
+      // Texto
+      if(consulta.text){html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.5;max-height:200px;overflow-y:auto">'+(consulta.text||'').replace(/</g,'&lt;')+'</div>';}
+      var missions=consulta.missions||[];var recipients=consulta.recipients||[];
+      if(!recipients.length){html+='<div class="no-data">Sem destinatários.</div></div>';return;}
+      // Stats
+      var total=recipients.length;var confirmed=recipients.filter(function(r){return r.confirmed;}).length;var pending=total-confirmed;
+      html+='<div style="display:flex;gap:16px;margin-bottom:12px;font-size:.82rem">';
+      html+='<span>👥 '+total+' tripulantes</span>';
+      html+='<span style="color:var(--green)">✅ '+confirmed+' responderam</span>';
+      html+='<span style="color:var(--yellow)">⏳ '+pending+' pendentes</span></div>';
+      // Matriz
+      if(missions.length){
+        html+='<div style="overflow-x:auto;margin-bottom:16px"><table style="width:100%;border-collapse:collapse;font-size:.78rem">';
+        html+='<thead><tr style="border-bottom:2px solid var(--border)"><th style="text-align:left;padding:8px 6px;color:var(--text2);min-width:140px">Tripulante</th>';
+        for(var mi=0;mi<missions.length;mi++){html+='<th style="text-align:center;padding:8px 4px;color:var('+colorVar+');font-weight:900;width:36px">'+missions[mi]+'</th>';}
+        html+='<th style="text-align:center;padding:8px 6px;color:var(--text2)">Status</th></tr></thead><tbody>';
+        for(var ri=0;ri<recipients.length;ri++){
+          var r=recipients[ri];
+          html+='<tr style="border-bottom:1px solid rgba(255,255,255,.05)">';
+          html+='<td style="padding:6px;font-weight:700">'+(r.rank||'')+' '+(r.name||'')+'</td>';
+          for(var mj=0;mj<missions.length;mj++){
+            var mKey=missions[mj];var resp=r.responses&&r.responses[mKey];
+            var bg='',color='rgba(255,255,255,.2)',display='-';
+            if(resp===true){bg='rgba(0,255,136,.15)';color='var(--green)';display='✅';}
+            else if(resp===false){bg='rgba(255,80,80,.1)';color='var(--red)';display='❌';}
+            else{bg='rgba(255,200,50,.06)';color='var(--yellow)';display='⏳';}
+            html+='<td style="text-align:center;padding:6px;background:'+bg+';color:'+color+';font-weight:900;border-radius:4px">'+display+'</td>';
+          }
+          if(r.confirmed) html+='<td style="text-align:center;padding:6px"><span style="color:var(--green)">✅</span></td>';
+          else if(r.delivered) html+='<td style="text-align:center;padding:6px"><span style="color:var(--yellow)">⏳</span></td>';
+          else html+='<td style="text-align:center;padding:6px"><span style="color:var(--red)">❌</span></td>';
+          html+='</tr>';
+        }
+        html+='</tbody></table></div>';
+      }
+      // Cientes
+      var parsed=consulta.parsed||{};var missoes=parsed.missoes||[];
+      var hasCientes=missoes.some(function(m){return m.cientes&&m.cientes.length;});
+      if(hasCientes){
+        html+='<div style="margin-top:14px;padding:12px;background:rgba(0,120,255,.08);border:1px solid rgba(0,120,255,.25);border-radius:8px">';
+        html+='<div style="font-size:.82rem;font-weight:900;color:var(--vc1);margin-bottom:8px">📋 CIENTES</div>';
+        missoes.forEach(function(mm){if(mm.cientes&&mm.cientes.length){
+          html+='<div style="font-size:.8rem;padding:2px 0"><strong>'+mm.letra+'):</strong> '+mm.cientes.map(function(c){return c.name+' ('+c.at.substring(11,16)+')';}).join(', ')+'</div>';
+        }});
+        html+='</div>';
+      }
+      // Escalados
+      var hasEscalados=missoes.some(function(m){return m.escalados&&m.escalados.length;});
+      if(hasEscalados){
+        html+='<div style="margin-top:14px;padding:12px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.25);border-radius:8px">';
+        html+='<div style="font-size:.82rem;font-weight:900;color:var(--green);margin-bottom:8px">✅ ESCALADOS</div>';
+        missoes.forEach(function(mm){if(mm.escalados&&mm.escalados.length){
+          var tipo=mm.is_saviso?'SAVISO':'MISSÃO';
+          html+='<div style="font-size:.8rem;padding:4px 0"><strong>'+mm.letra+') '+tipo+':</strong> '+mm.escalados.join(' / ')+'</div>';
+        }});
+        html+='</div>';
+      }
+      html+='</div>';
     });
-    h+='</table>';
+    container.innerHTML=html;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONSULTA — Interface principal do SisGOPA
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function s3RenderConsultaV2(container){
+  container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
+  fetchConsultasJson().then(function(data){
+    var h='<h2 style="color:var(--vc1)">📨 Consulta de Escalação</h2>';
+
+    // ─── 1. CRIAR CONSULTA ──────────────────────────────────────────────
+    h+='<div class="consulta-card" id="consulta-create-section">';
+    h+='<h3>📝 Nova Consulta</h3>';
+    // Tipo VC
+    h+='<div class="consulta-row"><span class="consulta-label">Tipo:</span>';
+    h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-vc-type" value="vc1" '+(data.vc1?'disabled':' checked')+'>  VC-1'+(data.vc1?' (em uso)':'')+'</label>&nbsp;&nbsp;';
+    h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-vc-type" value="vc2" '+(data.vc2?'disabled':(!data.vc1?' checked':''))+'>  VC-2'+(data.vc2?' (em uso)':'')+'</label></div>';
+    // Mensagem
+    h+='<div class="consulta-row"><span class="consulta-label">Mensagem da consulta:</span></div>';
+    h+='<textarea class="consulta-textarea" id="consulta-msg-input" rows="8" placeholder="Cole aqui a mensagem completa da consulta...\n\nExemplo:\nA) BR-RJ-BR 04 QUA 0700/1040 ESCAV / TRLD\nB) SAVISO QUA\nC) RJ-SP 04 QUA 1200/1400"></textarea>';
+    // Prazo
+    h+='<div class="consulta-row"><span class="consulta-label">Prazo:</span>';
+    ['3','6','9','12','24'].forEach(function(v){
+      h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer;margin-right:8px"><input type="radio" name="consulta-prazo" value="'+v+'"> '+v+'h</label>';
+    });
+    h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-prazo" value="sem" checked> Sem prazo</label></div>';
+    // Botões
     h+='<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">';
-    h+='<button class="consulta-btn" id="consulta-refresh-btn">🔄 ATUALIZAR</button>';
-    if(!st.active.locked){h+='<button class="consulta-btn-danger" id="consulta-lock-btn">🔒 ENCERRAR CONSULTA</button>';}
-    else{h+='<span style="color:var(--text2);font-size:.82rem">🔒 Consulta encerrada</span>';}
-    h+='<button class="consulta-btn-success" id="consulta-archive-btn">📦 ARQUIVAR</button>';
+    h+='<button class="consulta-btn" id="consulta-preview-btn">👁 PRÉVIA</button>';
+    h+='<button class="consulta-btn-primary" id="consulta-send-btn">📤 CRIAR E ENVIAR</button></div>';
+    h+='<div class="consulta-preview" id="consulta-preview-box"></div>';
+    h+='<div id="consulta-send-status" style="margin-top:10px"></div>';
     h+='</div>';
-  } else {
-    h+='<div style="padding:20px;text-align:center;color:var(--text2);font-size:.85rem">Nenhuma consulta ativa no momento.</div>';
-  }
-  h+='</div>';
-  // Section 3: Archive
-  h+='<div class="consulta-card" id="consulta-archive-section">';
-  h+='<h3>📦 Arquivo de Consultas</h3>';
-  if(st.archive&&st.archive.length>0){
-    st.archive.slice().reverse().forEach(function(a,i){
-      h+='<div class="consulta-archive-item" data-arch="'+i+'">';
-      h+='<span style="color:var(--vc1)">📋</span> '+(a.sentAt||'—')+' — Missões: '+(a.missions||[]).join(', ')+' — '+(a.recipients||[]).length+' destinatário(s)';
-      h+='<div class="consulta-archive-detail" id="consulta-arch-det-'+i+'"><pre style="margin:0;color:var(--text);font-size:.78rem">'+JSON.stringify(a,null,2).replace(/</g,'&lt;')+'</pre></div>';
+
+    // ─── 2. CONSULTAS ATIVAS ────────────────────────────────────────────
+    ['vc1','vc2'].forEach(function(vcKey){
+      var consulta=data[vcKey];
+      var vcLabel=vcKey==='vc1'?'VC-1':'VC-2';
+      var colorVar=vcKey==='vc1'?'--vc1':'--vc2';
+      var emoji=vcKey==='vc1'?'🔵':'🟢';
+
+      h+='<div class="consulta-card">';
+      h+='<h3 style="color:var('+colorVar+')">'+emoji+' '+vcLabel+' — '+(consulta?consulta.id:'Sem consulta')+'</h3>';
+
+      if(!consulta){h+='<div style="padding:16px;text-align:center;color:var(--text2);font-size:.85rem">Nenhuma consulta ativa.</div></div>';return;}
+
+      // Status e info
+      h+='<div style="font-size:.82rem;color:var(--text2);margin-bottom:8px">Status: '+(consulta.locked?'🔒 Encerrada':'🟢 Ativa');
+      if(consulta.deadline&&!consulta.locked){
+        try{var dl=new Date(consulta.deadline);var now=new Date();var diff=dl-now;
+          if(diff>0){var hh=Math.floor(diff/3600000);var mm=Math.floor((diff%3600000)/60000);h+=' | ⏰ Prazo: '+hh+'h'+('0'+mm).slice(-2)+'m';}
+          else h+=' | ⏰ Prazo expirado';
+        }catch(e){}
+      }
       h+='</div>';
+
+      // Texto
+      h+='<div style="font-size:.82rem;white-space:pre-wrap;background:var(--bg3);padding:10px;border-radius:6px;margin-bottom:10px;max-height:150px;overflow-y:auto">'+(consulta.text||'').replace(/</g,'&lt;')+'</div>';
+
+      // Matriz de respostas
+      var missions=consulta.missions||[];var recipients=consulta.recipients||[];
+      if(missions.length&&recipients.length){
+        var total=recipients.length;var confirmed=recipients.filter(function(r){return r.confirmed;}).length;
+        h+='<div style="font-size:.82rem;margin-bottom:8px">👥 '+total+' tripulantes | <span style="color:var(--green)">✅ '+confirmed+'</span> responderam | <span style="color:var(--yellow)">⏳ '+(total-confirmed)+'</span> pendentes</div>';
+        h+='<table class="consulta-matrix"><tr><th>Tripulante</th>';
+        missions.forEach(function(m){h+='<th>'+m+'</th>';});
+        h+='<th>Status</th></tr>';
+        recipients.forEach(function(r){
+          h+='<tr><td style="text-align:left;color:var(--text)">'+(r.rank||'')+' '+(r.name||'')+'</td>';
+          missions.forEach(function(m){
+            var resp=r.responses&&r.responses[m];
+            if(resp===true) h+='<td style="color:var(--green)">✅</td>';
+            else if(resp===false) h+='<td style="color:var(--red)">❌</td>';
+            else h+='<td>⏳</td>';
+          });
+          h+='<td>'+(r.confirmed?'<span style="color:var(--green)">✅ Confirmado</span>':'<span style="color:var(--text2)">⏳</span>')+'</td></tr>';
+        });
+        h+='</table>';
+      }
+
+      // ─── 3. ENCERRAR / 9. ARQUIVAR ────────────────────────────────────
+      h+='<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">';
+      if(!consulta.locked){
+        h+='<button class="consulta-btn-danger" onclick="consultaAction(\'lock\',\''+vcKey+'\')">🔒 ENCERRAR RESPOSTAS</button>';
+      }
+      h+='<button class="consulta-btn" onclick="consultaAction(\'archive\',\''+vcKey+'\')">📦 ARQUIVAR</button>';
+      h+='</div>';
+
+      // ─── 4. ENVIAR OM (pós encerramento) ──────────────────────────────
+      if(consulta.locked){
+        var missoes=(consulta.parsed||{}).missoes||[];
+        var nonSaviso=missoes.filter(function(m){return !m.is_saviso;});
+        if(nonSaviso.length){
+          h+='<div style="margin-top:16px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">';
+          h+='<div style="font-size:.85rem;font-weight:900;margin-bottom:10px">📋 Ordem de Missão (OM)</div>';
+          nonSaviso.forEach(function(mm){
+            var hasOm=mm.om?'✅':'';
+            h+='<div style="margin-bottom:10px;padding:8px;border:1px solid var(--border);border-radius:6px">';
+            h+='<div style="font-size:.82rem;font-weight:700;margin-bottom:6px">Missão '+mm.letra+' '+hasOm+'</div>';
+            h+='<input class="consulta-input" id="om-trechos-'+vcKey+'-'+mm.letra+'" placeholder="Trechos: SBBR/SBKP, SBKP/SBSP" value="'+(mm.om&&mm.om.trechos?mm.om.trechos.join(', '):'')+'" style="margin-bottom:4px">';
+            h+='<div style="display:flex;gap:8px"><input class="consulta-input" id="om-anv-'+vcKey+'-'+mm.letra+'" placeholder="ANV: 2101" value="'+(mm.om&&mm.om.anv?mm.om.anv:'')+'" style="max-width:120px">';
+            h+='<input class="consulta-input" id="om-obs-'+vcKey+'-'+mm.letra+'" placeholder="Observações" value="'+(mm.om&&mm.om.obs?mm.om.obs:'')+'" style="flex:1"></div>';
+            h+='<button class="consulta-btn" style="margin-top:6px" onclick="consultaSaveOM(\''+vcKey+'\',\''+mm.letra+'\')">💾 Salvar OM '+mm.letra+'</button>';
+            h+='</div>';
+          });
+          h+='</div>';
+        }
+
+        // ─── 5. SAVISO ──────────────────────────────────────────────────
+        var savisoMissoes=missoes.filter(function(m){return m.is_saviso;});
+        if(savisoMissoes.length){
+          h+='<div style="margin-top:16px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">';
+          h+='<div style="font-size:.85rem;font-weight:900;margin-bottom:10px">📋 SAVISO — Nomes Escalados</div>';
+          savisoMissoes.forEach(function(mm){
+            h+='<div style="margin-bottom:8px">';
+            h+='<span style="font-size:.82rem;font-weight:700">'+mm.letra+') SAVISO '+(mm.saviso_dia||'')+': </span>';
+            h+='<input class="consulta-input" id="saviso-nomes-'+vcKey+'-'+mm.letra+'" placeholder="MJ MACHADO / MJ OSVALDO" value="'+(mm.escalados||[]).join(' / ')+'" style="max-width:400px">';
+            h+='<button class="consulta-btn" style="margin-left:8px" onclick="consultaSaveSAVISO(\''+vcKey+'\',\''+mm.letra+'\')">💾</button>';
+            h+='</div>';
+          });
+          h+='</div>';
+        }
+
+        // ─── 6. DEFINIR ESCALADOS ───────────────────────────────────────
+        if(missions.length&&recipients.length){
+          h+='<div style="margin-top:16px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">';
+          h+='<div style="font-size:.85rem;font-weight:900;margin-bottom:10px">👥 Definir Escalados por Missão</div>';
+          missoes.filter(function(m){return !m.is_saviso;}).forEach(function(mm){
+            // Quem respondeu disponível para esta missão
+            var disponiveis=recipients.filter(function(r){return r.confirmed&&r.responses&&r.responses[mm.letra]===true;});
+            var escaladosAtuais=mm.escalados||[];
+            h+='<div style="margin-bottom:10px;padding:8px;border:1px solid var(--border);border-radius:6px">';
+            h+='<div style="font-size:.82rem;font-weight:700;margin-bottom:6px">Missão '+mm.letra+' — Disponíveis: '+disponiveis.length+'</div>';
+            if(disponiveis.length){
+              disponiveis.forEach(function(r){
+                var nomeCompleto=(r.rank||'')+' '+(r.name||'');
+                var checked=escaladosAtuais.indexOf(nomeCompleto.trim())>=0?'checked':'';
+                h+='<label style="display:block;font-size:.82rem;color:var(--text);cursor:pointer;margin-bottom:2px"><input type="checkbox" class="escal-cb-'+vcKey+'-'+mm.letra+'" value="'+nomeCompleto.trim()+'" '+checked+'> '+nomeCompleto+'</label>';
+              });
+            } else {
+              h+='<div style="font-size:.82rem;color:var(--text2)">Nenhum tripulante disponível.</div>';
+            }
+            h+='<button class="consulta-btn" style="margin-top:6px" onclick="consultaSaveEscalados(\''+vcKey+'\',\''+mm.letra+'\')">💾 Salvar Escalados '+mm.letra+'</button>';
+            h+='</div>';
+          });
+          h+='</div>';
+        }
+
+        // ─── 7. ENVIAR CONFIRMAÇÃO ──────────────────────────────────────
+        var anyEscalados=missoes.some(function(m){return m.escalados&&m.escalados.length;});
+        if(anyEscalados){
+          h+='<div style="margin-top:16px;padding:12px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.25);border-radius:8px">';
+          h+='<div style="font-size:.85rem;font-weight:900;color:var(--green);margin-bottom:10px">📤 Enviar Confirmação de Escalação</div>';
+          // Prévia
+          h+='<div style="font-size:.8rem;color:var(--text2);margin-bottom:8px">';
+          missoes.forEach(function(mm){
+            if(mm.escalados&&mm.escalados.length){
+              var tipo=mm.is_saviso?'SAVISO':'MISSÃO';
+              h+='<div><strong>'+mm.letra+') '+tipo+':</strong> '+mm.escalados.join(' / ')+'</div>';
+            }
+          });
+          h+='</div>';
+          h+='<button class="consulta-btn-primary" onclick="consultaSendConfirmacao(\''+vcKey+'\')">📤 ENVIAR CONFIRMAÇÃO VIA TELEGRAM</button>';
+          h+='<div id="confirmacao-status-'+vcKey+'" style="margin-top:8px"></div>';
+          h+='</div>';
+        }
+
+        // ─── 8. ACOMPANHAR CIENTES ──────────────────────────────────────
+        var hasCientes=missoes.some(function(m){return m.cientes&&m.cientes.length;});
+        if(hasCientes){
+          h+='<div style="margin-top:14px;padding:12px;background:rgba(0,120,255,.08);border:1px solid rgba(0,120,255,.25);border-radius:8px">';
+          h+='<div style="font-size:.82rem;font-weight:900;color:var(--vc1);margin-bottom:8px">📋 CIENTES REGISTRADOS</div>';
+          missoes.forEach(function(mm){if(mm.cientes&&mm.cientes.length){
+            h+='<div style="font-size:.8rem;padding:2px 0"><strong>'+mm.letra+'):</strong> '+mm.cientes.map(function(c){return c.name+' ('+(c.at||'').substring(11,16)+')';}).join(', ')+'</div>';
+          }});
+          h+='</div>';
+        }
+      }
+
+      h+='</div>'; // fim consulta-card
     });
-  } else {
-    h+='<div style="padding:16px;text-align:center;color:var(--text2);font-size:.82rem">Nenhuma consulta arquivada.</div>';
-  }
-  h+='</div>';
-  container.innerHTML=h;
-  // Event bindings
-  var prazoRadios=document.querySelectorAll('input[name="consulta-prazo"]');
-  var dlInput=document.getElementById('consulta-deadline');
-  var msgArea=document.getElementById('consulta-msg');
-  var missionsInput=document.getElementById('consulta-missions');
-  prazoRadios.forEach(function(r){r.addEventListener('change',function(){
-    dlInput.style.display=this.value==='com'?'inline-block':'none';
-    updateConsultaMsg();
-  });});
-  function updateConsultaMsg(){
-    var ms=(missionsInput.value||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
-    var prazoVal='Sem prazo definido';
-    if(document.querySelector('input[name="consulta-prazo"]:checked').value==='com'&&dlInput.value){
-      var d=new Date(dlInput.value);prazoVal=d.toLocaleString('pt-BR');
+
+    // ─── ARQUIVO ────────────────────────────────────────────────────────
+    h+='<div class="consulta-card">';
+    h+='<h3>📦 Arquivo de Consultas</h3>';
+    var archive=data.archive||[];
+    if(archive.length>0){
+      archive.slice().reverse().forEach(function(a){
+        h+='<div class="consulta-archive-item" onclick="this.querySelector(\'.consulta-archive-detail\').style.display=this.querySelector(\'.consulta-archive-detail\').style.display===\'block\'?\'none\':\'block\'">';
+        var tipo=a.vc_type==='vc1'?'🔵 VC-1':'🟢 VC-2';
+        h+='<span style="color:var(--vc1)">📋</span> '+tipo+' — '+(a.id||'—')+' — Missões: '+(a.missions||[]).join(', ');
+        h+='<div class="consulta-archive-detail"><pre style="margin:0;color:var(--text);font-size:.72rem;max-height:200px;overflow:auto">'+JSON.stringify(a,null,2).replace(/</g,'&lt;').substring(0,2000)+'</pre></div>';
+        h+='</div>';
+      });
+    } else {
+      h+='<div style="padding:16px;text-align:center;color:var(--text2);font-size:.82rem">Nenhuma consulta arquivada.</div>';
     }
-    msgArea.value=consultaTemplate(ms.length?ms:['A','B','C','D'],prazoVal);
-  }
-  if(missionsInput)missionsInput.addEventListener('input',updateConsultaMsg);
-  if(dlInput)dlInput.addEventListener('change',updateConsultaMsg);
-  // Preview
-  var prevBtn=document.getElementById('consulta-preview-btn');
-  var prevBox=document.getElementById('consulta-preview-box');
-  if(prevBtn)prevBtn.addEventListener('click',function(){
-    prevBox.textContent=msgArea.value;
-    prevBox.style.display=prevBox.style.display==='block'?'none':'block';
-  });
-  // Send
-  var sendBtn=document.getElementById('consulta-send-btn');
-  var sendStatus=document.getElementById('consulta-send-status');
-  if(sendBtn)sendBtn.addEventListener('click',async function(){
-    sendBtn.disabled=true;sendBtn.textContent='⏳ Enviando...';sendStatus.innerHTML='';
-    var ms=(missionsInput.value||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
-    if(!ms.length){sendStatus.innerHTML='<span style="color:var(--red)">❌ Informe ao menos uma missão</span>';sendBtn.disabled=false;sendBtn.textContent='📤 ENVIAR CONSULTA';return;}
-    var checks=document.querySelectorAll('.consulta-recip:checked');
-    if(!checks.length){sendStatus.innerHTML='<span style="color:var(--red)">❌ Selecione ao menos um destinatário</span>';sendBtn.disabled=false;sendBtn.textContent='📤 ENVIAR CONSULTA';return;}
-    var text=msgArea.value;var results=[];
-    for(var c of checks){
-      var idx=parseInt(c.dataset.idx);var rec=CONSULTA_RECIPIENTS[idx];
-      try{var res=await sendConsultaTelegram(rec.chatId,text,ms);
-        if(res.ok)results.push({name:rec.name,chatId:rec.chatId,ok:true,msgId:res.result.message_id,responses:{},confirmed:false,unavailAll:false});
-        else results.push({name:rec.name,chatId:rec.chatId,ok:false,err:res.description||'Erro desconhecido'});
-      }catch(e){results.push({name:rec.name,chatId:rec.chatId,ok:false,err:e.message});}
-    }
-    var html='';results.forEach(function(r){
-      html+=r.ok?'<div style="color:var(--green);font-size:.82rem">✅ '+r.name+' — Enviado (msg #'+r.msgId+')</div>'
-        :'<div style="color:var(--red);font-size:.82rem">❌ '+r.name+' — Falha: '+r.err+'</div>';
+    h+='</div>';
+
+    container.innerHTML=h;
+
+    // ─── Event bindings ─────────────────────────────────────────────────
+    // Prévia
+    var prevBtn=document.getElementById('consulta-preview-btn');
+    var prevBox=document.getElementById('consulta-preview-box');
+    if(prevBtn)prevBtn.addEventListener('click',function(){
+      var msgArea=document.getElementById('consulta-msg-input');
+      var text=msgArea?msgArea.value:'';
+      var parsed=parseConsultaMessageJS(text);
+      var vcType=(document.querySelector('input[name="consulta-vc-type"]:checked')||{}).value||'vc1';
+      var vcLabel=vcType==='vc1'?'VC-1':'VC-2';
+      var prazoVal=(document.querySelector('input[name="consulta-prazo"]:checked')||{}).value||'sem';
+      var preview='🛩️ CONSULTA '+vcLabel+'\n\n'+text+'\n\nMissões: '+(parsed.missoes.length?parsed.missoes.map(function(m){return m.letra;}).join(', '):'Nenhuma detectada');
+      if(prazoVal!=='sem'){
+        var dl=new Date(Date.now()+parseInt(prazoVal)*3600000);
+        preview+='\n⏰ Prazo: '+dl.toLocaleString('pt-BR');
+      }
+      preview+='\n\nDestinatários: '+(vcType==='vc1'?CONSULTA_RECIPIENTS_VC1:CONSULTA_RECIPIENTS_VC2).map(function(r){return r.rank+' '+r.name;}).join(', ');
+      prevBox.textContent=preview;
+      prevBox.style.display=prevBox.style.display==='block'?'none':'block';
     });
-    sendStatus.innerHTML=html;
-    var okRecips=results.filter(function(r){return r.ok;});
-    if(okRecips.length){
-      var prazoVal='Sem prazo definido';
-      if(document.querySelector('input[name="consulta-prazo"]:checked').value==='com'&&dlInput.value){prazoVal=new Date(dlInput.value).toLocaleString('pt-BR');}
-      var newSt=consultaLoadState();
-      newSt.active={text:text,missions:ms,sentAt:new Date().toLocaleString('pt-BR'),deadline:prazoVal,locked:false,recipients:okRecips.map(function(r){return{name:r.name,chatId:r.chatId,msgId:r.msgId,responses:{},confirmed:false,unavailAll:false};})};
-      consultaSaveState(newSt);
-      setTimeout(function(){s3RenderConsulta(container);},1500);
+
+    // Enviar
+    var sendBtn=document.getElementById('consulta-send-btn');
+    if(sendBtn)sendBtn.addEventListener('click',async function(){
+      var statusEl=document.getElementById('consulta-send-status');
+      var msgArea=document.getElementById('consulta-msg-input');
+      var text=(msgArea?msgArea.value:'').trim();
+      if(!text){statusEl.innerHTML='<span style="color:var(--red)">❌ Cole a mensagem da consulta</span>';return;}
+
+      var vcType=(document.querySelector('input[name="consulta-vc-type"]:checked')||{}).value;
+      if(!vcType){statusEl.innerHTML='<span style="color:var(--red)">❌ Selecione VC-1 ou VC-2</span>';return;}
+
+      // Confirmar
+      if(!confirm('Enviar consulta '+(vcType==='vc1'?'VC-1':'VC-2')+'?')) return;
+
+      sendBtn.disabled=true;sendBtn.textContent='⏳ Enviando...';statusEl.innerHTML='';
+
+      var parsed=parseConsultaMessageJS(text);
+      var missions=parsed.missoes.length?parsed.missoes:[];
+      if(!missions.length){
+        // Tentar extrair letras simples
+        var simpleLetters=text.match(/\b([A-Z])\b/g);
+        if(simpleLetters){
+          var unique=[...new Set(simpleLetters)].slice(0,8);
+          missions=unique.map(function(l){return{letra:l,descricao:'',trechos:[],is_saviso:false,escalados:[],om:null,cientes:[]};});
+        }
+      }
+
+      var prazoVal=(document.querySelector('input[name="consulta-prazo"]:checked')||{}).value||'sem';
+      var deadline=null;
+      if(prazoVal!=='sem'){deadline=new Date(Date.now()+parseInt(prazoVal)*3600000).toISOString();}
+
+      var recipients=vcType==='vc1'?CONSULTA_RECIPIENTS_VC1:CONSULTA_RECIPIENTS_VC2;
+      var recipientsList=recipients.map(function(r){return{chat_id:r.chatId,name:r.name,rank:r.rank};});
+
+      try{
+        var result=await consultaApiPost({
+          action:'create',
+          vc:vcType,
+          text:text,
+          missions:missions,
+          deadline:deadline,
+          recipients:recipientsList
+        });
+        if(result.ok){
+          statusEl.innerHTML='<span style="color:var(--green)">✅ Consulta criada: '+result.id+'</span>';
+          consultasJsonLastFetch=0;
+          setTimeout(function(){s3RenderConsultaV2(container);},1500);
+        } else {
+          statusEl.innerHTML='<span style="color:var(--red)">❌ '+result.error+'</span>';
+        }
+      }catch(e){
+        statusEl.innerHTML='<span style="color:var(--red)">❌ Erro de conexão com o bot: '+e.message+'</span>';
+      }
+      sendBtn.disabled=false;sendBtn.textContent='📤 CRIAR E ENVIAR';
+    });
+  });
+}
+
+// ─── Ações de consulta (encerrar/arquivar) ──────────────────────────────────
+async function consultaAction(action,vcKey){
+  var vcLabel=vcKey==='vc1'?'VC-1':'VC-2';
+  var msg=action==='lock'?'Encerrar respostas de '+vcLabel+'?':'Arquivar consulta de '+vcLabel+'?';
+  if(!confirm(msg)) return;
+  try{
+    var result=await consultaApiPost({action:action,vc:vcKey});
+    if(result.ok){consultasJsonLastFetch=0;s3RenderActiveTab();}
+    else alert('Erro: '+result.error);
+  }catch(e){alert('Erro de conexão com o bot: '+e.message);}
+}
+
+// ─── Salvar OM ──────────────────────────────────────────────────────────────
+async function consultaSaveOM(vcKey,letra){
+  var trechos=(document.getElementById('om-trechos-'+vcKey+'-'+letra)||{}).value||'';
+  var anv=(document.getElementById('om-anv-'+vcKey+'-'+letra)||{}).value||'';
+  var obs=(document.getElementById('om-obs-'+vcKey+'-'+letra)||{}).value||'';
+  try{
+    var result=await consultaApiPost({action:'update_om',vc:vcKey,missao:letra,om:{
+      trechos:trechos.split(',').map(function(s){return s.trim();}).filter(Boolean),
+      anv:anv.trim(),obs:obs.trim()
+    }});
+    if(result.ok){alert('OM '+letra+' salva!');consultasJsonLastFetch=0;s3RenderActiveTab();}
+    else alert('Erro: '+result.error);
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+// ─── Salvar SAVISO ──────────────────────────────────────────────────────────
+async function consultaSaveSAVISO(vcKey,letra){
+  var nomes=(document.getElementById('saviso-nomes-'+vcKey+'-'+letra)||{}).value||'';
+  var escalados=nomes.split('/').map(function(s){return s.trim();}).filter(Boolean);
+  try{
+    var result=await consultaApiPost({action:'update_saviso',vc:vcKey,missao:letra,escalados:escalados});
+    if(result.ok){alert('SAVISO salvo!');consultasJsonLastFetch=0;s3RenderActiveTab();}
+    else alert('Erro: '+result.error);
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+// ─── Salvar Escalados ───────────────────────────────────────────────────────
+async function consultaSaveEscalados(vcKey,letra){
+  var checks=document.querySelectorAll('.escal-cb-'+vcKey+'-'+letra+':checked');
+  var escalados=[];
+  checks.forEach(function(cb){escalados.push(cb.value);});
+  try{
+    var result=await consultaApiPost({action:'update_escalados',vc:vcKey,missao:letra,escalados:escalados});
+    if(result.ok){alert('Escalados missão '+letra+' salvos!');consultasJsonLastFetch=0;s3RenderActiveTab();}
+    else alert('Erro: '+result.error);
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+// ─── Enviar Confirmação ─────────────────────────────────────────────────────
+async function consultaSendConfirmacao(vcKey){
+  if(!confirm('Enviar confirmação de escalação via Telegram?')) return;
+  var statusEl=document.getElementById('confirmacao-status-'+vcKey);
+  if(statusEl) statusEl.innerHTML='⏳ Enviando...';
+  try{
+    var result=await consultaApiPost({action:'send_confirmacao',vc:vcKey});
+    if(result.ok){
+      if(statusEl) statusEl.innerHTML='<span style="color:var(--green)">✅ '+result.enviados+' mensagem(ns) enviada(s)'+(result.erros?' | '+result.erros+' erro(s)':'')+'</span>';
+    } else {
+      if(statusEl) statusEl.innerHTML='<span style="color:var(--red)">❌ '+result.error+'</span>';
     }
-    sendBtn.disabled=false;sendBtn.textContent='📤 ENVIAR CONSULTA';
-  });
-  // Refresh
-  var refBtn=document.getElementById('consulta-refresh-btn');
-  if(refBtn)refBtn.addEventListener('click',function(){s3RenderConsulta(container);});
-  // Lock
-  var lockBtn=document.getElementById('consulta-lock-btn');
-  if(lockBtn)lockBtn.addEventListener('click',function(){var s=consultaLoadState();if(s.active){s.active.locked=true;consultaSaveState(s);s3RenderConsulta(container);}});
-  // Archive
-  var archBtn=document.getElementById('consulta-archive-btn');
-  if(archBtn)archBtn.addEventListener('click',function(){var s=consultaLoadState();if(s.active){s.archive.push(Object.assign({},s.active,{archivedAt:new Date().toLocaleString('pt-BR')}));s.active=null;consultaSaveState(s);s3RenderConsulta(container);}});
-  // Archive expand
-  document.querySelectorAll('.consulta-archive-item').forEach(function(el){
-    el.addEventListener('click',function(){var det=this.querySelector('.consulta-archive-detail');if(det)det.style.display=det.style.display==='block'?'none':'block';});
-  });
+  }catch(e){
+    if(statusEl) statusEl.innerHTML='<span style="color:var(--red)">❌ Erro: '+e.message+'</span>';
+  }
 }
 
 function renderAll(){
