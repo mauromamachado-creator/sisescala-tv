@@ -3653,14 +3653,31 @@ async function botNotam(){botLastFn=botNotam;
   const icao=getBotIcao();if(!icao)return;
   botLoading('NOTAMs '+icao);
   try{
-    // Try aviationweather (AISWEB POST won't work from browser due to CORS)
+    let notams=[];let fonte='';
+    // 1. Tentar aviationweather.gov (grátis, sem limite)
     const raw=await proxyFetchRaw(`https://aviationweather.gov/api/data/notam?ids=${icao}&format=raw`).catch(()=>'');
+    if(raw&&raw.trim()&&!raw.includes('Not found')){
+      notams=raw.trim().split(/\n{2,}/).filter(n=>n.trim());
+      fonte='aviationweather.gov';
+    }
+    // 2. Fallback: ICAO API (limitada — só se aviationweather falhar)
+    if(!notams.length){
+      try{
+        const icaoKey='0957b31c-6510-4974-8342-1a85ffd29a6e';
+        const resp=await fetch(`https://dataservices.icao.int/api/realtime-notams?api_key=${icaoKey}&format=json&ICAOCode=${icao}`);
+        const data=await resp.json();
+        if(Array.isArray(data)&&data.length){
+          notams=data.map(n=>n.all||n.message||n.text||'').filter(t=>t.trim());
+          fonte='ICAO API';
+        }
+      }catch(e){}
+    }
     let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">📋 NOTAMs - ${icao}</div>`;
-    if(raw&&raw.trim()){
-      const notams=raw.trim().split(/\n{2,}/);
+    if(notams.length){
       notams.forEach(n=>{
         html+=`<div style="background:var(--bg);padding:8px;border-radius:4px;margin-bottom:6px;border-left:3px solid var(--yellow);font-size:.75rem;white-space:pre-wrap">${n.trim()}</div>`;
       });
+      if(fonte)html+=`<div style="font-size:.7rem;color:var(--text2);margin-top:4px">Fonte: ${fonte}</div>`;
     }else{
       html+=`<div>✅ Nenhum NOTAM encontrado ou serviço indisponível.</div>`;
       html+=`<div style="margin-top:4px">🔗 <a href="https://aisweb.decea.mil.br/?i=notam" target="_blank" style="color:var(--vc1)">Consultar AISWEB</a> | <a href="https://www.notams.faa.gov/" target="_blank" style="color:var(--vc1)">FAA NOTAMs</a></div>`;
@@ -4096,9 +4113,12 @@ async function botExecMsgPadrao(){
     const rec=checkRecNeeded(destAis.rwyLen,destAis.rwyWid,destAis.hasIfr,destAis.oprType);
     // PCN tire pressure
     const tireCat=getPcnTireCat(destAis.pcn);
-    // NOTAMs (runway filter)
+    // NOTAMs (runway filter) — aviationweather.gov primary, ICAO API fallback
     let notamAlert='NOTAM OK';
-    const notamRaw=await proxyFetchRaw(`https://aviationweather.gov/api/data/notam?ids=${dest}&format=raw`).catch(()=>'');
+    let notamRaw=await proxyFetchRaw(`https://aviationweather.gov/api/data/notam?ids=${dest}&format=raw`).catch(()=>'');
+    if(!notamRaw||notamRaw.includes('Not found')){
+      try{const r=await fetch(`https://dataservices.icao.int/api/realtime-notams?api_key=0957b31c-6510-4974-8342-1a85ffd29a6e&format=json&ICAOCode=${dest}`);const d=await r.json();if(Array.isArray(d)&&d.length)notamRaw=d.map(n=>n.all||n.message||'').join('\n\n');}catch(e){}
+    }
     if(notamRaw){
       const alerts=filterNotamRunway(notamRaw);
       if(alerts.length)notamAlert=alerts.join('; ');
