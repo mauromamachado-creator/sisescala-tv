@@ -2768,7 +2768,28 @@ function openDiariaForm(omId){
       .diaria-section{margin-bottom:16px}
       .diaria-table{width:100%;border-collapse:collapse;font-size:.75rem}
       .diaria-table th{background:#0a0f1a;padding:6px;text-align:left;color:var(--text2);font-weight:600;border:1px solid #1a2a40}
-      .diaria-table td{padding:4px;border:1px solid #1a2a40}</style>
+      .diaria-table td{padding:4px;border:1px solid #1a2a40}
+      .consulta-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+      .consulta-card h3{margin:0 0 12px;color:var(--vc1);font-size:.95rem}
+      .consulta-textarea{width:100%;min-height:140px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px;font-size:.82rem;resize:vertical;font-family:inherit}
+      .consulta-input{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:.82rem;width:100%}
+      .consulta-row{display:flex;gap:12px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+      .consulta-label{color:var(--text2);font-size:.82rem;min-width:100px}
+      .consulta-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:.82rem;transition:background .2s}
+      .consulta-btn:hover{background:var(--vc1);color:#fff}
+      .consulta-btn-primary{background:var(--vc1);color:#fff;border:none;border-radius:6px;padding:8px 18px;cursor:pointer;font-size:.85rem;font-weight:600}
+      .consulta-btn-primary:hover{opacity:.85}
+      .consulta-btn-danger{background:var(--red);color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:.82rem}
+      .consulta-btn-success{background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:.82rem}
+      .consulta-badge{display:inline-block;background:var(--red);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:10px;font-weight:700;margin-left:8px}
+      .consulta-preview{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;margin-top:10px;white-space:pre-wrap;font-size:.82rem;color:var(--text);display:none}
+      .consulta-status-row{display:flex;gap:8px;align-items:center;margin-top:6px;font-size:.82rem}
+      .consulta-matrix{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:10px}
+      .consulta-matrix th{background:var(--bg3);padding:6px;text-align:center;color:var(--text2);border:1px solid var(--border)}
+      .consulta-matrix td{padding:6px;text-align:center;border:1px solid var(--border)}
+      .consulta-archive-item{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px;cursor:pointer;font-size:.82rem;color:var(--text2);transition:background .2s}
+      .consulta-archive-item:hover{background:var(--bg2)}
+      .consulta-archive-detail{display:none;padding:10px;font-size:.8rem;white-space:pre-wrap;color:var(--text);margin-top:6px;border-top:1px solid var(--border)}</style>
 
       <div class="diaria-section">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -3113,14 +3134,154 @@ function s3RenderDiario(container){
   var src=document.getElementById('screen4');
   if(src) container.innerHTML=src.innerHTML;
 }
+var CONSULTA_TOKEN='8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU';
+var CONSULTA_RECIPIENTS=[{name:'Major Machado',chatId:'673591486',label:'✅ Major Machado (TESTE)'}];
+function consultaLoadState(){try{return JSON.parse(localStorage.getItem('sisgopa_consulta'))||{active:null,archive:[]};}catch(e){return{active:null,archive:[]};}}
+function consultaSaveState(st){localStorage.setItem('sisgopa_consulta',JSON.stringify(st));}
+function consultaTemplate(missions,prazo){return '📋 CONSULTA DE ESCALAÇÃO - GTE\n\nPrezados Oficiais,\n\nSolicito manifestação de disponibilidade para as missões abaixo:\n\n'+missions.map(function(m){return '• Missão '+m;}).join('\n')+'\n\nFavor responder utilizando os botões abaixo.\nResposta até: '+(prazo||'Sem prazo definido')+'\n\nAtenciosamente,\nS3/GTE';}
+async function sendConsultaTelegram(chatId,text,missions){
+  var keyboard=missions.map(function(m){return[{text:m,callback_data:'toggle_'+m}];});
+  keyboard.push([{text:'✅ CONFIRMAR',callback_data:'confirm'}]);
+  keyboard.push([{text:'❌ INDISPONÍVEL TODAS',callback_data:'unavail_all'}]);
+  var resp=await fetch('https://api.telegram.org/bot'+CONSULTA_TOKEN+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:text,parse_mode:'Markdown',reply_markup:{inline_keyboard:keyboard}})});
+  return resp.json();
+}
 function s3RenderConsulta(container){
-  var html='<h2 style="color:var(--vc1)">📨 Consulta de Escalação</h2>';
-  html+='<div style="padding:40px;text-align:center;color:var(--text2);font-size:1rem">';
-  html+='<div style="font-size:3rem;margin-bottom:16px">🚧</div>';
-  html+='<div style="font-weight:700;margin-bottom:8px">Em desenvolvimento</div>';
-  html+='<div style="font-size:.82rem">Sistema de consulta de escalação em construção.</div>';
-  html+='</div>';
-  container.innerHTML=html;
+  var st=consultaLoadState();
+  var h='<h2 style="color:var(--vc1)">📨 Consulta de Escalação <span class="consulta-badge">MODO TESTE</span></h2>';
+  // Section 1: Create new
+  h+='<div class="consulta-card" id="consulta-create">';
+  h+='<h3>📝 Nova Consulta</h3>';
+  h+='<div class="consulta-row"><span class="consulta-label">Missões:</span><input type="text" class="consulta-input" id="consulta-missions" placeholder="A,B,C,D" value="A,B,C,D" style="max-width:220px"></div>';
+  h+='<div class="consulta-row"><span class="consulta-label">Prazo:</span>';
+  h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-prazo" value="sem" checked> Sem prazo</label>&nbsp;&nbsp;';
+  h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-prazo" value="com"> Com prazo</label>&nbsp;';
+  h+='<input type="datetime-local" class="consulta-input" id="consulta-deadline" style="max-width:220px;display:none"></div>';
+  h+='<div class="consulta-row"><span class="consulta-label">Mensagem:</span></div>';
+  h+='<textarea class="consulta-textarea" id="consulta-msg">'+consultaTemplate(['A','B','C','D'],'Sem prazo definido')+'</textarea>';
+  h+='<div class="consulta-row"><span class="consulta-label">Destinatários:</span></div>';
+  CONSULTA_RECIPIENTS.forEach(function(r,i){h+='<div style="margin-bottom:4px"><label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="checkbox" class="consulta-recip" data-idx="'+i+'" checked> '+r.label+'</label></div>';});
+  h+='<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">';
+  h+='<button class="consulta-btn" id="consulta-preview-btn">👁 PRÉVIA</button>';
+  h+='<button class="consulta-btn-primary" id="consulta-send-btn">📤 ENVIAR CONSULTA</button></div>';
+  h+='<div class="consulta-preview" id="consulta-preview-box"></div>';
+  h+='<div id="consulta-send-status" style="margin-top:10px"></div>';
+  h+='</div>';
+  // Section 2: Active consultation
+  h+='<div class="consulta-card" id="consulta-active-section">';
+  h+='<h3>📊 Consulta Ativa</h3>';
+  if(st.active){
+    h+='<div style="font-size:.82rem;color:var(--text2);white-space:pre-wrap;background:var(--bg3);padding:10px;border-radius:6px;margin-bottom:10px">'+st.active.text.replace(/</g,'&lt;')+'</div>';
+    h+='<div style="font-size:.78rem;color:var(--text2)">Enviada em: '+st.active.sentAt+' | Missões: '+st.active.missions.join(', ')+'</div>';
+    h+='<table class="consulta-matrix"><tr><th>Destinatário</th>';
+    st.active.missions.forEach(function(m){h+='<th>'+m+'</th>';});
+    h+='<th>Status</th></tr>';
+    (st.active.recipients||[]).forEach(function(r){
+      h+='<tr><td style="text-align:left;color:var(--text)">'+r.name+'</td>';
+      st.active.missions.forEach(function(m){
+        var resp=r.responses&&r.responses[m];
+        h+='<td>'+(resp==='yes'?'✅':resp==='no'?'❌':'⏳')+'</td>';
+      });
+      h+='<td>'+(r.confirmed?'<span style="color:var(--green)">✅ Confirmado</span>':r.unavailAll?'<span style="color:var(--red)">❌ Indisponível</span>':'<span style="color:var(--text2)">⏳ Aguardando</span>')+'</td></tr>';
+    });
+    h+='</table>';
+    h+='<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">';
+    h+='<button class="consulta-btn" id="consulta-refresh-btn">🔄 ATUALIZAR</button>';
+    if(!st.active.locked){h+='<button class="consulta-btn-danger" id="consulta-lock-btn">🔒 ENCERRAR CONSULTA</button>';}
+    else{h+='<span style="color:var(--text2);font-size:.82rem">🔒 Consulta encerrada</span>';}
+    h+='<button class="consulta-btn-success" id="consulta-archive-btn">📦 ARQUIVAR</button>';
+    h+='</div>';
+  } else {
+    h+='<div style="padding:20px;text-align:center;color:var(--text2);font-size:.85rem">Nenhuma consulta ativa no momento.</div>';
+  }
+  h+='</div>';
+  // Section 3: Archive
+  h+='<div class="consulta-card" id="consulta-archive-section">';
+  h+='<h3>📦 Arquivo de Consultas</h3>';
+  if(st.archive&&st.archive.length>0){
+    st.archive.slice().reverse().forEach(function(a,i){
+      h+='<div class="consulta-archive-item" data-arch="'+i+'">';
+      h+='<span style="color:var(--vc1)">📋</span> '+(a.sentAt||'—')+' — Missões: '+(a.missions||[]).join(', ')+' — '+(a.recipients||[]).length+' destinatário(s)';
+      h+='<div class="consulta-archive-detail" id="consulta-arch-det-'+i+'"><pre style="margin:0;color:var(--text);font-size:.78rem">'+JSON.stringify(a,null,2).replace(/</g,'&lt;')+'</pre></div>';
+      h+='</div>';
+    });
+  } else {
+    h+='<div style="padding:16px;text-align:center;color:var(--text2);font-size:.82rem">Nenhuma consulta arquivada.</div>';
+  }
+  h+='</div>';
+  container.innerHTML=h;
+  // Event bindings
+  var prazoRadios=document.querySelectorAll('input[name="consulta-prazo"]');
+  var dlInput=document.getElementById('consulta-deadline');
+  var msgArea=document.getElementById('consulta-msg');
+  var missionsInput=document.getElementById('consulta-missions');
+  prazoRadios.forEach(function(r){r.addEventListener('change',function(){
+    dlInput.style.display=this.value==='com'?'inline-block':'none';
+    updateConsultaMsg();
+  });});
+  function updateConsultaMsg(){
+    var ms=(missionsInput.value||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+    var prazoVal='Sem prazo definido';
+    if(document.querySelector('input[name="consulta-prazo"]:checked').value==='com'&&dlInput.value){
+      var d=new Date(dlInput.value);prazoVal=d.toLocaleString('pt-BR');
+    }
+    msgArea.value=consultaTemplate(ms.length?ms:['A','B','C','D'],prazoVal);
+  }
+  if(missionsInput)missionsInput.addEventListener('input',updateConsultaMsg);
+  if(dlInput)dlInput.addEventListener('change',updateConsultaMsg);
+  // Preview
+  var prevBtn=document.getElementById('consulta-preview-btn');
+  var prevBox=document.getElementById('consulta-preview-box');
+  if(prevBtn)prevBtn.addEventListener('click',function(){
+    prevBox.textContent=msgArea.value;
+    prevBox.style.display=prevBox.style.display==='block'?'none':'block';
+  });
+  // Send
+  var sendBtn=document.getElementById('consulta-send-btn');
+  var sendStatus=document.getElementById('consulta-send-status');
+  if(sendBtn)sendBtn.addEventListener('click',async function(){
+    sendBtn.disabled=true;sendBtn.textContent='⏳ Enviando...';sendStatus.innerHTML='';
+    var ms=(missionsInput.value||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+    if(!ms.length){sendStatus.innerHTML='<span style="color:var(--red)">❌ Informe ao menos uma missão</span>';sendBtn.disabled=false;sendBtn.textContent='📤 ENVIAR CONSULTA';return;}
+    var checks=document.querySelectorAll('.consulta-recip:checked');
+    if(!checks.length){sendStatus.innerHTML='<span style="color:var(--red)">❌ Selecione ao menos um destinatário</span>';sendBtn.disabled=false;sendBtn.textContent='📤 ENVIAR CONSULTA';return;}
+    var text=msgArea.value;var results=[];
+    for(var c of checks){
+      var idx=parseInt(c.dataset.idx);var rec=CONSULTA_RECIPIENTS[idx];
+      try{var res=await sendConsultaTelegram(rec.chatId,text,ms);
+        if(res.ok)results.push({name:rec.name,chatId:rec.chatId,ok:true,msgId:res.result.message_id,responses:{},confirmed:false,unavailAll:false});
+        else results.push({name:rec.name,chatId:rec.chatId,ok:false,err:res.description||'Erro desconhecido'});
+      }catch(e){results.push({name:rec.name,chatId:rec.chatId,ok:false,err:e.message});}
+    }
+    var html='';results.forEach(function(r){
+      html+=r.ok?'<div style="color:var(--green);font-size:.82rem">✅ '+r.name+' — Enviado (msg #'+r.msgId+')</div>'
+        :'<div style="color:var(--red);font-size:.82rem">❌ '+r.name+' — Falha: '+r.err+'</div>';
+    });
+    sendStatus.innerHTML=html;
+    var okRecips=results.filter(function(r){return r.ok;});
+    if(okRecips.length){
+      var prazoVal='Sem prazo definido';
+      if(document.querySelector('input[name="consulta-prazo"]:checked').value==='com'&&dlInput.value){prazoVal=new Date(dlInput.value).toLocaleString('pt-BR');}
+      var newSt=consultaLoadState();
+      newSt.active={text:text,missions:ms,sentAt:new Date().toLocaleString('pt-BR'),deadline:prazoVal,locked:false,recipients:okRecips.map(function(r){return{name:r.name,chatId:r.chatId,msgId:r.msgId,responses:{},confirmed:false,unavailAll:false};})};
+      consultaSaveState(newSt);
+      setTimeout(function(){s3RenderConsulta(container);},1500);
+    }
+    sendBtn.disabled=false;sendBtn.textContent='📤 ENVIAR CONSULTA';
+  });
+  // Refresh
+  var refBtn=document.getElementById('consulta-refresh-btn');
+  if(refBtn)refBtn.addEventListener('click',function(){s3RenderConsulta(container);});
+  // Lock
+  var lockBtn=document.getElementById('consulta-lock-btn');
+  if(lockBtn)lockBtn.addEventListener('click',function(){var s=consultaLoadState();if(s.active){s.active.locked=true;consultaSaveState(s);s3RenderConsulta(container);}});
+  // Archive
+  var archBtn=document.getElementById('consulta-archive-btn');
+  if(archBtn)archBtn.addEventListener('click',function(){var s=consultaLoadState();if(s.active){s.archive.push(Object.assign({},s.active,{archivedAt:new Date().toLocaleString('pt-BR')}));s.active=null;consultaSaveState(s);s3RenderConsulta(container);}});
+  // Archive expand
+  document.querySelectorAll('.consulta-archive-item').forEach(function(el){
+    el.addEventListener('click',function(){var det=this.querySelector('.consulta-archive-detail');if(det)det.style.display=det.style.display==='block'?'none':'block';});
+  });
 }
 
 function renderAll(){
