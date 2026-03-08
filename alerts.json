@@ -1,0 +1,29 @@
+[
+  {
+    "id": "cancela-20260306-eua",
+    "type": "viagem",
+    "title": "❌ VIAGEM PR CANCELADA",
+    "body": "Viagem de Lula aos <b>EUA</b> prevista para março/2026 foi <b>suspensa</b> em virtude do conflito no Irã. Fonte: Min. Fávaro (Agricultura).",
+    "source": "Estadão / CNN Brasil / InfoMoney",
+    "date": "06/03/2026",
+    "expires": "2026-03-20T00:00:00-03:00"
+  },
+  {
+    "id": "viagem-20260311-chile",
+    "type": "viagem",
+    "title": "✈️ POSSÍVEL VIAGEM PR",
+    "body": "Lula viaja ao <b>Chile</b> em <b>11/03/2026</b> para posse do presidente eleito José Antonio Kast, em Valparaíso.",
+    "source": "Agência Brasil / CNN Brasil",
+    "date": "03/03/2026",
+    "expires": "2026-03-12T00:00:00-03:00"
+  },
+  {
+    "id": "viagem-20260417-espanha",
+    "type": "viagem",
+    "title": "✈️ POSSÍVEL VIAGEM PR",
+    "body": "Lula confirmou viagem à <b>Espanha</b> de 17 a 18/04/2026. Visita bilateral a Barcelona com Pedro Sánchez + reunião do grupo \"Em Defesa da Democracia\".",
+    "source": "Estadão / Correio Braziliense",
+    "date": "04/03/2026",
+    "expires": "2026-04-19T00:00:00-03:00"
+  }
+]
