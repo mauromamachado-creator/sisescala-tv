@@ -335,7 +335,8 @@
       },
       {
         "posto": "1S",
-        "nome": "PEREIRA (PR)",
+        "nome": "PEREIRA",
+        "funcao": "PR",
         "saram": "527.615"
       },
       {
@@ -345,13 +346,14 @@
       },
       {
         "posto": "2S",
-        "nome": "CELESTE",
-        "saram": "569.985"
+        "nome": "LUDMYLLA",
+        "funcao": "PR",
+        "saram": "582.959"
       },
       {
-        "posto": "2S",
-        "nome": "LUDMYLLA (PR)",
-        "saram": "582.959"
+        "posto": "T1",
+        "nome": "SILVA JUNIOR",
+        "saram": "706.978"
       }
     ],
     "pernas": [
@@ -379,7 +381,8 @@
       }
     ],
     "gerado": "06/03/2026 16:03:31",
-    "gerado_por": ""
+    "gerado_por": "",
+    "ordens_especiais": "O MJ Machado realiza REC em SCVM."
   },
   {
     "om": "96/GTE-1/2026",
