@@ -3654,13 +3654,17 @@ async function botNotam(){botLastFn=botNotam;
   botLoading('NOTAMs '+icao);
   try{
     let notams=[];let fonte='';
-    // 1. Tentar aviationweather.gov (grátis, sem limite)
-    const raw=await proxyFetchRaw(`https://aviationweather.gov/api/data/notam?ids=${icao}&format=raw`).catch(()=>'');
-    if(raw&&raw.trim()&&!raw.includes('Not found')){
-      notams=raw.trim().split(/\n{2,}/).filter(n=>n.trim());
-      fonte='aviationweather.gov';
-    }
-    // 2. Fallback: ICAO API (limitada — só se aviationweather falhar)
+    const NOTAM_PROXY='https://script.google.com/macros/s/AKfycbx3zntUTktuQLkS6Rns05ztYyLctlJh1ciGEpVTjGypQxgFrVc0a8WPekbJzBkk8m43mQ/exec';
+    // 1. AISWEB via Google Apps Script proxy (fonte oficial DECEA — grátis, ilimitada)
+    try{
+      const resp=await fetch(`${NOTAM_PROXY}?icao=${icao}`);
+      const data=await resp.json();
+      if(data.notams&&data.notams.length){
+        notams=data.notams;
+        fonte='AISWEB/DECEA';
+      }
+    }catch(e){}
+    // 2. Fallback: ICAO API (limitada — só quando AISWEB falhar)
     if(!notams.length){
       try{
         const icaoKey='0957b31c-6510-4974-8342-1a85ffd29a6e';
@@ -4113,10 +4117,12 @@ async function botExecMsgPadrao(){
     const rec=checkRecNeeded(destAis.rwyLen,destAis.rwyWid,destAis.hasIfr,destAis.oprType);
     // PCN tire pressure
     const tireCat=getPcnTireCat(destAis.pcn);
-    // NOTAMs (runway filter) — aviationweather.gov primary, ICAO API fallback
+    // NOTAMs (runway filter) — AISWEB via proxy (primário), ICAO API (fallback)
     let notamAlert='NOTAM OK';
-    let notamRaw=await proxyFetchRaw(`https://aviationweather.gov/api/data/notam?ids=${dest}&format=raw`).catch(()=>'');
-    if(!notamRaw||notamRaw.includes('Not found')){
+    let notamRaw='';
+    const NOTAM_PROXY='https://script.google.com/macros/s/AKfycbx3zntUTktuQLkS6Rns05ztYyLctlJh1ciGEpVTjGypQxgFrVc0a8WPekbJzBkk8m43mQ/exec';
+    try{const r=await fetch(`${NOTAM_PROXY}?icao=${dest}`);const d=await r.json();if(d.notams&&d.notams.length)notamRaw=d.notams.join('\n\n');}catch(e){}
+    if(!notamRaw){
       try{const r=await fetch(`https://dataservices.icao.int/api/realtime-notams?api_key=0957b31c-6510-4974-8342-1a85ffd29a6e&format=json&ICAOCode=${dest}`);const d=await r.json();if(Array.isArray(d)&&d.length)notamRaw=d.map(n=>n.all||n.message||'').join('\n\n');}catch(e){}
     }
     if(notamRaw){
