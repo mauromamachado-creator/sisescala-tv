@@ -271,8 +271,10 @@
         "alternativa": "SBCF"
       }
     ],
-    "file_id": "",
-    "file_ids": []
+    "file_id": "1HdMEz57OsDAHjAKQgdCqxFy4rS0QHp7-",
+    "file_ids": [
+      "1HdMEz57OsDAHjAKQgdCqxFy4rS0QHp7-"
+    ]
   },
   {
     "aeronave": "VC-2",
@@ -299,8 +301,10 @@
         "alternativa": "SBCF"
       }
     ],
-    "file_id": "",
-    "file_ids": []
+    "file_id": "1J-LSmtZ5RhfNGhmjByIflcB2vfz9Of12",
+    "file_ids": [
+      "1J-LSmtZ5RhfNGhmjByIflcB2vfz9Of12"
+    ]
   },
   {
     "aeronave": "VC-1",
@@ -343,8 +347,10 @@
         "alternativa": "SBCF"
       }
     ],
-    "file_id": "",
-    "file_ids": []
+    "file_id": "19CmDInuYwDHWLcQoDsf1YsaFBbW3RGX6",
+    "file_ids": [
+      "19CmDInuYwDHWLcQoDsf1YsaFBbW3RGX6"
+    ]
   },
   {
     "aeronave": "VC-2",
@@ -377,8 +383,72 @@
         "alternativa": "SCIE"
       }
     ],
-    "file_id": "",
-    "file_ids": [],
+    "file_id": "1AxBqHSQwJJ8p7S4uQzo61Yq29mmXrek3",
+    "file_ids": [
+      "1AxBqHSQwJJ8p7S4uQzo61Yq29mmXrek3"
+    ],
     "obs": "REALIZA O ALERTA SOLO APENAS EM SBBR."
+  },
+  {
+    "aeronave": "VC-2",
+    "om_numero": "102/GTE-1/2026",
+    "om": "102/GTE-1/2026",
+    "fab": "FAB 2590",
+    "data": "11/03/26",
+    "tripulacao": [
+      "MJ FARIAS (FAI / 552.925)",
+      "MJ SAMIR (SMR / 557.877)",
+      "CP CAMPOS (CPO / 563.414)",
+      "CP GABRIEL TODESCO (TOD / 515.359)",
+      "SO VINÍCIUS (474.042)",
+      "2S ALCANTARA (575.028)",
+      "2S NOGUEIRA (535.280)",
+      "1S SANTIAGO (PR) (525.328)",
+      "2S LOPES (PR) (530.806)",
+      "2S NEVES (543.527)",
+      "2S LUCAS SOUZA (581.915)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "11/03/26 - 10:05 Z / UTC-3",
+        "ete": "04:25",
+        "destino": "SCVM",
+        "destino_nome": "SCVM (AEROP)",
+        "eta": "11/03/26 - 14:30 Z / UTC-3",
+        "alternativa": "SCIE",
+        "comb_min": 11500,
+        "comb_rec": 12500
+      },
+      {
+        "origem": "SCVM",
+        "origem_nome": "SCVM (AEROP)",
+        "etd": "11/03/26 - 17:50 Z / UTC-3",
+        "ete": "03:00",
+        "destino": "SBCG",
+        "destino_nome": "SBCG (BACG)",
+        "eta": "11/03/26 - 20:50 Z / UTC-3",
+        "alternativa": "SBCY",
+        "comb_min": 10000,
+        "comb_rec": 11500
+      },
+      {
+        "origem": "SBCG",
+        "origem_nome": "SBCG (BACG)",
+        "etd": "11/03/26 - 21:50 Z / UTC-3",
+        "ete": "01:20",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "11/03/26 - 23:10 Z / UTC-3",
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 7500
+      }
+    ],
+    "file_id": "1yPgLxKa2xEx-F2VcHokIxjTNvw19UA2O",
+    "file_ids": [
+      "1yPgLxKa2xEx-F2VcHokIxjTNvw19UA2O"
+    ]
   }
 ]
