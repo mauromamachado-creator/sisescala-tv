@@ -3413,7 +3413,7 @@ function s3RenderEscalaV2(container){
       var lista=parseRaioGAS(rows);
       var texto=textoPlnilha;
       var html='';
-      if(texto) html+='<div style="background:var(--bg2);border-left:3px solid var('+colorVar+');border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.6;max-height:200px;overflow-y:auto;color:var(--text)"><span style="font-size:.7rem;color:var('+colorVar+');font-weight:900;display:block;margin-bottom:6px">📋 MENSAGEM DA CONSULTA</span>'+texto.replace(/</g,'&lt;')+'</div>';
+      html+='<div style="background:var(--bg2);border-left:3px solid var('+colorVar+');border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.6;max-height:200px;overflow-y:auto;color:var(--text)"><span style="font-size:.7rem;color:var('+colorVar+');font-weight:900;display:block;margin-bottom:6px">📋 MENSAGEM DA CONSULTA</span>'+(texto?texto.replace(/</g,'&lt;'):'<span style="color:var(--text2);font-style:italic">Nenhuma consulta ativa no momento.</span>')+'</div>';
       if(!lista.length){html+='<div style="color:var(--text2);padding:10px">Nenhum raio carregado. Envie o PDF pelo @SISGOP_BOT.</div>';return html;}
 
       // Detectar missões a partir das respostas existentes
