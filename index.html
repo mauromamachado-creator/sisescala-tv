@@ -1372,7 +1372,7 @@ function renderScreen0(){
   const tdMid=new Date(td);tdMid.setHours(12,0,0,0);
   const futureOMs=omData.filter(o=>{const od=parseOMDate(o.data);const diff=(od-tdMid)/86400000;return diff>0&&diff<=7;});
   // Extrair todas as datas de pernas das OMs (para missões multi-dia)
-  function getOMDates(om){const dates=new Set([om.data]);om.pernas.forEach(p=>{const m=p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(m)dates.add('20'+m[3]+'-'+m[2]+'-'+m[1]);const m2=p.eta.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(m2)dates.add('20'+m2[3]+'-'+m2[2]+'-'+m2[1]);});return[...dates];}
+  function getOMDates(om){const dates=new Set([omDataISO(om.data)]);om.pernas.forEach(p=>{const m=p.etd&&p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(m)dates.add('20'+m[3]+'-'+m[2]+'-'+m[1]);const m2=p.eta&&p.eta.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(m2)dates.add('20'+m2[3]+'-'+m2[2]+'-'+m2[1]);});return[...dates].filter(d=>!!d&&!d.includes('undefined'));}
   // Juntar todas as datas únicas
   const allDates=new Set();
   weekDays.forEach(d=>{const iso=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');allDates.add(iso);});
