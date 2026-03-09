@@ -3683,6 +3683,10 @@ function s3RenderConsultaV2(container){
     });
     h+='<label style="color:var(--text);font-size:.82rem;cursor:pointer"><input type="radio" name="consulta-prazo" value="sem"'+(consultaPrazo==='sem'?' checked':'')+' onchange="consultaPrazo=this.value"> Sem prazo</label></div>';
 
+    // Prévia ao vivo
+    h+='<div style="margin-top:14px"><span class="consulta-label" style="font-weight:900;font-size:.9rem">📄 Prévia do texto:</span></div>';
+    h+='<pre id="consulta-live-preview" style="background:var(--bg3);padding:12px;border-radius:8px;font-size:.8rem;color:var(--text);white-space:pre-wrap;border:1px solid var(--border);max-height:300px;overflow-y:auto;margin-top:6px">'+consultaGerarTexto().replace(/</g,'&lt;')+'</pre>';
+
     // Botões
     h+='<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">';
     h+='<button class="consulta-btn-primary" id="consulta-send-btn">📤 CRIAR E ENVIAR</button></div>';
