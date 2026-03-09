@@ -989,11 +989,11 @@ function parseDiario(rows){
   // Flight rows: rows index 4,5,6 (main legs) and look for extra flights around row 20
   const flightRowIdxs=[4,5,6];
   // Find extra flight rows (look for rows where col 1 has task name and has route-like data)
-  for(let ri=15;ri<Math.min(rows.length,30);ri++){
+  for(let ri=15;ri<rows.length;ri++){
     const rr=rows[ri];if(!rr)continue;
     // Check if any date column has route-like data (contains hyphen, looks like ICAO codes)
     let hasFlightData=false;
-    for(const dc of dateColMap.slice(0,5)){
+    for(const dc of dateColMap.slice(0,10)){
       const dep=String(rr[dc.col]||'').trim();
       const route=String(rr[dc.col+1]||'').trim();
       if(dep&&route&&route.includes('-')&&!route.includes('Status')&&!route.includes('Origem')&&!route.includes('Marco')&&
