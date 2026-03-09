@@ -3238,115 +3238,109 @@ function parseConsultaMessageJS(text){
 // O refresh só acontece quando o usuário navega entre abas ou faz uma ação
 
 function s3RenderEscalaV2(container){
-  container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
-  // Buscar respostas do GitHub (publicadas pelo bot) e mesclar com dados locais
-  Promise.all([fetchConsultasJson(), fetchRespostasPublic()]).then(function(results){
-    var data=results[0]||{};
-    var pub=results[1];
-    // Mesclar respostas públicas (do bot) com dados locais
-    if(pub){
-      ['vc1','vc2'].forEach(function(vk){
-        if(pub[vk]){
-          if(!data[vk]) data[vk]={};
-          // Copiar campos do bot que são mais atuais
-          data[vk].id=pub[vk].id||data[vk].id;
-          data[vk].text=pub[vk].text||data[vk].text;
-          data[vk].missions=pub[vk].missions||data[vk].missions||[];
-          data[vk].locked=pub[vk].locked||false;
-          data[vk].status=pub[vk].status||data[vk].status;
-          data[vk].created_at=pub[vk].created_at||data[vk].created_at;
-          // Recipients: usar dados do bot (tem respostas reais)
-          if(pub[vk].recipients&&pub[vk].recipients.length){
-            data[vk].recipients=pub[vk].recipients;
-          }
-        }
-      });
-      // Atualizar localStorage com dados mesclados
-      _consultaLocalSave(data);
+  // Lê direto das abas "Raio Final VC-1" e "Raio Final VC-2" + "Consulta VC-1/VC-2"
+  // Exatamente como o sistema já lê todas as outras abas da planilha
+  container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando respostas...</div>';
+  var SHEET_ID='1MxhMnlzZNdXUkFRs_XmBI8SI3xhL1TDLEiCZ7aJKE-g';
+  function sheetCSV(name){
+    return fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent(name)+'&t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():null;}).catch(function(){return null;});
+  }
+  Promise.all([
+    sheetCSV('Consulta VC-1'), sheetCSV('Raio Final VC-1'),
+    sheetCSV('Consulta VC-2'), sheetCSV('Raio Final VC-2')
+  ]).then(function(results){
+    var data={
+      vc1:{texto:results[0]?results[0].replace(/^"|"$/g,'').trim():'',rows:results[1]?parseCSV(results[1]):[]},
+      vc2:{texto:results[2]?results[2].replace(/^"|"$/g,'').trim():'',rows:results[3]?parseCSV(results[3]):[]}
+    };
+    // Descobrir quais colunas são missões (A, B, C...) a partir do header
+    function getMissionCols(rows){
+      if(!rows||!rows.length)return[];
+      var header=rows[0];
+      var cols=[];
+      for(var i=0;i<header.length;i++){
+        var h=String(header[i]||'').trim();
+        if(/^[A-Z]$/.test(h)) cols.push({letra:h,col:i});
+      }
+      return cols;
     }
-    var html='<h2>📋 Escalação V2 — Acompanhamento</h2>';
+    // Col índices fixos da planilha: col3=nome, col4=SimQual(operação), col5=Op
+    var NAME_COL=3, OP_COL=5;
+
+    var html='<div style="padding:0 4px">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
+    html+='<h2 style="margin:0">📋 ESCALA V2 — Respostas</h2>';
+    html+='<button onclick="s3RenderEscalaV2(document.getElementById(\'s3Content\'))" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem">🔄 Atualizar</button>';
+    html+='</div>';
+
     ['vc1','vc2'].forEach(function(vcKey){
-      var consulta=data[vcKey];
+      var vc=data[vcKey];
       var vcLabel=vcKey==='vc1'?'VC-1':'VC-2';
-      var colorVar=vcKey==='vc1'?'--vc1':'--vc2';
-      var emoji=vcKey==='vc1'?'🔵':'🟢';
-      html+='<div style="margin-bottom:24px">';
-      html+='<h3 style="color:var('+colorVar+');border-bottom:2px solid var('+colorVar+');padding-bottom:6px">'+emoji+' '+vcLabel+'</h3>';
-      if(!consulta){html+='<div class="no-data">Nenhuma consulta ativa.</div></div>';return;}
-      // Info
-      html+='<div style="display:flex;gap:12px;margin-bottom:10px;font-size:.78rem;color:var(--text2);flex-wrap:wrap">';
-      html+='<span>📋 ID: '+consulta.id+'</span>';
-      html+='<span>📅 Criada: '+(consulta.created_at||'').substring(0,16)+'</span>';
-      html+='<span>🔹 Status: '+(consulta.locked?'🔒 Encerrada':'🟢 Ativa')+'</span>';
-      // Deadline timer
-      if(consulta.deadline&&!consulta.locked){
-        try{var dl=new Date(consulta.deadline);var now=new Date();var diff=dl-now;
-          if(diff>0){var h2=Math.floor(diff/3600000);var m2=Math.floor((diff%3600000)/60000);
-            html+='<span style="color:var(--yellow)">⏰ Prazo: '+h2+'h'+('0'+m2).slice(-2)+'m</span>';
-          }else{html+='<span style="color:var(--red)">⏰ Prazo expirado</span>';}
-        }catch(e){}
+      var colorVar=vcKey==='vc1'?'var(--vc1)':'var(--vc2)';
+      var rows=vc.rows;
+      var missionCols=getMissionCols(rows);
+      // Linhas de tripulantes: ignorar header (row 0) e linhas sem nome
+      var tripRows=rows.slice(1).filter(function(r){return String(r[NAME_COL]||'').trim()!='';});
+      var responderam=tripRows.filter(function(r){
+        return missionCols.some(function(m){var v=String(r[m.col]||'').trim();return v==='1'||v==='-';});
+      }).length;
+      var pendentes=tripRows.length-responderam;
+
+      html+='<div style="margin-bottom:28px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">';
+      // Header do card
+      html+='<div style="background:rgba(0,0,0,.3);padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
+      html+='<span style="color:'+colorVar+';font-size:1.05rem;font-weight:900">'+vcLabel+'</span>';
+      if(vc.texto){
+        var firstLine=vc.texto.split('\n')[0];
+        html+='<span style="color:var(--text2);font-size:.78rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+firstLine.replace(/"/g,'&quot;')+'">'+firstLine.replace(/</g,'&lt;')+'</span>';
       }
+      html+='<span style="font-size:.75rem;color:var(--green)">✅ '+responderam+' responderam</span>';
+      html+='<span style="font-size:.75rem;color:var(--yellow)">⏳ '+pendentes+' pendentes</span>';
       html+='</div>';
-      // Texto
-      if(consulta.text){html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.5;max-height:200px;overflow-y:auto">'+(consulta.text||'').replace(/</g,'&lt;')+'</div>';}
-      var missions=consulta.missions||[];var recipients=consulta.recipients||[];
-      if(!recipients.length){html+='<div class="no-data">Sem destinatários.</div></div>';return;}
-      // Stats
-      var total=recipients.length;var confirmed=recipients.filter(function(r){return r.confirmed;}).length;var pending=total-confirmed;
-      html+='<div style="display:flex;gap:16px;margin-bottom:12px;font-size:.82rem">';
-      html+='<span>👥 '+total+' tripulantes</span>';
-      html+='<span style="color:var(--green)">✅ '+confirmed+' responderam</span>';
-      html+='<span style="color:var(--yellow)">⏳ '+pending+' pendentes</span></div>';
-      // Matriz
-      if(missions.length){
-        html+='<div style="overflow-x:auto;margin-bottom:16px"><table style="width:100%;border-collapse:collapse;font-size:.78rem">';
-        html+='<thead><tr style="border-bottom:2px solid var(--border)"><th style="text-align:left;padding:8px 6px;color:var(--text2);min-width:140px">Tripulante</th>';
-        for(var mi=0;mi<missions.length;mi++){html+='<th style="text-align:center;padding:8px 4px;color:var('+colorVar+');font-weight:900;width:36px">'+missions[mi]+'</th>';}
-        html+='<th style="text-align:center;padding:8px 6px;color:var(--text2)">Status</th></tr></thead><tbody>';
-        for(var ri=0;ri<recipients.length;ri++){
-          var r=recipients[ri];
-          html+='<tr style="border-bottom:1px solid rgba(255,255,255,.05)">';
-          html+='<td style="padding:6px;font-weight:700">'+(r.rank||'')+' '+(r.name||'')+'</td>';
-          for(var mj=0;mj<missions.length;mj++){
-            var mKey=missions[mj];var resp=r.responses&&r.responses[mKey];
-            var bg='',color='rgba(255,255,255,.2)',display='-';
-            if(resp===true||resp>=1){bg='rgba(0,255,136,.15)';color='var(--green)';display=resp>=1?''+resp+'º':'✅';}
-            else if(resp===false||resp===0){bg='rgba(255,80,80,.1)';color='var(--red)';display='❌';}
-            else{bg='rgba(255,200,50,.06)';color='var(--yellow)';display='⏳';}
-            html+='<td style="text-align:center;padding:6px;background:'+bg+';color:'+color+';font-weight:900;border-radius:4px">'+display+'</td>';
-          }
-          if(r.confirmed) html+='<td style="text-align:center;padding:6px"><span style="color:var(--green)">✅</span></td>';
-          else if(r.delivered) html+='<td style="text-align:center;padding:6px"><span style="color:var(--yellow)">⏳</span></td>';
-          else html+='<td style="text-align:center;padding:6px"><span style="color:var(--red)">❌</span></td>';
-          html+='</tr>';
-        }
-        html+='</tbody></table></div>';
+
+      if(!tripRows.length){
+        html+='<div style="padding:20px;color:var(--text2);text-align:center">Nenhum tripulante na planilha.</div></div>';
+        return;
       }
-      // Cientes
-      var parsed=consulta.parsed||{};var missoes=parsed.missoes||[];
-      var hasCientes=missoes.some(function(m){return m.cientes&&m.cientes.length;});
-      if(hasCientes){
-        html+='<div style="margin-top:14px;padding:12px;background:rgba(0,120,255,.08);border:1px solid rgba(0,120,255,.25);border-radius:8px">';
-        html+='<div style="font-size:.82rem;font-weight:900;color:var(--vc1);margin-bottom:8px">📋 CIENTES</div>';
-        missoes.forEach(function(mm){if(mm.cientes&&mm.cientes.length){
-          html+='<div style="font-size:.8rem;padding:2px 0"><strong>'+mm.letra+'):</strong> '+mm.cientes.map(function(c){return c.name+' ('+c.at.substring(11,16)+')';}).join(', ')+'</div>';
-        }});
-        html+='</div>';
+      if(!missionCols.length){
+        html+='<div style="padding:20px;color:var(--text2);text-align:center">Nenhuma missão encontrada na planilha.</div></div>';
+        return;
       }
-      // Escalados
-      var hasEscalados=missoes.some(function(m){return m.escalados&&m.escalados.length;});
-      if(hasEscalados){
-        html+='<div style="margin-top:14px;padding:12px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.25);border-radius:8px">';
-        html+='<div style="font-size:.82rem;font-weight:900;color:var(--green);margin-bottom:8px">✅ ESCALADOS</div>';
-        missoes.forEach(function(mm){if(mm.escalados&&mm.escalados.length){
-          var tipo=mm.is_saviso?'SAVISO':'MISSÃO';
-          html+='<div style="font-size:.8rem;padding:4px 0"><strong>'+mm.letra+') '+tipo+':</strong> '+mm.escalados.join(' / ')+'</div>';
-        }});
-        html+='</div>';
-      }
-      html+='</div>';
+
+      // Tabela
+      html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">';
+      html+='<thead><tr style="border-bottom:2px solid var(--border);background:rgba(0,0,0,.2)">';
+      html+='<th style="text-align:left;padding:8px 12px;color:var(--text2)">Aeronavegante</th>';
+      html+='<th style="text-align:center;padding:8px 6px;color:var(--text2);width:50px">Op.</th>';
+      missionCols.forEach(function(m){
+        html+='<th style="text-align:center;padding:8px 6px;color:'+colorVar+';font-weight:900;width:40px">'+m.letra+'</th>';
+      });
+      html+='</tr></thead><tbody>';
+
+      tripRows.forEach(function(r,idx){
+        var nome=String(r[NAME_COL]||'').trim();
+        var op=String(r[OP_COL]||'').trim();
+        var bgRow=idx%2===0?'':'background:rgba(255,255,255,.02)';
+        html+='<tr style="border-bottom:1px solid rgba(255,255,255,.04);'+bgRow+'">';
+        html+='<td style="padding:7px 12px;font-weight:700">'+nome.replace(/</g,'&lt;')+'</td>';
+        html+='<td style="text-align:center;padding:7px 6px;color:var(--text2);font-size:.72rem">'+op.replace(/</g,'&lt;')+'</td>';
+        missionCols.forEach(function(m){
+          var v=String(r[m.col]||'').trim();
+          var bg='',color='rgba(255,255,255,.15)',display='—';
+          if(v==='1'){bg='rgba(0,255,136,.12)';color='var(--green)';display='✅';}
+          else if(v==='-'){bg='rgba(255,80,80,.1)';color='var(--red)';display='❌';}
+          else if(v!=''){bg='rgba(255,200,50,.08)';color='var(--yellow)';display=v;}
+          html+='<td style="text-align:center;padding:7px 4px;background:'+bg+';color:'+color+';font-weight:900">'+display+'</td>';
+        });
+        html+='</tr>';
+      });
+      html+='</tbody></table></div></div>';
     });
+    html+='<div style="font-size:.72rem;color:var(--text2);text-align:right;padding:4px 0">Fonte: planilha "Dados Bot GTE-1 Escala"</div>';
+    html+='</div>';
     container.innerHTML=html;
+  }).catch(function(e){
+    container.innerHTML='<div style="padding:20px;color:var(--red)">Erro ao carregar respostas: '+e.message+'</div>';
   });
 }
 
