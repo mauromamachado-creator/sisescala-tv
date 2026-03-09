@@ -56,6 +56,7 @@ ESCALANTES_AUTORIZADOS = {
 }
 GAS_URL = "https://script.google.com/macros/s/AKfycbz8wQqdiHoKOlh4XR2tBJ3KcWBTtR0ooafEEjGdq6hecoPDBvVFoLYi4S8s7UU4S1nk/exec"
 API_PORT = 8085
+API_SECRET = os.environ.get("SISGOP_API_SECRET", "sisgopa-gte-2026")
 
 DATA_DIR = Path(__file__).parent / "data"
 
@@ -761,15 +762,22 @@ async def cors_middleware(request, handler):
     return resp
 
 
+def _check_auth(request):
+    """Verifica token de autenticação da API."""
+    token = request.headers.get("X-API-Secret") or request.rel_url.query.get("secret")
+    return token == API_SECRET
+
 async def api_get_consultas(request):
     """GET /api/consultas — Retorna estado atual das consultas."""
+    if not _check_auth(request):
+        return web.json_response({"error": "Unauthorized"}, status=401)
     data = _load_data()
     return web.json_response(data)
 
 
 async def api_post_consulta(request):
     """
-    POST /api/consulta — Ações de gestão do SisGOPA.
+    POST /api/consulta — Ações de gestão do SisGOPA. Requer header X-API-Secret.
 
     Actions:
       create          — Cria consulta
@@ -780,6 +788,8 @@ async def api_post_consulta(request):
       update_escalados— Define escalados para missão
       send_confirmacao— Envia confirmação via Telegram
     """
+    if not _check_auth(request):
+        return web.json_response({"error": "Unauthorized"}, status=401)
     try:
         body = await request.json()
     except Exception:
@@ -1051,9 +1061,9 @@ async def start_api():
 
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", API_PORT)
+    site = web.TCPSite(runner, "127.0.0.1", API_PORT)
     await site.start()
-    logger.info("API HTTP rodando em http://0.0.0.0:%d", API_PORT)
+    logger.info("API HTTP rodando em http://127.0.0.1:%d", API_PORT)
 
 
 # ─── Verificador de prazo (deadline) ─────────────────────────────────────────
