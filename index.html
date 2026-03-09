@@ -3442,7 +3442,7 @@ function s3RenderEscalaV2(container){
       return html;
     }
 
-    var upd=pub.updated?'<span style="color:var(--text2)"> · atualizado '+pub.updated.substring(11,16)+'</span>':'';
+    var upd='';
     var html='<div style="display:flex;gap:8px;margin-bottom:16px;font-size:.75rem;color:var(--text2);align-items:center">';
     html+='<span>🤖 Respostas via @SISGOP_BOT'+upd+'</span>';
     html+='<button onclick="s3RenderEscalaV2(document.getElementById(\'s3-content\'))" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:.72rem">↻ Atualizar</button>';
