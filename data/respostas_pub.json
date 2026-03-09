@@ -1,7 +1,7 @@
 {
   "vc1": {
     "id": "vc1",
-    "text": "Senhores, bom dia. Consulta para o dia 08 de marÃ§o, VC-1:\n\nA) BR-BR",
+    "text": "Senhores, bom dia. Consulta para o dia 08 de março, VC-1:\n\nA) BR-BR",
     "missions": [
       "A"
     ],
@@ -16,5 +16,21 @@
       }
     ]
   },
-  "vc2": null
+  "vc2": {
+    "id": "vc2",
+    "text": "Senhores, bom dia. Consulta para o dia 08 de março, VC-2:\n\nA) BR-BR 08 SEG",
+    "missions": [
+      "A"
+    ],
+    "locked": false,
+    "recipients": [
+      {
+        "name": "Mauro Machado",
+        "responses": {
+          "A": 1
+        },
+        "confirmed": true
+      }
+    ]
+  }
 }
