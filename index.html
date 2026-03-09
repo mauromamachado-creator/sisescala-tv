@@ -3386,6 +3386,8 @@ function s3RenderEscalaV2(container){
     var _lsData={};try{_lsData=JSON.parse(localStorage.getItem('consultas_data')||'{}');}catch(e){}
     var textoVC1=((_lsData.vc1&&_lsData.vc1.text)||'')||(results[1][0]&&results[1][0][0])||'';
     var textoVC2=((_lsData.vc2&&_lsData.vc2.text)||'')||(results[2][0]&&results[2][0][0])||'';
+    var dataRaioVC1=gasAll.data_raio_vc1||'';
+    var dataRaioVC2=gasAll.data_raio_vc2||'';
     var raioVC1=results[3];
     var raioVC2=results[4];
 
@@ -3408,7 +3410,7 @@ function s3RenderEscalaV2(container){
       return list;
     }
 
-    function renderVC(vcKey,colorVar,textoPlnilha,_unused){
+    function renderVC(vcKey,colorVar,textoPlnilha,dataRaio){
       var rows=gasAll[vcKey]||[];
       var lista=parseRaioGAS(rows);
       var texto=textoPlnilha;
@@ -3422,6 +3424,7 @@ function s3RenderEscalaV2(container){
       var missions=Object.keys(missionsSet).sort();
 
       var confirmed=lista.filter(function(p){return p.confirmed;}).length;
+      if(dataRaio) html+='<div style="font-size:.72rem;color:var(--text2);margin-bottom:8px">📅 Raio atualizado em: <strong style="color:var('+colorVar+')">'+dataRaio+'</strong></div>';
       html+='<div style="display:flex;gap:16px;margin-bottom:10px;font-size:.82rem;flex-wrap:wrap">';
       html+='<span>👥 '+lista.length+'</span>';
       html+='<span style="color:var(--green)">✅ '+confirmed+' confirmaram</span>';
@@ -3462,8 +3465,8 @@ function s3RenderEscalaV2(container){
     html+='<span>🤖 Respostas via @SISGOP_BOT'+upd+'</span>';
     html+='<button onclick="s3RenderEscalaV2(document.getElementById(\'s3-content\'))" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:.72rem">↻ Atualizar</button>';
     html+='</div>';
-    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc1);border-bottom:2px solid var(--vc1);padding-bottom:6px">🔵 VC-1</h3>'+renderVC('vc1','--vc1',textoVC1,raioVC1)+'</div>';
-    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc2);border-bottom:2px solid var(--vc2);padding-bottom:6px">🟢 VC-2</h3>'+renderVC('vc2','--vc2',textoVC2,raioVC2)+'</div>';
+    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc1);border-bottom:2px solid var(--vc1);padding-bottom:6px">🔵 VC-1</h3>'+renderVC('vc1','--vc1',textoVC1,dataRaioVC1)+'</div>';
+    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc2);border-bottom:2px solid var(--vc2);padding-bottom:6px">🟢 VC-2</h3>'+renderVC('vc2','--vc2',textoVC2,dataRaioVC2)+'</div>';
     container.innerHTML=html;
   }).catch(function(e){
     container.innerHTML='<div style="color:var(--red);padding:20px">❌ Erro: '+e.message+'</div>';

@@ -40,6 +40,10 @@ function _dispatch(p) {
       });
       sh.getRange(2,1,rows.length,6).setValues(rows);
     }
+    // Armazena data_raio nas propriedades do script
+    if (p.data_raio) {
+      PropertiesService.getScriptProperties().setProperty('data_raio_'+vcSheet.replace('-','').toLowerCase(), p.data_raio);
+    }
     return _json({ok:true, count: Array.isArray(pilotos)?pilotos.length:0});
   }
 
@@ -122,7 +126,12 @@ function _dispatch(p) {
   }
 
   // ── get (padrão) — retorna raio + respostas de VC-1 e VC-2 ─────
-  var result = {ok:true, vc1:[], vc2:[]};
+  var props = PropertiesService.getScriptProperties();
+  var result = {
+    ok:true, vc1:[], vc2:[],
+    data_raio_vc1: props.getProperty('data_raio_vc1') || '',
+    data_raio_vc2: props.getProperty('data_raio_vc2') || ''
+  };
   var sh1 = ss.getSheetByName('VC-1');
   var sh2b = ss.getSheetByName('VC-2');
   if (sh1 && sh1.getLastRow() > 0) result.vc1 = sh1.getDataRange().getValues();
