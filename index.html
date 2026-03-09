@@ -2478,12 +2478,20 @@ function showOMDetail(omId){
     <div style="font-size:1.1rem;font-weight:700;color:var(--green)">📋 OM ${om.om}</div>
     <div style="color:var(--text2);font-size:.8rem;margin-top:4px">${om.fab||om.aeronave} • ${parseOMDate(om.data).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
   </div>`;
+  // Normaliza tripulação: aceita string "TC VERAS (VRS / 529.456)" ou objeto {posto,nome,trigrama}
+  const tripNorm=(om.tripulacao||[]).map(t=>{
+    if(typeof t==='string'){
+      const m=t.match(/^(\S+)\s+(.+?)(?:\s*\(([^/]+?)(?:\s*\/[^)]+)?\))?$/);
+      return m?{posto:m[1],nome:m[2].trim(),trigrama:(m[3]||'').trim()}:{posto:'',nome:t,trigrama:''};
+    }
+    return t;
+  });
   // Tripulação
   html+=`<div style="margin-bottom:16px">
-    <div style="font-weight:700;color:#64b4ff;font-size:.85rem;margin-bottom:8px;border-bottom:1px solid #1a2a40;padding-bottom:4px">👥 TRIPULAÇÃO (${om.tripulacao.length})</div>`;
+    <div style="font-weight:700;color:#64b4ff;font-size:.85rem;margin-bottom:8px;border-bottom:1px solid #1a2a40;padding-bottom:4px">👥 TRIPULAÇÃO (${tripNorm.length})</div>`;
   // Group by role
-  const pilotos=om.tripulacao.filter(t=>['MJ','CP','TC','1T','2T'].includes(t.posto));
-  const outros=om.tripulacao.filter(t=>!['MJ','CP','TC','1T','2T'].includes(t.posto));
+  const pilotos=tripNorm.filter(t=>['MJ','CP','TC','1T','2T'].includes(t.posto));
+  const outros=tripNorm.filter(t=>!['MJ','CP','TC','1T','2T'].includes(t.posto));
   if(pilotos.length){
     html+=`<div style="color:var(--text2);font-size:.7rem;margin-bottom:4px;font-weight:600">PILOTOS</div>`;
     pilotos.forEach(t=>{
@@ -2506,8 +2514,11 @@ function showOMDetail(omId){
     html+=`<div style="margin-bottom:16px">
       <div style="font-weight:700;color:#64b4ff;font-size:.85rem;margin-bottom:8px;border-bottom:1px solid #1a2a40;padding-bottom:4px">🛫 PERNAS DE VOO</div>`;
     om.pernas.forEach((p,i)=>{
+      // Extrai origem/destino do campo etd ou do raw se não tiver campos separados
+      const orig=p.origem||(p.etd&&p.etd.match(/^([A-Z]{4})/)?p.etd.match(/^([A-Z]{4})/)[1]:'?');
+      const dest=p.destino||(p.eta&&p.eta.match(/([A-Z]{4})$/)?p.eta.match(/([A-Z]{4})$/)[1]:'?');
       html+=`<div style="background:#0d1220;border-radius:8px;padding:10px;margin-bottom:6px;border-left:3px solid var(--green)">
-        <div style="font-weight:700;font-size:.85rem">${p.origem} → ${p.destino}</div>
+        <div style="font-weight:700;font-size:.85rem">${orig} → ${dest}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;font-size:.75rem;color:var(--text2)">
           <span>🕐 ETD: ${p.etd||'-'}</span>
           <span>🕐 ETA: ${p.eta||'-'}</span>
