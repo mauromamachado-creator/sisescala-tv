@@ -67,7 +67,7 @@ function doGet(e) {
       var list = [];
       for (var k = 1; k < rows2.length; k++) {
         var r = rows2[k];
-        if (r[5] === 'SIM') {
+        if (r[5] && String(r[5]).toUpperCase() !== 'NÃO' && String(r[5]).toUpperCase() !== 'NAO' && String(r[5]).toUpperCase() !== 'FALSE') {
           list.push({chat_id:String(r[0]),tg_name:r[1],posto:r[2],nome_guerra:r[3],vc:r[4]});
         }
       }
