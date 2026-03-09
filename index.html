@@ -764,7 +764,7 @@ async function _sendReport(type,desc,diagnostics){
     });
   }catch(e){}
   if(sent){
-    if(status)status.innerHTML='<span style="color:#4ecdc4">✅ Reporte enviado! Ravi vai analisar e corrigir automaticamente.</span>';
+    if(status)status.innerHTML='<span style="color:#4ecdc4">✅ Reporte enviado! o Setor de Operações vai analisar e corrigir.</span>';
     const ta=document.getElementById('emDesc')||document.getElementById('reportDesc');
     if(ta)ta.value='';
   }else{
@@ -3177,7 +3177,7 @@ function renderScreenReport(){
       <div id="reportDiag" style="font-size:.75rem;color:var(--text2);font-family:monospace;line-height:1.6"></div>
     </div>
     <div style="margin-top:16px;padding:12px;border-radius:8px;background:#1a2a1a;border:1px solid #2a4a2a">
-      <p style="color:#4ecdc4;margin:0;font-size:.8rem">🤖 <b>Bugs</b> serão verificados e corrigidos automaticamente pelo Ravi (sem alterar funcionalidades).<br>
+      <p style="color:#4ecdc4;margin:0;font-size:.8rem">🤖 <b>Bugs</b> serão verificados e corrigidos pelo Setor de Operações (sem alterar funcionalidades).<br>
       💡 <b>Sugestões</b> serão compiladas em relatório para aprovação do Major Machado.</p>
     </div>
   </div>`;
