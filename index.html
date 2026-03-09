@@ -4075,7 +4075,7 @@ function _buildMsgOficial(letra,posto,nome,dados){
   var nomeUp=nome.toUpperCase();
   var omsDoOficial=oms.length?oms.filter(function(om){return(om.tripulantes||[]).some(function(t){return(t.nome||'').toUpperCase().includes(nomeUp)||(t.posto+' '+t.nome).toUpperCase().includes(nomeUp);});}):[];
   var omsExibir=omsDoOficial.length?omsDoOficial:oms;
-  if(omsExibir.length){omsExibir.forEach(function(om){msg+='📋 OM '+om.om_num+' — '+(om.anv||'')+' FAB '+(om.fab||'')+'\n';var trip=(om.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');msg+=trip+'\n';(om.pernas||[]).forEach(function(p){msg+='  '+(p.raw||p)+'\n';});if(om.obs)msg+='  OBS: '+om.obs+'\n';msg+='\n';});}
+  if(omsExibir.length){omsExibir.forEach(function(om){msg+='📋 OM '+om.om_num+' — '+(om.anv||'')+' FAB '+(om.fab||'')+'\n\n';var trip=(om.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');msg+=trip+'\n\n';(om.pernas||[]).forEach(function(p){msg+='  '+(p.raw||p)+'\n';});if(om.obs)msg+='\n  OBS: '+om.obs+'\n';msg+='\n';});}
   else{var trip=(dados.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');msg+=trip+'\n\n';(dados.pernas||[]).forEach(function(p){msg+=p+'\n';});msg+='\n';}
   msg+='FAVOR ACUSAR CIENTE\nOPR GTE-1';return msg;
 }
