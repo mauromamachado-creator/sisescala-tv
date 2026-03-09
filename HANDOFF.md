@@ -16,7 +16,7 @@ O projeto é composto por três partes principais:
 
 **URL do sistema:** https://mauromamachado-creator.github.io/sisescala-tv/
 **Repositório:** https://github.com/mauromamachado-creator/sisescala-tv
-**Token GitHub:** `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`
+**Token GitHub:** *(guardado com o Mauro — não colocar aqui)*
 
 ---
 
