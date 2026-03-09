@@ -4067,6 +4067,18 @@ function s3RenderAcnt(container){
 
 // ─── Confirmação de Missão ───────────────────────────────────────────────────
 var _confLetra='A';
+var _confLetras={};
+function _confSetLetra(nome,val){_confLetras[nome]=val.toUpperCase();var el=document.getElementById('confprev_'+nome.replace(/\W/g,'_'));if(el&&_confDados)el.textContent=_buildMsgOficial(val.toUpperCase(),_confDados._postoOf&&_confDados._postoOf[nome]||'',nome,_confDados);}
+function _buildMsgOficial(letra,posto,nome,dados){
+  var oms=(dados&&dados.oms)||[];
+  var msg='Prezado tripulante, informo que o senhor está escalado para a consulta '+letra+'\n\n';
+  var nomeUp=nome.toUpperCase();
+  var omsDoOficial=oms.length?oms.filter(function(om){return(om.tripulantes||[]).some(function(t){return(t.nome||'').toUpperCase().includes(nomeUp)||(t.posto+' '+t.nome).toUpperCase().includes(nomeUp);});}):[];
+  var omsExibir=omsDoOficial.length?omsDoOficial:oms;
+  if(omsExibir.length){omsExibir.forEach(function(om){msg+='📋 OM '+om.om_num+' — '+(om.anv||'')+' FAB '+(om.fab||'')+'\n';var trip=(om.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');msg+=trip+'\n';(om.pernas||[]).forEach(function(p){msg+='  '+(p.raw||p)+'\n';});if(om.obs)msg+='  OBS: '+om.obs+'\n';msg+='\n';});}
+  else{var trip=(dados.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');msg+=trip+'\n\n';(dados.pernas||[]).forEach(function(p){msg+=p+'\n';});msg+='\n';}
+  msg+='FAVOR ACUSAR CIENTE\nOPR GTE-1';return msg;
+}
 var _confDados=null;
 var _confCientes={};
 var _confSobreaviso=[]; // [{chat_id, nome, posto, letra}]
@@ -4111,36 +4123,7 @@ function consultaApiFetch(path){
 
 function _escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-function _buildMsgOficial(letra, posto, nome, dados){
-  var oms=(dados&&dados.oms)||[];
-  var msg='SR. '+posto+' '+nome+', MISSÃO '+letra+':\n\n';
-  // Filtra só as OMs em que o tripulante aparece
-  var nomeUp=nome.toUpperCase();
-  var omsDoOficial=oms.length?oms.filter(function(om){
-    return (om.tripulantes||[]).some(function(t){
-      return (t.nome||'').toUpperCase().includes(nomeUp)||(t.posto+' '+t.nome).toUpperCase().includes(nomeUp);
-    });
-  }):[];
-  // Se não encontrou em nenhuma OM específica, mostra todas (fallback)
-  var omsExibir=omsDoOficial.length?omsDoOficial:oms;
-  if(omsExibir.length){
-    omsExibir.forEach(function(om){
-      msg+='📋 OM '+om.om_num+' — '+(om.anv||'')+' FAB '+(om.fab||'')+'\n';
-      var trip=(om.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');
-      msg+=trip+'\n';
-      (om.pernas||[]).forEach(function(p){msg+='  '+(p.raw||p)+'\n';});
-      if(om.obs) msg+='  OBS: '+om.obs+'\n';
-      msg+='\n';
-    });
-  } else {
-    var trip=(dados.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');
-    msg+=trip+'\n\n';
-    (dados.pernas||[]).forEach(function(p){msg+=p+'\n';});
-    msg+='\n';
-  }
-  msg+='FAVOR ACUSAR CIENTE\nOPR GTE-1';
-  return msg;
-}
+
 
 function _renderConfView(container){
   var dados=_confDados;
@@ -4194,8 +4177,8 @@ function _renderConfView(container){
       html+='<div style="margin-bottom:16px">';
       html+='<div style="font-size:.75rem;font-weight:900;color:var(--text2);margin-bottom:8px">📨 MENSAGENS QUE SERÃO ENVIADAS ('+todos_dest.length+')</div>';
       todos_dest.forEach(function(t){
-        var letra_dest=t._letra||_confLetra||'?';
         var nome_key=t.nome.toUpperCase();
+        var letra_dest=_confLetras[nome_key]||t._letra||_confLetra||'A';
         var confirmou=Object.values(cientes_gas).some(function(c){var n=(c.nome||'').toUpperCase();return n.includes(nome_key)||nome_key.includes(n);});
         // Busca chat_id no GAS para mostrar status cadastrado
         var cadastrado=_confTripulantes.some(function(tr){return (tr.nome_guerra||'').toUpperCase()===nome_key||(tr.nome_guerra||'').toUpperCase().includes(nome_key);});
@@ -4203,11 +4186,15 @@ function _renderConfView(container){
         var tagColor=confirmou?'var(--green)':cadastrado?'var(--text2)':'var(--red)';
         var tag=confirmou?'✅ CIENTE':cadastrado?'⏳ Aguardando':'⚠️ Não cadastrado';
         html+='<div style="background:var(--bg2);border:1px solid '+borderColor+';border-radius:8px;padding:12px;margin-bottom:10px">';
-        html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+        var safeNome=nome_key.replace(/[^A-Z0-9]/g,'_');
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">';
         html+='<span style="font-weight:900;font-size:.85rem;color:var(--text)">'+t.posto+' '+t.nome+(t._saviso?' <span style="color:var(--yellow);font-size:.7rem">SOBREAVISO</span>':'')+'</span>';
+        html+='<div style="display:flex;align-items:center;gap:6px">';
+        html+='<label style="font-size:.75rem;color:var(--text2)">Consulta:</label>';
+        html+='<input type="text" maxlength="3" value="'+letra_dest+'" data-nome="'+safeNome+'" onchange="_confLetras[\''+nome_key.replace(/'/g,"\\'")+'\']=this.value.toUpperCase();document.getElementById(\'pr_'+safeNome+'\').textContent=_buildMsgOficial(this.value.toUpperCase(),\''+t.posto.replace(/'/g,"\\'")+'\',\''+t.nome.replace(/'/g,"\\'")+'\',_confDados)" style="width:44px;text-align:center;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:.9rem;font-weight:900;text-transform:uppercase">';
         html+='<span style="font-size:.72rem;color:'+tagColor+'">'+tag+'</span>';
-        html+='</div>';
-        html+='<pre style="margin:0;background:var(--bg3);padding:10px;border-radius:6px;font-size:.74rem;white-space:pre-wrap;color:var(--text);max-height:200px;overflow-y:auto">'+_escHtml(_buildMsgOficial(letra_dest,t.posto,t.nome,dados))+'</pre>';
+        html+='</div></div>';
+        html+='<pre id="pr_'+safeNome+'" style="margin:0;background:var(--bg3);padding:10px;border-radius:6px;font-size:.74rem;white-space:pre-wrap;color:var(--text);max-height:200px;overflow-y:auto">'+_escHtml(_buildMsgOficial(letra_dest,t.posto,t.nome,dados))+'</pre>';
         html+='</div>';
       });
       html+='</div>';
@@ -4301,7 +4288,7 @@ async function _enviarConfirmacao(){
   var btn=document.getElementById('conf-send-btn');
   if(btn){btn.disabled=true;btn.textContent='⏳ Enviando...';}
   try{
-    var r=await consultaApiPost({action:'send_conf',letra:letra,sobreaviso:_confSobreaviso});
+    var r=await consultaApiPost({action:'send_conf',letra:_confLetra,letras_por_oficial:_confLetras,sobreaviso:_confSobreaviso});
     if(r.ok){
       var msg='✅ Enviado para '+r.enviados+' oficial(is).';
       if(r.enviados_saviso) msg+=' + '+r.enviados_saviso+' sobreaviso.';
