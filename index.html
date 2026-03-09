@@ -357,7 +357,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <button onclick="goScreen(2)" id="btn2">HORAS DE VOO</button>
     <button onclick="goScreen(3)" id="btn3">FERIAS/ALERTAS</button>
     <button onclick="goScreen(14)" id="btn14">S3</button>
-    <button onclick="goScreen(5)" id="btn5">ACNT/ALTR</button>
+
     <button onclick="goScreen(6)" id="btn6">CALENDÁRIO</button>
     <button onclick="goScreen(10)" id="btn10">CARTÕES</button>
     <button onclick="goScreen(11)" id="btn11">BOT</button>
@@ -3203,6 +3203,7 @@ function renderScreenS3(){
   html+='<button class="'+(s3ActiveTab==='consulta'?'active':'')+'" onclick="s3SwitchTab(\'consulta\')">CONSULTA</button>';
   html+='<button class="'+(s3ActiveTab==='escalav2'?'active':'')+'" onclick="s3SwitchTab(\'escalav2\')">ESCALA V2</button>';
   html+='<button class="'+(s3ActiveTab==='confirmacao'?'active':'')+'" onclick="s3SwitchTab(\'confirmacao\')">CONFIRMAÇÃO</button>';
+  html+='<button class="'+(s3ActiveTab==='acnt'?'active':'')+'" onclick="s3SwitchTab(\'acnt\')">ACNT/ALTR</button>';
   html+='</div>';
   html+='<div id="s3-content"></div>';
   document.getElementById('screen14').innerHTML=html;
@@ -3224,6 +3225,7 @@ function s3RenderActiveTab(){
   else if(s3ActiveTab==='consulta'){s3RenderConsultaV2(container);}
   else if(s3ActiveTab==='escalav2'){s3RenderEscalaV2(container);}
   else if(s3ActiveTab==='confirmacao'){s3RenderConfirmacao(container);}
+  else if(s3ActiveTab==='acnt'){s3RenderAcnt(container);}
 }
 function s3RenderEscala(container){
   renderScreenEscala();
@@ -3994,6 +3996,34 @@ function s3RenderConsultaV2(container){
     container.innerHTML='<div style="padding:24px;color:var(--red)">❌ Erro ao carregar consulta: '+e.message+'</div>';
     console.error('s3RenderConsultaV2 erro:',e);
   });
+}
+
+// ─── ACNT/ALTR como submenu S3 ──────────────────────────────────────────────
+function s3RenderAcnt(container){
+  let html='';
+  if(!acntData.length){
+    html='<div style="padding:24px;color:var(--text2)">Sem dados de ACNT/ALTR disponíveis.</div>';
+    container.innerHTML=html;return;
+  }
+  html+='<h2 style="font-size:1rem;margin-bottom:16px">ACNT/ALTR — Checklist de Missões</h2>';
+  html+='<div class="acnt-grid">';
+  for(const m of acntData){
+    const pctCls=m.pctDone>80?'pct-high':m.pctDone>=50?'pct-mid':'pct-low';
+    const barColor=m.pctDone>80?'var(--green)':m.pctDone>=50?'var(--yellow)':'var(--red)';
+    html+=`<div class="acnt-card ${pctCls}">`;
+    html+=`<div class="acnt-header"><span class="date">📅 ${m.data}</span><span class="anv">FAB ${m.anvNum} - ${m.anvType}</span></div>`;
+    html+=`<div class="acnt-progress"><div class="prog-label"><span style="font-size:.78rem">Progresso</span><span style="color:${barColor};font-weight:900">${m.pctDone.toFixed(1)}%</span></div>`;
+    html+=`<div class="prog-track"><div class="prog-fill" style="width:${Math.min(m.pctDone,100)}%;background:${barColor}" data-pct="${m.pctDone.toFixed(0)}%"></div></div></div>`;
+    html+='<ul class="acnt-items">';
+    for(const item of m.items){
+      const icon=item.status==='done'?'✅':'⬜';
+      const style=item.status==='done'?'':'color:var(--text2)';
+      html+=`<li style="${style}"><span class="icon">${icon}</span>${item.name}</li>`;
+    }
+    html+='</ul></div>';
+  }
+  html+='</div>';
+  container.innerHTML=html;
 }
 
 // ─── Confirmação de Missão ───────────────────────────────────────────────────
