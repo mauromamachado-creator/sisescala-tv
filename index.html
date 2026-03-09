@@ -3374,66 +3374,44 @@ function s3RenderEscalaV2(container){
     var raioVC1=results[3];
     var raioVC2=results[4];
 
-    function gasToConsulta(rows){
-      try{
-        if(!Array.isArray(rows)||rows.length<1) return null;
-        var recs=[];
-        // Detectar se primeira linha é header (col[0]="Timestamp" ou col[1]="Nome")
-        var start=(rows[0]&&(String(rows[0][0]).startsWith('Timestamp')||rows[0][1]==='Nome'))?1:0;
-        for(var i=start;i<rows.length;i++){
-          var row=rows[i]||[];
-          var nome=row[1]||'';
-          if(!nome) continue;
-          var respTxt=row[2]||'{}';
-          var conf=String(row[3]||'').toLowerCase();
-          var confirmed=(conf==='true'||conf==='1'||conf==='sim');
-          var responses={};
-          try{responses=JSON.parse(respTxt||'{}')||{};}catch(e){responses={};}
-          recs.push({name:nome,responses:responses,confirmed:confirmed});
-        }
-        return {id:'gas',text:'',missions:[],locked:false,recipients:recs};
-      }catch(e){return null;}
+    // Nova estrutura GAS: [ordem, posto, nome_guerra, respostas, confirmado, atualizado]
+    // Header na linha 0 é 'ordem','posto','nome_guerra',...
+    function parseRaioGAS(rows){
+      // Retorna [{pos,posto,nome_guerra,respostas,confirmado}]
+      if(!Array.isArray(rows)||rows.length<2) return [];
+      var list=[];
+      for(var i=1;i<rows.length;i++){
+        var r=rows[i];
+        var ng=String(r[2]||'').trim();
+        if(!ng||ng==='nome_guerra') continue;
+        var respTxt=String(r[3]||'');
+        var conf=r[4]===true||String(r[4]).toLowerCase()==='true';
+        var responses={};
+        try{responses=JSON.parse(respTxt||'{}')||{};}catch(e){responses={};}
+        list.push({pos:Number(r[0])||i,posto:String(r[1]||''),nome_guerra:ng,responses:responses,confirmed:conf});
+      }
+      return list;
     }
 
-    var pub={vc1:gasToConsulta(gasAll.vc1||[]),vc2:gasToConsulta(gasAll.vc2||[])};
-
-    function renderVC(vcKey,colorVar,textoPlnilha,raio){
-      var c=pub[vcKey];
-      var texto=c&&c.text?c.text:textoPlnilha;
+    function renderVC(vcKey,colorVar,textoPlnilha,_unused){
+      var rows=gasAll[vcKey]||[];
+      var lista=parseRaioGAS(rows);
+      var texto=textoPlnilha;
       var html='';
       if(texto) html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.5;max-height:160px;overflow-y:auto">'+texto.replace(/</g,'&lt;')+'</div>';
-      if(!c&&!raio){html+='<div style="color:var(--text2);padding:10px">Nenhuma consulta ativa.</div>';return html;}
+      if(!lista.length){html+='<div style="color:var(--text2);padding:10px">Nenhum raio carregado. Envie o PDF pelo @SISGOP_BOT.</div>';return html;}
 
-      // Montar lista de pilotos: raio define a ordem; respostas do bot complementam
-      var missions=c?c.missions||[]:[];
-      var respostasMap={}; // nome.upper -> recipient
-      if(c){(c.recipients||[]).forEach(function(r){respostasMap[(r.name||'').toUpperCase()]=r;});}
+      // Detectar missões a partir das respostas existentes
+      var missionsSet={};
+      lista.forEach(function(p){Object.keys(p.responses||{}).forEach(function(k){missionsSet[k]=1;});});
+      var missions=Object.keys(missionsSet).sort();
 
-      // Lista base: raio (em ordem) ou só respondentes se não houver raio
-      var lista=[];
-      if(raio&&raio.pilotos){
-        raio.pilotos.forEach(function(p,i){
-          var nomeCompleto=p.posto+' '+p.nome;
-          var _nc=nomeCompleto.toUpperCase();var _pn=p.nome.toUpperCase();
-          var resp=respostasMap[_nc]||respostasMap[_pn]||null;
-          // Match parcial: "Mauro Machado" contém "MACHADO"
-          if(!resp){for(var _rk in respostasMap){var _rku=_rk.toUpperCase();if(_rku.includes(_pn)||_pn.includes(_rku.split(' ').pop())){resp=respostasMap[_rk];break;}}}
-          lista.push({pos:p.pos,label:nomeCompleto,resp:resp});
-        });
-      } else if(c){
-        (c.recipients||[]).forEach(function(r,i){lista.push({pos:i+1,label:r.name||'',resp:r});});
-      }
-
-      var confirmed=lista.filter(function(l){return l.resp&&l.resp.confirmed;}).length;
-      html+='<div style="display:flex;gap:16px;margin-bottom:10px;font-size:.82rem">';
-      if(raio) html+='<span style="color:var(--text2)">📋 Raio '+raio.data_consulta+'</span>';
+      var confirmed=lista.filter(function(p){return p.confirmed;}).length;
+      html+='<div style="display:flex;gap:16px;margin-bottom:10px;font-size:.82rem;flex-wrap:wrap">';
       html+='<span>👥 '+lista.length+'</span>';
       html+='<span style="color:var(--green)">✅ '+confirmed+' confirmaram</span>';
       html+='<span style="color:var(--yellow)">⏳ '+(lista.length-confirmed)+' pendentes</span>';
-      if(c&&c.locked) html+='<span style="color:var(--red)">🔒 Encerrada</span>';
       html+='</div>';
-
-      if(!lista.length){html+='<div style="color:var(--text2);padding:8px">Sem pilotos no raio.</div>';return html;}
 
       html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">';
       html+='<thead><tr style="border-bottom:2px solid var(--border)">';
@@ -3442,27 +3420,23 @@ function s3RenderEscalaV2(container){
       missions.forEach(function(m){html+='<th style="text-align:center;padding:8px 6px;color:var('+colorVar+');font-weight:900">'+m+'</th>';});
       html+='<th style="text-align:center;padding:8px 6px;color:var(--text2)">Status</th>';
       html+='</tr></thead><tbody>';
-      lista.forEach(function(item){
-        var r=item.resp;
+      lista.forEach(function(p){
         html+='<tr style="border-bottom:1px solid rgba(255,255,255,.05)">';
-        html+='<td style="text-align:center;padding:6px;color:var(--text2);font-size:.72rem">'+item.pos+'</td>';
-        html+='<td style="padding:6px;font-weight:700">'+item.label+'</td>';
-        if(missions.length){
-          missions.forEach(function(m){
-            var v=r&&r.responses?r.responses[m]:undefined;
-            var bg,color,disp;
-            if(!r||v===undefined||v===null){bg='rgba(255,200,50,.04)';color='var(--text2)';disp='—';}
-            else if(v===0||v===false){bg='rgba(255,80,80,.1)';color='var(--red)';disp='❌';}
-            else{bg='rgba(0,255,136,.15)';color='var(--green)';disp=(typeof v==='number'&&v>0)?v+'º':'✅';}
-            html+='<td style="text-align:center;padding:6px;background:'+bg+';color:'+color+';font-weight:900;border-radius:4px">'+disp+'</td>';
-          });
-        }
+        html+='<td style="text-align:center;padding:6px;color:var(--text2);font-size:.72rem">'+p.pos+'</td>';
+        html+='<td style="padding:6px;font-weight:700">'+p.posto+' '+p.nome_guerra+'</td>';
+        missions.forEach(function(m){
+          var v=p.responses[m];
+          var bg,color,disp;
+          if(!p.confirmed||v===undefined||v===null){bg='rgba(255,200,50,.04)';color='var(--text2)';disp='—';}
+          else if(v===0||v===false){bg='rgba(255,80,80,.1)';color='var(--red)';disp='❌';}
+          else{bg='rgba(0,255,136,.15)';color='var(--green)';disp=(typeof v==='number'&&v>0)?v+'º':'✅';}
+          html+='<td style="text-align:center;padding:6px;background:'+bg+';color:'+color+';font-weight:900;border-radius:4px">'+disp+'</td>';
+        });
         var statusTd;
-        if(!r) statusTd='<td style="text-align:center;padding:6px;color:var(--text2)">⏳ Aguardando</td>';
-        else if(r.confirmed) statusTd='<td style="text-align:center;padding:6px;color:var(--green)">✅ Confirmado</td>';
+        if(!p.confirmed&&!Object.keys(p.responses).length) statusTd='<td style="text-align:center;padding:6px;color:var(--text2)">⏳ Aguardando</td>';
+        else if(p.confirmed) statusTd='<td style="text-align:center;padding:6px;color:var(--green)">✅ Confirmado</td>';
         else statusTd='<td style="text-align:center;padding:6px;color:var(--yellow)">⏳ Respondendo...</td>';
-        html+=statusTd;
-        html+='</tr>';
+        html+=statusTd+'</tr>';
       });
       html+='</tbody></table></div>';
       return html;
