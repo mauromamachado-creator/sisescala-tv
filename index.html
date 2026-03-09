@@ -334,23 +334,39 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 </style>
 </head>
 <body>
-<header>
-  <div style="display:flex;align-items:center;gap:12px">
-    <div style="width:44px;height:44px;background:rgba(0,212,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-      <img src="logo-sisgop-transp.png" alt="SisGOPA" style="width:56px;height:56px;border-radius:10px;object-fit:cover">
+<header style="flex-direction:column;align-items:stretch;padding:6px 20px 4px">
+  <!-- Linha 1: logo + relógio/controles -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <!-- Esquerda: logo + nome + KPIs -->
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:44px;height:44px;background:rgba(0,212,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <img src="logo-sisgop-transp.png" alt="SisGOPA" style="width:56px;height:56px;border-radius:10px;object-fit:cover">
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
+        <div style="font-size:1.2rem;font-weight:900;letter-spacing:1px">SisGOPA</div>
+        <div style="font-size:.5rem;letter-spacing:1.5px;color:var(--vc1);text-transform:uppercase;white-space:nowrap">Gestão de Operações Aéreas</div>
+      </div>
+      <div id="kpi-box" style="display:flex;gap:24px;margin-left:24px">
+        <div style="text-align:center"><div id="kpi-trip" style="font-size:1.5rem;font-weight:900;color:var(--vc1)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Tripulantes</div></div>
+        <div style="text-align:center"><div id="kpi-aptos" style="font-size:1.5rem;font-weight:900;color:var(--green)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Disponíveis</div></div>
+        <div style="text-align:center"><div id="kpi-miss" style="font-size:1.5rem;font-weight:900;color:var(--vc2)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Missões Cumpridas</div></div>
+      </div>
     </div>
-    <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
-      <div style="font-size:1.2rem;font-weight:900;letter-spacing:1px">SisGOPA</div>
-      <div style="font-size:.5rem;letter-spacing:1.5px;color:var(--vc1);text-transform:uppercase;white-space:nowrap">Gestão de Operações Aéreas</div>
+    <!-- Direita: relógio + status + tela cheia -->
+    <div class="header-right">
+      <span class="clock" id="clock"></span>
+      <span style="position:relative;display:inline-flex;align-items:center">
+        <span class="status-dot" id="statusDot" onclick="document.getElementById('statusPanel').classList.toggle('open')"></span>
+        <div class="status-panel" id="statusPanel"></div>
+      </span>
+      <span id="lastUpdate" style="color:var(--text2);font-size:.75rem"></span>
+      <button class="ctrl-btn" onclick="goFullscreen()">TELA CHEIA</button>
     </div>
-    <div id="kpi-box" style="display:flex;gap:24px;margin-left:24px">
-      <div style="text-align:center"><div id="kpi-trip" style="font-size:1.5rem;font-weight:900;color:var(--vc1)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Tripulantes</div></div>
-      <div style="text-align:center"><div id="kpi-aptos" style="font-size:1.5rem;font-weight:900;color:var(--green)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Disponíveis</div></div>
-      <div style="text-align:center"><div id="kpi-miss" style="font-size:1.5rem;font-weight:900;color:var(--vc2)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Missões Cumpridas</div></div>
-    </div>
+    <!-- Hamburger (mobile) -->
+    <button class="hamburger-btn" id="hamburgerBtn" onclick="document.querySelector('.nav-btns').classList.toggle('open');this.textContent=document.querySelector('.nav-btns').classList.contains('open')?'✕ FECHAR MENU':'☰ MENU'">☰ MENU</button>
   </div>
-  <button class="hamburger-btn" id="hamburgerBtn" onclick="document.querySelector('.nav-btns').classList.toggle('open');this.textContent=document.querySelector('.nav-btns').classList.contains('open')?'✕ FECHAR MENU':'☰ MENU'">☰ MENU</button>
-  <div class="nav-btns">
+  <!-- Linha 2: nav buttons -->
+  <div class="nav-btns" style="margin-top:4px">
     <button onclick="goScreen(0)" id="btn0">DASHBOARD</button>
     <button onclick="goScreen(1)" id="btn1">DISPONIBILIDADE</button>
     <button onclick="goScreen(2)" id="btn2">HORAS DE VOO</button>
@@ -364,15 +380,6 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <button onclick="goScreen(7)" id="btn7">🔍 BUSCA</button>
     <button onclick="goScreen(12)" id="btn12" style="color:var(--red)">REPORTAR</button>
     <button onclick="goScreen(9)" id="btn9" class="desktop-only">📺 TV</button>
-  </div>
-  <div class="header-right">
-    <span class="clock" id="clock"></span>
-    <span style="position:relative;display:inline-flex;align-items:center">
-      <span class="status-dot" id="statusDot" onclick="document.getElementById('statusPanel').classList.toggle('open')"></span>
-      <div class="status-panel" id="statusPanel"></div>
-    </span>
-    <span id="lastUpdate" style="color:var(--text2);font-size:.75rem"></span>
-    <button class="ctrl-btn" onclick="goFullscreen()">TELA CHEIA</button>
   </div>
 </header>
 
