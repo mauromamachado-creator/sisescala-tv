@@ -2551,10 +2551,15 @@ const BRASAO_IMG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADKCAYAAADg
 function parseDadosPessoais(rows){
   const map={};
   rows.forEach(r=>{
-    const nome=r[22]||'';const tri=r[23]||'';const cpf=r[34]||'';const posto=r[20]||'';const nomeCompleto=r[21]||'';
+    const nome=r[22]||'';const tri=r[23]||'';
+    // MP às vezes muda coluna; CPF tem formato 000.000.000-00. Se vier SARAM (ex: 529.456), não usar como CPF.
+    const cpfRaw=(r[34]||r[33]||r[32]||'');
+    const cpf=(/\d{3}\.\d{3}\.\d{3}-\d{2}/.test(String(cpfRaw))?String(cpfRaw).trim():'');
+    const saram=(!cpf && /\d{3}\.\d{3}/.test(String(cpfRaw))?String(cpfRaw).trim():'');
+    const posto=r[20]||'';const nomeCompleto=r[21]||'';
     const celular=r[26]||'';const email=r[30]||'';
     if(!nomeCompleto)return;
-    const obj={cpf,posto,nomeCompleto,trigrama:tri,celular,email};
+    const obj={cpf,saram,posto,nomeCompleto,trigrama:tri,celular,email};
     // Key by nome guerra (uppercase) and by trigrama
     const key=nome.toUpperCase().trim();
     if(key)map[key]=obj;
@@ -2569,14 +2574,17 @@ function parseDadosPessoais(rows){
 
 function findCPF(nome){
   if(!dadosPessoais||!Object.keys(dadosPessoais).length)return '';
-  const n=nome.toUpperCase().trim();
-  // Direct match by nome guerra
-  if(dadosPessoais[n])return dadosPessoais[n].cpf;
-  // Try by trigrama
-  if(dadosPessoais['TRI_'+n])return dadosPessoais['TRI_'+n].cpf;
-  // Partial match on full name
+  const n=String(nome||'').toUpperCase().trim();
+  const pick=(o)=>{
+    if(!o)return '';
+    if(o.cpf) return o.cpf;
+    // Se não tiver CPF, não inventar (SARAM não entra no campo CPF)
+    return '';
+  };
+  if(dadosPessoais[n])return pick(dadosPessoais[n]);
+  if(dadosPessoais['TRI_'+n])return pick(dadosPessoais['TRI_'+n]);
   for(const k of Object.keys(dadosPessoais)){
-    if(k.startsWith('FULL_')&&k.includes(n))return dadosPessoais[k].cpf;
+    if(k.startsWith('FULL_')&&k.includes(n))return pick(dadosPessoais[k]);
   }
   return '';
 }
@@ -2593,11 +2601,12 @@ function findDadosPessoais(nome){
 
 function findNomeCompleto(nome){
   if(!dadosPessoais||!Object.keys(dadosPessoais).length)return nome;
-  const n=nome.toUpperCase().trim();
-  if(dadosPessoais[n])return dadosPessoais[n].nomeCompleto;
-  if(dadosPessoais['TRI_'+n])return dadosPessoais['TRI_'+n].nomeCompleto;
+  const n=String(nome||'').toUpperCase().trim();
+  const pick=(o)=>o&&o.nomeCompleto?o.nomeCompleto:nome;
+  if(dadosPessoais[n])return pick(dadosPessoais[n]);
+  if(dadosPessoais['TRI_'+n])return pick(dadosPessoais['TRI_'+n]);
   for(const k of Object.keys(dadosPessoais)){
-    if(k.startsWith('FULL_')&&k.includes(n))return dadosPessoais[k].nomeCompleto;
+    if(k.startsWith('FULL_')&&k.includes(n))return pick(dadosPessoais[k]);
   }
   return nome;
 }
