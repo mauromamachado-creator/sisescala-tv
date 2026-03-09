@@ -3913,6 +3913,20 @@ function s3RenderConsultaV2(container){
       var deadline=null;
       if(consultaPrazo!=='sem'){deadline=new Date(Date.now()+parseInt(consultaPrazo)*3600000).toISOString();}
 
+      // Recarrega destinatários do GAS antes de enviar (garante lista atualizada)
+      try{
+        var _gtr=await fetch(CONSULTA_GAS+'?action=get_tripulantes&t='+Date.now(),{cache:'no-store'});
+        var _gtd=await _gtr.json();
+        if(_gtd&&_gtd.ok){
+          CONSULTA_RECIPIENTS_VC1=[];CONSULTA_RECIPIENTS_VC2=[];
+          (_gtd.tripulantes||[]).forEach(function(t){
+            var rec={name:(t.posto||'')+' '+(t.nome_guerra||''),chatId:t.chat_id,rank:t.posto||''};
+            var vc=(t.vc||'').toUpperCase().replace('VC-','').trim();
+            if(vc==='1')CONSULTA_RECIPIENTS_VC1.push(rec);
+            else if(vc==='2')CONSULTA_RECIPIENTS_VC2.push(rec);
+          });
+        }
+      }catch(e){console.warn('reload tripulantes falhou:',e);}
       var recipients=vcType==='vc1'?CONSULTA_RECIPIENTS_VC1:CONSULTA_RECIPIENTS_VC2;
       var recipientsList=recipients.map(function(r){return{chat_id:r.chatId,name:r.name,rank:r.rank};});
 
