@@ -1110,9 +1110,11 @@ function decodeMetar(raw){
 const METAR_WORKER=''; // URL do Cloudflare Worker quando deployado, ex: 'https://metar-proxy.seu-user.workers.dev'
 const CORS_PROXIES=[
   ...(METAR_WORKER?[u=>{try{const p=new URL(u);return METAR_WORKER+'?ids='+(p.searchParams.get('ids')||'SBBR')+'&format='+(p.searchParams.get('format')||'raw');}catch(e){return METAR_WORKER+'?url='+encodeURIComponent(u);}}]:[]),
+  u=>'https://corsproxy.io/?'+encodeURIComponent(u),
   u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u),
   u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
-  u=>'https://corsproxy.io/?'+encodeURIComponent(u)
+  u=>'https://thingproxy.freeboard.io/fetch/'+u,
+  u=>'https://cors-anywhere.herokuapp.com/'+u
 ];
 async function proxyFetch(url){
   for(const mk of CORS_PROXIES){
@@ -1131,7 +1133,7 @@ async function fetchMetar(){
     const text=await proxyFetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw');
     if(!text)throw new Error('Sem dados');
     metarRaw=text;metarDecoded=decodeMetar(metarRaw);
-  }catch(e){console.error('METAR fetch error',e);throw e;}
+  }catch(e){console.warn('METAR fetch error',e);}
 }
 async function fetchMetarMulti(){
   try{
