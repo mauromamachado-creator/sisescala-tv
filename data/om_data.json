@@ -65,7 +65,8 @@
       "1I5FhRGnVKF-7adXL070LxMdFPs0ocwiV"
     ],
     "om": "92/GTE-1/2026",
-    "fab": "FAB 2101"
+    "fab": "FAB 2101",
+    "tipo": "TRP"
   },
   {
     "aeronave": "VC-2",
@@ -110,7 +111,8 @@
       "1ssJBo-oreeUPttN-tUEHWj54a3G966Kr"
     ],
     "om": "94/GTE-1/2026",
-    "fab": "FAB 2590"
+    "fab": "FAB 2590",
+    "tipo": "ESCAV"
   },
   {
     "aeronave": "VC-2",
@@ -159,7 +161,8 @@
       "1BX7n7GwZJblCyWTXKFSSb1GdGnZm8j2R"
     ],
     "om": "95/GTE-1/2026",
-    "fab": "FAB 2590"
+    "fab": "FAB 2590",
+    "tipo": "ESCAV"
   },
   {
     "aeronave": "VC-2",
@@ -202,7 +205,8 @@
       "1YyT0rCWlBgzLLk54YsTF3toi3dAKJJro"
     ],
     "om": "96/GTE-1/2026",
-    "fab": "FAB 2590"
+    "fab": "FAB 2590",
+    "tipo": "ESCAV"
   },
   {
     "aeronave": "VC-1",
@@ -274,7 +278,8 @@
     "file_id": "1HdMEz57OsDAHjAKQgdCqxFy4rS0QHp7-",
     "file_ids": [
       "1HdMEz57OsDAHjAKQgdCqxFy4rS0QHp7-"
-    ]
+    ],
+    "tipo": "TRP"
   },
   {
     "aeronave": "VC-2",
@@ -304,7 +309,8 @@
     "file_id": "1J-LSmtZ5RhfNGhmjByIflcB2vfz9Of12",
     "file_ids": [
       "1J-LSmtZ5RhfNGhmjByIflcB2vfz9Of12"
-    ]
+    ],
+    "tipo": "TRP"
   },
   {
     "aeronave": "VC-1",
@@ -350,7 +356,8 @@
     "file_id": "19CmDInuYwDHWLcQoDsf1YsaFBbW3RGX6",
     "file_ids": [
       "19CmDInuYwDHWLcQoDsf1YsaFBbW3RGX6"
-    ]
+    ],
+    "tipo": "TRP"
   },
   {
     "aeronave": "VC-2",
@@ -387,7 +394,8 @@
     "file_ids": [
       "1AxBqHSQwJJ8p7S4uQzo61Yq29mmXrek3"
     ],
-    "obs": "REALIZA O ALERTA SOLO APENAS EM SBBR."
+    "obs": "REALIZA O ALERTA SOLO APENAS EM SBBR.",
+    "tipo": "ALT"
   },
   {
     "aeronave": "VC-2",
@@ -449,6 +457,7 @@
     "file_id": "1yPgLxKa2xEx-F2VcHokIxjTNvw19UA2O",
     "file_ids": [
       "1yPgLxKa2xEx-F2VcHokIxjTNvw19UA2O"
-    ]
+    ],
+    "tipo": "ESCAV"
   }
 ]
