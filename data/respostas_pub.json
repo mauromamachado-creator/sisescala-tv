@@ -14,6 +14,23 @@
           "A": 1,
           "B": 2
         },
+        "confirmed": true
+      }
+    ]
+  },
+  "vc2": {
+    "id": "vc2",
+    "text": "Senhores, bom dia. Consulta para o dia 08 de março, VC-2:\n\nA) BR-BR",
+    "missions": [
+      "A"
+    ],
+    "locked": false,
+    "recipients": [
+      {
+        "name": "Mauro Machado",
+        "responses": {
+          "A": 1
+        },
         "confirmed": false
       }
     ]
