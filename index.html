@@ -4286,19 +4286,43 @@ async function _enviarConfirmacao(){
   var btn=document.getElementById('conf-send-btn');
   if(btn){btn.disabled=true;btn.textContent='⏳ Enviando...';}
   try{
-    var r=await consultaApiPost({action:'send_conf',letra:_confLetra,letras_por_oficial:_confLetras,sobreaviso:_confSobreaviso});
-    if(r.ok){
+    if(!_confDados){alert('Nenhum controlão carregado.');if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}return;}
+    var dados=_confDados;
+    var trip=dados.tripulantes||[];
+    var oficiais=trip.filter(function(t){return['TC','MJ','CP'].indexOf(t.posto)>=0;});
+    // Monta lista de mensagens com chat_id por oficial
+    var gasTrip=_confTripulantes||[];
+    var messages=[];
+    oficiais.forEach(function(t){
+      var ng=t.nome.toUpperCase();
+      var tg=gasTrip.find(function(tr){var n=(tr.nome_guerra||'').toUpperCase();return n===ng||n.includes(ng)||ng.includes(n);});
+      if(!tg||!tg.chat_id) return;
+      var letra=_confLetras[ng]||_confLetra||'A';
+      var texto=_buildMsgOficial(letra,t.posto,t.nome,dados);
+      messages.push({chat_id:tg.chat_id,texto:texto,letra:letra,nome:t.nome});
+    });
+    // Sobreaviso
+    (_confSobreaviso||[]).forEach(function(s){
+      var letra=s.letra||_confLetra||'A';
+      var texto=_buildMsgOficial(letra,s.posto,s.nome,dados);
+      messages.push({chat_id:s.chat_id,texto:texto,letra:letra,nome:s.nome});
+    });
+    if(!messages.length){alert('Nenhum oficial cadastrado no bot encontrado na tripulação.');if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}return;}
+    // Envia via CONF_GAS (sem depender do bot local)
+    var gasUrl=CONF_GAS+'?t='+Date.now();
+    var resp=await fetch(gasUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'send_conf',messages:messages}),signal:AbortSignal.timeout(30000)});
+    var r=await resp.json();
+    if(r&&r.ok){
       var msg='✅ Enviado para '+r.enviados+' oficial(is).';
-      if(r.enviados_saviso) msg+=' + '+r.enviados_saviso+' sobreaviso.';
-      if(r.erros) msg+=' ⚠️ '+r.erros+' erro(s).';
+      if(r.erros) msg+=' ⚠️ '+r.erros+' sem cadastro.';
       alert(msg);
       setTimeout(function(){s3RenderConfirmacao(document.getElementById('s3-content'));},1000);
     } else {
-      alert('Erro: '+(r.error||'Falha ao enviar'));
+      alert('Erro: '+((r&&r.error)||'Falha ao enviar'));
       if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}
     }
   }catch(e){
-    alert('Erro de conexão: '+e.message+'\n\nAPI local (127.0.0.1:8085) inacessível.');
+    alert('Erro: '+e.message);
     if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}
   }
 }

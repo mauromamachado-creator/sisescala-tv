@@ -3,6 +3,7 @@
 // Ações: set_conf, conf_ciente, get_conf
 
 var SS_ID = '15MyzYrdwfkX2jChz-aokq2g1mMfThayBsDMx3tGlvxA';
+var BOT_TOKEN = '8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU';
 
 function doGet(e) {
   return _dispatch(e && e.parameter ? e.parameter : {});
@@ -101,6 +102,42 @@ function _dispatch(p) {
       }
     }
     return _json({ ok: false, error: 'Oficial não encontrado: ' + cid });
+  }
+
+  // ── send_conf ─────────────────────────────────────────────────────────────
+  // Recebe: {action, messages:[{chat_id, texto, letra}]}
+  // Envia mensagens Telegram para cada oficial
+  if (action === 'send_conf') {
+    var msgs = p.messages;
+    if (typeof msgs === 'string') msgs = JSON.parse(msgs);
+    if (!Array.isArray(msgs) || msgs.length === 0) return _json({ ok: false, error: 'Nenhuma mensagem fornecida' });
+    var enviados = 0, erros = 0;
+    msgs.forEach(function(m) {
+      if (!m.chat_id || !m.texto) { erros++; return; }
+      var payload = {
+        chat_id: String(m.chat_id),
+        text: m.texto,
+        reply_markup: JSON.stringify({
+          inline_keyboard: [[{ text: '✅ CIENTE', callback_data: 'conf_ciente|' + (m.letra || 'A') }]]
+        })
+      };
+      var opts = {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      };
+      try {
+        var resp = UrlFetchApp.fetch('https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage', opts);
+        var result = JSON.parse(resp.getContentText());
+        if (result.ok) enviados++;
+        else { Logger.log('TG error ' + m.chat_id + ': ' + resp.getContentText()); erros++; }
+      } catch(e_tg) {
+        Logger.log('Fetch error: ' + e_tg);
+        erros++;
+      }
+    });
+    return _json({ ok: true, enviados: enviados, erros: erros });
   }
 
   return _json({ ok: false, error: 'Ação desconhecida: ' + action });
