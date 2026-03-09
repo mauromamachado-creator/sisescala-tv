@@ -86,8 +86,8 @@ function _dispatch(p) {
     var vcR = p.vc || '';
     var ts2 = new Date().toISOString();
     var shT = _getOrCreateSheet(ss, 'Tripulantes');
-    if (shT.getLastRow() < 1 || shT.getRange(1,1).getValue() !== 'chat_id') {
-      shT.clearContents();
+    // Só cria header se a aba estiver completamente vazia
+    if (shT.getLastRow() < 1) {
       shT.getRange(1,1,1,7).setValues([['chat_id','tg_name','posto','nome_guerra','vc','ativo','cadastrado_em']]);
     }
     var rowsT = shT.getDataRange().getValues();
