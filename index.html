@@ -3217,6 +3217,7 @@ function s3RenderDiario(container){
 // CONFIG CONSULTA — API e Destinatários
 // ═══════════════════════════════════════════════════════════════════════════════
 var CONSULTA_API = 'http://localhost:8085';
+var CONSULTA_API_SECRET = 'sisgopa-gte-2026';
 var CONSULTA_GAS = 'https://script.google.com/macros/s/AKfycbz8wQqdiHoKOlh4XR2tBJ3KcWBTtR0ooafEEjGdq6hecoPDBvVFoLYi4S8s7UU4S1nk/exec';
 var CONSULTA_TOKEN = '8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU';
 var CONSULTA_RECIPIENTS_VC1 = [{name:'Major Machado', chatId:'673591486', rank:'MJ'}];
@@ -3258,7 +3259,7 @@ async function fetchRespostasPublic(){
 // Helper: POST para API do bot
 async function consultaApiPost(body){
   try{var r=await fetch(CONSULTA_API+'/api/consulta',{
-    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),
+    method:'POST',headers:{'Content-Type':'application/json','X-API-Secret':CONSULTA_API_SECRET},body:JSON.stringify(body),
     signal:AbortSignal.timeout(3000)
   });
   return r.json();
