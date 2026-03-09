@@ -46,7 +46,7 @@ from telegram.ext import (
 )
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-BOT_TOKEN = "8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU"
+BOT_TOKEN = os.environ.get("SISGOP_BOT_TOKEN") or "8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU"
 TELEFONE_CONTATO = "(21) 99524-2702"
 
 # ─── Escalantes autorizados a enviar raio e consultas ─────────────────────────
