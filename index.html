@@ -3429,7 +3429,7 @@ function s3RenderEscalaV2(container){
           var bg,color,disp;
           if(!p.confirmed||v===undefined||v===null){bg='rgba(255,200,50,.04)';color='var(--text2)';disp='—';}
           else if(v===0||v===false){bg='rgba(255,80,80,.1)';color='var(--red)';disp='❌';}
-          else{bg='rgba(0,255,136,.15)';color='var(--green)';disp=(typeof v==='number'&&v>0)?v+'º':'✅';}
+          else{bg='rgba(0,255,136,.15)';color='var(--green)';disp=(typeof v==='number'&&v>0)?String(v):'✅';}
           html+='<td style="text-align:center;padding:6px;background:'+bg+';color:'+color+';font-weight:900;border-radius:4px">'+disp+'</td>';
         });
         var statusTd;
