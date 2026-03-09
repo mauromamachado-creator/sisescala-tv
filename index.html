@@ -5590,7 +5590,7 @@ async function loadAllData(){
     const missingIcaos=expectedIcaos.filter(i=>!metarMulti[i]);
     if(missingIcaos.length&&sourceStatus.metarMulti==='ok')sourceStatus.metarMulti='fail';
     await fetchAnual().then(()=>{sourceStatus.anual='ok';}).catch(()=>{sourceStatus.anual='fail';});
-    await fetchWithTimeout('om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;sourceStatus.om='ok';}).catch(()=>{omData=[];sourceStatus.om='fail';});
+    await fetchWithTimeout('data/om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;sourceStatus.om='ok';}).catch(()=>{omData=[];sourceStatus.om='fail';});
     await fetchEscala().then(()=>{sourceStatus.escala='ok';}).catch(()=>{sourceStatus.escala='fail';});
     await fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);cartoesFailed=false;sourceStatus.cartoes='ok';}).catch(()=>{cartoesData=[];cartoesFailed=true;sourceStatus.cartoes='fail';});
     await fetchCSVByName('dados').then(rows=>{dadosPessoais=parseDadosPessoais(rows);sourceStatus.dados='ok';}).catch(()=>{dadosPessoais={};sourceStatus.dados='fail';});
