@@ -20,12 +20,12 @@
 }
 body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono','Consolas','Courier New',monospace;overflow:hidden;height:100vh;height:100dvh;display:flex;flex-direction:column}
 
-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px;flex-wrap:wrap}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0;gap:10px;flex-wrap:wrap}
 .nav-btns{display:flex;gap:6px;flex-wrap:wrap;order:10;width:100%;justify-content:center;padding-top:6px;border-top:1px solid var(--border);margin-top:4px}
 .hamburger-btn{display:none}
 .nav-btns button{background:var(--bg3);color:var(--text);border:1px solid var(--border);padding:8px 14px;cursor:pointer;font-family:inherit;font-size:.85rem;border-radius:4px;transition:.2s;white-space:nowrap}
 .nav-btns button:hover,.nav-btns button.active{background:var(--vc1);color:var(--bg);border-color:var(--vc1)}
-.header-right{display:flex;align-items:center;gap:10px;font-size:.85rem;white-space:nowrap}
+.header-right{display:flex;align-items:center;gap:10px;font-size:.85rem;white-space:nowrap;align-self:flex-start}
 .clock{color:var(--vc1);font-size:1rem;font-weight:800}
 .status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;background:#444;cursor:pointer;position:relative;transition:background .3s}
 .status-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
@@ -339,7 +339,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <div style="width:44px;height:44px;background:rgba(0,212,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
       <img src="logo-sisgop-transp.png" alt="SisGOPA" style="width:56px;height:56px;border-radius:10px;object-fit:cover">
     </div>
-    <div style="display:flex;align-items:center;gap:8px">
+    <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
       <div style="font-size:1.2rem;font-weight:900;letter-spacing:1px">SisGOPA</div>
       <div style="font-size:.5rem;letter-spacing:1.5px;color:var(--vc1);text-transform:uppercase;white-space:nowrap">Gestão de Operações Aéreas</div>
     </div>
