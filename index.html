@@ -4068,9 +4068,33 @@ function consultaApiFetch(path){
   }).then(function(r){return r.ok?r.json():null;});
 }
 
+function _escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function _buildMsgOficial(letra, posto, nome, dados){
+  var oms=(dados&&dados.oms)||[];
+  var msg='SR. '+posto+' '+nome+', MISSÃO '+letra+':\n\n';
+  if(oms.length){
+    oms.forEach(function(om){
+      msg+='📋 OM '+om.om_num+' — '+(om.anv||'')+' FAB '+(om.fab||'')+'\n';
+      var trip=(om.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');
+      msg+=trip+'\n';
+      (om.pernas||[]).forEach(function(p){msg+='  '+(p.raw||p)+'\n';});
+      if(om.obs) msg+='  OBS: '+om.obs+'\n';
+      msg+='\n';
+    });
+  } else {
+    var trip=(dados.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');
+    msg+=trip+'\n\n';
+    (dados.pernas||[]).forEach(function(p){msg+=p+'\n';});
+    msg+='\n';
+  }
+  msg+='FAVOR ACUSAR CIENTE\nOPR GTE-1';
+  return msg;
+}
+
 function _renderConfView(container){
   var dados=_confDados;
-  var html='<div style="max-width:700px">';
+  var html='<div style="max-width:720px">';
 
   // Cabeçalho
   html+='<div style="display:flex;gap:12px;align-items:center;margin-bottom:18px;flex-wrap:wrap">';
@@ -4107,12 +4131,37 @@ function _renderConfView(container){
   html+='<span style="font-size:.78rem;color:var(--text2);margin-left:8px">Ex: A, B, C...</span>';
   html+='</div>';
 
-  // Prévia da mensagem
+  // Mensagens individuais por oficial
   if(dados){
-    html+='<div style="margin-bottom:14px">';
-    html+='<div style="font-size:.75rem;font-weight:900;color:var(--text2);margin-bottom:6px">📋 PRÉVIA DA MENSAGEM</div>';
-    html+='<pre id="conf-preview" style="background:var(--bg3);padding:12px;border-radius:8px;font-size:.78rem;white-space:pre-wrap;border:1px solid var(--border);color:var(--text);max-height:260px;overflow-y:auto">'+_buildConfPreview(_confLetra,dados)+'</pre>';
-    html+='</div>';
+    var cientes_gas=_confCientes||{};
+    var oficiais_all=(dados.tripulantes||[]).filter(function(t){return['TC','MJ','CP'].indexOf(t.posto)>=0;});
+    // Adiciona sobreaviso
+    var todos_dest=oficiais_all.slice();
+    _confSobreaviso.forEach(function(s){
+      todos_dest.push({posto:s.posto,nome:s.nome,_letra:s.letra,_saviso:true});
+    });
+    if(todos_dest.length){
+      html+='<div style="margin-bottom:16px">';
+      html+='<div style="font-size:.75rem;font-weight:900;color:var(--text2);margin-bottom:8px">📨 MENSAGENS QUE SERÃO ENVIADAS ('+todos_dest.length+')</div>';
+      todos_dest.forEach(function(t){
+        var letra_dest=t._letra||_confLetra||'?';
+        var nome_key=t.nome.toUpperCase();
+        var confirmou=Object.values(cientes_gas).some(function(c){var n=(c.nome||'').toUpperCase();return n.includes(nome_key)||nome_key.includes(n);});
+        // Busca chat_id no GAS para mostrar status cadastrado
+        var cadastrado=_confTripulantes.some(function(tr){return (tr.nome_guerra||'').toUpperCase()===nome_key||(tr.nome_guerra||'').toUpperCase().includes(nome_key);});
+        var borderColor=confirmou?'var(--green)':t._saviso?'var(--yellow)':'var(--border)';
+        var tagColor=confirmou?'var(--green)':cadastrado?'var(--text2)':'var(--red)';
+        var tag=confirmou?'✅ CIENTE':cadastrado?'⏳ Aguardando':'⚠️ Não cadastrado';
+        html+='<div style="background:var(--bg2);border:1px solid '+borderColor+';border-radius:8px;padding:12px;margin-bottom:10px">';
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+        html+='<span style="font-weight:900;font-size:.85rem;color:var(--text)">'+t.posto+' '+t.nome+(t._saviso?' <span style="color:var(--yellow);font-size:.7rem">SOBREAVISO</span>':'')+'</span>';
+        html+='<span style="font-size:.72rem;color:'+tagColor+'">'+tag+'</span>';
+        html+='</div>';
+        html+='<pre style="margin:0;background:var(--bg3);padding:10px;border-radius:6px;font-size:.74rem;white-space:pre-wrap;color:var(--text);max-height:200px;overflow-y:auto">'+_escHtml(_buildMsgOficial(letra_dest,t.posto,t.nome,dados))+'</pre>';
+        html+='</div>';
+      });
+      html+='</div>';
+    }
   }
 
   // ─── Sobreaviso ───────────────────────────────────────────────────────────
@@ -4148,24 +4197,13 @@ function _renderConfView(container){
   // Botão enviar
   html+='<button id="conf-send-btn" onclick="_enviarConfirmacao()" style="background:var(--green);color:#000;border:none;border-radius:6px;padding:10px 24px;font-weight:900;font-size:.9rem;cursor:pointer;width:100%">📨 ENVIAR CONFIRMAÇÃO</button>';
 
-  // Tabela de cientes
+  // Resumo de cientes
   var cientes=_confCientes||{};
   var nCientes=Object.keys(cientes).length;
   if(dados&&dados.tripulantes){
     var oficiais=(dados.tripulantes||[]).filter(function(t){return['TC','MJ','CP'].indexOf(t.posto)>=0;});
-    if(oficiais.length){
-      html+='<div style="margin-top:20px">';
-      html+='<div style="font-size:.8rem;font-weight:900;color:var(--text2);margin-bottom:8px">✅ Status de Ciente ('+nCientes+'/'+oficiais.length+')</div>';
-      html+='<div style="display:flex;flex-wrap:wrap;gap:8px">';
-      oficiais.forEach(function(t){
-        var nome=t.nome.toUpperCase();
-        var confirmou=Object.values(cientes).some(function(c){var n=(c.nome||'').toUpperCase();return n.includes(nome)||nome.includes(n);});
-        var bg=confirmou?'rgba(0,255,136,.15)':'rgba(255,255,255,.05)';
-        var color=confirmou?'var(--green)':'var(--text2)';
-        var icon=confirmou?'✅':'⏳';
-        html+='<div style="background:'+bg+';border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:.78rem;color:'+color+'">'+icon+' '+t.posto+' '+t.nome+'</div>';
-      });
-      html+='</div></div>';
+    if(oficiais.length&&nCientes>0){
+      html+='<div style="margin-top:4px;padding:10px;background:rgba(0,255,136,.08);border-radius:6px;font-size:.78rem;color:var(--green)">✅ '+nCientes+' de '+oficiais.length+' oficial(is) confirmaram ciente.</div>';
     }
   }
 
