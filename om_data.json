@@ -1,458 +1,236 @@
 [
   {
-    "om": "86/GTE-1/2026",
-    "data": "2026-03-03",
-    "aeronave": "VC-1",
-    "fab": "FAB 2101",
+    "aeronave": "VC-1 / FAB 2101",
+    "om_numero": "92/GTE-1/2026",
+    "data": "06/03/26",
     "tripulacao": [
-      {
-        "posto": "MJ",
-        "nome": "MACHADO",
-        "trigrama": "MAC",
-        "funcao": "Piloto"
-      },
-      {
-        "posto": "MJ",
-        "nome": "MASLINKIEWICZ",
-        "funcao": "Piloto"
-      },
-      {
-        "posto": "CP",
-        "nome": "CIRIACO",
-        "funcao": "Piloto"
-      },
-      {
-        "posto": "CP",
-        "nome": "CHARLES",
-        "funcao": "Mecânico"
-      },
-      {
-        "posto": "2S",
-        "nome": "ANDRE",
-        "funcao": "Mecânico"
-      },
-      {
-        "posto": "1S",
-        "nome": "MARCO AURELIO",
-        "funcao": "Op. Comunicações"
-      },
-      {
-        "posto": "2S",
-        "nome": "ANDRESSA",
-        "funcao": "Comissária"
-      },
-      {
-        "posto": "2S",
-        "nome": "CLÉSIO",
-        "funcao": "Comissário"
-      }
+      "TC VERAS (VRS / 529.456)",
+      "MJ OSVALDO (OSV / 552.893)",
+      "CP PEDRO CIRIACO (PCI / 574.168)",
+      "2S ANDRÉ PEDRO (545.601)",
+      "2S SOUSA E CRUZ (572.203)",
+      "1S PRATTI (532.131)",
+      "1S GLÁUCIA (PR) (498.158)",
+      "1S SANTIAGO (PR) (525.328)",
+      "2S LOPES (PR) (530.806)",
+      "2S CLÉSIO (536.708)",
+      "2S DE LIMA (560.913)"
     ],
     "pernas": [
       {
         "origem": "SBBR",
-        "destino": "SBKP",
-        "etd": "03/03/26 17:05Z",
-        "eta": "03/03/26 18:20Z",
-        "ete": "01:15",
-        "missao": "PR"
-      },
-      {
-        "origem": "SBKP",
-        "destino": "SBSP",
-        "etd": "03/03/26 21:20Z",
-        "eta": "03/03/26 21:35Z",
-        "ete": "00:15",
-        "missao": "PR"
-      },
-      {
-        "origem": "SBSP",
-        "destino": "SBBR",
-        "etd": "04/03/26 01:25Z",
-        "eta": "04/03/26 02:45Z",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "06/03/26 - 11:00 Z",
         "ete": "01:20",
-        "missao": "PR"
-      }
-    ],
-    "gerado": "03/03/2026",
-    "gerado_por": "TC GAMMERDINGER"
-  },
-  {
-    "om": "92/GTE-1/2026",
-    "aeronave": "VC-1",
-    "fab": "FAB 2101",
-    "tripulacao": [
-      {
-        "posto": "TC",
-        "nome": "VERAS",
-        "trigrama": "VRS",
-        "saram": "529.456"
-      },
-      {
-        "posto": "MJ",
-        "nome": "OSVALDO",
-        "trigrama": "OSV",
-        "saram": "552.893"
-      },
-      {
-        "posto": "CP",
-        "nome": "PEDRO CIRIACO",
-        "trigrama": "PCI",
-        "saram": "574.168"
-      },
-      {
-        "posto": "2S",
-        "nome": "ANDRÉ PEDRO",
-        "trigrama": "",
-        "saram": "545.601"
-      },
-      {
-        "posto": "2S",
-        "nome": "SOUSA E CRUZ",
-        "trigrama": "",
-        "saram": "572.203"
-      },
-      {
-        "posto": "1S",
-        "nome": "PRATTI",
-        "trigrama": "",
-        "saram": "532.131"
-      },
-      {
-        "posto": "1S",
-        "nome": "GLÁUCIA",
-        "trigrama": "",
-        "saram": "498.158",
-        "funcao": "PR"
-      },
-      {
-        "posto": "1S",
-        "nome": "SANTIAGO",
-        "trigrama": "",
-        "saram": "525.328",
-        "funcao": "PR"
-      },
-      {
-        "posto": "2S",
-        "nome": "LOPES",
-        "trigrama": "",
-        "saram": "530.806",
-        "funcao": "PR"
-      },
-      {
-        "posto": "2S",
-        "nome": "CLÉSIO",
-        "trigrama": "",
-        "saram": "536.708"
-      },
-      {
-        "posto": "2S",
-        "nome": "DE LIMA",
-        "trigrama": "",
-        "saram": "560.913"
-      }
-    ],
-    "pernas": [
-      {
-        "origem": "SBBR",
         "destino": "SBSC",
-        "etd": "06/03/26 11:00Z",
-        "eta": "06/03/26 12:20Z",
-        "ete": "01:20",
-        "alternativa": "SBGL",
-        "comb_min": 5500,
-        "comb_rec": 9000,
-        "missao": "PR",
-        "pilotos": "OSV/PCI"
+        "destino_nome": "SBSC (BASC)",
+        "eta": "06/03/26 - 12:20 Z",
+        "alternativa": "SBGL"
       },
       {
         "origem": "SBSC",
-        "destino": "SBGL",
-        "etd": "06/03/26 12:50Z",
-        "eta": "06/03/26 13:20Z",
+        "origem_nome": "SBSC (BASC)",
+        "etd": "06/03/26 - 12:50 Z",
         "ete": "00:30",
-        "alternativa": "SBGR",
-        "comb_min": 5500,
-        "comb_rec": 9000,
-        "missao": "PR TLD",
-        "pilotos": "PCI/VRS"
+        "destino": "SBGL",
+        "destino_nome": "SBGL (BAGL)",
+        "eta": "06/03/26 - 13:20 Z",
+        "alternativa": "SBGR"
       },
       {
         "origem": "SBGL",
-        "destino": "SBSP",
-        "etd": "06/03/26 20:40Z",
-        "eta": "06/03/26 21:30Z",
+        "origem_nome": "SBGL (BAGL)",
+        "etd": "06/03/26 - 20:40 Z",
         "ete": "00:50",
-        "alternativa": "SBGL",
-        "comb_min": 6000,
-        "comb_rec": 9000,
-        "missao": "PR",
-        "pilotos": "VRS/OSV"
+        "destino": "SBSP",
+        "destino_nome": "SBSP (PAVOF)",
+        "eta": "06/03/26 - 21:30 Z",
+        "alternativa": "SBGL"
       },
       {
         "origem": "SBSP",
-        "destino": "SBBR",
+        "origem_nome": "SBSP (PAVOF)",
         "etd": "08/03/26 - ADET",
-        "eta": "08/03/26 - ADET",
         "ete": "01:20",
-        "alternativa": "SBCF",
-        "comb_min": 5500,
-        "comb_rec": 9000,
-        "missao": "PR",
-        "pilotos": "OSV/VRS"
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "08/03/26 - ADET",
+        "alternativa": "SBCF"
       }
     ],
-    "comandante": "Gustavo Carlos Gammerdinger Veras - Ten Cel Av",
-    "assinante": "Mauro Martins Alves Machado - Maj Av - Comandante do 1° Esquadrão",
-    "ordens_especiais": "Santiago atua como tripulante apenas nos trechos SBBR-SBSC-SBGL e retorna a bordo da aeronave VC-2 2590.",
-    "data": "2026-03-06"
+    "file_id": "drive_92_GTE1_2026",
+    "file_ids": [
+      "drive_92_GTE1_2026",
+      "1NtEAgyk87GHNyc_8bpEEhtM7KL0dlzmN"
+    ]
   },
   {
-    "om": "94/GTE-1/2026",
-    "data": "2026-03-06",
-    "aeronave": "VC-2",
-    "fab": "FAB 2590",
+    "aeronave": "VC-2 / FAB 2590",
+    "om_numero": "94/GTE-1/2026",
+    "data": "06/03/26",
     "tripulacao": [
-      {
-        "posto": "MJ",
-        "nome": "IGOR",
-        "trigrama": "IGO",
-        "saram": "547.869"
-      },
-      {
-        "posto": "MJ",
-        "nome": "LOTTI",
-        "trigrama": "LTT",
-        "saram": "553.264"
-      },
-      {
-        "posto": "MJ",
-        "nome": "SOUZA",
-        "trigrama": "SZA",
-        "saram": "557.692"
-      },
-      {
-        "posto": "SO",
-        "nome": "AMARAL",
-        "saram": "483.523"
-      },
-      {
-        "posto": "2S",
-        "nome": "SYLAS",
-        "saram": "583.048"
-      },
-      {
-        "posto": "2S",
-        "nome": "NOGUEIRA",
-        "saram": "535.280"
-      },
-      {
-        "posto": "1S",
-        "nome": "LORENA (PR)",
-        "saram": "545.673"
-      },
-      {
-        "posto": "1S",
-        "nome": "SANTIAGO (PR)",
-        "saram": "525.328"
-      },
-      {
-        "posto": "2S",
-        "nome": "NEVES",
-        "saram": "543.527"
-      }
+      "MJ IGOR (IGO / 547.869)",
+      "MJ LOTTI (LTT / 553.264)",
+      "MJ SOUZA (SZA / 557.692)",
+      "SO AMARAL (483.523)",
+      "2S SYLAS (583.048)",
+      "2S NOGUEIRA (535.280)",
+      "1S LORENA (PR) (545.673)",
+      "1S SANTIAGO (PR) (525.328)",
+      "2S NEVES (543.527)"
     ],
     "pernas": [
       {
         "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
         "etd": "06/03/26 - 16:20 Z",
         "ete": "01:20",
         "destino": "SBGL",
+        "destino_nome": "SBGL (BAGL)",
         "eta": "06/03/26 - 17:40 Z",
-        "altn": "SBGR",
-        "comb_min": 5500,
-        "comb_rec": 10500,
-        "missao": "PR TLD/PR VER"
+        "alternativa": "SBGR"
       },
       {
         "origem": "SBGL",
+        "origem_nome": "SBGL (BAGL)",
         "etd": "06/03/26 - 22:10 Z",
         "ete": "01:20",
         "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
         "eta": "06/03/26 - 23:30 Z",
-        "altn": "SBCF",
-        "comb_min": 5500,
-        "comb_rec": 7500,
-        "missao": "PR RES/PR ESCAV"
+        "alternativa": "SBCF"
       }
     ],
-    "gerado": "05/03/2026 21:03:07",
-    "gerado_por": ""
+    "file_id": "1ssJBo-oreeUPttN-tUEHWj54a3G966Kr",
+    "file_ids": [
+      "1Fk076I1Wf_VlPsifGZYaUtkrLU4CMtZL",
+      "1ssJBo-oreeUPttN-tUEHWj54a3G966Kr"
+    ]
   },
   {
-    "om": "95/GTE-1/2026",
-    "data": "2026-03-08",
-    "aeronave": "VC-2",
-    "fab": "FAB 2590",
+    "aeronave": "VC-2 / FAB 2590",
+    "om_numero": "95/GTE-1/2026",
+    "data": "08/03/26",
     "tripulacao": [
-      {
-        "posto": "MJ",
-        "nome": "MACHADO",
-        "trigrama": "MAC",
-        "saram": "502.537"
-      },
-      {
-        "posto": "MJ",
-        "nome": "VASCONCELOS",
-        "trigrama": "VAS",
-        "saram": "552.888"
-      },
-      {
-        "posto": "CP",
-        "nome": "ALEXANDRE",
-        "trigrama": "ALX",
-        "saram": "563.382"
-      },
-      {
-        "posto": "CP",
-        "nome": "CASTRO",
-        "trigrama": "CAS",
-        "saram": "505.768"
-      },
-      {
-        "posto": "2S",
-        "nome": "ZITO",
-        "saram": "572.344"
-      },
-      {
-        "posto": "2S",
-        "nome": "SYLAS",
-        "saram": "583.048"
-      },
-      {
-        "posto": "1S",
-        "nome": "MACÊDO",
-        "saram": "522.897"
-      },
-      {
-        "posto": "1S",
-        "nome": "PEREIRA",
-        "funcao": "PR",
-        "saram": "527.615"
-      },
-      {
-        "posto": "2S",
-        "nome": "JARDEL",
-        "saram": "543.770"
-      },
-      {
-        "posto": "2S",
-        "nome": "LUDMYLLA",
-        "funcao": "PR",
-        "saram": "582.959"
-      },
-      {
-        "posto": "T1",
-        "nome": "SILVA JUNIOR",
-        "saram": "706.978"
-      }
+      "MJ MACHADO (MAC / 502.537)",
+      "MJ VASCONCELOS (VAS / 552.888)",
+      "CP ALEXANDRE (ALX / 563.382)",
+      "CP CASTRO (CAS / 505.768)",
+      "2S ZITO (572.344)",
+      "2S SYLAS (583.048)",
+      "1S MACÊDO (522.897)",
+      "1S PEREIRA (PR) (527.615)",
+      "2S JARDEL (543.770)",
+      "2S CELESTE (569.985)",
+      "2S LUDMYLLA (PR) (582.959)"
     ],
     "pernas": [
       {
         "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
         "etd": "08/03/26 - 13:00 Z / UTC-3",
         "ete": "04:25",
         "destino": "SCVM",
+        "destino_nome": "SCVM (AEROP)",
         "eta": "08/03/26 - 17:25 Z / UTC-3",
-        "altn": "SCIE",
-        "comb_min": 13500,
-        "comb_rec": 13500,
-        "missao": "PR ESCAV"
+        "alternativa": "SCIE"
       },
       {
         "origem": "SCVM",
+        "origem_nome": "SCVM (AEROP)",
         "etd": "08/03/26 - 18:55 Z / UTC-3",
         "ete": "04:20",
         "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
         "eta": "08/03/26 - 23:15 Z / UTC-3",
-        "altn": "SBCF",
-        "comb_min": 11500,
-        "comb_rec": 11500,
-        "missao": "PR TLD"
+        "alternativa": "SBCF"
       }
     ],
-    "gerado": "06/03/2026 16:03:31",
-    "gerado_por": "",
-    "ordens_especiais": "O MJ Machado realiza REC em SCVM."
+    "file_id": "10GjQ8cMecbNFjTCNgZB_o-cj4ZjOIWJZ",
+    "file_ids": [
+      "10GjQ8cMecbNFjTCNgZB_o-cj4ZjOIWJZ",
+      "1SmFVkqcQkTdu8R-iBdV1z-hKbIvhuL6F",
+      "1vC8C-GGAUiIcwOf01NwhuCMmvleEIxb_"
+    ]
   },
   {
-    "om": "96/GTE-1/2026",
-    "data": "2026-03-07",
-    "aeronave": "VC-2",
-    "fab": "FAB 2590",
+    "aeronave": "VC-2 / FAB 2590",
+    "om_numero": "96/GTE-1/2026",
+    "data": "07/03/26",
     "tripulacao": [
-      {
-        "posto": "CP",
-        "nome": "CASTRO",
-        "trigrama": "CAS",
-        "saram": "505.768"
-      },
-      {
-        "posto": "CP",
-        "nome": "CAMPOS",
-        "trigrama": "CPO",
-        "saram": "563.414"
-      },
-      {
-        "posto": "2S",
-        "nome": "ALCANTARA",
-        "saram": "575.028"
-      },
-      {
-        "posto": "2S",
-        "nome": "RONALDO",
-        "saram": "540.297"
-      },
-      {
-        "posto": "1S",
-        "nome": "L. RIBEIRO",
-        "saram": "521.066"
-      },
-      {
-        "posto": "1S",
-        "nome": "PEREIRA (PR)",
-        "saram": "527.615"
-      },
-      {
-        "posto": "2S",
-        "nome": "CELESTE",
-        "saram": "569.985"
-      }
+      "CP CASTRO (CAS / 505.768)",
+      "CP CAMPOS (CPO / 563.414)",
+      "2S ALCANTARA (575.028)",
+      "2S RONALDO (540.297)",
+      "1S L. RIBEIRO (521.066)",
+      "1S PEREIRA (PR) (527.615)",
+      "2S CELESTE (569.985)"
     ],
     "pernas": [
       {
         "origem": "SBBR",
+        "origem_nome": "SBBR (EST ATU)",
         "etd": "07/03/26 - 00:35 Z",
         "ete": "01:25",
         "destino": "SBGL",
+        "destino_nome": "SBGL (BAGL)",
         "eta": "07/03/26 - 02:00 Z",
-        "altn": "SBGR",
-        "comb_min": 5500,
-        "comb_rec": 10500,
-        "missao": "PR TLD"
+        "alternativa": "SBGR"
       },
       {
         "origem": "SBGL",
+        "origem_nome": "SBGL (SBGL)",
         "etd": "07/03/26 - 03:00 Z",
         "ete": "01:25",
         "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
         "eta": "07/03/26 - 04:25 Z",
-        "altn": "SBCF",
-        "comb_min": 5500,
-        "comb_rec": 7500,
-        "missao": "PR ESCAV"
+        "alternativa": "SBCF"
       }
     ],
-    "gerado": "05/03/2026 21:03:19",
-    "gerado_por": ""
+    "file_id": "1YyT0rCWlBgzLLk54YsTF3toi3dAKJJro",
+    "file_ids": [
+      "11MKWPzIgc58kTxzOHjcTF8YtzsI4LYQx",
+      "1YyT0rCWlBgzLLk54YsTF3toi3dAKJJro"
+    ]
+  },
+  {
+    "aeronave": "VC-1 / FAB 2101",
+    "om_numero": "103/GTE-1/2026",
+    "data": "08/03/26",
+    "tripulacao": [
+      "CP VASCONCELOS (TVS / 563.133)",
+      "CP PEDRO CIRIACO (PCI / 574.168)",
+      "SO CIROMAR (520.531)",
+      "1S DANIEL (522.613)",
+      "1S AIMORÉ (524.355)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "08/03/26 - 22:00 Z",
+        "ete": "01:00",
+        "destino": "SDSC",
+        "destino_nome": "SDSC (LATAM)",
+        "eta": "08/03/26 - 23:00 Z",
+        "alternativa": "SBGR"
+      },
+      {
+        "origem": "SDSC",
+        "origem_nome": "SDSC (LATAM)",
+        "etd": "09/03/26 - 10:05 Z",
+        "ete": "01:00",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "09/03/26 - 11:05 Z",
+        "alternativa": "SBCF"
+      }
+    ],
+    "file_id": "1rV0ymjEVdekYNdwQyv5fSLQUwtwrXJlE",
+    "file_ids": [
+      "1rV0ymjEVdekYNdwQyv5fSLQUwtwrXJlE"
+    ],
+    "observacoes": "MNT (Manutenção). Autorizado embarque 2S Danilo Miguel para acompanhar serviço."
   }
 ]
