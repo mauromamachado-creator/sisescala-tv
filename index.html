@@ -3332,53 +3332,88 @@ function parseConsultaMessageJS(text){
 // O refresh só acontece quando o usuário navega entre abas ou faz uma ação
 
 function s3RenderEscalaV2(container){
-  // Lê respostas do bot (@SISGOP_BOT) via GitHub raw + texto da consulta da planilha
+  // Lê respostas do bot (@SISGOP_BOT) via GitHub raw + raio de pilotos em ordem
   container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando respostas...</div>';
-  var RESP_URL='https://raw.githubusercontent.com/mauromamachado-creator/sisescala-tv/main/data/respostas_pub.json';
+  var BASE='https://raw.githubusercontent.com/mauromamachado-creator/sisescala-tv/main/';
+  var RESP_URL=BASE+'data/respostas_pub.json';
+  var RAIO_VC1=BASE+'data/raio_vc1.json';
+  var RAIO_VC2=BASE+'data/raio_vc2.json';
+  var fetchJSON=function(url){return fetch(url+'?t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(10000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});};
   Promise.all([
-    fetch(RESP_URL+'?t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(10000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetchJSON(RESP_URL),
     fetchCSVByName('Consulta VC-1').catch(function(){return[];}),
-    fetchCSVByName('Consulta VC-2').catch(function(){return[];})
+    fetchCSVByName('Consulta VC-2').catch(function(){return[];}),
+    fetchJSON(RAIO_VC1),
+    fetchJSON(RAIO_VC2)
   ]).then(function(results){
     var pub=results[0]||{};
     var textoVC1=(results[1][0]&&results[1][0][0])||'';
     var textoVC2=(results[2][0]&&results[2][0][0])||'';
+    var raioVC1=results[3];
+    var raioVC2=results[4];
 
-    function renderVC(vcKey,colorVar,textoPlnilha){
+    function renderVC(vcKey,colorVar,textoPlnilha,raio){
       var c=pub[vcKey];
       var texto=c&&c.text?c.text:textoPlnilha;
       var html='';
       if(texto) html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.5;max-height:160px;overflow-y:auto">'+texto.replace(/</g,'&lt;')+'</div>';
-      if(!c){html+='<div style="color:var(--text2);padding:10px">Nenhuma consulta ativa no bot.</div>';return html;}
-      var missions=c.missions||[];
-      var recipients=c.recipients||[];
-      var confirmed=recipients.filter(function(r){return r.confirmed;}).length;
+      if(!c&&!raio){html+='<div style="color:var(--text2);padding:10px">Nenhuma consulta ativa.</div>';return html;}
+
+      // Montar lista de pilotos: raio define a ordem; respostas do bot complementam
+      var missions=c?c.missions||[]:[];
+      var respostasMap={}; // nome.upper -> recipient
+      if(c){(c.recipients||[]).forEach(function(r){respostasMap[(r.name||'').toUpperCase()]=r;});}
+
+      // Lista base: raio (em ordem) ou só respondentes se não houver raio
+      var lista=[];
+      if(raio&&raio.pilotos){
+        raio.pilotos.forEach(function(p,i){
+          var nomeCompleto=p.posto+' '+p.nome;
+          var resp=respostasMap[nomeCompleto.toUpperCase()]||respostasMap[p.nome.toUpperCase()]||null;
+          lista.push({pos:p.pos,label:nomeCompleto,resp:resp});
+        });
+      } else if(c){
+        (c.recipients||[]).forEach(function(r,i){lista.push({pos:i+1,label:r.name||'',resp:r});});
+      }
+
+      var confirmed=lista.filter(function(l){return l.resp&&l.resp.confirmed;}).length;
       html+='<div style="display:flex;gap:16px;margin-bottom:10px;font-size:.82rem">';
-      html+='<span>👥 '+recipients.length+' tripulantes</span>';
+      if(raio) html+='<span style="color:var(--text2)">📋 Raio '+raio.data_consulta+'</span>';
+      html+='<span>👥 '+lista.length+'</span>';
       html+='<span style="color:var(--green)">✅ '+confirmed+' confirmaram</span>';
-      html+='<span style="color:var(--yellow)">⏳ '+(recipients.length-confirmed)+' pendentes</span>';
-      if(c.locked) html+='<span style="color:var(--red)">🔒 Encerrada</span>';
+      html+='<span style="color:var(--yellow)">⏳ '+(lista.length-confirmed)+' pendentes</span>';
+      if(c&&c.locked) html+='<span style="color:var(--red)">🔒 Encerrada</span>';
       html+='</div>';
-      if(!missions.length||!recipients.length){html+='<div style="color:var(--text2);padding:8px">Sem respostas ainda.</div>';return html;}
+
+      if(!lista.length){html+='<div style="color:var(--text2);padding:8px">Sem pilotos no raio.</div>';return html;}
+
       html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">';
       html+='<thead><tr style="border-bottom:2px solid var(--border)">';
+      html+='<th style="text-align:center;padding:8px 4px;color:var(--text2);width:32px">#</th>';
       html+='<th style="text-align:left;padding:8px 6px;color:var(--text2)">Tripulante</th>';
       missions.forEach(function(m){html+='<th style="text-align:center;padding:8px 6px;color:var('+colorVar+');font-weight:900">'+m+'</th>';});
       html+='<th style="text-align:center;padding:8px 6px;color:var(--text2)">Status</th>';
       html+='</tr></thead><tbody>';
-      recipients.forEach(function(r){
+      lista.forEach(function(item){
+        var r=item.resp;
         html+='<tr style="border-bottom:1px solid rgba(255,255,255,.05)">';
-        html+='<td style="padding:6px;font-weight:700">'+(r.name||'')+'</td>';
-        missions.forEach(function(m){
-          var v=r.responses?r.responses[m]:undefined;
-          var bg,color,disp;
-          if(v===undefined||v===null){bg='rgba(255,200,50,.06)';color='var(--yellow)';disp='⏳';}
-          else if(v===0||v===false){bg='rgba(255,80,80,.1)';color='var(--red)';disp='❌';}
-          else{bg='rgba(0,255,136,.15)';color='var(--green)';disp=(typeof v==='number'&&v>0)?v+'º':'✅';}
-          html+='<td style="text-align:center;padding:6px;background:'+bg+';color:'+color+';font-weight:900;border-radius:4px">'+disp+'</td>';
-        });
-        if(r.confirmed) html+='<td style="text-align:center;padding:6px;color:var(--green)">✅ Confirmado</td>';
-        else html+='<td style="text-align:center;padding:6px;color:var(--yellow)">⏳ Aguardando</td>';
+        html+='<td style="text-align:center;padding:6px;color:var(--text2);font-size:.72rem">'+item.pos+'</td>';
+        html+='<td style="padding:6px;font-weight:700">'+item.label+'</td>';
+        if(missions.length){
+          missions.forEach(function(m){
+            var v=r&&r.responses?r.responses[m]:undefined;
+            var bg,color,disp;
+            if(!r||v===undefined||v===null){bg='rgba(255,200,50,.04)';color='var(--text2)';disp='—';}
+            else if(v===0||v===false){bg='rgba(255,80,80,.1)';color='var(--red)';disp='❌';}
+            else{bg='rgba(0,255,136,.15)';color='var(--green)';disp=(typeof v==='number'&&v>0)?v+'º':'✅';}
+            html+='<td style="text-align:center;padding:6px;background:'+bg+';color:'+color+';font-weight:900;border-radius:4px">'+disp+'</td>';
+          });
+        }
+        var statusTd;
+        if(!r) statusTd='<td style="text-align:center;padding:6px;color:var(--text2)">⏳ Aguardando</td>';
+        else if(r.confirmed) statusTd='<td style="text-align:center;padding:6px;color:var(--green)">✅ Confirmado</td>';
+        else statusTd='<td style="text-align:center;padding:6px;color:var(--yellow)">⏳ Respondendo...</td>';
+        html+=statusTd;
         html+='</tr>';
       });
       html+='</tbody></table></div>';
@@ -3390,8 +3425,8 @@ function s3RenderEscalaV2(container){
     html+='<span>🤖 Respostas via @SISGOP_BOT'+upd+'</span>';
     html+='<button onclick="s3RenderEscalaV2(document.getElementById(\'s3-content\'))" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:.72rem">↻ Atualizar</button>';
     html+='</div>';
-    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc1);border-bottom:2px solid var(--vc1);padding-bottom:6px">🔵 VC-1</h3>'+renderVC('vc1','--vc1',textoVC1)+'</div>';
-    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc2);border-bottom:2px solid var(--vc2);padding-bottom:6px">🟢 VC-2</h3>'+renderVC('vc2','--vc2',textoVC2)+'</div>';
+    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc1);border-bottom:2px solid var(--vc1);padding-bottom:6px">🔵 VC-1</h3>'+renderVC('vc1','--vc1',textoVC1,raioVC1)+'</div>';
+    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc2);border-bottom:2px solid var(--vc2);padding-bottom:6px">🟢 VC-2</h3>'+renderVC('vc2','--vc2',textoVC2,raioVC2)+'</div>';
     container.innerHTML=html;
   }).catch(function(e){
     container.innerHTML='<div style="color:var(--red);padding:20px">❌ Erro: '+e.message+'</div>';
