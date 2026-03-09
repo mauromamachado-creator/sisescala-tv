@@ -18,19 +18,5 @@
       }
     ]
   },
-  "vc2": {
-    "id": "vc2",
-    "text": "Senhores, bom dia. Consulta para o dia 08 de março, VC-2:\n\nA) BR-BR",
-    "missions": [
-      "A"
-    ],
-    "locked": false,
-    "recipients": [
-      {
-        "name": "Mauro Machado",
-        "responses": {},
-        "confirmed": false
-      }
-    ]
-  }
+  "vc2": null
 }
