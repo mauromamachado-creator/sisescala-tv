@@ -1509,7 +1509,7 @@ function renderScreen0(){
   {
     const _done=getDiariasDownloaded();const _conc=getDiariasConcluidas();
     const _brP=['SB','SD','SN','SI','SS','SW'];
-    const _diarias=(omData||[]).filter(om=>om.pernas.every(p=>_brP.some(pf=>p.origem.startsWith(pf))&&_brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>{const m=(p.missao||'').toUpperCase();return m.includes('PR')||m.includes('ESCAV');}));
+    const _diarias=(omData||[]).filter(om=>om.pernas.every(p=>_brP.some(pf=>p.origem.startsWith(pf))&&_brP.some(pf=>p.destino.startsWith(pf))));
     const _pend=_diarias.filter(om=>!_conc[om.om]);
     const _nBiz=d=>{const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;};
     const _hj=nowBRT();_hj.setHours(0,0,0,0);
@@ -2701,7 +2701,7 @@ function undoDiariaConcluida(omId){const d=getDiariasConcluidas();delete d[omId]
 function exportDiariasCSV(){
   const done=getDiariasDownloaded();const conc=getDiariasConcluidas();
   const brP=['SB','SD','SN','SI','SS','SW'];
-  const list=(omData||[]).filter(om=>om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>{const m=(p.missao||'').toUpperCase();return m.includes('PR')||m.includes('ESCAV');}));
+  const list=(omData||[]).filter(om=>om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf))));
   if(!list.length){alert('Nenhuma diária para exportar');return;}
   let csv='OM;Data;Aeronave;Rota;Tripulantes;Status;Data Conclusão\n';
   list.forEach(om=>{
@@ -5304,7 +5304,7 @@ function getDiariasAlerts(){
     if(!omData||!omData.length)return items;
     const conc=getDiariasConcluidas();
     const brP=['SB','SD','SN','SI','SS','SW'];
-    const list=omData.filter(om=>!conc[om.om]&&om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>{const m=(p.missao||'').toUpperCase();return m.includes('PR')||m.includes('ESCAV');}));
+    const list=omData.filter(om=>!conc[om.om]&&om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf))));
     const nBiz=d=>{const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;};
     const hj=nowBRT();hj.setHours(0,0,0,0);
     list.forEach(om=>{
