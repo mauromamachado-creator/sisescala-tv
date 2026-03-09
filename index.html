@@ -3423,7 +3423,10 @@ function s3RenderEscalaV2(container){
       if(raio&&raio.pilotos){
         raio.pilotos.forEach(function(p,i){
           var nomeCompleto=p.posto+' '+p.nome;
-          var resp=respostasMap[nomeCompleto.toUpperCase()]||respostasMap[p.nome.toUpperCase()]||null;
+          var _nc=nomeCompleto.toUpperCase();var _pn=p.nome.toUpperCase();
+          var resp=respostasMap[_nc]||respostasMap[_pn]||null;
+          // Match parcial: "Mauro Machado" contém "MACHADO"
+          if(!resp){for(var _rk in respostasMap){var _rku=_rk.toUpperCase();if(_rku.includes(_pn)||_pn.includes(_rku.split(' ').pop())){resp=respostasMap[_rk];break;}}}
           lista.push({pos:p.pos,label:nomeCompleto,resp:resp});
         });
       } else if(c){
