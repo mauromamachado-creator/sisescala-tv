@@ -2,7 +2,7 @@
 // Planilha separada, independente da consulta/raio
 // Ações: set_conf, conf_ciente, get_conf
 
-var SS_ID = 'COLE_O_ID_DA_PLANILHA_AQUI';
+var SS_ID = '15MyzYrdwfkX2jChz-aokq2g1mMfThayBsDMx3tGlvxA';
 
 function doGet(e) {
   return _dispatch(e && e.parameter ? e.parameter : {});
