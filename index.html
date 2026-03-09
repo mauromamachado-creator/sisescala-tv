@@ -3382,8 +3382,10 @@ function s3RenderEscalaV2(container){
     fetchJSON(RAIO_VC2)
   ]).then(function(results){
     var gasAll=results[0]||{};
-    var textoVC1=(results[1][0]&&results[1][0][0])||'';
-    var textoVC2=(results[2][0]&&results[2][0][0])||'';
+    // Texto da consulta ativa — lê do localStorage (fonte garantida)
+    var _lsData={};try{_lsData=JSON.parse(localStorage.getItem('consultas_data')||'{}');}catch(e){}
+    var textoVC1=((_lsData.vc1&&_lsData.vc1.text)||'')||(results[1][0]&&results[1][0][0])||'';
+    var textoVC2=((_lsData.vc2&&_lsData.vc2.text)||'')||(results[2][0]&&results[2][0][0])||'';
     var raioVC1=results[3];
     var raioVC2=results[4];
 
@@ -3411,7 +3413,7 @@ function s3RenderEscalaV2(container){
       var lista=parseRaioGAS(rows);
       var texto=textoPlnilha;
       var html='';
-      if(texto) html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.5;max-height:160px;overflow-y:auto">'+texto.replace(/</g,'&lt;')+'</div>';
+      if(texto) html+='<div style="background:var(--bg2);border-left:3px solid var('+colorVar+');border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.6;max-height:200px;overflow-y:auto;color:var(--text)"><span style="font-size:.7rem;color:var('+colorVar+');font-weight:900;display:block;margin-bottom:6px">📋 MENSAGEM DA CONSULTA</span>'+texto.replace(/</g,'&lt;')+'</div>';
       if(!lista.length){html+='<div style="color:var(--text2);padding:10px">Nenhum raio carregado. Envie o PDF pelo @SISGOP_BOT.</div>';return html;}
 
       // Detectar missões a partir das respostas existentes
