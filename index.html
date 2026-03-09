@@ -3385,9 +3385,11 @@ function s3RenderEscalaV2(container){
 
     function gasToConsulta(rows){
       try{
-        if(!Array.isArray(rows)||rows.length<2) return null;
+        if(!Array.isArray(rows)||rows.length<1) return null;
         var recs=[];
-        for(var i=1;i<rows.length;i++){
+        // Detectar se primeira linha é header (col[0]="Timestamp" ou col[1]="Nome")
+        var start=(rows[0]&&(String(rows[0][0]).startsWith('Timestamp')||rows[0][1]==='Nome'))?1:0;
+        for(var i=start;i<rows.length;i++){
           var row=rows[i]||[];
           var nome=row[1]||'';
           if(!nome) continue;
