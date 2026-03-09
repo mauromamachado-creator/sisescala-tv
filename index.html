@@ -3294,7 +3294,7 @@ function s3RenderEscalaV2(container){
     var upd=pub.updated?'<span style="color:var(--text2)"> · atualizado '+pub.updated.substring(11,16)+'</span>':'';
     var html='<div style="display:flex;gap:8px;margin-bottom:16px;font-size:.75rem;color:var(--text2);align-items:center">';
     html+='<span>🤖 Respostas via @SISGOP_BOT'+upd+'</span>';
-    html+='<button onclick="s3RenderEscalaV2(document.getElementById(\'s3Content\'))" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:.72rem">↻ Atualizar</button>';
+    html+='<button onclick="s3RenderEscalaV2(document.getElementById(\'s3-content\'))" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:.72rem">↻ Atualizar</button>';
     html+='</div>';
     html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc1);border-bottom:2px solid var(--vc1);padding-bottom:6px">🔵 VC-1</h3>'+renderVC('vc1','--vc1',textoVC1)+'</div>';
     html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc2);border-bottom:2px solid var(--vc2);padding-bottom:6px">🟢 VC-2</h3>'+renderVC('vc2','--vc2',textoVC2)+'</div>';
@@ -3492,6 +3492,7 @@ function consultaBindInputs(){
 function s3RenderConsultaV2(container){
   container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
   fetchConsultasJson().then(function(data){
+    if(!data) data={vc1:null,vc2:null,archive:[]};
     var h='<h2 style="color:var(--vc1)">📨 Consulta de Escalação</h2>';
 
     // ─── 1. CRIAR CONSULTA (formulário estruturado) ─────────────────────
