@@ -4283,8 +4283,6 @@ function _atualizarPreviaConf(){
 }
 
 async function _enviarConfirmacao(){
-  var letra=(document.getElementById('conf-letra')||{}).value||_confLetra;
-  if(!letra.trim()){alert('Informe a letra da missão.');return;}
   var btn=document.getElementById('conf-send-btn');
   if(btn){btn.disabled=true;btn.textContent='⏳ Enviando...';}
   try{
