@@ -3151,6 +3151,14 @@ var CONSULTA_RECIPIENTS_VC2 = [{name:'Major Machado', chatId:'673591486', rank:'
 var consultasJsonCache=null;
 var consultasJsonLastFetch=0;
 
+// ─── Estado da consulta em edição ───────────────────────────────────────────
+var consultaVC='';
+var consultaDias='';
+var consultaMes='';
+var consultaAno=String(new Date().getFullYear());
+var consultaPrazo='sem';
+var consultaMissoes=[{tipo:'batepronto',trecho:'',dataDia:'',horario:'',descricao:'',obs:'',savisoDia:'SAB'}];
+
 function _consultaLocalLoad(){try{return JSON.parse(localStorage.getItem('sisgopa_consultas_v2'))||{vc1:null,vc2:null,archive:[]};}catch(e){return{vc1:null,vc2:null,archive:[]};}}
 function _consultaLocalSave(d){localStorage.setItem('sisgopa_consultas_v2',JSON.stringify(d));}
 
@@ -3818,6 +3826,9 @@ function s3RenderConsultaV2(container){
       }
       sendBtn.disabled=false;sendBtn.textContent='📤 CRIAR E ENVIAR';
     });
+  }).catch(function(e){
+    container.innerHTML='<div style="padding:24px;color:var(--red)">❌ Erro ao carregar consulta: '+e.message+'</div>';
+    console.error('s3RenderConsultaV2 erro:',e);
   });
 }
 
