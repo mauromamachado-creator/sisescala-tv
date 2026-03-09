@@ -1912,7 +1912,7 @@ function renderOMsNaBusca(nome,trigrama){
   let html=`<div class="sc-item" style="grid-column:1/-1"><div class="sc-item-label">Próximas Missões (OM)</div><div style="margin-top:4px">`;
   oms.forEach(om=>{
     const dateStr=parseOMDate(om.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
-    const rotas=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
+    const rotas=om.pernas.map(p=>(p.origem||_icaoOrig(p))+'→'+(p.destino||_icaoDest(p))).join(' / ');
     const missoes=om.pernas.map(p=>p.missao).filter(Boolean).join(' / ');
     html+=`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.78rem;border-bottom:1px solid rgba(255,255,255,.05)">
       <span style="font-weight:700;min-width:40px">${dateStr}</span>
@@ -2450,7 +2450,7 @@ function renderScreenTV(){
       if(dayOMs.length){
         for(const om of dayOMs){
           const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
-          const route=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
+          const route=om.pernas.map(p=>(p.origem||_icaoOrig(p))+'→'+(p.destino||_icaoDest(p))).join(' / ');
           html+=`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem;align-items:center">`;
           html+=`<span style="font-weight:900;min-width:40px">${dateStr}</span>`;
           html+=`<span style="color:var(--text2);min-width:28px">${dayName2}</span>`;
@@ -2741,7 +2741,7 @@ function exportDiariasCSV(){
   if(!list.length){alert('Nenhuma diária para exportar');return;}
   let csv='OM;Data;Aeronave;Rota;Tripulantes;Status;Data Conclusão\n';
   list.forEach(om=>{
-    const rotas=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
+    const rotas=om.pernas.map(p=>(p.origem||_icaoOrig(p))+'→'+(p.destino||_icaoDest(p))).join(' / ');
     const nomes=om.tripulacao.map(t=>t.nome).join(', ');
     const status=conc[om.om]?'Concluída':done[om.om]?'PDF Gerado':'Pendente';
     const dtConc=conc[om.om]?new Date(conc[om.om]).toLocaleDateString('pt-BR'):'';
@@ -2766,7 +2766,9 @@ function renderScreenDiarias(){
     c.innerHTML=html;return;
   }
   const brPrefixes=['SB','SD','SN','SI','SS','SW'];
-  const isNacional=om=>om.pernas.every(p=>brPrefixes.some(pf=>p.origem.startsWith(pf))&&brPrefixes.some(pf=>p.destino.startsWith(pf)));
+  function _icaoOrig(p){return p.origem||(p.etd&&p.etd.match(/^([A-Z]{4})/)?p.etd.match(/^([A-Z]{4})/)[1]:'');}
+  function _icaoDest(p){return p.destino||(p.eta&&p.eta.match(/([A-Z]{4})$/)?p.eta.match(/([A-Z]{4})$/)[1]:'');}
+  const isNacional=om=>om.pernas.every(p=>brPrefixes.some(pf=>_icaoOrig(p).startsWith(pf))&&brPrefixes.some(pf=>_icaoDest(p).startsWith(pf)));
   const temMissaoDiaria=om=>true;
   const sorted=[...omData].filter(om=>isNacional(om)&&temMissaoDiaria(om)).sort((a,b)=>omDataISO(b.data).localeCompare(omDataISO(a.data)));
   const pendentes=sorted.filter(om=>!concluidas[om.om]);
@@ -2777,7 +2779,7 @@ function renderScreenDiarias(){
     const isDone=done[om.om];
     const dateStr=parseOMDate(om.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
     const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
-    const rotas=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
+    const rotas=om.pernas.map(p=>(p.origem||_icaoOrig(p))+'→'+(p.destino||_icaoDest(p))).join(' / ');
     const omDate=parseOMDate(om.data,true);
     const prazo=nextBizDay(omDate);prazo.setHours(0,0,0,0);
     const diffPrazo=Math.floor((prazo-hoje)/(86400000));
