@@ -41,11 +41,19 @@ from telegram.ext import (
     Application,
     CallbackQueryHandler,
     CommandHandler,
+    MessageHandler,
+    filters,
 )
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 BOT_TOKEN = "8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU"
 TELEFONE_CONTATO = "(21) 99524-2702"
+
+# ─── Escalantes autorizados a enviar raio e consultas ─────────────────────────
+# Para adicionar: incluir chat_id e nome do escalante
+ESCALANTES_AUTORIZADOS = {
+    673591486: "MJ MACHADO",   # Mauro Machado (admin)
+}
 GAS_URL = "https://script.google.com/macros/s/AKfycbz8wQqdiHoKOlh4XR2tBJ3KcWBTtR0ooafEEjGdq6hecoPDBvVFoLYi4S8s7UU4S1nk/exec"
 API_PORT = 8085
 
@@ -286,6 +294,102 @@ def _build_ciente_keyboard(consulta_id: str, missao_letra: str) -> InlineKeyboar
 # /start — Boas-vindas
 # ═══════════════════════════════════════════════════════════════════════════════
 
+async def raio_handler(update: Update, context):
+    """Recebe PDF do raio enviado por escalante autorizado e atualiza GitHub."""
+    user_id = update.effective_user.id
+    if user_id not in ESCALANTES_AUTORIZADOS:
+        await update.message.reply_text("⛔ Você não tem autorização para enviar o raio.")
+        return
+
+    # Detectar VC pelo caption: "/raio vc1" ou "/raio vc2"
+    caption = (update.message.caption or "").strip().lower()
+    if "vc2" in caption:
+        vc = "vc2"
+    elif "vc1" in caption or "vc" not in caption:
+        vc = "vc1"  # default vc1
+    else:
+        await update.message.reply_text("⚠️ Informe o VC no caption: /raio vc1 ou /raio vc2")
+        return
+
+    await update.message.reply_text(f"📄 Processando raio {vc.upper()}...")
+
+    try:
+        # Baixar o PDF
+        file = await context.bot.get_file(update.message.document.file_id)
+        pdf_path = DATA_DIR / f"raio_{vc}_temp.pdf"
+        await file.download_to_drive(str(pdf_path))
+
+        # Extrair texto do PDF diretamente com pypdf
+        import pypdf as _pypdf
+        try:
+            _reader = _pypdf.PdfReader(str(pdf_path))
+            texto = "\n".join(
+                p.extract_text() for p in _reader.pages if p.extract_text()
+            )
+        except Exception as _epdf:
+            logger.error("pypdf erro: %s", _epdf)
+            texto = ""
+
+        if not texto.strip():
+            await update.message.reply_text("❌ Não consegui extrair texto do PDF.")
+            return
+
+        # Parser: cada linha começa com número e contém data DD/MM/YYYY
+        # Extrai posto e nome antes do qualificador (IN, 1P, etc.)
+        POSTOS = ["TEN-BRIG", "MAJ-BRIG", "BRIG", "CEL", "TC", "MJ", "CP", "1T", "2T", "ST", "CB", "SD"]
+        pilotos = []
+        for linha in texto.split("\n"):
+            linha = linha.strip()
+            # Linha de piloto: começa com número e tem data no meio
+            m = re.match(r'^(\d+)(.+?)\s+\d{2}/\d{2}/\d{4}', linha)
+            if not m:
+                continue
+            pos = int(m.group(1))
+            trecho = m.group(2).strip()
+            # Extrai posto + nome (palavras em maiúsculas consecutivas após o posto)
+            m2 = re.match(r'^((?:' + '|'.join(POSTOS) + r')\s+[A-ZÁÉÍÓÚÂÊÔÃÕÜÇ]+(?:\s+[A-ZÁÉÍÓÚÂÊÔÃÕÜÇ]+)*)', trecho)
+            if m2:
+                nome_completo = m2.group(1).strip()
+                partes = nome_completo.split(None, 1)
+                posto = partes[0]
+                nome = partes[1].strip() if len(partes) > 1 else ""
+                pilotos.append({"pos": pos, "posto": posto, "nome": nome})
+
+        if not pilotos:
+            await update.message.reply_text("❌ Não encontrei pilotos no PDF. Verifique o formato.")
+            return
+
+        # Salvar raio JSON
+        from datetime import datetime
+        raio = {
+            "vc": vc,
+            "data_consulta": datetime.now().strftime("%Y-%m-%d"),
+            "gerado_em": datetime.now().isoformat(),
+            "enviado_por": ESCALANTES_AUTORIZADOS[user_id],
+            "pilotos": pilotos
+        }
+        raio_path = DATA_DIR / f"raio_{vc}.json"
+        with open(raio_path, "w", encoding="utf-8") as f:
+            json.dump(raio, f, ensure_ascii=False, indent=2)
+
+        # Git push
+        import subprocess
+        subprocess.run(["git", "add", f"data/raio_{vc}.json"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
+        subprocess.run(["git", "commit", "-m", f"raio: {vc.upper()} atualizado por {ESCALANTES_AUTORIZADOS[user_id]}"],
+                       cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
+        subprocess.run(["git", "push", "origin", "main"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=30)
+
+        nomes_lista = "\n".join([f"{p['pos']}. {p['posto']} {p['nome']}" for p in pilotos])
+        await update.message.reply_text(
+            f"✅ Raio {vc.upper()} atualizado! {len(pilotos)} pilotos:\n\n{nomes_lista}\n\nJá aparece no ESCALA V2."
+        )
+        pdf_path.unlink(missing_ok=True)
+
+    except Exception as e:
+        logger.error("Erro raio_handler: %s", e)
+        await update.message.reply_text(f"❌ Erro ao processar PDF: {e}")
+
+
 async def cmd_start(update: Update, context):
     await update.message.reply_text(
         "🛩️ *SISGOP BOT — Consulta de Escala*\n\n"
@@ -358,6 +462,24 @@ async def callback_handler(update: Update, context):
     logger.info("Resolved: vc=%s action=%s", _resolved_vc, action)
 
     consulta = data[_resolved_vc]
+
+    # ─── Detectar nova consulta pelo message_id ───────────────────────────
+    # Se o callback vem de uma mensagem diferente da armazenada = nova consulta
+    # Reset automático dos recipients para evitar bloqueio de consultas anteriores
+    current_msg_id = query.message.message_id if query.message else None
+    stored_msg_id  = consulta.get("message_id")
+    if current_msg_id and stored_msg_id and current_msg_id != stored_msg_id:
+        logger.info("Nova consulta detectada (msg_id %s != %s) — resetando recipients", current_msg_id, stored_msg_id)
+        for r in consulta.get("recipients", []):
+            r["confirmed"] = False
+            r["confirmed_at"] = None
+            r["responses"] = {}
+        consulta["message_id"] = current_msg_id
+        _save_data(data)
+    elif current_msg_id and not stored_msg_id:
+        # Primeira vez que recebe callback — salva o message_id
+        consulta["message_id"] = current_msg_id
+        _save_data(data)
 
     # Verificar se consulta está encerrada (vale pra todos os callbacks)
     if consulta.get("locked") and action != "ciente":
@@ -470,12 +592,14 @@ async def callback_handler(update: Update, context):
         recipient["confirmed"] = True
         recipient["confirmed_at"] = datetime.now().isoformat()
         logger.info("Resposta confirmada: %s para %s", recipient.get("name", user_id), consulta_id)
-        # Sincronizar com a planilha Google Sheets
+        # Salvar ANTES do sync para que confirmed=True apareça no JSON público
+        _save_data(data)
         await _sync_response_to_sheet(
             vc_key_found,
             recipient.get("name", str(user_id)),
             responses,
         )
+        # Não faz return — deixa cair no bloco de atualização de mensagem abaixo
 
     _save_data(data)
 
@@ -907,6 +1031,7 @@ def main():
     # Handlers — apenas /start e callbacks inline
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CallbackQueryHandler(callback_handler))
+    app.add_handler(MessageHandler(filters.Document.PDF, raio_handler))
     app.add_error_handler(error_handler)
 
     # Iniciar API HTTP e verificador de prazos junto com o bot
