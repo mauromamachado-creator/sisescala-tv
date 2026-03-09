@@ -1351,7 +1351,10 @@ function renderScreen0(){
         html+=`<span class="mission-tipo">${p.missao||om.tipo||''}</span>`;
         html+=`</div>`;
       }
-      const pilotos=om.tripulacao.filter(t=>t.trigrama).map(t=>`${t.posto} ${t.nome}`).join(' / ');
+      const pilotos=om.tripulacao.map(t=>{
+        if(typeof t==='string'){const m=t.match(/^(\S+)\s+([^(]+?)\s*\(([A-Z]{2,4})\s*\//);return m?`${m[1]} ${m[2].trim()} (${m[3]})`:t;}
+        return t.trigrama?`${t.posto} ${t.nome} (${t.trigrama})`:null;
+      }).filter(Boolean).join(' / ');
       html+=`<div style="font-size:.7rem;color:var(--text2);margin-top:4px">👨‍✈️ ${pilotos}</div>`;
       html+=`</div>`;
     }
