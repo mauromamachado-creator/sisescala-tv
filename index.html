@@ -2634,7 +2634,7 @@ async function _consultaLimparVcGitHub(vc, arquivada){
     await fetch(CONSULTA_GAS,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'clear',vc:vcSheet})
+      body:JSON.stringify({action:'archive_vc',vc:vcSheet})
     });
     console.log('GAS: consulta '+vc+' limpa ('+vcSheet+')');
   }catch(e){console.warn('Erro ao limpar GAS após archive:',e);}
