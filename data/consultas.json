@@ -1,5 +1,51 @@
 {
-  "vc1": null,
+  "vc1": {
+    "id": "vc1",
+    "created_at": "2026-03-08T20:00:00",
+    "text": "Teste",
+    "missions": [
+      "A",
+      "B"
+    ],
+    "deadline": null,
+    "status": "active",
+    "locked": false,
+    "recipients": [
+      {
+        "chat_id": 673591486,
+        "name": "Major Machado",
+        "rank": "MJ",
+        "message_id": null,
+        "delivered": true,
+        "responses": {
+          "A": true,
+          "B": false
+        },
+        "confirmed": true,
+        "confirmed_at": "2026-03-08T20:05:47.136719"
+      }
+    ],
+    "parsed": {
+      "missoes": [
+        {
+          "letra": "A",
+          "descricao": "BR-ZM-BR",
+          "is_saviso": false,
+          "escalados": [],
+          "om": null,
+          "cientes": []
+        },
+        {
+          "letra": "B",
+          "descricao": "SAVISO SAB",
+          "is_saviso": true,
+          "escalados": [],
+          "om": null,
+          "cientes": []
+        }
+      ]
+    }
+  },
   "vc2": null,
   "archive": []
 }

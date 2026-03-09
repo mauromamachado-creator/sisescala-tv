@@ -46,6 +46,7 @@ from telegram.ext import (
 # ─── Config ───────────────────────────────────────────────────────────────────
 BOT_TOKEN = "8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU"
 TELEFONE_CONTATO = "(21) 99524-2702"
+GAS_URL = "https://script.google.com/macros/s/AKfycbz8wQqdiHoKOlh4XR2tBJ3KcWBTtR0ooafEEjGdq6hecoPDBvVFoLYi4S8s7UU4S1nk/exec"
 API_PORT = 8085
 
 DATA_DIR = Path(__file__).parent / "data"
@@ -87,6 +88,30 @@ def _save_data(data: dict):
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+async def _sync_response_to_sheet(vc_key: str, name: str, responses: dict, motivo: str = ""):
+    """Sincroniza resposta do tripulante com a planilha via Google Apps Script."""
+    import urllib.request
+    vc_num = "1" if vc_key == "vc1" else "2"
+    payload = json.dumps({
+        "action": "save_response",
+        "vc": vc_num,
+        "name": name,
+        "responses": responses,
+        "motivo": motivo
+    }).encode("utf-8")
+    try:
+        req = urllib.request.Request(
+            GAS_URL, data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        resp = urllib.request.urlopen(req, timeout=15)
+        result = json.loads(resp.read())
+        logger.info("Planilha sync OK: %s -> %s", name, result)
+    except Exception as e:
+        logger.error("Erro sync planilha: %s", e)
 
 
 def _vc_display(vc_key: str) -> str:
@@ -240,59 +265,54 @@ async def callback_handler(update: Update, context):
 
     consulta_id = parts[1]
 
+    # Resolver vc_key: aceita "vc1"/"vc2" direto ou busca pelo id completo
+    data = _load_data()
+    _resolved_vc = None
+    for _vk in ("vc1", "vc2"):
+        _c = data[_vk]
+        if _c and (_c["id"] == consulta_id or consulta_id == _vk):
+            _resolved_vc = _vk
+            break
+
+    if not _resolved_vc:
+        logger.warning("Consulta não encontrada: %s", consulta_id)
+        return
+
+    consulta = data[_resolved_vc]
+
+    # Verificar se consulta está encerrada (vale pra todos os callbacks)
+    if consulta.get("locked") and action != "ciente":
+        await query.edit_message_text(
+            f"🔒 Consulta encerrada. Para dúvidas, entre em contato: {TELEFONE_CONTATO}"
+        )
+        return
+
     # ─── CIENTE ───────────────────────────────────────────────────────────
     if action == "ciente":
         missao_letra = parts[2] if len(parts) > 2 else ""
-        data = _load_data()
-        for vc_key in ("vc1", "vc2"):
-            c = data[vc_key]
-            if c and c["id"] == consulta_id:
-                # Verificar se consulta está encerrada
-                if c.get("locked"):
-                    await query.answer(
-                        f"🔒 Consulta encerrada. Para dúvidas: {TELEFONE_CONTATO}",
-                        show_alert=True,
-                    )
-                    return
-                for m in c.get("parsed", {}).get("missoes", []):
-                    if m["letra"] == missao_letra:
-                        if user_id not in [ci.get("user_id") for ci in m.get("cientes", [])]:
-                            user_name = query.from_user.full_name or str(user_id)
-                            m["cientes"].append({
-                                "user_id": user_id,
-                                "name": user_name,
-                                "at": datetime.now().isoformat(),
-                            })
-                            _save_data(data)
-                await query.edit_message_text(
-                    query.message.text + f"\n\n✅ CIENTE REGISTRADO — {datetime.now().strftime('%d/%m %H:%M')}",
-                )
-                return
-        await query.answer("⚠️ Consulta não encontrada.", show_alert=True)
+        if consulta.get("locked"):
+            await query.answer(
+                f"🔒 Consulta encerrada. Para dúvidas: {TELEFONE_CONTATO}",
+                show_alert=True,
+            )
+            return
+        for m in consulta.get("parsed", {}).get("missoes", []):
+            if m["letra"] == missao_letra:
+                if user_id not in [ci.get("user_id") for ci in m.get("cientes", [])]:
+                    user_name = query.from_user.full_name or str(user_id)
+                    m["cientes"].append({
+                        "user_id": user_id,
+                        "name": user_name,
+                        "at": datetime.now().isoformat(),
+                    })
+                    _save_data(data)
+        await query.edit_message_text(
+            query.message.text + f"\n\n✅ CIENTE REGISTRADO — {datetime.now().strftime('%d/%m %H:%M')}",
+        )
         return
 
     # ─── Toggle / allno / confirm ─────────────────────────────────────────
-    data = _load_data()
-    consulta = None
-    vc_key_found = None
-    for vc_key in ("vc1", "vc2"):
-        c = data[vc_key]
-        if c and c["id"] == consulta_id:
-            consulta = c
-            vc_key_found = vc_key
-            break
-
-    if not consulta:
-        await query.answer("⚠️ Consulta não encontrada.", show_alert=True)
-        return
-
-    # Consulta encerrada
-    if consulta.get("locked"):
-        await query.answer(
-            f"🔒 Consulta encerrada. Para dúvidas, entre em contato: {TELEFONE_CONTATO}",
-            show_alert=True,
-        )
-        return
+    vc_key_found = _resolved_vc
 
     # Encontrar destinatário
     recipient = None
@@ -340,6 +360,12 @@ async def callback_handler(update: Update, context):
         recipient["confirmed"] = True
         recipient["confirmed_at"] = datetime.now().isoformat()
         logger.info("Resposta confirmada: %s para %s", recipient.get("name", user_id), consulta_id)
+        # Sincronizar com a planilha Google Sheets
+        await _sync_response_to_sheet(
+            vc_key_found,
+            recipient.get("name", str(user_id)),
+            responses,
+        )
 
     _save_data(data)
 
