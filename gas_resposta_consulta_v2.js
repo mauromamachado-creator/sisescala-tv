@@ -64,6 +64,9 @@ function _dispatch(p) {
   }
 
   // ── archive_vc (limpa respostas, mantém nomes) ──────────────────
+  // Suporte a action=archive_vc1 / archive_vc2 (single-param GET do browser)
+  if (action === 'archive_vc1') { action = 'archive_vc'; p.vc = 'VC-1'; }
+  if (action === 'archive_vc2') { action = 'archive_vc'; p.vc = 'VC-2'; }
   if (action === 'archive_vc') {
     var vcSheet3 = p.vc || 'VC-1';
     var sh3 = ss.getSheetByName(vcSheet3);
