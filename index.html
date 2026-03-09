@@ -2812,8 +2812,17 @@ function openDiariaForm(omId){
     // Normaliza: suporta string "TC VERAS (VRS / 529.456)" ou objeto {posto,nome,trigrama,funcao}
     let t=raw;
     if(typeof raw==='string'){
-      const m=raw.match(/^(\S+)\s+(.+?)\s*\((\w+)\s*\/\s*[\d.]+\)\s*$/);
-      t=m?{posto:m[1],nome:m[2].trim(),trigrama:m[3],funcao:''}:{posto:'',nome:raw,trigrama:'',funcao:''};
+      // Formato com trigrama:  "TC VERAS (VRS / 529.456)"
+      const mTri=raw.match(/^(\S+)\s+(.+?)\s*\((\w+)\s*\/\s*[\d.]+\)\s*$/);
+      // Formato sem trigrama:  "2S ANDRÉ PEDRO (545.601)"
+      const mNum=!mTri&&raw.match(/^(\S+)\s+(.+?)\s*\([\d.]+\)\s*$/);
+      if(mTri) t={posto:mTri[1],nome:mTri[2].trim(),trigrama:mTri[3],funcao:''};
+      else if(mNum) t={posto:mNum[1],nome:mNum[2].trim(),trigrama:'',funcao:''};
+      else{
+        // fallback: primeiro token = posto, resto = nome
+        const parts=raw.trim().split(/\s+/);
+        t={posto:parts[0]||'',nome:parts.slice(1).join(' '),trigrama:'',funcao:''};
+      }
     }
     let funcao=t.funcao||'';
     if(!funcao){
