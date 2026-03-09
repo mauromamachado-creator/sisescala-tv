@@ -3238,74 +3238,61 @@ function parseConsultaMessageJS(text){
 // O refresh só acontece quando o usuário navega entre abas ou faz uma ação
 
 function s3RenderEscalaV2(container){
-  // Lê direto da planilha "Dados Bot GTE-1 Escala" — mesma fonte do sistema antigo
-  container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
-  Promise.all([
-    fetchCSVByName('Consulta VC-1').catch(function(){return[];}),
-    fetchCSVByName('Consulta VC-2').catch(function(){return[];}),
-    fetchCSVByName('Raio Final VC-1').catch(function(){return[];}),
-    fetchCSVByName('Raio Final VC-2').catch(function(){return[];})
-  ]).then(function(results){
-    var textoVC1=(results[0][0]&&results[0][0][0])||'';
-    var textoVC2=(results[1][0]&&results[1][0][0])||'';
-    var raioVC1=results[2];
-    var raioVC2=results[3];
-
-    function renderVC(colorVar,texto,raio){
-      var header=raio[0]||[];
-      var colNome=3,colSim=4,colOp=5,colMissaoStart=6;
-      var missoes=[];
-      for(var c=colMissaoStart;c<header.length;c++){
-        var h=String(header[c]||'').trim();
-        if(/^[A-Z]$/.test(h)) missoes.push({letra:h,col:c});
-        else if(h===''&&missoes.length) break;
-      }
-      var rows=raio.slice(1).filter(function(r){return String(r[colNome]||'').trim()!='';});
-      var responderam=rows.filter(function(r){return missoes.some(function(m){return String(r[m.col]||'').trim()!='';});}).length;
-      var html='';
-      if(texto) html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.5;max-height:160px;overflow-y:auto">'+texto.replace(/</g,'&lt;')+('</div>');
+  // Lê respostas do bot (@SISGOP_BOT) publicadas no GitHub
+  container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando respostas...</div>';
+  var url='https://raw.githubusercontent.com/mauromamachado-creator/sisescala-tv/main/data/respostas_pub.json?t='+Date.now();
+  fetch(url,{cache:'no-store'}).then(function(r){return r.json();}).then(function(pub){
+    function renderVC(vcKey,colorVar,vcLabel){
+      var c=pub[vcKey];
+      var html='<div style="margin-bottom:24px">';
+      html+='<h3 style="color:var('+colorVar+');border-bottom:2px solid var('+colorVar+');padding-bottom:6px">'+(vcKey==='vc1'?'🔵':'🟢')+' '+vcLabel+'</h3>';
+      if(!c){html+='<div style="color:var(--text2);padding:10px">Nenhuma consulta ativa.</div></div>';return html;}
+      // Texto da consulta
+      if(c.text) html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:12px;font-size:.8rem;white-space:pre-wrap;max-height:150px;overflow-y:auto">'+c.text.replace(/</g,'&lt;')+'</div>';
+      var missions=c.missions||[];
+      var recipients=c.recipients||[];
+      var responded=recipients.filter(function(r){return r.confirmed;}).length;
       html+='<div style="display:flex;gap:16px;margin-bottom:10px;font-size:.82rem">';
-      html+='<span>👥 '+rows.length+' tripulantes</span>';
-      html+='<span style="color:var(--green)">✅ '+responderam+' responderam</span>';
-      html+='<span style="color:var(--yellow)">⏳ '+(rows.length-responderam)+' pendentes</span></div>';
-      if(!missoes.length){html+='<div style="color:var(--text2);padding:10px">Sem missões na consulta.</div>';return html;}
+      html+='<span>👥 '+recipients.length+' tripulantes</span>';
+      html+='<span style="color:var(--green)">✅ '+responded+' confirmaram</span>';
+      html+='<span style="color:var(--yellow)">⏳ '+(recipients.length-responded)+' pendentes</span></div>';
+      if(!missions.length){html+='<div style="color:var(--text2);padding:10px">Sem missões definidas.</div></div>';return html;}
+      // Matriz
       html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">';
       html+='<thead><tr style="border-bottom:2px solid var(--border)">';
       html+='<th style="text-align:left;padding:8px 6px;color:var(--text2)">Tripulante</th>';
-      html+='<th style="text-align:center;padding:8px 4px;color:var(--text2)">Cargo</th>';
-      missoes.forEach(function(m){html+='<th style="text-align:center;padding:8px 4px;color:var('+colorVar+');font-weight:900">'+m.letra+'</th>';});
-      html+='</tr></thead><tbody>';
-      rows.forEach(function(r){
-        var nome=String(r[colNome]||'').trim();
-        var sim=String(r[colSim]||'').trim();
-        var op=String(r[colOp]||'').trim();
+      missions.forEach(function(m){html+='<th style="text-align:center;padding:8px 4px;color:var('+colorVar+');font-weight:900">'+m+'</th>';});
+      html+='<th style="text-align:center;padding:8px 6px;color:var(--text2)">Status</th></tr></thead><tbody>';
+      recipients.forEach(function(r){
         html+='<tr style="border-bottom:1px solid rgba(255,255,255,.05)">';
-        html+='<td style="padding:6px;font-weight:700">'+nome+'</td>';
-        html+='<td style="text-align:center;padding:6px;font-size:.72rem;color:var(--text2)">'+sim+(op&&op!='--'?' / '+op:'')+('</td>');
-        missoes.forEach(function(m){
-          var v=String(r[m.col]||'').trim();
+        html+='<td style="padding:6px;font-weight:700">'+r.name+'</td>';
+        missions.forEach(function(m){
+          var v=r.responses&&r.responses[m];
           var bg='rgba(255,200,50,.06)',color='var(--yellow)',disp='⏳';
-          if(v==='1'){bg='rgba(0,255,136,.15)';color='var(--green)';disp='✅';}
-          else if(v==='-'){bg='rgba(255,80,80,.1)';color='var(--red)';disp='❌';}
-          html+='<td style="text-align:center;padding:6px;background:'+bg+';color:'+color+';font-weight:900;border-radius:4px">'+disp+('</td>');
+          if(v>=1){bg='rgba(0,255,136,.15)';color='var(--green)';disp=v+'º';}
+          else if(v===0||v===false){bg='rgba(255,80,80,.1)';color='var(--red)';disp='❌';}
+          else if(v===null){disp='-';}
+          html+='<td style="text-align:center;padding:6px;background:'+bg+';color:'+color+';font-weight:900;border-radius:4px">'+disp+'</td>';
         });
+        var status=r.confirmed?'<span style="color:var(--green)">✅ Confirmado</span>':'<span style="color:var(--yellow)">⏳ Aguardando</span>';
+        html+='<td style="text-align:center;padding:6px">'+status+'</td>';
         html+='</tr>';
       });
-      html+='</tbody></table></div>';
+      html+='</tbody></table></div></div>';
       return html;
     }
-
-    var html='<div style="display:flex;gap:8px;margin-bottom:16px;font-size:.75rem;color:var(--text2);align-items:center">';
-    html+='<span>🔄 Fonte: planilha "Dados Bot GTE-1 Escala"</span>';
+    var html='<div style="display:flex;gap:8px;margin-bottom:12px;font-size:.75rem;color:var(--text2);align-items:center">';
+    html+='<span>🔄 Atualizado: '+(pub.updated||'').substring(11,16)+'</span>';
     html+='<button onclick="s3RenderEscalaV2(document.getElementById(\'s3Content\'))" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:.72rem">↻ Atualizar</button>';
     html+='</div>';
-    html+='<div style="margin-bottom:24px"><h3 style="color:var(--vc1);border-bottom:2px solid var(--vc1);padding-bottom:6px">🔵 VC-1</h3>'+renderVC('--vc1',textoVC1,raioVC1)+'</div>';
-    html+='<div style="margin-bottom:24px"><h3 style="color:var(--vc2);border-bottom:2px solid var(--vc2);padding-bottom:6px">🟢 VC-2</h3>'+renderVC('--vc2',textoVC2,raioVC2)+'</div>';
+    html+=renderVC('vc1','--vc1','VC-1');
+    html+=renderVC('vc2','--vc2','VC-2');
     container.innerHTML=html;
   }).catch(function(e){
-    container.innerHTML='<div style="color:var(--red);padding:20px">❌ Erro: '+e.message+'</div>';
+    container.innerHTML='<div style="color:var(--red);padding:20px">❌ Erro ao carregar: '+e.message+'<br><small>Verifique se o bot respondeu alguma consulta recentemente.</small></div>';
   });
 }
+
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
