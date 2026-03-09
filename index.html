@@ -3751,22 +3751,7 @@ function s3RenderConsultaV2(container){
       h+='</div>'; // fim consulta-card
     });
 
-    // ─── ARQUIVO ────────────────────────────────────────────────────────
-    h+='<div class="consulta-card">';
-    h+='<h3>📦 Arquivo de Consultas</h3>';
-    var archive=data.archive||[];
-    if(archive.length>0){
-      archive.slice().reverse().forEach(function(a){
-        h+='<div class="consulta-archive-item" onclick="this.querySelector(\'.consulta-archive-detail\').style.display=this.querySelector(\'.consulta-archive-detail\').style.display===\'block\'?\'none\':\'block\'">';
-        var tipo=a.vc_type==='vc1'?'🔵 VC-1':'🟢 VC-2';
-        h+='<span style="color:var(--vc1)">📋</span> '+tipo+' — '+(a.id||'—')+' — Missões: '+(a.missions||[]).join(', ');
-        h+='<div class="consulta-archive-detail"><pre style="margin:0;color:var(--text);font-size:.72rem;max-height:200px;overflow:auto">'+JSON.stringify(a,null,2).replace(/</g,'&lt;').substring(0,2000)+'</pre></div>';
-        h+='</div>';
-      });
-    } else {
-      h+='<div style="padding:16px;text-align:center;color:var(--text2);font-size:.82rem">Nenhuma consulta arquivada.</div>';
-    }
-    h+='</div>';
+    // ─── ARQUIVO: removido da UI — backup automático no GitHub ao arquivar ────
 
     container.innerHTML=h;
 

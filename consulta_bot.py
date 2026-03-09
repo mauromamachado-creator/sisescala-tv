@@ -90,6 +90,26 @@ def _save_data(data: dict):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+async def _backup_consulta_arquivada(consulta: dict):
+    """Salva backup JSON da consulta arquivada no GitHub para auditoria futura."""
+    try:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        vc = consulta.get("vc_type", "vc?")
+        filename = f"data/historico/consulta_{vc}_{ts}.json"
+        filepath = DATA_DIR.parent / filename
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(consulta, f, ensure_ascii=False, indent=2)
+        import subprocess
+        subprocess.run(["git", "add", str(filepath)], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
+        subprocess.run(["git", "commit", "-m", f"backup: consulta {vc} arquivada {ts}"],
+                       cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
+        subprocess.run(["git", "push", "origin", "main"],
+                       cwd=str(DATA_DIR.parent), capture_output=True, timeout=30)
+        logger.info("Backup consulta arquivada: %s", filename)
+    except Exception as e:
+        logger.error("Erro backup consulta: %s", e)
+
 async def _sync_response_to_sheet(vc_key: str, name: str, responses: dict, motivo: str = ""):
     """Sincroniza respostas publicando JSON no GitHub (raw) pra SisGOPA ler."""
     try:
@@ -673,10 +693,15 @@ async def api_post_consulta(request):
     elif action == "archive":
         if not data.get(vc):
             return web.json_response({"ok": False, "error": "Nenhuma consulta para arquivar"})
-        data[vc]["archived_at"] = datetime.now().isoformat()
-        data.setdefault("archive", []).append(data[vc])
+        consulta_arquivada = data[vc].copy()
+        consulta_arquivada["archived_at"] = datetime.now().isoformat()
+        data.setdefault("archive", []).append(consulta_arquivada)
         data[vc] = None
         _save_data(data)
+        # Backup da consulta arquivada em arquivo separado no GitHub
+        await _backup_consulta_arquivada(consulta_arquivada)
+        # Limpa o VC arquivado do respostas_pub.json no GitHub
+        await _sync_response_to_sheet(vc, "archive", {}, motivo="arquivado")
         return web.json_response({"ok": True})
 
     # ─── UPDATE_OM ────────────────────────────────────────────────────────
