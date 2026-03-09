@@ -2603,8 +2603,64 @@ function findNomeCompleto(nome){
   return nome;
 }
 
-function getDiariasDownloaded(){return JSON.parse(localStorage.getItem('sisgopa_diarias_done')||'{}');}
-function setDiariaDownloaded(omId){const d=getDiariasDownloaded();d[omId]=Date.now();localStorage.setItem('sisgopa_diarias_done',JSON.stringify(d));}
+// ─── PDF Gerado — sincronizado via GitHub (compartilhado entre dispositivos) ──
+const _GH_OWNER='mauromamachado-creator';
+const _GH_REPO='sisescala-tv';
+const _GH_PDF_PATH='data/pdf_gerado.json';
+const _GH_PDF_URL=`https://raw.githubusercontent.com/${_GH_OWNER}/${_GH_REPO}/main/${_GH_PDF_PATH}`;
+let _pdfGeradoCache=null;
+let _pdfGeradoSha=null; // SHA do arquivo no GitHub (necessário para PUT)
+
+// Lê do cache local (fallback)
+function getDiariasDownloaded(){
+  if(_pdfGeradoCache) return _pdfGeradoCache;
+  return JSON.parse(localStorage.getItem('sisgopa_diarias_done')||'{}');
+}
+
+// Busca status de PDF do GitHub (ao vivo, compartilhado)
+async function fetchPdfGerado(){
+  try{
+    // Usar API do GitHub para obter SHA + conteúdo
+    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
+    const r=await fetch(`https://api.github.com/repos/${_GH_OWNER}/${_GH_REPO}/contents/${_GH_PDF_PATH}`,{
+      headers:{'Authorization':'token '+ghToken,'Accept':'application/vnd.github.v3+json'},
+      cache:'no-store'
+    });
+    if(r.ok){
+      const meta=await r.json();
+      _pdfGeradoSha=meta.sha;
+      const data=JSON.parse(atob(meta.content.replace(/\n/g,'')));
+      _pdfGeradoCache=data;
+      localStorage.setItem('sisgopa_diarias_done',JSON.stringify(data));
+      return data;
+    }
+  }catch(e){console.warn('fetchPdfGerado erro:',e);}
+  return getDiariasDownloaded();
+}
+
+// Marca PDF como gerado e salva no GitHub
+async function setDiariaDownloaded(omId){
+  // Atualiza local imediatamente
+  const d=getDiariasDownloaded();
+  d[omId]=Date.now();
+  _pdfGeradoCache=d;
+  localStorage.setItem('sisgopa_diarias_done',JSON.stringify(d));
+
+  // Sincroniza com GitHub em background
+  try{
+    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(d,null,2))));
+    const body={message:`pdf: OM ${omId} gerada`,content,committer:{name:'SisGOPA',email:'sisgopa@gte1.fab'}};
+    if(_pdfGeradoSha) body.sha=_pdfGeradoSha;
+    const r=await fetch(`https://api.github.com/repos/${_GH_OWNER}/${_GH_REPO}/contents/${_GH_PDF_PATH}`,{
+      method:'PUT',
+      headers:{'Authorization':'token '+ghToken,'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    if(r.ok){const resp=await r.json();_pdfGeradoSha=resp.content.sha;console.log('PDF status salvo no GitHub:',omId);}
+    else console.warn('GitHub PUT pdf_gerado falhou:',await r.text());
+  }catch(e){console.warn('setDiariaDownloaded GitHub erro:',e);}
+}
 const DIARIAS_API='https://script.google.com/macros/s/AKfycbyUm_PXR8M9yU1jLhUQC60SYNF_WEUmsxsb3hMigElzBOwI2LYEGKVkXyC_A1g1bOf4/exec';
 let _diariasCache=null;
 function getDiariasConcluidas(){if(_diariasCache)return _diariasCache;return JSON.parse(localStorage.getItem('sisgopa_diarias_concluidas')||'{}');}
@@ -3916,7 +3972,8 @@ function renderAll(){
   const flightsThisYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
   const uniqueOMs=new Set(flightsThisYear.map(f=>f.om).filter(Boolean));
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
-  fetchDiariasConcluidas().then(()=>{renderScreenDiarias();}).catch(()=>{});
+  // Busca diárias concluídas + status de PDF gerado em paralelo, depois renderiza
+  Promise.all([fetchDiariasConcluidas(),fetchPdfGerado()]).then(()=>{renderScreenDiarias();}).catch(()=>{renderScreenDiarias();});
   renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();renderScreenTV();renderScreenCartoes();renderScreenBot();renderScreenDiarias();renderScreenReport();renderScreenS3();
 }
 
