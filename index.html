@@ -3228,21 +3228,8 @@ function parseConsultaMessageJS(text){
 }
 
 // Auto-refresh timer
-var consultaRefreshTimer=null;
-function consultaStartAutoRefresh(){
-  if(consultaRefreshTimer) clearInterval(consultaRefreshTimer);
-  consultaRefreshTimer=setInterval(function(){
-    // Não re-renderizar CONSULTA se o usuário estiver digitando (foco em input/textarea/select)
-    var ae=document.activeElement;
-    var isTyping=ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT');
-    if(s3ActiveTab==='consulta'&&isTyping) return;
-    if(s3ActiveTab==='consulta'||s3ActiveTab==='escalav2'){
-      consultasJsonLastFetch=0;
-      s3RenderActiveTab();
-    }
-  },10000);
-}
-consultaStartAutoRefresh();
+// Auto-refresh DESABILITADO — dados vêm do localStorage ou da API sob demanda
+// O refresh só acontece quando o usuário navega entre abas ou faz uma ação
 
 function s3RenderEscalaV2(container){
   container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
