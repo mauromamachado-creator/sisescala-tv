@@ -3357,7 +3357,7 @@ function s3RenderEscalaV2(container){
       var texto=c&&c.text?c.text:textoPlnilha;
       var html='';
       if(texto) html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.5;max-height:160px;overflow-y:auto">'+texto.replace(/</g,'&lt;')+'</div>';
-      if(!c){html+='<div style="color:var(--text2);padding:10px">Nenhuma consulta ativa.</div>';return html;}
+      if(!c&&!raio){html+='<div style="color:var(--text2);padding:10px">Nenhuma consulta ativa.</div>';return html;}
 
       // Montar lista de pilotos: raio define a ordem; respostas do bot complementam
       var missions=c?c.missions||[]:[];
