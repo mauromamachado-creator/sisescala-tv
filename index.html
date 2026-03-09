@@ -4077,7 +4077,7 @@ function _buildMsgOficial(letra,posto,nome,dados){
   var omsExibir=omsDoOficial.length?omsDoOficial:oms;
   if(omsExibir.length){omsExibir.forEach(function(om){msg+='📋 OM '+om.om_num+' — '+(om.anv||'')+' FAB '+(om.fab||'')+'\n\n';var trip=(om.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');msg+=trip+'\n\n';(om.pernas||[]).forEach(function(p){msg+='  '+(p.raw||p)+'\n';});if(om.obs)msg+='\n  OBS: '+om.obs+'\n';msg+='\n';});}
   else{var trip=(dados.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');msg+=trip+'\n\n';(dados.pernas||[]).forEach(function(p){msg+=p+'\n';});msg+='\n';}
-  msg+='FAVOR ACUSAR CIENTE\nOPR GTE-1';return msg;
+  msg+='FAVOR ACUSAR CIENTE\nOPR GTE-1';return msg.toUpperCase();
 }
 var _confDados=null;
 var _confCientes={};
