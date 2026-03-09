@@ -3243,6 +3243,8 @@ function s3RenderDiario(container){
 var CONSULTA_API = 'http://localhost:8085';
 var CONSULTA_API_SECRET = 'sisgopa-gte-2026';
 var CONSULTA_GAS = 'https://script.google.com/macros/s/AKfycbyDdqWqCKLoCVwgajS3kr4o6q2MHx3UYxwe2o-28JbFCS__NhV2l2OqFlUT-cyRu-Vg/exec';
+var CONF_GAS = 'https://script.google.com/macros/s/AKfycbwAkuMtXPes8ciLZw_EYT6a4EAHz6wGwdBUj5Bqm5eM--rkO2Yj7uJy8USXTjTWNkEYhg/exec';
+var CONF_RAW = 'https://raw.githubusercontent.com/mauromamachado-creator/sisescala-tv/main/data/conf_missao.json';
 var CONSULTA_TOKEN = '8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU';
 var CONSULTA_RECIPIENTS_VC1 = [];
 var CONSULTA_RECIPIENTS_VC2 = [];
@@ -4037,13 +4039,23 @@ function s3RenderConfirmacao(container){
   container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
 
   Promise.all([
-    consultaApiFetch('/api/conf').catch(function(){return null;}),
+    fetch(CONF_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetch(CONF_GAS+'?action=get_conf&t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
     fetch(CONSULTA_GAS+'?action=get_tripulantes&t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
   ]).then(function(results){
-    var d=results[0];
-    var gt=results[1];
-    _confDados=d&&d.dados?d.dados:null;
-    _confCientes=d&&d.confirmacoes?d.confirmacoes:{};
+    var raw=results[0];
+    var gasConf=results[1];
+    var gt=results[2];
+    _confDados=raw&&raw.dados?raw.dados:null;
+    // Cientes vêm do GAS (fonte de verdade)
+    _confCientes={};
+    if(gasConf&&gasConf.oficiais){
+      gasConf.oficiais.forEach(function(o){
+        if(o.ciente) _confCientes[o.chat_id]={nome:o.posto+' '+o.nome,timestamp:o.timestamp};
+      });
+      // Preserva missão/ANV/pernas do GAS se não tiver no raw
+      if(_confDados&&!_confDados.missao_ativa) _confDados._missao=gasConf.missao||'';
+    }
     _confTripulantes=gt&&gt.tripulantes?gt.tripulantes:[];
     _renderConfView(container);
   });
