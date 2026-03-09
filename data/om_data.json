@@ -243,7 +243,8 @@
     ],
     "observacoes": "MNT (Manutenção). Autorizado embarque 2S Danilo Miguel para acompanhar serviço.",
     "om": "103/GTE-1/2026",
-    "fab": "FAB 2101"
+    "fab": "FAB 2101",
+    "tipo": "MMT"
   },
   {
     "aeronave": "VC-1",

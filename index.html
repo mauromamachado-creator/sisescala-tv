@@ -1348,7 +1348,7 @@ function renderScreen0(){
         html+=`<span style="color:var(--text2)">→</span>`;
         html+=`<span style="font-weight:700;min-width:40px">${p.destino}</span>`;
         html+=`<span style="color:var(--text2);font-size:.7rem">${p.etd.split(' ')[1]||''}</span>`;
-        html+=`<span class="mission-tipo">${p.missao}</span>`;
+        html+=`<span class="mission-tipo">${p.missao||om.tipo||''}</span>`;
         html+=`</div>`;
       }
       const pilotos=om.tripulacao.filter(t=>t.trigrama).map(t=>`${t.posto} ${t.nome}`).join(' / ');
@@ -1418,7 +1418,7 @@ function renderScreen0(){
               <span style="font-weight:900;color:var(--text)">${pi===0?dateStr:''}</span>
               <span style="color:var(--text2);font-size:.7rem">${pi===0?dayName:''}</span>
               <span style="color:${anvColor};font-weight:700">${pi===0?om.fab:''}</span>
-              <span>${p.origem}→${p.destino} <span style="color:var(--yellow)">${p.missao||''}</span></span>
+              <span>${p.origem}→${p.destino} <span style="color:var(--yellow)">${p.missao||om.tipo||''}</span></span>
               <span>${pi===0?`<button onclick="event.stopPropagation();showOMDetail('${om.om}')" style="background:rgba(0,255,136,.15);border:1px solid var(--green);color:var(--green);padding:3px 8px;border-radius:5px;cursor:pointer;font-size:.7rem;font-weight:700;white-space:nowrap">📋 OM</button>`:''}</span>
             </div>`;
           }
@@ -2313,7 +2313,7 @@ function renderScreenTV(){
         html+=`<div style="display:flex;gap:4px;align-items:center;padding:2px 0;font-size:.72rem">`;
         html+=`<span style="font-weight:700">${p.origem}→${p.destino}</span>`;
         html+=`<span style="color:var(--text2);font-size:.65rem">${p.etd.split(' ')[1]||''}</span>`;
-        html+=`<span style="font-size:.65rem;color:var(--yellow)">${p.missao}</span>`;
+        html+=`<span style="font-size:.65rem;color:var(--yellow)">${p.missao||om.tipo||''}</span>`;
         html+=`</div>`;
       }
       const pilotos=om.tripulacao.filter(t=>t.trigrama).map(t=>t.trigrama).join('/');
