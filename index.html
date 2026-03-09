@@ -2641,26 +2641,23 @@ async function _consultaLimparVcGitHub(vc, arquivada){
 }
 
 async function fetchPdfGerado(){
+  // Agora a fonte de verdade é a planilha (DIARIAS_API) — compartilhado entre todos
   try{
-    // Usar API do GitHub para obter SHA + conteúdo
-    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
-    const r=await fetch(`https://api.github.com/repos/${_GH_OWNER}/${_GH_REPO}/contents/${_GH_PDF_PATH}`,{
-      headers:{'Authorization':'token '+ghToken,'Accept':'application/vnd.github.v3+json'},
-      cache:'no-store'
-    });
+    const r=await fetch(DIARIAS_API+'?t='+Date.now(),{cache:'no-store'});
     if(r.ok){
-      const meta=await r.json();
-      _pdfGeradoSha=meta.sha;
-      const data=JSON.parse(atob(meta.content.replace(/\n/g,'')));
-      _pdfGeradoCache=data;
-      localStorage.setItem('sisgopa_diarias_done',JSON.stringify(data));
-      return data;
+      const payload=await r.json();
+      const list=Array.isArray(payload)?[]:(payload.pdfs_gerados||[]);
+      const map={};
+      (list||[]).forEach(x=>{if(x&&x.om_id)map[x.om_id]=new Date(x.data_geracao||Date.now()).getTime();});
+      _pdfGeradoCache=map;
+      localStorage.setItem('sisgopa_diarias_done',JSON.stringify(map));
+      return map;
     }
   }catch(e){console.warn('fetchPdfGerado erro:',e);}
   return getDiariasDownloaded();
 }
 
-// Marca PDF como gerado e salva no GitHub
+// Marca PDF como gerado e salva na planilha (DIARIAS_API)
 async function setDiariaDownloaded(omId){
   // Atualiza local imediatamente
   const d=getDiariasDownloaded();
@@ -2668,44 +2665,26 @@ async function setDiariaDownloaded(omId){
   _pdfGeradoCache=d;
   localStorage.setItem('sisgopa_diarias_done',JSON.stringify(d));
 
-  // Sincroniza com GitHub em background
-  try{
-    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
-    const content=btoa(unescape(encodeURIComponent(JSON.stringify(d,null,2))));
-    const body={message:`pdf: OM ${omId} gerada`,content,committer:{name:'SisGOPA',email:'sisgopa@gte1.fab'}};
-    if(_pdfGeradoSha) body.sha=_pdfGeradoSha;
-    const r=await fetch(`https://api.github.com/repos/${_GH_OWNER}/${_GH_REPO}/contents/${_GH_PDF_PATH}`,{
-      method:'PUT',
-      headers:{'Authorization':'token '+ghToken,'Content-Type':'application/json'},
-      body:JSON.stringify(body)
-    });
-    if(r.ok){const resp=await r.json();_pdfGeradoSha=resp.content.sha;console.log('PDF status salvo no GitHub:',omId);}
-    else console.warn('GitHub PUT pdf_gerado falhou:',await r.text());
-  }catch(e){console.warn('setDiariaDownloaded GitHub erro:',e);}
+  // Sincroniza com Sheets em background
+  fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'pdf_gerado',om_id:omId})})
+    .catch(e=>console.warn('Erro ao salvar PDF gerado na API:',e));
 }
-// Diárias concluídas — armazenado no GitHub (mesmo mecanismo do pdf_gerado.json)
-const _GH_CONC_PATH='data/diarias_concluidas.json';
-let _diariasCache=null;let _diariasConclSha=null;
+// Diárias (concluídas + PDF gerado) — fonte de verdade na planilha (Google Sheets via Apps Script)
+const DIARIAS_API='https://script.google.com/macros/s/AKfycbyUm_PXR8M9yU1jLhUQC60SYNF_WEUmsxsb3hMigElzBOwI2LYEGKVkXyC_A1g1bOf4/exec';
+let _diariasCache=null;
 function getDiariasConcluidas(){if(_diariasCache)return _diariasCache;return JSON.parse(localStorage.getItem('sisgopa_diarias_concluidas')||'{}');}
 async function fetchDiariasConcluidas(){
   try{
-    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
-    const r=await fetch(`https://api.github.com/repos/${_GH_OWNER}/${_GH_REPO}/contents/${_GH_CONC_PATH}`,{
-      headers:{'Authorization':'token '+ghToken,'Accept':'application/vnd.github.v3+json'},cache:'no-store'});
-    if(r.ok){const meta=await r.json();_diariasConclSha=meta.sha;const data=JSON.parse(atob(meta.content.replace(/\n/g,'')));_diariasCache=data;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(data));return data;}
+    const r=await fetch(DIARIAS_API+'?t='+Date.now(),{cache:'no-store'});
+    const payload=await r.json();
+    const rows=Array.isArray(payload)?payload:(payload.concluidas||[]);
+    const map={};
+    (rows||[]).forEach(row=>{if(row&&row.status==='CONCLUIDA'&&row.om_id)map[row.om_id]=new Date(row.data_conclusao||Date.now()).getTime();});
+    _diariasCache=map;
+    localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(map));
+    return map;
   }catch(e){console.warn('fetchDiariasConcluidas erro:',e);}
   return getDiariasConcluidas();
-}
-async function _saveDiariasConcluidas(data){
-  try{
-    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
-    const content=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
-    const body={message:'diarias: atualiza concluidas',content,committer:{name:'SisGOPA',email:'sisgopa@gte1.fab'}};
-    if(_diariasConclSha)body.sha=_diariasConclSha;
-    const r=await fetch(`https://api.github.com/repos/${_GH_OWNER}/${_GH_REPO}/contents/${_GH_CONC_PATH}`,{
-      method:'PUT',headers:{'Authorization':'token '+ghToken,'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(r.ok){const rd=await r.json();_diariasConclSha=rd.content?.sha||_diariasConclSha;}
-  }catch(e){console.warn('Erro ao salvar diárias concluídas no GitHub:',e);}
 }
 function setDiariaConcluida(omId){
   const ov=document.createElement('div');
@@ -2723,7 +2702,7 @@ function setDiariaConcluida(omId){
   const close=()=>{ov.style.opacity='0';setTimeout(()=>ov.remove(),300);};
   ov.addEventListener('click',e=>{if(e.target===ov)close();});
   ov.querySelector('#_dcCancel').onclick=close;
-  ov.querySelector('#_dcConfirm').onclick=()=>{close();const d=getDiariasConcluidas();d[omId]=Date.now();_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();_saveDiariasConcluidas(d).catch(e=>console.warn('Erro ao salvar:',e));};
+  ov.querySelector('#_dcConfirm').onclick=()=>{close();const d=getDiariasConcluidas();d[omId]=Date.now();_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'concluir',om_id:omId})}).catch(e=>console.warn('Erro ao salvar:',e));};
 }
 function undoDiariaConcluida(omId){const d=getDiariasConcluidas();delete d[omId];_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'desfazer',om_id:omId})}).catch(e=>console.warn('Erro ao desfazer diária na API:',e));}
 function exportDiariasCSV(){
