@@ -370,6 +370,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
       <div class="status-panel" id="statusPanel"></div>
     </span>
     <span id="lastUpdate" style="color:var(--text2);font-size:.75rem"></span>
+    <button id="alertBtn" onclick="fetchAllAlerts(true)" title="Ver alertas" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;margin-right:4px">🔔</button>
     <button class="ctrl-btn" onclick="goFullscreen()">TELA CHEIA</button>
   </div>
 </header>
@@ -5323,7 +5324,7 @@ function getDiariasAlerts(){
   }catch(e){}
   return items;
 }
-async function fetchAllAlerts(){
+async function fetchAllAlerts(force=false){
   const allItems=[];
   // 1) alerts.json (viagens PR, etc)
   try{
@@ -5348,7 +5349,7 @@ async function fetchAllAlerts(){
   // 2) Diárias vencendo
   getDiariasAlerts().forEach(a=>allItems.push(a));
   // Filter dismissed (1h cooldown)
-  const fresh=allItems.filter(a=>{
+  const fresh=force?allItems:allItems.filter(a=>{
     const d=_alertDismissed[a.id];
     return !d||(Date.now()-d)>3600000;
   });
