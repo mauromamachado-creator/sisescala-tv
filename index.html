@@ -3460,7 +3460,10 @@ function consultaGerarTexto(){
     fraseData='os dias '+parts.join('')+' de '+mesNome;
   }
 
-  var texto='Senhores, bom dia. Consulta para '+fraseData+', '+vcLabel+':\n';
+  // Saudação conforme horário de Brasília
+  var _hora=(new Date()).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'numeric',hour12:false})|0;
+  var _saud=_hora<12?'bom dia':_hora<18?'boa tarde':'boa noite';
+  var texto='Senhores, '+_saud+'. Consulta para '+fraseData+', '+vcLabel+':\n';
 
   consultaMissoes.forEach(function(m,idx){
     var letra=String.fromCharCode(65+idx);
