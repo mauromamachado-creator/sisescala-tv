@@ -94,25 +94,23 @@ function _json(obj) {
 
 function _lookupVCfromMP(nomeGuerra) {
   try {
-    var MP_ID = '1EV81x0Np-zeHhznvzAGrPyck5YUHgW_eRb18uOGc7nQ';
+    // Planilha principal (SHEET) — aba "Dados"
+    // Estrutura: col5=QT (VC1/VC2), col6=TRIGRAMA, col7=nome completo
+    var MP_ID = '1gwkeV2iA_JPTZ3rp0wf1PvXUI0TiOzNg3Xd4DhWwpao';
     var mp = SpreadsheetApp.openById(MP_ID);
-    var shDisp = mp.getSheetByName('Disponibilidade') || mp.getSheets()[0];
-    var vals = shDisp.getDataRange().getValues();
-    var hdrRow = -1, colNome = -1, colGrupo = -1;
-    for (var i = 0; i < Math.min(5, vals.length); i++) {
-      var row = vals[i].map(function(c){return String(c).toUpperCase().trim();});
-      if (row.indexOf('TRIGRAMA') >= 0 || row.indexOf('NOME') >= 0) {
-        hdrRow = i;
-        colNome  = row.indexOf('TRIGRAMA') >= 0 ? row.indexOf('TRIGRAMA') : row.indexOf('NOME');
-        colGrupo = row.indexOf('GRUPO');
-        break;
-      }
-    }
-    if (hdrRow < 0 || colGrupo < 0) return '';
-    for (var j = hdrRow+1; j < vals.length; j++) {
-      var nG = String(vals[j][colNome]||'').toUpperCase().trim();
-      if (nG === nomeGuerra || nG.includes(nomeGuerra) || nomeGuerra.includes(nG)) {
-        return String(vals[j][colGrupo]||'').trim().toUpperCase();
+    var sh = mp.getSheetByName('Dados');
+    if (!sh) return '';
+    var vals = sh.getDataRange().getValues();
+    var ng = nomeGuerra.toUpperCase().trim();
+    for (var i = 0; i < vals.length; i++) {
+      var qt  = String(vals[i][5]||'').toUpperCase().trim(); // VC1 ou VC2
+      var tri = String(vals[i][6]||'').toUpperCase().trim(); // trigrama ex: MAC
+      var nom = String(vals[i][7]||'').toUpperCase().trim(); // ex: MJ MACHADO
+      if (!qt) continue;
+      // Compara trigrama ou parte do nome
+      if (tri === ng || nom.includes(ng) || ng.includes(tri)) {
+        // Normaliza para VC-1 / VC-2
+        return qt.replace('VC1','VC-1').replace('VC2','VC-2');
       }
     }
   } catch(e) { Logger.log('_lookupVCfromMP err: '+e.message); }
