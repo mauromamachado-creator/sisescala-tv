@@ -3242,8 +3242,23 @@ var CONSULTA_API = 'http://localhost:8085';
 var CONSULTA_API_SECRET = 'sisgopa-gte-2026';
 var CONSULTA_GAS = 'https://script.google.com/macros/s/AKfycbyDdqWqCKLoCVwgajS3kr4o6q2MHx3UYxwe2o-28JbFCS__NhV2l2OqFlUT-cyRu-Vg/exec';
 var CONSULTA_TOKEN = '8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU';
-var CONSULTA_RECIPIENTS_VC1 = [{name:'Major Machado', chatId:'673591486', rank:'MJ'}];
-var CONSULTA_RECIPIENTS_VC2 = [{name:'Major Machado', chatId:'673591486', rank:'MJ'}];
+var CONSULTA_RECIPIENTS_VC1 = [];
+var CONSULTA_RECIPIENTS_VC2 = [];
+// Carrega destinatários dinamicamente da aba Tripulantes
+(function(){
+  fetch(CONSULTA_GAS+'?action=get_tripulantes&t='+Date.now(),{cache:'no-store'})
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(d){
+      if(!d||!d.ok) return;
+      (d.tripulantes||[]).forEach(function(t){
+        var rec={name:(t.posto||'')+' '+(t.nome_guerra||''), chatId:t.chat_id, rank:t.posto||''};
+        var vc=(t.vc||'').toUpperCase().replace('VC-','').trim();
+        if(vc==='1') CONSULTA_RECIPIENTS_VC1.push(rec);
+        else if(vc==='2') CONSULTA_RECIPIENTS_VC2.push(rec);
+      });
+      console.log('Destinatários carregados: VC-1='+CONSULTA_RECIPIENTS_VC1.length+' VC-2='+CONSULTA_RECIPIENTS_VC2.length);
+    }).catch(function(){});
+})();
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ESCALA V2 - Lê do JSON via API do bot
