@@ -244,5 +244,167 @@
     "observacoes": "MNT (Manutenção). Autorizado embarque 2S Danilo Miguel para acompanhar serviço.",
     "om": "103/GTE-1/2026",
     "fab": "FAB 2101"
+  },
+  {
+    "aeronave": "VC-2",
+    "om_numero": "97/GTE-1/2026",
+    "om": "97/GTE-1/2026",
+    "fab": "FAB 2590",
+    "data": "09/03/26",
+    "tripulacao": [
+      "1S PRATTI",
+      "1S L. RIBEIRO",
+      "2S NEVES",
+      "2S ANJOS"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (HANGAR)",
+        "etd": "09/03/26 - 12:00 Z",
+        "ete": "04:00",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "09/03/26 - 16:00 Z",
+        "alternativa": "SBCF"
+      }
+    ],
+    "file_id": "",
+    "file_ids": []
+  },
+  {
+    "aeronave": "VC-1",
+    "om_numero": "98/GTE-1/2026",
+    "om": "98/GTE-1/2026",
+    "fab": "FAB 2101",
+    "data": "10/03/26",
+    "tripulacao": [
+      "TC VERAS",
+      "MJ OSVALDO",
+      "2S ANDRÉ PEDRO",
+      "1S PRATTI",
+      "1S AIMORÉ"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "10/03/26 - 12:00 Z",
+        "ete": "01:00",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "10/03/26 - 13:00 Z",
+        "alternativa": "SBCF"
+      }
+    ],
+    "file_id": "",
+    "file_ids": []
+  },
+  {
+    "aeronave": "VC-2",
+    "om_numero": "99/GTE-1/2026",
+    "om": "99/GTE-1/2026",
+    "fab": "FAB 2590",
+    "data": "10/03/26",
+    "tripulacao": [
+      "MJ DA SILVA",
+      "CP SAMPAIO",
+      "2S DA COSTA",
+      "2S ÁVILA",
+      "2S JARDEL"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "10/03/26 - 13:00 Z",
+        "ete": "01:00",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "10/03/26 - 14:00 Z",
+        "alternativa": "SBCF"
+      }
+    ],
+    "file_id": "",
+    "file_ids": []
+  },
+  {
+    "aeronave": "VC-1",
+    "om_numero": "100/GTE-1/2026",
+    "om": "100/GTE-1/2026",
+    "fab": "FAB 2101",
+    "data": "10/03/26",
+    "tripulacao": [
+      "MJ MACHADO",
+      "CP THIAGO VASCONCELOS",
+      "CP PEDRO CIRIACO",
+      "CP J. OLIVEIRA",
+      "SO CIROMAR",
+      "1S DANIEL",
+      "1S LORENA (PR)",
+      "1S PEREIRA (PR)",
+      "2S ANDRESSA",
+      "2S LUDMYLLA (PR)",
+      "2S AGOSTINI"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "10/03/26 - 19:00 Z",
+        "ete": "04:25",
+        "destino": "SCVM",
+        "destino_nome": "SCVM (AEROP)",
+        "eta": "10/03/26 - 23:25 Z",
+        "alternativa": "SCIE"
+      },
+      {
+        "origem": "SCVM",
+        "origem_nome": "SCVM (AEROP)",
+        "etd": "11/03/26 - 16:50 Z",
+        "ete": "04:20",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "11/03/26 - 21:10 Z",
+        "alternativa": "SBCF"
+      }
+    ],
+    "file_id": "",
+    "file_ids": []
+  },
+  {
+    "aeronave": "VC-2",
+    "om_numero": "101/GTE-1/2026",
+    "om": "101/GTE-1/2026",
+    "fab": "FAB 2590",
+    "data": "10/03/26",
+    "tripulacao": [
+      "MJ FARIAS",
+      "MJ SAMIR",
+      "CP CAMPOS",
+      "CP GABRIEL TODESCO",
+      "SO VINÍCIUS",
+      "2S ALCANTARA",
+      "2S NOGUEIRA",
+      "1S SANTIAGO (PR)",
+      "2S LOPES (PR)",
+      "2S NEVES",
+      "2S LUCAS SOUZA"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "10/03/26 - 19:00 Z",
+        "ete": "04:25",
+        "destino": "SCVM",
+        "destino_nome": "SCVM (AEROP)",
+        "eta": "10/03/26 - 23:25 Z",
+        "alternativa": "SCIE"
+      }
+    ],
+    "file_id": "",
+    "file_ids": [],
+    "obs": "REALIZA O ALERTA SOLO APENAS EM SBBR."
   }
 ]
