@@ -1419,7 +1419,7 @@ function renderScreen0(){
               <span style="color:var(--text2);font-size:.7rem">${pi===0?dayName:''}</span>
               <span style="color:${anvColor};font-weight:700">${pi===0?om.fab:''}</span>
               <span>${p.origem}→${p.destino} <span style="color:var(--yellow)">${p.missao||''}</span></span>
-              <span>${pi===0?`<span style="font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</span>`:''}</span>
+              <span>${pi===0?`<button onclick="event.stopPropagation();showOMDetail('${om.om}')" style="background:rgba(0,255,136,.15);border:1px solid var(--green);color:var(--green);padding:3px 8px;border-radius:5px;cursor:pointer;font-size:.7rem;font-weight:700;white-space:nowrap">📋 OM</button>`:''}</span>
             </div>`;
           }
         }
