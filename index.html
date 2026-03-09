@@ -4067,6 +4067,7 @@ function s3RenderAcnt(container){
 
 // ─── Confirmação de Missão ───────────────────────────────────────────────────
 var _confLetra='A';
+var _confLetras={}; // por nome do oficial
 var _confDados=null;
 var _confCientes={};
 var _confSobreaviso=[]; // [{chat_id, nome, posto, letra}]
@@ -4113,7 +4114,7 @@ function _escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
 
 function _buildMsgOficial(letra, posto, nome, dados){
   var oms=(dados&&dados.oms)||[];
-  var msg='SR. '+posto+' '+nome+', MISSÃO '+letra+':\n\n';
+  var msg='Prezado tripulante, informo que o senhor está escalado para a consulta '+letra+'\n\n';
   // Filtra só as OMs em que o tripulante aparece
   var nomeUp=nome.toUpperCase();
   var omsDoOficial=oms.length?oms.filter(function(om){
@@ -4174,12 +4175,7 @@ function _renderConfView(container){
     html+='</div>';
   }
 
-  // Campo letra da missão + botão enviar
-  html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px">';
-  html+='<label style="font-size:.82rem;font-weight:900;color:var(--text)">Missão:</label> ';
-  html+='<input id="conf-letra" type="text" value="'+_confLetra+'" maxlength="3" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;width:60px;font-size:1rem;font-weight:900;text-transform:uppercase" oninput="this.value=this.value.toUpperCase();_confLetra=this.value;_atualizarPreviaConf()">';
-  html+='<span style="font-size:.78rem;color:var(--text2);margin-left:8px">Ex: A, B, C...</span>';
-  html+='</div>';
+  
 
   // Mensagens individuais por oficial
   if(dados){
@@ -4194,20 +4190,25 @@ function _renderConfView(container){
       html+='<div style="margin-bottom:16px">';
       html+='<div style="font-size:.75rem;font-weight:900;color:var(--text2);margin-bottom:8px">📨 MENSAGENS QUE SERÃO ENVIADAS ('+todos_dest.length+')</div>';
       todos_dest.forEach(function(t){
-        var letra_dest=t._letra||_confLetra||'?';
-        var nome_key=t.nome.toUpperCase();
-        var confirmou=Object.values(cientes_gas).some(function(c){var n=(c.nome||'').toUpperCase();return n.includes(nome_key)||nome_key.includes(n);});
-        // Busca chat_id no GAS para mostrar status cadastrado
-        var cadastrado=_confTripulantes.some(function(tr){return (tr.nome_guerra||'').toUpperCase()===nome_key||(tr.nome_guerra||'').toUpperCase().includes(nome_key);});
+        var nomeKey=t.nome.toUpperCase();
+        var letraSalva=_confLetras[nomeKey]||t._letra||_confLetra||'A';
+        var confirmou=Object.values(cientes_gas).some(function(c){var n=(c.nome||'').toUpperCase();return n.includes(nomeKey)||nomeKey.includes(n);});
+        var cadastrado=_confTripulantes.some(function(tr){return (tr.nome_guerra||'').toUpperCase()===nomeKey||(tr.nome_guerra||'').toUpperCase().includes(nomeKey);});
         var borderColor=confirmou?'var(--green)':t._saviso?'var(--yellow)':'var(--border)';
         var tagColor=confirmou?'var(--green)':cadastrado?'var(--text2)':'var(--red)';
         var tag=confirmou?'✅ CIENTE':cadastrado?'⏳ Aguardando':'⚠️ Não cadastrado';
+        var inputId='conf-letra-'+nomeKey.replace(/\s/g,'_');
         html+='<div style="background:var(--bg2);border:1px solid '+borderColor+';border-radius:8px;padding:12px;margin-bottom:10px">';
-        html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">';
         html+='<span style="font-weight:900;font-size:.85rem;color:var(--text)">'+t.posto+' '+t.nome+(t._saviso?' <span style="color:var(--yellow);font-size:.7rem">SOBREAVISO</span>':'')+'</span>';
+        html+='<div style="display:flex;align-items:center;gap:8px">';
+        html+='<span style="font-size:.75rem;color:var(--text2)">Consulta:</span>';
+        html+='<input id="'+inputId+'" type="text" value="'+letraSalva+'" maxlength="3" placeholder="A" ';
+        html+='style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;width:48px;font-size:.95rem;font-weight:900;text-transform:uppercase;text-align:center" ';
+        html+='oninput="this.value=this.value.toUpperCase();_confLetras[\''+nomeKey+'\\']=this.value;var pr=document.getElementById(\'prev-'+inputId+'\');if(pr)pr.textContent=_buildMsgOficial(this.value,\''+t.posto+'\',\''+t.nome+'\',_confDados)">';
         html+='<span style="font-size:.72rem;color:'+tagColor+'">'+tag+'</span>';
-        html+='</div>';
-        html+='<pre style="margin:0;background:var(--bg3);padding:10px;border-radius:6px;font-size:.74rem;white-space:pre-wrap;color:var(--text);max-height:200px;overflow-y:auto">'+_escHtml(_buildMsgOficial(letra_dest,t.posto,t.nome,dados))+'</pre>';
+        html+='</div></div>';
+        html+='<pre id="prev-'+inputId+'" style="margin:0;background:var(--bg3);padding:10px;border-radius:6px;font-size:.74rem;white-space:pre-wrap;color:var(--text);max-height:200px;overflow-y:auto">'+_escHtml(_buildMsgOficial(letraSalva,t.posto,t.nome,dados))+'</pre>';
         html+='</div>';
       });
       html+='</div>';
@@ -4296,12 +4297,10 @@ function _atualizarPreviaConf(){
 }
 
 async function _enviarConfirmacao(){
-  var letra=(document.getElementById('conf-letra')||{}).value||_confLetra;
-  if(!letra.trim()){alert('Informe a letra da missão.');return;}
   var btn=document.getElementById('conf-send-btn');
   if(btn){btn.disabled=true;btn.textContent='⏳ Enviando...';}
   try{
-    var r=await consultaApiPost({action:'send_conf',letra:letra,sobreaviso:_confSobreaviso});
+    var r=await consultaApiPost({action:'send_conf',letra:_confLetra,letras_por_oficial:_confLetras,sobreaviso:_confSobreaviso});
     if(r.ok){
       var msg='✅ Enviado para '+r.enviados+' oficial(is).';
       if(r.enviados_saviso) msg+=' + '+r.enviados_saviso+' sobreaviso.';
