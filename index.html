@@ -3415,14 +3415,14 @@ function s3RenderEscalaV2(container){
 
       html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">';
       html+='<thead><tr style="border-bottom:2px solid var(--border)">';
-      html+='<th style="text-align:center;padding:8px 4px;color:var(--text2);width:32px">#</th>';
+
       html+='<th style="text-align:left;padding:8px 6px;color:var(--text2)">Tripulante</th>';
       missions.forEach(function(m){html+='<th style="text-align:center;padding:8px 6px;color:var('+colorVar+');font-weight:900">'+m+'</th>';});
       html+='<th style="text-align:center;padding:8px 6px;color:var(--text2)">Status</th>';
       html+='</tr></thead><tbody>';
       lista.forEach(function(p){
         html+='<tr style="border-bottom:1px solid rgba(255,255,255,.05)">';
-        html+='<td style="text-align:center;padding:6px;color:var(--text2);font-size:.72rem">'+p.pos+'</td>';
+
         html+='<td style="padding:6px;font-weight:700">'+p.posto+' '+p.nome_guerra+'</td>';
         missions.forEach(function(m){
           var v=p.responses[m];
