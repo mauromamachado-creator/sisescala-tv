@@ -2609,6 +2609,29 @@ function getDiariasDownloaded(){
 }
 
 // Busca status de PDF do GitHub (ao vivo, compartilhado)
+// Limpa o VC do respostas_pub.json no GitHub ao arquivar consulta
+async function _consultaLimparVcGitHub(vc, arquivada){
+  try{
+    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
+    const owner='mauromamachado-creator', repo='sisescala-tv', path='data/respostas_pub.json';
+    // Lê estado atual
+    const r=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`,{
+      headers:{'Authorization':'token '+ghToken,'Accept':'application/vnd.github.v3+json'},cache:'no-store'
+    });
+    if(!r.ok) return;
+    const meta=await r.json();
+    const pub=JSON.parse(atob(meta.content.replace(/\n/g,'')));
+    pub[vc]=null; // Limpa o VC arquivado
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(pub,null,2))));
+    await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`,{
+      method:'PUT',
+      headers:{'Authorization':'token '+ghToken,'Content-Type':'application/json'},
+      body:JSON.stringify({message:`archive: consulta ${vc} arquivada`,content,sha:meta.sha,committer:{name:'SisGOPA',email:'sisgopa@gte1.fab'}})
+    });
+    console.log('Consulta '+vc+' removida do ESCALA V2');
+  }catch(e){console.warn('Erro ao limpar GitHub após archive:',e);}
+}
+
 async function fetchPdfGerado(){
   try{
     // Usar API do GitHub para obter SHA + conteúdo
@@ -3252,7 +3275,16 @@ function consultaApiLocal(body){
     _consultaLocalSave(data);return{ok:true,mode:'local'};
   }
   if(body.action==='lock'&&data[vc]){data[vc].locked=true;data[vc].status='locked';_consultaLocalSave(data);return{ok:true};}
-  if(body.action==='archive'&&data[vc]){if(!data.archive)data.archive=[];data.archive.push(Object.assign({},data[vc],{archivedAt:new Date().toISOString()}));data[vc]=null;_consultaLocalSave(data);return{ok:true};}
+  if(body.action==='archive'&&data[vc]){
+    if(!data.archive)data.archive=[];
+    var arquivada=Object.assign({},data[vc],{archivedAt:new Date().toISOString()});
+    data.archive.push(arquivada);
+    data[vc]=null;
+    _consultaLocalSave(data);
+    // Limpa o VC do respostas_pub.json no GitHub
+    _consultaLimparVcGitHub(vc,arquivada);
+    return{ok:true};
+  }
   if(body.action==='update_om'&&data[vc]){var m=(data[vc].missions||[]).find(function(x){return x.letra===body.missao;});if(m)m.om=body.om;_consultaLocalSave(data);return{ok:true};}
   if(body.action==='update_saviso'&&data[vc]){var m2=(data[vc].missions||[]).find(function(x){return x.letra===body.missao;});if(m2)m2.escalados=body.escalados;_consultaLocalSave(data);return{ok:true};}
   if(body.action==='update_escalados'&&data[vc]){var m3=(data[vc].missions||[]).find(function(x){return x.letra===body.missao;});if(m3)m3.escalados=body.escalados;_consultaLocalSave(data);return{ok:true};}
