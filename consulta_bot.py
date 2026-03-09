@@ -58,6 +58,9 @@ GAS_URL = "https://script.google.com/macros/s/AKfycbz8wQqdiHoKOlh4XR2tBJ3KcWBTtR
 API_PORT = 8085
 
 DATA_DIR = Path(__file__).parent / "data"
+
+# Cache temporário de file_ids pendentes de confirmação de VC
+_raio_pending: dict = {}  # {"u{user_id}": file_id}
 DATA_FILE = DATA_DIR / "consultas.json"
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
@@ -144,7 +147,7 @@ async def _sync_response_to_sheet(vc_key: str, name: str, responses: dict, motiv
         pub_path = DATA_DIR / "respostas_pub.json"
         with open(pub_path, "w", encoding="utf-8") as f:
             json.dump(pub, f, ensure_ascii=False, indent=2)
-        # Git push
+        # Git push (com pull --rebase antes para evitar conflito)
         import subprocess
         subprocess.run(
             ["git", "add", "data/respostas_pub.json"],
@@ -153,6 +156,11 @@ async def _sync_response_to_sheet(vc_key: str, name: str, responses: dict, motiv
         subprocess.run(
             ["git", "commit", "-m", f"auto: resposta {name}"],
             cwd=str(DATA_DIR.parent), capture_output=True, timeout=10,
+        )
+        # Rebase remoto antes de push para evitar rejeição
+        subprocess.run(
+            ["git", "pull", "--rebase", "origin", "main"],
+            cwd=str(DATA_DIR.parent), capture_output=True, timeout=30,
         )
         result = subprocess.run(
             ["git", "push", "origin", "main"],
@@ -303,12 +311,20 @@ async def raio_handler(update: Update, context):
 
     # Detectar VC pelo caption: "/raio vc1" ou "/raio vc2"
     caption = (update.message.caption or "").strip().lower()
-    if "vc2" in caption:
+    logger.info("Raio recebido — caption: %r", caption)
+
+    if re.search(r'vc[-\s]?2\b', caption):
         vc = "vc2"
-    elif "vc1" in caption or "vc" not in caption:
-        vc = "vc1"  # default vc1
+    elif re.search(r'vc[-\s]?1\b', caption):
+        vc = "vc1"
     else:
-        await update.message.reply_text("⚠️ Informe o VC no caption: /raio vc1 ou /raio vc2")
+        # Sem caption — guardar file_id em memória e perguntar com botões
+        _raio_pending[f"u{user_id}"] = update.message.document.file_id
+        keyboard = InlineKeyboardMarkup([[
+            InlineKeyboardButton("🔵 VC-1", callback_data=f"raio_vc|vc1|u{user_id}"),
+            InlineKeyboardButton("🟢 VC-2", callback_data=f"raio_vc|vc2|u{user_id}"),
+        ]])
+        await update.message.reply_text("📄 Raio recebido! Este raio é para:", reply_markup=keyboard)
         return
 
     await update.message.reply_text(f"📄 Processando raio {vc.upper()}...")
@@ -413,6 +429,59 @@ async def callback_handler(update: Update, context):
     parts = query.data.split("|")
     action = parts[0]
 
+    # ─── RAIO_VC: usuário escolheu VC para o raio via botão ───────────────
+    if action == "raio_vc":
+        if user_id not in ESCALANTES_AUTORIZADOS:
+            await query.answer("⛔ Não autorizado.", show_alert=True)
+            return
+        vc = parts[1]      # "vc1" ou "vc2"
+        cache_key = parts[2]   # "u{user_id}"
+        file_id = _raio_pending.pop(cache_key, None)
+        if not file_id:
+            await query.edit_message_text("❌ PDF expirou. Manda o arquivo de novo.")
+            return
+        await query.edit_message_text(f"📄 Processando raio {vc.upper()}...")
+        try:
+            file = await context.bot.get_file(file_id)
+            pdf_path = DATA_DIR / f"raio_{vc}_temp.pdf"
+            await file.download_to_drive(str(pdf_path))
+            import pypdf as _pypdf2
+            _reader2 = _pypdf2.PdfReader(str(pdf_path))
+            texto2 = "\n".join(p.extract_text() for p in _reader2.pages if p.extract_text())
+            pdf_path.unlink(missing_ok=True)
+            if not texto2.strip():
+                await query.edit_message_text("❌ Não consegui extrair texto do PDF.")
+                return
+            POSTOS2 = ["TEN-BRIG","MAJ-BRIG","BRIG","CEL","TC","MJ","CP","1T","2T","ST","CB","SD"]
+            pilotos2 = []
+            for linha2 in texto2.split("\n"):
+                linha2 = linha2.strip()
+                m2 = re.match(r'^(\d+)(.+?)\s+\d{2}/\d{2}/\d{4}', linha2)
+                if not m2: continue
+                trecho2 = m2.group(2).strip()
+                mx = re.match(r'^((?:' + '|'.join(POSTOS2) + r')\s+[A-ZÁÉÍÓÚÂÊÔÃÕÜÇ]+(?:\s+[A-ZÁÉÍÓÚÂÊÔÃÕÜÇ]+)*)', trecho2)
+                if mx:
+                    partes2 = mx.group(1).strip().split(None, 1)
+                    pilotos2.append({"pos": int(m2.group(1)), "posto": partes2[0], "nome": partes2[1].strip() if len(partes2)>1 else ""})
+            if not pilotos2:
+                await query.edit_message_text("❌ Não encontrei pilotos no PDF.")
+                return
+            raio2 = {"vc": vc, "data_consulta": datetime.now().strftime("%Y-%m-%d"), "gerado_em": datetime.now().isoformat(),
+                     "enviado_por": ESCALANTES_AUTORIZADOS[user_id], "pilotos": pilotos2}
+            raio_path2 = DATA_DIR / f"raio_{vc}.json"
+            with open(raio_path2, "w", encoding="utf-8") as f:
+                json.dump(raio2, f, ensure_ascii=False, indent=2)
+            import subprocess as _sp
+            _sp.run(["git","add",f"data/raio_{vc}.json"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
+            _sp.run(["git","commit","-m",f"raio: {vc.upper()} atualizado por {ESCALANTES_AUTORIZADOS[user_id]}"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
+            _sp.run(["git","push","origin","main"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=30)
+            lista2 = "\n".join(f"{p['pos']}. {p['posto']} {p['nome']}" for p in pilotos2)
+            await query.edit_message_text(f"✅ Raio {vc.upper()} atualizado! {len(pilotos2)} pilotos:\n\n{lista2}\n\nJá aparece no ESCALA V2.")
+        except Exception as e:
+            logger.error("Erro raio_vc callback: %s", e)
+            await query.edit_message_text(f"❌ Erro: {e}")
+        return
+
     if len(parts) < 2:
         return
 
@@ -469,12 +538,25 @@ async def callback_handler(update: Update, context):
     current_msg_id = query.message.message_id if query.message else None
     stored_msg_id  = consulta.get("message_id")
     if current_msg_id and stored_msg_id and current_msg_id != stored_msg_id:
-        logger.info("Nova consulta detectada (msg_id %s != %s) — resetando recipients", current_msg_id, stored_msg_id)
-        for r in consulta.get("recipients", []):
-            r["confirmed"] = False
-            r["confirmed_at"] = None
-            r["responses"] = {}
+        logger.info("Nova consulta detectada (msg_id %s != %s) — resetando", current_msg_id, stored_msg_id)
+        # Atualizar texto e missões da nova mensagem
+        if query.message:
+            consulta["text"] = query.message.text or consulta.get("text", "")
+            # Re-extrair missões do teclado da nova mensagem
+            new_missions = []
+            if query.message.reply_markup:
+                for row in query.message.reply_markup.inline_keyboard:
+                    for btn in row:
+                        if btn.callback_data and btn.callback_data.startswith("toggle|"):
+                            m = btn.callback_data.split("|")
+                            if len(m) >= 3 and m[2] not in new_missions:
+                                new_missions.append(m[2])
+            if new_missions:
+                consulta["missions"] = new_missions
+        # Resetar recipients
+        consulta["recipients"] = []
         consulta["message_id"] = current_msg_id
+        consulta["locked"] = False
         _save_data(data)
     elif current_msg_id and not stored_msg_id:
         # Primeira vez que recebe callback — salva o message_id
