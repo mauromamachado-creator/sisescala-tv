@@ -5264,7 +5264,7 @@ function goScreen(n){
     const pw=prompt('🔒 Área restrita S3. Digite a senha:');
     if(!pw){return;}
     async function verifyPw(p){const enc=new TextEncoder().encode(p);const buf=await crypto.subtle.digest('SHA-256',enc);return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-    verifyPw(pw).then(h=>{if(h==='eb9eaaaaf29e9838c97791fbf68ac2483f2aa3f93c6dc39c6bf0162cc51a6322'){s3Unlocked=true;goScreen(14);}else{alert('Senha incorreta.');_trackEscalaAttempt(false);}});
+    verifyPw(pw).then(h=>{if(h==='ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'){s3Unlocked=true;goScreen(14);}else{alert('Senha incorreta.');_trackEscalaAttempt(false);}});
     return;
   }
   _trackScreen(n);
