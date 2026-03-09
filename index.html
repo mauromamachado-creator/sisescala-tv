@@ -2631,11 +2631,8 @@ async function _consultaLimparVcGitHub(vc, arquivada){
   // Limpa respostas do VC no GAS (fonte de verdade do ESCALA V2)
   const vcSheet = vc==='vc1'?'VC-1':'VC-2';
   try{
-    await fetch(CONSULTA_GAS,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'archive_vc',vc:vcSheet})
-    });
+    // GET evita CORS preflight
+    await fetch(CONSULTA_GAS+'?action=archive_vc&vc='+encodeURIComponent(vcSheet)+'&t='+Date.now(),{cache:'no-store'});
     console.log('GAS: consulta '+vc+' limpa ('+vcSheet+')');
   }catch(e){console.warn('Erro ao limpar GAS após archive:',e);}
 }
