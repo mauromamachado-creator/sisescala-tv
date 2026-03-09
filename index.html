@@ -786,7 +786,6 @@ let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[], diari
 let cartoesData=[];let cartoesFailed=false;let pauDeSeboData={};
 let metarMulti={};
 let anualVC1={voadas:0,esforco:650}, anualVC2={voadas:0,esforco:1220};
-let escalaData={vc1:{consulta:'',raio:[]},vc2:{consulta:'',raio:[]}};
 let confirmaData=[];
 let omData=[];let dadosPessoais={};
 function parseOMDate(s,end){const m=s&&s.match(/^(\d{2})\/(\d{2})\/(\d{2})$/);const iso=m?('20'+m[3]+'-'+m[2]+'-'+m[1]):s;return new Date(iso+'T'+(end?'23:59':'12:00')+':00');}
@@ -2091,170 +2090,6 @@ function doSearch(val){
   searchTimeout=setTimeout(()=>renderScreenSearch(val),200);
 }
 
-// ===== ESCALAÇÃO =====
-async function fetchEscalaCSV(sheetName){
-  const url=`https://docs.google.com/spreadsheets/d/${ESCALA_SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-  const r=await fetch(url,{cache:'no-store'});if(!r.ok)return[];return parseCSV(await r.text());
-}
-async function fetchEscala(){
-  try{
-    const [c1,c2,r1,r2,sav]=await Promise.all([
-      fetchEscalaCSV('Consulta VC-1'),fetchEscalaCSV('Consulta VC-2'),
-      fetchEscalaCSV('Raio Final VC-1'),fetchEscalaCSV('Raio Final VC-2'),
-      fetchEscalaCSV('SAVISO')]);
-    escalaData.vc1.consulta=c1.length?String(c1[0][0]||''):'';
-    escalaData.vc2.consulta=c2.length?String(c2[0][0]||''):'';
-    const parseRaio=(rows)=>{
-      if(!rows.length)return[];
-      // Header row has mission columns starting at col6 (A,B,C...)
-      const hdr=rows[0];const missions=[];
-      for(let i=6;i<hdr.length;i++){const v=String(hdr[i]||'').trim();if(v&&v.length<=2)missions.push({idx:i,label:v});else break;}
-      const pilots=[];
-      for(let r=1;r<rows.length;r++){
-        const row=rows[r];const name=String(row[3]||'').trim();if(!name||name==='X')continue;
-        const qual=String(row[4]||'').trim();const op=String(row[5]||'').trim();
-        const reason=String(row[16]||'').trim();
-        const responses={};let answered=false;
-        for(const m of missions){
-          const v=String(row[m.idx]||'').trim();
-          responses[m.label]=v;if(v)answered=true;
-        }
-        pilots.push({name,qual,op,reason,responses,answered});
-      }
-      return pilots;
-    };
-    escalaData.vc1.raio=parseRaio(r1);
-    escalaData.vc2.raio=parseRaio(r2);
-    // Extract mission labels from header
-    const getMissions=(rows)=>{
-      if(!rows.length)return[];
-      const hdr=rows[0];const m=[];
-      for(let i=6;i<hdr.length;i++){const v=String(hdr[i]||'').trim();if(v&&v.length<=2)m.push(v);else break;}
-      return m;
-    };
-    escalaData.vc1.missions=getMissions(r1);
-    escalaData.vc2.missions=getMissions(r2);
-    // Parse SAVISO (confirmed missions)
-    confirmaData=[];
-    if(sav.length>1){
-      for(let i=1;i<sav.length;i++){
-        const row=sav[i];
-        const dia=String(row[1]||'').trim();if(!dia)continue;
-        const escalados=String(row[2]||'').trim().split('\n').map(s=>s.trim()).filter(Boolean);
-        const anv=String(row[8]||'').trim();
-        const num=String(row[9]||'').trim();
-        const letra=String(row[10]||'').trim();
-        if(escalados.length)confirmaData.push({dia,escalados,anv,num,letra});
-      }
-    }
-  }catch(e){console.warn('fetchEscala error',e);}
-}
-
-function renderScreenEscala(){
-  let html='<h2>📋 Escalação de Missões</h2>';
-
-  // Escala Confirmada
-  if(confirmaData.length){
-    html+=`<div style="margin-bottom:24px;padding:16px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.25);border-radius:10px">`;
-    html+=`<div style="font-size:.9rem;font-weight:900;color:var(--green);margin-bottom:12px">✅ ESCALA ENCERRADA - TRIPULAÇÕES CONFIRMADAS</div>`;
-    // Extract dates from consultas
-    const dateInfo=[];
-    [escalaData.vc1.consulta,escalaData.vc2.consulta].forEach(c=>{
-      if(!c)return;const m=c.match(/dias?\s+([\d,\s]+e?\s*\d*)\s+de\s+(\w+)/i);
-      if(m)dateInfo.push(m[0]);
-    });
-    if(dateInfo.length)html+=`<div style="font-size:.78rem;color:var(--text2);margin-bottom:10px">📅 ${dateInfo[0]}</div>`;
-
-    for(const conf of confirmaData){
-      const anvColor=conf.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
-      html+=`<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">`;
-      html+=`<div style="min-width:36px;font-weight:900;color:${anvColor};font-size:.8rem">${conf.anv}</div>`;
-      html+=`<div style="min-width:28px;font-weight:900;color:var(--text);font-size:.8rem">${conf.letra})</div>`;
-      html+=`<div style="min-width:50px;font-size:.78rem;color:var(--text2)">SAVISO ${conf.dia}</div>`;
-      html+=`<div style="font-size:.8rem;font-weight:700">${conf.escalados.join(' / ')}</div>`;
-      html+=`</div>`;
-    }
-    html+=`</div>`;
-  }
-
-  const renderAnv=(label,data,colorVar)=>{
-    html+=`<div style="margin-bottom:24px">`;
-    html+=`<h3 style="color:var(${colorVar});border-bottom:2px solid var(${colorVar});padding-bottom:6px">${label}</h3>`;
-
-    // Consulta ativa
-    if(data.consulta){
-      html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.5">${data.consulta.replace(/</g,'&lt;')}</div>`;
-    }
-
-    const missions=data.missions||[];
-    const pilots=data.raio||[];
-    if(!pilots.length){html+=`<div class="no-data">Sem dados de escalação.</div></div>`;return;}
-
-    // Stats
-    const total=pilots.length;
-    const responded=pilots.filter(p=>p.answered).length;
-    const pending=total-responded;
-    html+=`<div style="display:flex;gap:16px;margin-bottom:12px;font-size:.82rem">`;
-    html+=`<span>👥 ${total} pilotos</span>`;
-    html+=`<span style="color:var(--green)">✅ ${responded} responderam</span>`;
-    html+=`<span style="color:var(--yellow)">⏳ ${pending} pendentes</span>`;
-    html+=`</div>`;
-
-    // Matrix table
-    if(missions.length){
-      html+=`<div style="overflow-x:auto;margin-bottom:16px"><table style="width:100%;border-collapse:collapse;font-size:.78rem">`;
-      html+=`<thead><tr style="border-bottom:2px solid var(--border)">`;
-      html+=`<th style="text-align:left;padding:8px 6px;color:var(--text2);min-width:140px">Piloto</th>`;
-      html+=`<th style="text-align:center;padding:8px 4px;color:var(--text2);width:40px">Qual.</th>`;
-      for(const m of missions)html+=`<th style="text-align:center;padding:8px 4px;color:var(${colorVar});font-weight:900;width:36px">${m}</th>`;
-      html+=`<th style="text-align:left;padding:8px 6px;color:var(--text2)">Obs</th>`;
-      html+=`</tr></thead><tbody>`;
-
-      for(const p of pilots){
-        html+=`<tr style="border-bottom:1px solid rgba(255,255,255,.05)">`;
-        html+=`<td style="padding:6px;font-weight:700">${p.name}</td>`;
-        html+=`<td style="text-align:center;padding:6px;font-size:.72rem;color:var(--text2)">${p.qual}</td>`;
-        for(const m of missions){
-          const v=p.responses[m]||'';
-          let bg='',color='var(--text2)',display=v||'-';
-          if(v&&v!=='-'){
-            // Number = wants it
-            bg='rgba(0,255,136,.15)';color='var(--green)';display=v;
-          }else if(v==='-'){
-            bg='rgba(255,80,80,.1)';color='var(--red)';display='✗';
-          }else{
-            bg='';color='rgba(255,255,255,.2)';display='-';
-          }
-          html+=`<td style="text-align:center;padding:6px;background:${bg};color:${color};font-weight:900;border-radius:4px">${display}</td>`;
-        }
-        html+=`<td style="padding:6px;font-size:.72rem;color:var(--text2)">${p.reason||''}</td>`;
-        html+=`</tr>`;
-      }
-      html+=`</tbody></table></div>`;
-    }
-
-
-
-    // Pendentes
-    const pendList=pilots.filter(p=>!p.answered);
-    if(pendList.length){
-      html+=`<div style="margin-top:12px;padding:10px;background:rgba(255,200,50,.06);border:1px solid rgba(255,200,50,.2);border-radius:8px">`;
-      html+=`<div style="font-size:.78rem;font-weight:700;color:var(--yellow);margin-bottom:4px">⏳ Aguardando resposta (${pendList.length})</div>`;
-      html+=`<div style="font-size:.75rem;color:var(--text2)">${pendList.map(p=>p.name.split('(')[0].trim()).join(' · ')}</div>`;
-      html+=`</div>`;
-    }
-
-    html+=`</div>`;
-  };
-
-  renderAnv('VC-1',escalaData.vc1,'--vc1');
-  renderAnv('VC-2',escalaData.vc2,'--vc2');
-
-  document.getElementById('screen8').innerHTML=html;
-  const s3c=document.getElementById('s3-content');
-  if(s3c && s3ActiveTab==='escala') s3c.innerHTML=html;
-}
-
 function renderScreenTV(){
   const td=nowBRT();const todayStr=`${String(td.getDate()).padStart(2,'0')}/${String(td.getMonth()+1).padStart(2,'0')}/${td.getFullYear()}`;
   const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
@@ -3231,11 +3066,10 @@ async function submitReport(){
 }
 
 // ===== S3 SCREEN =====
-let s3ActiveTab='escala';
+let s3ActiveTab='escala_v2';
 function renderScreenS3(){
   let html='<h2>📋 S3 — Operações</h2>';
   html+='<div class="s3-subnav">';
-  html+='<button class="'+(s3ActiveTab==='escala'?'active':'')+'" onclick="s3SwitchTab(\'escala\')">ESCALA</button>';
   html+='<button class="'+(s3ActiveTab==='diario'?'active':'')+'" onclick="s3SwitchTab(\'diario\')">DIÁRIO</button>';
   html+='<button class="'+(s3ActiveTab==='consulta'?'active':'')+'" onclick="s3SwitchTab(\'consulta\')">CONSULTA</button>';
   html+='<button class="'+(s3ActiveTab==='escalav2'?'active':'')+'" onclick="s3SwitchTab(\'escalav2\')">ESCALA V2</button>';
@@ -3257,7 +3091,6 @@ function s3SwitchTab(tab){
 function s3RenderActiveTab(){
   var container=document.getElementById('s3-content');
   if(!container)return;
-  if(s3ActiveTab==='escala'){s3RenderEscala(container);}
   else if(s3ActiveTab==='diario'){s3RenderDiario(container);}
   else if(s3ActiveTab==='consulta'){s3RenderConsultaV2(container);}
   else if(s3ActiveTab==='escalav2'){s3RenderEscalaV2(container);}
@@ -3265,7 +3098,7 @@ function s3RenderActiveTab(){
   else if(s3ActiveTab==='acnt'){s3RenderAcnt(container);}
 }
 function s3RenderEscala(container){
-  renderScreenEscala();
+  
   var src=document.getElementById('screen8');
   if(src) container.innerHTML=src.innerHTML;
 }
@@ -4406,7 +4239,7 @@ function renderAll(){
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
   // Busca diárias concluídas + status de PDF gerado em paralelo, depois renderiza
   Promise.all([fetchDiariasConcluidas(),fetchPdfGerado()]).then(()=>{renderScreenDiarias();}).catch(()=>{renderScreenDiarias();});
-  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();renderScreenTV();renderScreenCartoes();renderScreenBot();renderScreenDiarias();renderScreenReport();renderScreenS3();
+  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenTV();renderScreenCartoes();renderScreenBot();renderScreenDiarias();renderScreenReport();renderScreenS3();
 }
 
 // ===== CARTÕES =====
@@ -5521,7 +5354,6 @@ const STATUS_SOURCES=[
   {id:'metarMulti',label:'METAR Multi',critical:false},
   {id:'anual',label:'Horas Anual',critical:true},
   {id:'om',label:'Ordens de Missão',critical:false},
-  {id:'escala',label:'Escala',critical:true},
   {id:'cartoes',label:'Cartões',critical:false},
   {id:'pauSebo',label:'Pau de Sebo',critical:false},
   {id:'brAirports',label:'Aeroportos BR',critical:false},
@@ -5613,7 +5445,6 @@ async function loadAllData(){
     if(missingIcaos.length&&sourceStatus.metarMulti==='ok')sourceStatus.metarMulti='fail';
     await fetchAnual().then(()=>{sourceStatus.anual='ok';}).catch(()=>{sourceStatus.anual='fail';});
     await fetchWithTimeout('data/om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;sourceStatus.om='ok';}).catch(()=>{omData=[];sourceStatus.om='fail';});
-    await fetchEscala().then(()=>{sourceStatus.escala='ok';}).catch(()=>{sourceStatus.escala='fail';});
     await fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);cartoesFailed=false;sourceStatus.cartoes='ok';}).catch(()=>{cartoesData=[];cartoesFailed=true;sourceStatus.cartoes='fail';});
     await fetchCSVByName('dados').then(rows=>{dadosPessoais=parseDadosPessoais(rows);sourceStatus.dados='ok';}).catch(()=>{dadosPessoais={};sourceStatus.dados='fail';});
     pilotData=parseDisponibilidade(dispRows);
