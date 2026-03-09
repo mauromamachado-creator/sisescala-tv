@@ -1,0 +1,380 @@
+{
+  "dados": {
+    "oms": [
+      {
+        "om_num": "98",
+        "esq": "GTE-1",
+        "ano": "2026",
+        "anv": "VC-1",
+        "fab": "2101",
+        "tripulantes": [
+          {
+            "funcao": "IN",
+            "posto": "TC",
+            "nome": "VERAS"
+          },
+          {
+            "funcao": "IN",
+            "posto": "MJ",
+            "nome": "OSVALDO"
+          },
+          {
+            "funcao": "MC",
+            "posto": "2S",
+            "nome": "ANDRÉ PEDRO"
+          },
+          {
+            "funcao": "IN",
+            "posto": "1S",
+            "nome": "PRATTI"
+          },
+          {
+            "funcao": "CM",
+            "posto": "1S",
+            "nome": "AIMORÉ"
+          }
+        ],
+        "pernas": [
+          {
+            "orig": "SBBR",
+            "data": "10/03/26",
+            "hora": "12:00",
+            "dest": "SBBR",
+            "raw": "SBBR 10/03/26 12:00Z → SBBR"
+          }
+        ],
+        "obs": "",
+        "primeira_etd": "2026-03-10"
+      },
+      {
+        "om_num": "99",
+        "esq": "GTE-1",
+        "ano": "2026",
+        "anv": "VC-2",
+        "fab": "2590",
+        "tripulantes": [
+          {
+            "funcao": "IN",
+            "posto": "MJ",
+            "nome": "DA SILVA"
+          },
+          {
+            "funcao": "IN",
+            "posto": "CP",
+            "nome": "SAMPAIO"
+          },
+          {
+            "funcao": "IN",
+            "posto": "2S",
+            "nome": "DA COSTA"
+          },
+          {
+            "funcao": "OC",
+            "posto": "2S",
+            "nome": "ÁVILA"
+          },
+          {
+            "funcao": "IN",
+            "posto": "2S",
+            "nome": "JARDEL"
+          }
+        ],
+        "pernas": [
+          {
+            "orig": "SBBR",
+            "data": "10/03/26",
+            "hora": "13:00",
+            "dest": "SBBR",
+            "raw": "SBBR 10/03/26 13:00Z → SBBR"
+          }
+        ],
+        "obs": "",
+        "primeira_etd": "2026-03-10"
+      },
+      {
+        "om_num": "100",
+        "esq": "GTE-1",
+        "ano": "2026",
+        "anv": "VC-1",
+        "fab": "2101",
+        "tripulantes": [
+          {
+            "funcao": "IN",
+            "posto": "MJ",
+            "nome": "MACHADO"
+          },
+          {
+            "funcao": "1P",
+            "posto": "CP",
+            "nome": "THIAGO VASCONCELOS"
+          },
+          {
+            "funcao": "IN",
+            "posto": "CP",
+            "nome": "PEDRO CIRIACO"
+          },
+          {
+            "funcao": "IN",
+            "posto": "CP",
+            "nome": "J. OLIVEIRA"
+          },
+          {
+            "funcao": "IN",
+            "posto": "SO",
+            "nome": "CIROMAR"
+          },
+          {
+            "funcao": "IN",
+            "posto": "1S",
+            "nome": "DANIEL"
+          },
+          {
+            "funcao": "IN",
+            "posto": "2S",
+            "nome": "ANDRESSA"
+          },
+          {
+            "funcao": "IN",
+            "posto": "2S",
+            "nome": "AGOSTINI"
+          }
+        ],
+        "pernas": [
+          {
+            "orig": "SBBR",
+            "data": "10/03/26",
+            "hora": "19:00",
+            "dest": "SCVM",
+            "raw": "SBBR 10/03/26 19:00Z → SCVM"
+          },
+          {
+            "orig": "SCVM",
+            "data": "11/03/26",
+            "hora": "16:50",
+            "dest": "SBBR",
+            "raw": "SCVM 11/03/26 16:50Z → SBBR"
+          }
+        ],
+        "obs": "",
+        "primeira_etd": "2026-03-10"
+      },
+      {
+        "om_num": "101",
+        "esq": "GTE-1",
+        "ano": "2026",
+        "anv": "VC-2",
+        "fab": "2590",
+        "tripulantes": [
+          {
+            "funcao": "IN",
+            "posto": "MJ",
+            "nome": "FARIAS"
+          },
+          {
+            "funcao": "IN",
+            "posto": "MJ",
+            "nome": "SAMIR"
+          },
+          {
+            "funcao": "IN",
+            "posto": "CP",
+            "nome": "CAMPOS"
+          },
+          {
+            "funcao": "IN",
+            "posto": "CP",
+            "nome": "GABRIEL TODESCO"
+          },
+          {
+            "funcao": "IN",
+            "posto": "SO",
+            "nome": "VINÍCIUS"
+          },
+          {
+            "funcao": "IN",
+            "posto": "2S",
+            "nome": "ALCANTARA"
+          },
+          {
+            "funcao": "OC",
+            "posto": "2S",
+            "nome": "NOGUEIRA"
+          },
+          {
+            "funcao": "IN",
+            "posto": "2S",
+            "nome": "NEVES"
+          },
+          {
+            "funcao": "IN",
+            "posto": "2S",
+            "nome": "LUCAS SOUZA"
+          }
+        ],
+        "pernas": [
+          {
+            "orig": "SBBR",
+            "data": "10/03/26",
+            "hora": "19:00",
+            "dest": "SCVM",
+            "raw": "SBBR 10/03/26 19:00Z → SCVM"
+          }
+        ],
+        "obs": "",
+        "primeira_etd": "2026-03-10"
+      }
+    ],
+    "tripulantes": [
+      {
+        "funcao": "IN",
+        "posto": "TC",
+        "nome": "VERAS"
+      },
+      {
+        "funcao": "IN",
+        "posto": "MJ",
+        "nome": "OSVALDO"
+      },
+      {
+        "funcao": "MC",
+        "posto": "2S",
+        "nome": "ANDRÉ PEDRO"
+      },
+      {
+        "funcao": "IN",
+        "posto": "1S",
+        "nome": "PRATTI"
+      },
+      {
+        "funcao": "CM",
+        "posto": "1S",
+        "nome": "AIMORÉ"
+      },
+      {
+        "funcao": "IN",
+        "posto": "MJ",
+        "nome": "DA SILVA"
+      },
+      {
+        "funcao": "IN",
+        "posto": "CP",
+        "nome": "SAMPAIO"
+      },
+      {
+        "funcao": "IN",
+        "posto": "2S",
+        "nome": "DA COSTA"
+      },
+      {
+        "funcao": "OC",
+        "posto": "2S",
+        "nome": "ÁVILA"
+      },
+      {
+        "funcao": "IN",
+        "posto": "2S",
+        "nome": "JARDEL"
+      },
+      {
+        "funcao": "IN",
+        "posto": "MJ",
+        "nome": "MACHADO"
+      },
+      {
+        "funcao": "1P",
+        "posto": "CP",
+        "nome": "THIAGO VASCONCELOS"
+      },
+      {
+        "funcao": "IN",
+        "posto": "CP",
+        "nome": "PEDRO CIRIACO"
+      },
+      {
+        "funcao": "IN",
+        "posto": "CP",
+        "nome": "J. OLIVEIRA"
+      },
+      {
+        "funcao": "IN",
+        "posto": "SO",
+        "nome": "CIROMAR"
+      },
+      {
+        "funcao": "IN",
+        "posto": "1S",
+        "nome": "DANIEL"
+      },
+      {
+        "funcao": "IN",
+        "posto": "2S",
+        "nome": "ANDRESSA"
+      },
+      {
+        "funcao": "IN",
+        "posto": "2S",
+        "nome": "AGOSTINI"
+      },
+      {
+        "funcao": "IN",
+        "posto": "MJ",
+        "nome": "FARIAS"
+      },
+      {
+        "funcao": "IN",
+        "posto": "MJ",
+        "nome": "SAMIR"
+      },
+      {
+        "funcao": "IN",
+        "posto": "CP",
+        "nome": "CAMPOS"
+      },
+      {
+        "funcao": "IN",
+        "posto": "CP",
+        "nome": "GABRIEL TODESCO"
+      },
+      {
+        "funcao": "IN",
+        "posto": "SO",
+        "nome": "VINÍCIUS"
+      },
+      {
+        "funcao": "IN",
+        "posto": "2S",
+        "nome": "ALCANTARA"
+      },
+      {
+        "funcao": "OC",
+        "posto": "2S",
+        "nome": "NOGUEIRA"
+      },
+      {
+        "funcao": "IN",
+        "posto": "2S",
+        "nome": "NEVES"
+      },
+      {
+        "funcao": "IN",
+        "posto": "2S",
+        "nome": "LUCAS SOUZA"
+      }
+    ],
+    "pernas": [
+      "OM 98 (VC-1 FAB 2101):",
+      "  SBBR 10/03/26 12:00Z → SBBR",
+      "OM 99 (VC-2 FAB 2590):",
+      "  SBBR 10/03/26 13:00Z → SBBR",
+      "OM 100 (VC-1 FAB 2101):",
+      "  SBBR 10/03/26 19:00Z → SCVM",
+      "  SCVM 11/03/26 16:50Z → SBBR",
+      "OM 101 (VC-2 FAB 2590):",
+      "  SBBR 10/03/26 19:00Z → SCVM"
+    ],
+    "anv": "VC-1 2101, VC-2 2590, VC-1 2101, VC-2 2590",
+    "obs": "",
+    "raw": "4 OMs futuras parseadas"
+  },
+  "gerado_em": "2026-03-09T16:44:26.479276"
+}
