@@ -182,8 +182,11 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
   .header-logo-group>div:nth-child(2){flex-shrink:1!important;min-width:0!important}
   .header-logo-group>div:nth-child(2)>div:first-child{font-size:1rem!important}
   .header-logo-group>div:nth-child(2)>div:last-child{font-size:.5rem!important;white-space:nowrap!important}
-  /* Relógio e TELA CHEIA: ocultos no mobile (ficam no header-right inline) */
-  .header-right{display:none!important}
+  /* No mobile: mostra só o status dot, esconde relógio e botão TELA CHEIA */
+  .header-right{display:flex!important;gap:4px!important;align-items:center!important;padding:0!important;width:auto!important;justify-content:flex-end!important;position:absolute;top:6px;right:10px}
+  .header-right .clock{display:none!important}
+  .header-right #lastUpdate{display:none!important}
+  .header-right .ctrl-btn{display:none!important}
   .hamburger-btn{display:block!important;background:var(--bg3);color:var(--vc1);border:1px solid var(--vc1);padding:8px 16px;cursor:pointer;font-family:inherit;font-size:.9rem;border-radius:6px;width:100%;text-align:center;font-weight:700}
   #kpi-box{display:flex!important;gap:12px!important;margin-left:0!important;width:100%!important;flex:0 0 100%!important;justify-content:center!important;margin-top:4px!important}
   #kpi-box>div>div:first-child{font-size:1.1rem!important}
