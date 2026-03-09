@@ -173,29 +173,23 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 
 @media(max-width:768px){
   .desktop-only{display:none!important}
-  header{flex-direction:row!important;flex-wrap:wrap;padding:6px 10px;gap:6px;align-items:flex-start!important}
-  /* Linha topo: logo+kpi ocupa toda a largura */
-  .header-top-row{width:100%!important;flex-wrap:wrap!important;gap:6px!important;justify-content:flex-start!important}
-  .header-logo-group{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:6px!important;width:100%!important}
-  .header-logo-group>div:first-child{width:36px!important;height:36px!important;flex-shrink:0!important}
-  .header-logo-group>div:first-child img{width:40px!important;height:40px!important}
-  .header-logo-group>div:nth-child(2){flex-shrink:1!important;min-width:0!important}
-  .header-logo-group>div:nth-child(2)>div:first-child{font-size:1rem!important}
-  .header-logo-group>div:nth-child(2)>div:last-child{font-size:.5rem!important;white-space:nowrap!important}
-  /* No mobile: só o status dot visível, relógio e botão somem */
-  .header-right{display:flex!important;gap:4px!important;align-items:center!important;padding:0!important;width:auto!important;flex-shrink:0}
+  header{flex-wrap:wrap;padding:6px 10px;gap:6px}
+  header>div:first-child{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:6px!important;max-width:100%!important;width:100%!important}
+  header>div:first-child>div:first-child{width:36px!important;height:36px!important;flex-shrink:0!important}
+  header>div:first-child>div:first-child svg,header>div:first-child>div:first-child img{width:40px!important;height:40px!important}
+  header>div:first-child>div:nth-child(2){flex-shrink:1!important;min-width:0!important;flex-direction:column!important;align-items:flex-start!important;gap:0!important}
+  header>div:first-child>div:nth-child(2)>div:first-child{font-size:1rem!important}
+  header>div:first-child>div:nth-child(2)>div:last-child{font-size:.5rem!important;white-space:nowrap!important;letter-spacing:0!important}
+  #kpi-box{display:flex!important;width:100%!important;flex:0 0 100%!important;justify-content:center!important;margin-top:4px!important}
+  .header-right{width:100%!important;display:flex!important;justify-content:center!important;gap:6px!important;order:5;padding-top:2px}
   .header-right .clock{display:none!important}
-  .header-right #lastUpdate{display:none!important}
-  .header-right .ctrl-btn{display:none!important}
-  /* header-top-row no mobile: logo à esquerda, status dot à direita */
-  .header-top-row{justify-content:space-between!important;align-items:center!important}
-  .hamburger-btn{display:block!important;background:var(--bg3);color:var(--vc1);border:1px solid var(--vc1);padding:8px 16px;cursor:pointer;font-family:inherit;font-size:.9rem;border-radius:6px;width:100%;text-align:center;font-weight:700}
-  #kpi-box{display:flex!important;gap:12px!important;margin-left:0!important;width:100%!important;flex:0 0 100%!important;justify-content:center!important;margin-top:4px!important}
+  #kpi-box{gap:12px!important;margin-left:0!important;width:100%}
   #kpi-box>div>div:first-child{font-size:1.1rem!important}
   .ctrl-btn{display:none}
-  .nav-btns{width:100%;justify-content:center;flex-wrap:wrap;gap:4px;display:none;background:var(--bg2);padding:8px;border-radius:8px;border:1px solid var(--border);margin-top:0!important}
+  .nav-btns{width:100%;justify-content:center;flex-wrap:wrap;gap:4px;display:none;background:var(--bg2);padding:8px;border-radius:8px;border:1px solid var(--border)}
   .nav-btns.open{display:flex}
   .nav-btns button{padding:8px 12px;font-size:.78rem;width:calc(50% - 4px)}
+  .hamburger-btn{display:block!important;background:var(--bg3);color:var(--vc1);border:1px solid var(--vc1);padding:8px 16px;cursor:pointer;font-family:inherit;font-size:.9rem;border-radius:6px;width:100%;text-align:center;order:10;margin-top:4px;font-weight:700}
 
   body{overflow-y:scroll!important;height:auto!important;min-height:100dvh;-webkit-overflow-scrolling:touch}
   header{position:sticky;top:0;z-index:100;background:var(--bg2)}
@@ -336,39 +330,23 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 </style>
 </head>
 <body>
-<header style="flex-direction:column;align-items:stretch;padding:6px 20px 4px">
-  <!-- Linha 1: logo + relógio/controles -->
-  <div class="header-top-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-    <!-- Esquerda: logo + nome + KPIs -->
-    <div class="header-logo-group" style="display:flex;align-items:center;gap:12px">
-      <div style="width:44px;height:44px;background:rgba(0,212,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <img src="logo-sisgop-transp.png" alt="SisGOPA" style="width:56px;height:56px;border-radius:10px;object-fit:cover">
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
-        <div style="font-size:1.2rem;font-weight:900;letter-spacing:1px">SisGOPA</div>
-        <div style="font-size:.5rem;letter-spacing:1.5px;color:var(--vc1);text-transform:uppercase;white-space:nowrap">Gestão de Operações Aéreas</div>
-      </div>
-      <div id="kpi-box" style="display:flex;gap:24px;margin-left:24px">
-        <div style="text-align:center"><div id="kpi-trip" style="font-size:1.5rem;font-weight:900;color:var(--vc1)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Tripulantes</div></div>
-        <div style="text-align:center"><div id="kpi-aptos" style="font-size:1.5rem;font-weight:900;color:var(--green)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Disponíveis</div></div>
-        <div style="text-align:center"><div id="kpi-miss" style="font-size:1.5rem;font-weight:900;color:var(--vc2)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Missões Cumpridas</div></div>
-      </div>
+<header>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="width:44px;height:44px;background:rgba(0,212,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="logo-sisgop-transp.png" alt="SisGOPA" style="width:56px;height:56px;border-radius:10px;object-fit:cover">
     </div>
-    <!-- Direita: relógio + status + tela cheia -->
-    <div class="header-right">
-      <span class="clock" id="clock"></span>
-      <span style="position:relative;display:inline-flex;align-items:center">
-        <span class="status-dot" id="statusDot" onclick="document.getElementById('statusPanel').classList.toggle('open')"></span>
-        <div class="status-panel" id="statusPanel"></div>
-      </span>
-      <span id="lastUpdate" style="color:var(--text2);font-size:.75rem"></span>
-      <button class="ctrl-btn" onclick="goFullscreen()">TELA CHEIA</button>
+    <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
+      <div style="font-size:1.2rem;font-weight:900;letter-spacing:1px">SisGOPA</div>
+      <div style="font-size:.5rem;letter-spacing:1.5px;color:var(--vc1);text-transform:uppercase;white-space:nowrap">Gestão de Operações Aéreas</div>
     </div>
-    <!-- Hamburger (mobile) -->
-    <button class="hamburger-btn" id="hamburgerBtn" onclick="document.querySelector('.nav-btns').classList.toggle('open');this.textContent=document.querySelector('.nav-btns').classList.contains('open')?'✕ FECHAR MENU':'☰ MENU'">☰ MENU</button>
+    <div id="kpi-box" style="display:flex;gap:24px;margin-left:24px">
+      <div style="text-align:center"><div id="kpi-trip" style="font-size:1.5rem;font-weight:900;color:var(--vc1)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Tripulantes</div></div>
+      <div style="text-align:center"><div id="kpi-aptos" style="font-size:1.5rem;font-weight:900;color:var(--green)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Disponíveis</div></div>
+      <div style="text-align:center"><div id="kpi-miss" style="font-size:1.5rem;font-weight:900;color:var(--vc2)">--</div><div style="font-size:.55rem;letter-spacing:2px;color:var(--text2);text-transform:uppercase">Missões Cumpridas</div></div>
+    </div>
   </div>
-  <!-- Linha 2: nav buttons -->
-  <div class="nav-btns" style="margin-top:4px">
+  <button class="hamburger-btn" id="hamburgerBtn" onclick="document.querySelector('.nav-btns').classList.toggle('open');this.textContent=document.querySelector('.nav-btns').classList.contains('open')?'✕ FECHAR MENU':'☰ MENU'">☰ MENU</button>
+  <div class="nav-btns">
     <button onclick="goScreen(0)" id="btn0">DASHBOARD</button>
     <button onclick="goScreen(1)" id="btn1">DISPONIBILIDADE</button>
     <button onclick="goScreen(2)" id="btn2">HORAS DE VOO</button>
@@ -382,6 +360,15 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <button onclick="goScreen(7)" id="btn7">🔍 BUSCA</button>
     <button onclick="goScreen(12)" id="btn12" style="color:var(--red)">REPORTAR</button>
     <button onclick="goScreen(9)" id="btn9" class="desktop-only">📺 TV</button>
+  </div>
+  <div class="header-right">
+    <span class="clock" id="clock"></span>
+    <span style="position:relative;display:inline-flex;align-items:center">
+      <span class="status-dot" id="statusDot" onclick="document.getElementById('statusPanel').classList.toggle('open')"></span>
+      <div class="status-panel" id="statusPanel"></div>
+    </span>
+    <span id="lastUpdate" style="color:var(--text2);font-size:.75rem"></span>
+    <button class="ctrl-btn" onclick="goFullscreen()">TELA CHEIA</button>
   </div>
 </header>
 
