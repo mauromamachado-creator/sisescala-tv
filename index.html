@@ -2809,7 +2809,13 @@ function openDiariaForm(omId){
   const dateStr=parseOMDate(om.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
 
   let tripRows='';
-  om.tripulacao.forEach((t,i)=>{
+  om.tripulacao.forEach((raw,i)=>{
+    // Normaliza: suporta string "TC VERAS (VRS / 529.456)" ou objeto {posto,nome,trigrama,funcao}
+    let t=raw;
+    if(typeof raw==='string'){
+      const m=raw.match(/^(\S+)\s+(.+?)\s*\((\w+)\s*\/\s*[\d.]+\)\s*$/);
+      t=m?{posto:m[1],nome:m[2].trim(),trigrama:m[3],funcao:''}:{posto:'',nome:raw,trigrama:'',funcao:''};
+    }
     let funcao=t.funcao||'';
     if(!funcao){
       let ct=null;
