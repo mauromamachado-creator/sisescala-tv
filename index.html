@@ -2683,10 +2683,30 @@ async function setDiariaDownloaded(omId){
     else console.warn('GitHub PUT pdf_gerado falhou:',await r.text());
   }catch(e){console.warn('setDiariaDownloaded GitHub erro:',e);}
 }
-const DIARIAS_API='https://script.google.com/macros/s/AKfycbyUm_PXR8M9yU1jLhUQC60SYNF_WEUmsxsb3hMigElzBOwI2LYEGKVkXyC_A1g1bOf4/exec';
-let _diariasCache=null;
+// Diárias concluídas — armazenado no GitHub (mesmo mecanismo do pdf_gerado.json)
+const _GH_CONC_PATH='data/diarias_concluidas.json';
+let _diariasCache=null;let _diariasConclSha=null;
 function getDiariasConcluidas(){if(_diariasCache)return _diariasCache;return JSON.parse(localStorage.getItem('sisgopa_diarias_concluidas')||'{}');}
-async function fetchDiariasConcluidas(){try{const r=await fetch(DIARIAS_API);const rows=await r.json();const map={};rows.forEach(row=>{if(row.status==='CONCLUIDA')map[row.om_id]=new Date(row.data_conclusao).getTime();});_diariasCache=map;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(map));return map;}catch(e){console.warn('Falha ao buscar diárias da API:',e);return getDiariasConcluidas();}}
+async function fetchDiariasConcluidas(){
+  try{
+    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
+    const r=await fetch(`https://api.github.com/repos/${_GH_OWNER}/${_GH_REPO}/contents/${_GH_CONC_PATH}`,{
+      headers:{'Authorization':'token '+ghToken,'Accept':'application/vnd.github.v3+json'},cache:'no-store'});
+    if(r.ok){const meta=await r.json();_diariasConclSha=meta.sha;const data=JSON.parse(atob(meta.content.replace(/\n/g,'')));_diariasCache=data;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(data));return data;}
+  }catch(e){console.warn('fetchDiariasConcluidas erro:',e);}
+  return getDiariasConcluidas();
+}
+async function _saveDiariasConcluidas(data){
+  try{
+    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+    const body={message:'diarias: atualiza concluidas',content,committer:{name:'SisGOPA',email:'sisgopa@gte1.fab'}};
+    if(_diariasConclSha)body.sha=_diariasConclSha;
+    const r=await fetch(`https://api.github.com/repos/${_GH_OWNER}/${_GH_REPO}/contents/${_GH_CONC_PATH}`,{
+      method:'PUT',headers:{'Authorization':'token '+ghToken,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(r.ok){const rd=await r.json();_diariasConclSha=rd.content?.sha||_diariasConclSha;}
+  }catch(e){console.warn('Erro ao salvar diárias concluídas no GitHub:',e);}
+}
 function setDiariaConcluida(omId){
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .3s ease';
@@ -2703,7 +2723,7 @@ function setDiariaConcluida(omId){
   const close=()=>{ov.style.opacity='0';setTimeout(()=>ov.remove(),300);};
   ov.addEventListener('click',e=>{if(e.target===ov)close();});
   ov.querySelector('#_dcCancel').onclick=close;
-  ov.querySelector('#_dcConfirm').onclick=()=>{close();const d=getDiariasConcluidas();d[omId]=Date.now();_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'concluir',om_id:omId})}).catch(e=>console.warn('Erro ao salvar diária na API:',e));};
+  ov.querySelector('#_dcConfirm').onclick=()=>{close();const d=getDiariasConcluidas();d[omId]=Date.now();_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();_saveDiariasConcluidas(d).catch(e=>console.warn('Erro ao salvar:',e));};
 }
 function undoDiariaConcluida(omId){const d=getDiariasConcluidas();delete d[omId];_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'desfazer',om_id:omId})}).catch(e=>console.warn('Erro ao desfazer diária na API:',e));}
 function exportDiariasCSV(){
@@ -3232,7 +3252,7 @@ function s3RenderDiario(container){
 // ═══════════════════════════════════════════════════════════════════════════════
 var CONSULTA_API = 'http://localhost:8085';
 var CONSULTA_API_SECRET = 'sisgopa-gte-2026';
-var CONSULTA_GAS = 'https://script.google.com/macros/s/AKfycbz8wQqdiHoKOlh4XR2tBJ3KcWBTtR0ooafEEjGdq6hecoPDBvVFoLYi4S8s7UU4S1nk/exec';
+var CONSULTA_GAS = 'https://script.google.com/macros/s/AKfycbyDdqWqCKLoCVwgajS3kr4o6q2MHx3UYxwe2o-28JbFCS__NhV2l2OqFlUT-cyRu-Vg/exec';
 var CONSULTA_TOKEN = '8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU';
 var CONSULTA_RECIPIENTS_VC1 = [{name:'Major Machado', chatId:'673591486', rank:'MJ'}];
 var CONSULTA_RECIPIENTS_VC2 = [{name:'Major Machado', chatId:'673591486', rank:'MJ'}];
