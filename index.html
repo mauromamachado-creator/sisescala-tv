@@ -3238,74 +3238,72 @@ function parseConsultaMessageJS(text){
 // O refresh só acontece quando o usuário navega entre abas ou faz uma ação
 
 function s3RenderEscalaV2(container){
-  // Lê respostas do bot (@SISGOP_BOT) publicadas no GitHub
+  // Lê respostas do bot (@SISGOP_BOT) via GitHub raw + texto da consulta da planilha
   container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando respostas...</div>';
-  var url='https://raw.githubusercontent.com/mauromamachado-creator/sisescala-tv/main/data/respostas_pub.json?t='+Date.now();
-  fetch(url,{cache:'no-store'}).then(function(r){return r.json();}).then(function(pub){
-    function renderVC(vcKey,colorVar,vcLabel){
+  var RESP_URL='https://raw.githubusercontent.com/mauromamachado-creator/sisescala-tv/main/data/respostas_pub.json';
+  Promise.all([
+    fetch(RESP_URL+'?t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(10000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetchCSVByName('Consulta VC-1').catch(function(){return[];}),
+    fetchCSVByName('Consulta VC-2').catch(function(){return[];})
+  ]).then(function(results){
+    var pub=results[0]||{};
+    var textoVC1=(results[1][0]&&results[1][0][0])||'';
+    var textoVC2=(results[2][0]&&results[2][0][0])||'';
+
+    function renderVC(vcKey,colorVar,textoPlnilha){
       var c=pub[vcKey];
-      var html='<div style="margin-bottom:24px">';
-      html+='<h3 style="color:var('+colorVar+');border-bottom:2px solid var('+colorVar+');padding-bottom:6px">'+(vcKey==='vc1'?'🔵':'🟢')+' '+vcLabel+'</h3>';
-      if(!c){html+='<div style="color:var(--text2);padding:10px">Nenhuma consulta ativa.</div></div>';return html;}
-      // Texto da consulta
-      if(c.text) html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:12px;font-size:.8rem;white-space:pre-wrap;max-height:150px;overflow-y:auto">'+c.text.replace(/</g,'&lt;')+'</div>';
+      var texto=c&&c.text?c.text:textoPlnilha;
+      var html='';
+      if(texto) html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.5;max-height:160px;overflow-y:auto">'+texto.replace(/</g,'&lt;')+'</div>';
+      if(!c){html+='<div style="color:var(--text2);padding:10px">Nenhuma consulta ativa no bot.</div>';return html;}
       var missions=c.missions||[];
       var recipients=c.recipients||[];
-      var responded=recipients.filter(function(r){return r.confirmed;}).length;
+      var confirmed=recipients.filter(function(r){return r.confirmed;}).length;
       html+='<div style="display:flex;gap:16px;margin-bottom:10px;font-size:.82rem">';
       html+='<span>👥 '+recipients.length+' tripulantes</span>';
-      html+='<span style="color:var(--green)">✅ '+responded+' confirmaram</span>';
-      html+='<span style="color:var(--yellow)">⏳ '+(recipients.length-responded)+' pendentes</span></div>';
-      if(!missions.length){html+='<div style="color:var(--text2);padding:10px">Sem missões definidas.</div></div>';return html;}
-      // Matriz
+      html+='<span style="color:var(--green)">✅ '+confirmed+' confirmaram</span>';
+      html+='<span style="color:var(--yellow)">⏳ '+(recipients.length-confirmed)+' pendentes</span>';
+      if(c.locked) html+='<span style="color:var(--red)">🔒 Encerrada</span>';
+      html+='</div>';
+      if(!missions.length||!recipients.length){html+='<div style="color:var(--text2);padding:8px">Sem respostas ainda.</div>';return html;}
       html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">';
       html+='<thead><tr style="border-bottom:2px solid var(--border)">';
       html+='<th style="text-align:left;padding:8px 6px;color:var(--text2)">Tripulante</th>';
-      missions.forEach(function(m){html+='<th style="text-align:center;padding:8px 4px;color:var('+colorVar+');font-weight:900">'+m+'</th>';});
-      html+='<th style="text-align:center;padding:8px 6px;color:var(--text2)">Status</th></tr></thead><tbody>';
+      missions.forEach(function(m){html+='<th style="text-align:center;padding:8px 6px;color:var('+colorVar+');font-weight:900">'+m+'</th>';});
+      html+='<th style="text-align:center;padding:8px 6px;color:var(--text2)">Status</th>';
+      html+='</tr></thead><tbody>';
       recipients.forEach(function(r){
         html+='<tr style="border-bottom:1px solid rgba(255,255,255,.05)">';
-        html+='<td style="padding:6px;font-weight:700">'+r.name+'</td>';
+        html+='<td style="padding:6px;font-weight:700">'+(r.name||'')+'</td>';
         missions.forEach(function(m){
-          var v=r.responses&&r.responses[m];
-          var bg='rgba(255,200,50,.06)',color='var(--yellow)',disp='⏳';
-          if(v>=1){bg='rgba(0,255,136,.15)';color='var(--green)';disp=v+'º';}
+          var v=r.responses?r.responses[m]:undefined;
+          var bg,color,disp;
+          if(v===undefined||v===null){bg='rgba(255,200,50,.06)';color='var(--yellow)';disp='⏳';}
           else if(v===0||v===false){bg='rgba(255,80,80,.1)';color='var(--red)';disp='❌';}
-          else if(v===null){disp='-';}
+          else{bg='rgba(0,255,136,.15)';color='var(--green)';disp=(typeof v==='number'&&v>0)?v+'º':'✅';}
           html+='<td style="text-align:center;padding:6px;background:'+bg+';color:'+color+';font-weight:900;border-radius:4px">'+disp+'</td>';
         });
-        var status=r.confirmed?'<span style="color:var(--green)">✅ Confirmado</span>':'<span style="color:var(--yellow)">⏳ Aguardando</span>';
-        html+='<td style="text-align:center;padding:6px">'+status+'</td>';
+        if(r.confirmed) html+='<td style="text-align:center;padding:6px;color:var(--green)">✅ Confirmado</td>';
+        else html+='<td style="text-align:center;padding:6px;color:var(--yellow)">⏳ Aguardando</td>';
         html+='</tr>';
       });
-      html+='</tbody></table></div></div>';
+      html+='</tbody></table></div>';
       return html;
     }
-    var html='<div style="display:flex;gap:8px;margin-bottom:12px;font-size:.75rem;color:var(--text2);align-items:center">';
-    html+='<span>🔄 Atualizado: '+(pub.updated||'').substring(11,16)+'</span>';
+
+    var upd=pub.updated?'<span style="color:var(--text2)"> · atualizado '+pub.updated.substring(11,16)+'</span>':'';
+    var html='<div style="display:flex;gap:8px;margin-bottom:16px;font-size:.75rem;color:var(--text2);align-items:center">';
+    html+='<span>🤖 Respostas via @SISGOP_BOT'+upd+'</span>';
     html+='<button onclick="s3RenderEscalaV2(document.getElementById(\'s3Content\'))" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:.72rem">↻ Atualizar</button>';
     html+='</div>';
-    html+=renderVC('vc1','--vc1','VC-1');
-    html+=renderVC('vc2','--vc2','VC-2');
+    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc1);border-bottom:2px solid var(--vc1);padding-bottom:6px">🔵 VC-1</h3>'+renderVC('vc1','--vc1',textoVC1)+'</div>';
+    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc2);border-bottom:2px solid var(--vc2);padding-bottom:6px">🟢 VC-2</h3>'+renderVC('vc2','--vc2',textoVC2)+'</div>';
     container.innerHTML=html;
   }).catch(function(e){
-    container.innerHTML='<div style="color:var(--red);padding:20px">❌ Erro ao carregar: '+e.message+'<br><small>Verifique se o bot respondeu alguma consulta recentemente.</small></div>';
+    container.innerHTML='<div style="color:var(--red);padding:20px">❌ Erro: '+e.message+'</div>';
   });
 }
 
-
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// CONSULTA — Interface principal do SisGOPA
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// ─── Estado global das missões da consulta ──────────────────────────────────
-var consultaMissoes=[{tipo:'batepronto',trecho:'',dataDia:'',horario:'',descricao:'',obs:'',savisoDia:'SAB'}];
-var consultaVC='vc1';
-var consultaDias='';
-var consultaMes='';
-var consultaAno='2025';
-var consultaPrazo='sem';
 var _consultaDebounce=null;
 
 // Meses em português
