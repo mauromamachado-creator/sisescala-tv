@@ -3370,33 +3370,25 @@ function s3RenderEscalaV2(container){
   var RAIO_VC1=BASE+'data/raio_vc1.json';
   var RAIO_VC2=BASE+'data/raio_vc2.json';
   var fetchJSON=function(url){return fetch(url+'?t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(10000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});};
-  var fetchGas=function(vc){
-    return fetch(CONSULTA_GAS+'?action=get&vc='+encodeURIComponent(vc)+'&t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(10000)})
-      .then(function(r){return r.ok?r.json():null;})
-      .catch(function(){return null;});
-  };
   Promise.all([
-    fetchGas('VC-1'),
-    fetchGas('VC-2'),
+    fetch(CONSULTA_GAS+'?action=get&t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(10000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
     fetchCSVByName('Consulta VC-1').catch(function(){return[];}),
     fetchCSVByName('Consulta VC-2').catch(function(){return[];}),
     fetchJSON(RAIO_VC1),
     fetchJSON(RAIO_VC2)
   ]).then(function(results){
-    var gas1=results[0]||{};
-    var gas2=results[1]||{};
-    var textoVC1=(results[2][0]&&results[2][0][0])||'';
-    var textoVC2=(results[3][0]&&results[3][0][0])||'';
-    var raioVC1=results[4];
-    var raioVC2=results[5];
+    var gasAll=results[0]||{};
+    var textoVC1=(results[1][0]&&results[1][0][0])||'';
+    var textoVC2=(results[2][0]&&results[2][0][0])||'';
+    var raioVC1=results[3];
+    var raioVC2=results[4];
 
-    function gasToConsulta(gas){
+    function gasToConsulta(rows){
       try{
-        var vals=(gas&&gas.data)||[];
-        if(!Array.isArray(vals)||vals.length<2) return null;
+        if(!Array.isArray(rows)||rows.length<2) return null;
         var recs=[];
-        for(var i=1;i<vals.length;i++){
-          var row=vals[i]||[];
+        for(var i=1;i<rows.length;i++){
+          var row=rows[i]||[];
           var nome=row[1]||'';
           if(!nome) continue;
           var respTxt=row[2]||'{}';
@@ -3410,7 +3402,7 @@ function s3RenderEscalaV2(container){
       }catch(e){return null;}
     }
 
-    var pub={vc1:gasToConsulta(gas1),vc2:gasToConsulta(gas2)};
+    var pub={vc1:gasToConsulta(gasAll.vc1||[]),vc2:gasToConsulta(gasAll.vc2||[])};
 
     function renderVC(vcKey,colorVar,textoPlnilha,raio){
       var c=pub[vcKey];
