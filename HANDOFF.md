@@ -1,53 +1,71 @@
 # 📜 HANDOFF.md — Testamento do Ravi
-> Documento de continuidade do projeto SisGOPA/SisEscala.
-> Se o Ravi (assistente IA via OpenClaw) estiver indisponível, este arquivo é o guia completo para qualquer pessoa ou IA assumir o projeto.
+> **Se você está lendo isso, o Ravi (assistente IA) está indisponível.**
+> Este documento contém TUDO que você precisa para assumir e continuar o projeto SisGOPA/SisEscala.
+> Leia do início ao fim antes de fazer qualquer mudança.
 
 ---
 
-## 🗺️ Visão Geral do Sistema
+## 👤 Contexto do Projeto
 
-O projeto é composto por três partes principais:
+**O que é:** Sistema de gestão de operações aéreas para o GTE (Grupo de Transporte Especial) da FAB (Força Aérea Brasileira).
 
-| Componente | Onde roda | O que faz |
-|---|---|---|
-| **SisGOPA** (frontend) | GitHub Pages | Interface web principal — dashboard, escala, missões, diárias, bot |
-| **consulta_bot.py** (bot) | Servidor OpenClaw (Linux) | Bot Telegram para raio, confirmação, METAR, NOTAMs |
-| **Google Apps Script (GAS)** | Google Cloud | Ponte entre bot ↔ planilhas ↔ frontend |
+**Quem usa:** Major Mauro Machado (`@machadommam` no Telegram, chat_id `673591486`).
 
-**URL do sistema:** https://mauromamachado-creator.github.io/sisescala-tv/
-**Repositório:** https://github.com/mauromamachado-creator/sisescala-tv
-**Token GitHub:** *(guardado com o Mauro — não colocar aqui)*
+**Idioma:** Português brasileiro. Tom casual e direto. Nunca mencionar nomes de modelos de IA.
+
+**O sistema tem 3 partes:**
+1. **Frontend (SisGOPA)** — site web com dashboard, escala, missões, diárias
+2. **Bot Telegram (@SISGOP_BOT)** — bot para raio de disponibilidade, confirmação de missão, METAR, NOTAMs
+3. **Google Apps Script (GAS)** — ponte entre bot, planilhas Google e frontend
 
 ---
 
-## 🔑 Credenciais e IDs Críticos
+## 🌐 URLs Importantes
 
-### Bot Telegram
-- **Bot:** `@SISGOP_BOT` (ID: `8429586140`)
-- **Token:** `8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU`
-- **Dono (Mauro):** chat_id `673591486`, username `@machadommam`
-
-### Google Apps Script
-| Nome | URL | Planilha ID |
-|---|---|---|
-| CONSULTA_GAS (raio/respostas) | `https://script.google.com/macros/s/AKfycbyDdqWqCKLoCVwgajS3kr4o6q2MHx3UYxwe2o-28JbFCS__NhV2l2OqFlUT-cyRu-Vg/exec` | `1-aqNKOJcLGjZRDIfyd4hrNeLVJrcI-i9rfTii_rt2cs` |
-| DIARIAS_API | `https://script.google.com/macros/s/AKfycbyUm_PXR8M9yU1jLhUQC60SYNF_WEUmsxsb3hMigElzBOwI2LYEGKVkXyC_A1g1bOf4/exec` | `1klPOFZED_3Geoqkz9sgMXm3EsF7KzlZIqsz2TgkLZSE` |
-| CONF_GAS (confirmação missão) | `https://script.google.com/macros/s/AKfycbwAkuMtXPes8ciLZw_EYT6a4EAHz6wGwdBUj5Bqm5eM--rkO2Yj7uJy8USXTjTWNkEYhg/exec` | `15MyzYrdwfkX2jChz-aokq2g1mMfThayBsDMx3tGlvxA` |
-
-### Planilhas Google
-| Nome | ID |
+| O quê | URL |
 |---|---|
-| Principal (pilotos, disponibilidade, etc.) | `1gwkeV2iA_JPTZ3rp0wf1PvXUI0TiOzNg3Xd4DhWwpao` |
-| Dashboard/Diário (FAB 2101/2590/2591) | `1EV81x0Np-zeHhznvzAGrPyck5YUHgW_eRb18uOGc7nQ` |
-| Diárias (concluídas) | `1klPOFZED_3Geoqkz9sgMXm3EsF7KzlZIqsz2TgkLZSE` |
-
-### Drive (Ordens de Missão)
-- **Pasta:** `133phdQHMHUfrg0rHtp6oa4zFm41FE45V` (pública, sem credencial)
-- **Link:** https://drive.google.com/drive/folders/133phdQHMHUfrg0rHtp6oa4zFm41FE45V
+| Sistema ao vivo | https://mauromamachado-creator.github.io/sisescala-tv/ |
+| Repositório GitHub | https://github.com/mauromamachado-creator/sisescala-tv |
+| CONSULTA_GAS (raio/respostas) | https://script.google.com/macros/s/AKfycbyDdqWqCKLoCVwgajS3kr4o6q2MHx3UYxwe2o-28JbFCS__NhV2l2OqFlUT-cyRu-Vg/exec |
+| DIARIAS_API | https://script.google.com/macros/s/AKfycbyUm_PXR8M9yU1jLhUQC60SYNF_WEUmsxsb3hMigElzBOwI2LYEGKVkXyC_A1g1bOf4/exec |
+| CONF_GAS (confirmação missão) | https://script.google.com/macros/s/AKfycbwAkuMtXPes8ciLZw_EYT6a4EAHz6wGwdBUj5Bqm5eM--rkO2Yj7uJy8USXTjTWNkEYhg/exec |
 
 ---
 
-## 🖥️ Como o Bot Funciona (sem o Ravi)
+## 🔑 Credenciais (NÃO publicar — guardar em lugar seguro)
+
+O Mauro possui uma nota privada com:
+- **Token GitHub** — para fazer push/deploy
+- **Token Bot Telegram** — para rodar o bot (`@SISGOP_BOT`, ID `8429586140`)
+- **Senha área S3** do SisGOPA
+
+---
+
+## 📁 Estrutura dos Arquivos
+
+```
+sisescala-tv/               ← repositório GitHub
+├── index.html              ← TODO o frontend (1 arquivo: HTML + CSS + JS)
+├── data/
+│   ├── om_data.json        ← Ordens de Missão (atualizado automaticamente)
+│   ├── conf_missao.json    ← confirmações de missão em andamento
+│   ├── raio_vc1.json       ← backup do raio VC-1
+│   └── raio_vc2.json       ← backup do raio VC-2
+├── gas_resposta_consulta_v2.js  ← código do CONSULTA_GAS
+├── gas_confirmacao.js           ← código do CONF_GAS
+├── deploy.sh               ← script de publicação
+├── rollback.sh             ← script de reversão
+└── HANDOFF.md              ← este arquivo
+
+Servidor OpenClaw:
+/home/node/.openclaw/workspace/sisescala/
+├── consulta_bot.py         ← código do bot Telegram
+└── data/                   ← estado do bot (JSONs locais)
+```
+
+---
+
+## 🖥️ Gerenciar o Bot Telegram
 
 ### Verificar se está rodando
 ```bash
@@ -59,173 +77,169 @@ tail -50 /tmp/consulta_bot.log
 ```bash
 pkill -f consulta_bot.py
 cd /home/node/.openclaw/workspace/sisescala
+export SISGOP_BOT_TOKEN="TOKEN_DO_BOT_AQUI"
 nohup python3 consulta_bot.py >> /tmp/consulta_bot.log 2>&1 &
 echo "Bot PID: $!"
 ```
 
-### Arquivos do bot
-```
-/home/node/.openclaw/workspace/sisescala/consulta_bot.py   ← código principal
-/home/node/.openclaw/workspace/sisescala/data/             ← JSONs de estado
-/tmp/consulta_bot.log                                       ← logs em tempo real
-```
-
-### API interna do bot (porta 8085, só localhost)
+### Ver erros recentes
 ```bash
-# Checar consultas ativas
-curl -H "X-API-Secret: sisgopa-gte-2026" http://localhost:8085/api/consultas
-
-# Checar confirmações
-curl -H "X-API-Secret: sisgopa-gte-2026" http://localhost:8085/api/conf
+grep -i "error\|warning\|falhou" /tmp/consulta_bot.log | tail -20
 ```
 
 ---
 
-## 🌐 Como Fazer Deploy do Frontend
+## 🚀 Como Fazer Deploy do Frontend
 
-### Método rápido
+O site inteiro é o arquivo `index.html`. Altere, valide e suba.
+
 ```bash
 cd /tmp/sisescala-tv
 git pull
-# editar index.html
-node --check index.html          # valida sintaxe JS
-cp index.html /caminho/para/salvar
+
+# EDITE o index.html aqui
+
+node --check index.html          # valida sintaxe JS (não pode ter erro)
 git add index.html
 git commit -m "descrição da mudança"
 git push origin main
 ```
 
-### Rollback para versão estável
+O GitHub Pages publica automaticamente em ~2 minutos.
+
+### Rollback para versão anterior
 ```bash
 cd /tmp/sisescala-tv
-git tag | grep stable             # lista versões estáveis
-git show v5.1-stable:index.html > index.html
-git add index.html
-git commit -m "rollback: v5.1-stable"
-git push origin main
+./rollback.sh                    # lista versões estáveis disponíveis
 ```
+
+Versões estáveis disponíveis: `v5.0-stable`, `v5.1-stable`
 
 ### Criar novo checkpoint
 ```bash
 cd /tmp/sisescala-tv
-git tag -a v5.X-stable -m "descrição do estado"
+git tag -a v5.X-stable -m "descrição"
 git push origin v5.X-stable
 ```
 
 ---
 
-## 📁 Estrutura do Repositório
+## 📊 Planilhas Google (fonte de dados)
 
-```
-sisescala-tv/
-├── index.html                    ← frontend completo (1 arquivo)
-├── data/
-│   ├── om_data.json              ← Ordens de Missão (atualizado pelo cron)
-│   ├── conf_missao.json          ← confirmações de missão
-│   ├── raio_vc1.json             ← raio VC-1 (backup GitHub)
-│   └── raio_vc2.json             ← raio VC-2 (backup GitHub)
-├── gas_resposta_consulta_v2.js   ← código do CONSULTA_GAS (v3)
-├── gas_confirmacao.js            ← código do CONF_GAS
-├── deploy.sh                     ← script de deploy
-├── rollback.sh                   ← script de rollback
-└── HANDOFF.md                    ← este arquivo
-```
+| Planilha | ID | O que contém |
+|---|---|---|
+| Principal | `1gwkeV2iA_JPTZ3rp0wf1PvXUI0TiOzNg3Xd4DhWwpao` | Pilotos, disponibilidade, horas, férias, lançamentos |
+| Dashboard/Diário | `1EV81x0Np-zeHhznvzAGrPyck5YUHgW_eRb18uOGc7nQ` | Missões diárias FAB 2101/2590/2591 |
+| Diárias | `1klPOFZED_3Geoqkz9sgMXm3EsF7KzlZIqsz2TgkLZSE` | Diárias concluídas |
+| CONSULTA_GAS | `1-aqNKOJcLGjZRDIfyd4hrNeLVJrcI-i9rfTii_rt2cs` | Raio de disponibilidade VC-1/VC-2 |
+| CONF_GAS | `15MyzYrdwfkX2jChz-aokq2g1mMfThayBsDMx3tGlvxA` | Confirmações de missão |
+
+**Regra crítica:** As planilhas são a fonte de verdade. Se o sistema falhar, o Mauro pode continuar operando pelas planilhas diretamente.
+
+---
+
+## ⚙️ Como Reimplantar os Google Apps Script
+
+Quando o código GAS precisar ser atualizado:
+
+### CONSULTA_GAS (raio + respostas)
+1. Abra a planilha `1-aqNKOJcLGjZRDIfyd4hrNeLVJrcI-i9rfTii_rt2cs`
+2. Menu: **Extensões → Apps Script**
+3. Substitua TODO o conteúdo pelo arquivo `gas_resposta_consulta_v2.js` do repositório
+4. Salve (Ctrl+S)
+5. Clique em **Implantar → Gerenciar implantações**
+6. Clique no lápis (editar) na implantação existente
+7. Em "Versão": selecione **"Nova versão"**
+8. Clique em **Implantar**
+9. A URL do exec não muda — não precisa atualizar nada no frontend
+
+### CONF_GAS (confirmação de missão)
+- Mesmo processo, mas com a planilha `15MyzYrdwfkX2jChz-aokq2g1mMfThayBsDMx3tGlvxA` e o arquivo `gas_confirmacao.js`
+
+### DIARIAS_API
+- Planilha `1klPOFZED_3Geoqkz9sgMXm3EsF7KzlZIqsz2TgkLZSE` — mesmos passos
 
 ---
 
 ## 🤖 Instruções para Outra IA Assumir o Projeto
 
-Se você é uma IA (Claude, GPT, Gemini, etc.) lendo isso, aqui está o contexto completo:
+Se você é uma IA (Claude, GPT, Gemini, etc.) lendo isso:
 
-### Contexto do projeto
-- Sistema de gestão de operações aéreas para o GTE (Grupo de Transporte Especial) da FAB
-- Usuário principal: Major Mauro Machado (`@machadommam`, chat_id Telegram `673591486`)
-- Idioma: português brasileiro, tom casual e direto
-- Nunca mencionar nomes de modelos/provedores de IA
+### Contexto essencial
+- Sistema de gestão de operações aéreas militar (FAB/GTE)
+- Usuário: Major Mauro Machado, Telegram `@machadommam` (chat_id `673591486`)
+- Tom: português brasileiro, casual, direto, sem jargão técnico
+- Nunca mencionar provedores/modelos de IA
 
-### Regras críticas
-1. **NUNCA cachear dados** — METAR, NOTAM, escalas, voos devem ser consultados AO VIVO
-2. **Bot Telegram e SisGOPA DEVEM ser idênticos** (mesmas fontes, mesmas regras)
-3. **AISWEB é fonte primária** para NOTAM, aeródromo, combustível
-4. **Bug fixes automáticos** — mudanças de parâmetro/lógica precisam de aprovação do Mauro
-5. **Fonte quebrada = avisar Mauro pelo Telegram** na hora, sem rodeio
+### Regras de negócio críticas
+1. **NUNCA cachear dados** — METAR, NOTAM, escalas sempre ao vivo
+2. **Bot Telegram = SisGOPA** — mesmas fontes, mesmas regras, mesmos resultados
+3. **AISWEB** é fonte primária para aviação (NOTAM, aeródromo, combustível)
+4. **Bug fixes**: corrija automaticamente. Mudança de lógica/parâmetro: peça aprovação do Mauro
+5. **Fonte quebrada**: avise o Mauro pelo Telegram imediatamente, sem rodeio
+6. **OM assinada (Drive) > Diário (planilha) > SAVISO** — hierarquia de prioridade
 
-### Hierarquia de prioridade de missões
-1. 🔴 **OM assinada (PDF Drive)** — máxima prioridade
-2. 🟢 **Diário (aba planilha)** — rascunho/planejamento
-3. 🔵 **SAVISO** — sobreaviso, NÃO é missão
+### Onde está tudo
+- Contexto de memória: `/home/node/.openclaw/workspace/MEMORY.md`
+- Logs de sessão: `/home/node/.openclaw/workspace/memory/`
+- Frontend: `/tmp/sisescala-tv/index.html`
+- Bot: `/home/node/.openclaw/workspace/sisescala/consulta_bot.py`
+- Dados OM: `/home/node/.openclaw/workspace/gte_bot/om_data.json`
 
-### Arquivos de contexto do Ravi (assistente anterior)
-- `MEMORY.md` — memórias consolidadas
-- `memory/2026-03-09.md` — log detalhado da última sessão
-- Localização: `/home/node/.openclaw/workspace/`
-
-### Ferramentas que o Ravi usava
-- **OpenClaw** — plataforma de IA com ferramentas de execução, browser, cron, etc.
-- **GitHub** — deploy via git push para `mauromamachado-creator/sisescala-tv`
-- **GAS** — Google Apps Script para bridge planilhas ↔ bot ↔ frontend
-
----
-
-## 🔄 Alternativas se o OpenClaw Sair do Ar
-
-### O bot continua rodando?
-**Sim.** O bot é um processo Python independente no servidor. Se o OpenClaw sair do ar, o bot continua rodando. Para verificar: `ps aux | grep consulta_bot`
-
-### Como fazer mudanças sem o Ravi?
-**Opção 1 — Outro assistente IA:**
-1. Forneça este HANDOFF.md e o `index.html` atual
-2. Peça a modificação desejada
-3. Valide com `node --check index.html`
-4. Faça commit e push manualmente
-
-**Opção 2 — Desenvolvedor humano:**
-1. Clone o repo: `git clone https://github.com/mauromamachado-creator/sisescala-tv`
-2. Tudo está em um único arquivo `index.html` (HTML + CSS + JS)
-3. Para o bot: Python 3, dependências em `consulta_bot.py` (linha ~1-30)
-4. Use `deploy.sh` para publicar
-
-**Opção 3 — Hospedagem alternativa:**
-O `index.html` é completamente autocontido. Pode ser hospedado em:
-- **Netlify**: arraste o arquivo em https://app.netlify.com/drop
-- **Vercel**: `npx vercel --prod` na pasta do repo
-- **Cloudflare Pages**: conecte o GitHub repo
-- **Localmente**: `python3 -m http.server 8080` e acesse `http://localhost:8080`
-
-### Como corrigir um bug sem IA?
-Para erros simples no frontend (index.html):
-1. Abra `index.html` em qualquer editor de texto
-2. Use Ctrl+F para encontrar a função com problema (os logs do browser indicam a linha)
-3. Corrija, valide com `node --check index.html`, commit + push
-
-Para erros no bot:
-1. Veja `/tmp/consulta_bot.log` para identificar o erro
-2. Edite `consulta_bot.py` com qualquer editor
-3. Reinicie o bot (comandos acima)
+### Como começar
+1. Leia o `MEMORY.md` para contexto geral
+2. Leia o arquivo de memória mais recente em `memory/`
+3. Verifique se o bot está rodando: `ps aux | grep consulta_bot`
+4. Pergunte ao Mauro qual é a prioridade do momento
 
 ---
 
-## 📊 Planilhas como Fallback
+## 🏠 Hospedagem Alternativa (se GitHub Pages cair)
 
-Se tudo falhar, as planilhas Google continuam funcionando independentemente:
-- **Disponibilidade dos pilotos:** planilha principal, aba "Dados"
-- **Diário de voos:** planilha Dashboard, abas por aeronave
-- **Diárias concluídas:** planilha Diárias
+O `index.html` é 100% autocontido. Pode ser hospedado em qualquer lugar:
 
-O Mauro pode continuar operando pelas planilhas diretamente enquanto o sistema é restaurado.
+| Opção | Como |
+|---|---|
+| **Netlify** (mais fácil) | Acesse https://app.netlify.com/drop e arraste o `index.html` |
+| **Vercel** | `npx vercel --prod` na pasta do repositório |
+| **Cloudflare Pages** | Conecte o repositório GitHub em https://pages.cloudflare.com |
+| **Local (emergência)** | `python3 -m http.server 8080` e abra `http://localhost:8080` |
 
 ---
 
-## ⚠️ Pendências Conhecidas (ao criar este documento)
+## 🔧 Problemas Comuns e Soluções
+
+| Problema | Causa provável | Solução |
+|---|---|---|
+| Site não atualiza após push | Cache do browser | Ctrl+Shift+R ou aguardar 2min |
+| Bot não responde | Processo caiu | Reiniciar o bot (comandos acima) |
+| ESCALA V2 em branco | GAS não respondeu | Verificar `CONSULTA_GAS` URL no browser |
+| Diárias não aparecem | GAS DIARIAS_API fora | Testar URL do DIARIAS_API no browser |
+| OM não aparece | Não está no `om_data.json` | Adicionar manualmente ou aguardar cron |
+| "Invalid Date" nas missões | Formato de data errado | Usar formato `DD/MM/YY` no om_data.json |
+| Push bloqueado pelo GitHub | Token expirado/inválido | Gerar novo token em github.com/settings/tokens |
+
+---
+
+## ⚠️ Pendências ao Criar Este Documento (09/03/2026)
 
 - [ ] `gas_confirmacao.js` precisa ser reimplantado com ação `send_conf`
 - [ ] Ação `conf_ciente` não implementada no CONSULTA_GAS
 - [ ] OMs 44, 47, 49 faltam no `om_data.json`
-- [ ] Senha do S3 não trocada para `12345678`
-- [ ] `BOT_TOKEN` ainda tem fallback hardcoded em `consulta_bot.py`
+- [ ] Senha do S3 não trocada para o valor desejado pelo Mauro
+- [ ] `BOT_TOKEN` ainda tem fallback hardcoded em `consulta_bot.py` (funciona, mas não é seguro)
+
+---
+
+## 📞 Contato
+
+**Mauro Machado**
+- Telegram: `@machadommam`
+- chat_id: `673591486`
+- Telefone: +55 21 99524-2702
 
 ---
 
 *Documento criado em: 09/03/2026*
-*Versão do sistema no checkpoint: v5.1-stable*
-*Última atualização: Ravi Lemos 🦀*
+*Versão do sistema: v5.1-stable*
+*Autor: Ravi Lemos 🦀 — assistente pessoal via OpenClaw*
