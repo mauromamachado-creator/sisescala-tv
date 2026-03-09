@@ -1,22 +1,4 @@
 {
-  "vc1": {
-    "id": "vc1",
-    "text": "🛩️ CONSULTA VC-1 (TESTE FINAL)\n\nA) BR-RJ-BR 08 DOM 1245/1945\nB) SAVISO DOM\n\nToque na missão = prioridade\n✅ FULL DISP = disponível pra todas",
-    "missions": [
-      "A",
-      "B"
-    ],
-    "locked": false,
-    "recipients": [
-      {
-        "name": "Major Machado",
-        "responses": {
-          "A": 1,
-          "B": 2
-        },
-        "confirmed": false
-      }
-    ]
-  },
+  "vc1": null,
   "vc2": null
 }
