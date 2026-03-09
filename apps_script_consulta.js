@@ -102,7 +102,16 @@ function saveResponse(ss, vc, name, responsesRaw, motivo) {
   // Procurar tripulante na coluna D (nome)
   var dataRange = sheet.getDataRange();
   var values = dataRange.getValues();
-  var headerRow = values[0]; // Primeira linha = cabeçalho com letras das missões
+  
+  // Encontrar a linha de cabeçalho que contém "Aeronavegante" na col D (index 3)
+  var headerRowIdx = 3; // default: row 4 (index 3)
+  for (var h = 0; h < Math.min(10, values.length); h++) {
+    if (String(values[h][3]).trim().toUpperCase().indexOf('AERONAVEGANTE') >= 0) {
+      headerRowIdx = h;
+      break;
+    }
+  }
+  var headerRow = values[headerRowIdx];
   
   // Mapear letras das missões para colunas (A partir da col G = index 6)
   var missionCols = {};
@@ -115,7 +124,7 @@ function saveResponse(ss, vc, name, responsesRaw, motivo) {
   
   // Buscar tripulante pelo nome (coluna D = index 3)
   var found = false;
-  for (var r = 1; r < values.length; r++) {
+  for (var r = headerRowIdx + 1; r < values.length; r++) {
     var cellName = String(values[r][3]).trim().toUpperCase();
     if (cellName && name.toUpperCase().indexOf(cellName.split('(')[0].trim()) >= 0) {
       // Encontrou — gravar respostas

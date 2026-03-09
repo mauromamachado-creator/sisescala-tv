@@ -91,27 +91,48 @@ def _save_data(data: dict):
 
 
 async def _sync_response_to_sheet(vc_key: str, name: str, responses: dict, motivo: str = ""):
-    """Sincroniza resposta do tripulante com a planilha via Google Apps Script."""
-    import urllib.request
-    vc_num = "1" if vc_key == "vc1" else "2"
-    payload = json.dumps({
-        "action": "save_response",
-        "vc": vc_num,
-        "name": name,
-        "responses": responses,
-        "motivo": motivo
-    }).encode("utf-8")
+    """Sincroniza respostas publicando JSON no GitHub (raw) pra SisGOPA ler."""
     try:
-        req = urllib.request.Request(
-            GAS_URL, data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST"
+        data = _load_data()
+        # Gerar JSON público com respostas de ambas as consultas
+        pub = {}
+        for vk in ("vc1", "vc2"):
+            c = data.get(vk)
+            if c:
+                pub[vk] = {
+                    "id": c.get("id"),
+                    "text": c.get("text", ""),
+                    "missions": c.get("missions", []),
+                    "locked": c.get("locked", False),
+                    "recipients": [
+                        {
+                            "name": r.get("name"),
+                            "responses": r.get("responses", {}),
+                            "confirmed": r.get("confirmed", False),
+                        }
+                        for r in c.get("recipients", [])
+                    ],
+                }
+        pub_path = DATA_DIR / "respostas_pub.json"
+        with open(pub_path, "w", encoding="utf-8") as f:
+            json.dump(pub, f, ensure_ascii=False, indent=2)
+        # Git push
+        import subprocess
+        subprocess.run(
+            ["git", "add", "data/respostas_pub.json"],
+            cwd=str(DATA_DIR.parent), capture_output=True, timeout=10,
         )
-        resp = urllib.request.urlopen(req, timeout=15)
-        result = json.loads(resp.read())
-        logger.info("Planilha sync OK: %s -> %s", name, result)
+        subprocess.run(
+            ["git", "commit", "-m", f"auto: resposta {name}"],
+            cwd=str(DATA_DIR.parent), capture_output=True, timeout=10,
+        )
+        result = subprocess.run(
+            ["git", "push", "origin", "main"],
+            cwd=str(DATA_DIR.parent), capture_output=True, timeout=30,
+        )
+        logger.info("GitHub sync: %s (rc=%d)", name, result.returncode)
     except Exception as e:
-        logger.error("Erro sync planilha: %s", e)
+        logger.error("Erro sync GitHub: %s", e)
 
 
 def _vc_display(vc_key: str) -> str:
@@ -197,18 +218,24 @@ def parse_consulta_message(text: str) -> dict:
 # Construtores de teclado inline
 # ═══════════════════════════════════════════════════════════════════════════════
 
+PRIO_EMOJIS = {0: "❌", 1: "1️⃣", 2: "2️⃣", 3: "3️⃣", 4: "4️⃣", 5: "5️⃣", 6: "6️⃣", 7: "7️⃣", 8: "8️⃣", 9: "9️⃣"}
+
 def _build_keyboard(consulta_id: str, missions: list[str], responses: dict) -> InlineKeyboardMarkup:
-    """Monta teclado inline com botões de missão."""
+    """Monta teclado inline com botões de missão.
+    responses[m] = int: 0=indisponível, 1+=prioridade, None=pendente
+    Ordem de clique define prioridade automaticamente.
+    """
     buttons = []
     row = []
     for m in missions:
-        available = responses.get(m)
-        if available is True:
-            label = f"✅ {m}"
-        elif available is False:
+        prio = responses.get(m)
+        if prio is None:
+            label = f"⬜ {m}"
+        elif prio == 0:
             label = f"❌ {m}"
         else:
-            label = f"⬜ {m}"
+            emoji = PRIO_EMOJIS.get(prio, f"#{prio}")
+            label = f"{emoji} {m}"
         row.append(InlineKeyboardButton(label, callback_data=f"toggle|{consulta_id}|{m}"))
         if len(row) >= 4:
             buttons.append(row)
@@ -216,10 +243,11 @@ def _build_keyboard(consulta_id: str, missions: list[str], responses: dict) -> I
     if row:
         buttons.append(row)
     buttons.append([
+        InlineKeyboardButton("✅ FULL DISP", callback_data=f"allyes|{consulta_id}"),
         InlineKeyboardButton("❌ INDISPONÍVEL TODAS", callback_data=f"allno|{consulta_id}"),
     ])
     buttons.append([
-        InlineKeyboardButton("✅ CONFIRMAR RESPOSTA", callback_data=f"confirm|{consulta_id}"),
+        InlineKeyboardButton("📨 CONFIRMAR", callback_data=f"confirm|{consulta_id}"),
     ])
     return InlineKeyboardMarkup(buttons)
 
@@ -256,6 +284,7 @@ async def callback_handler(update: Update, context):
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
+    logger.info("CALLBACK RECEBIDO: data=%s user=%s", query.data, user_id)
 
     parts = query.data.split("|")
     action = parts[0]
@@ -275,8 +304,38 @@ async def callback_handler(update: Update, context):
             break
 
     if not _resolved_vc:
-        logger.warning("Consulta não encontrada: %s", consulta_id)
-        return
+        # Auto-criar consulta se callback veio com vc1/vc2 direto
+        if consulta_id in ("vc1", "vc2"):
+            logger.info("Auto-criando consulta %s a partir do callback", consulta_id)
+            # Extrair missões do reply_markup da mensagem original
+            missions = []
+            if query.message and query.message.reply_markup:
+                for row in query.message.reply_markup.inline_keyboard:
+                    for btn in row:
+                        if btn.callback_data and btn.callback_data.startswith("toggle|"):
+                            parts_btn = btn.callback_data.split("|")
+                            if len(parts_btn) >= 3:
+                                missions.append(parts_btn[2])
+            msg_text = query.message.text or ""
+            now = datetime.now()
+            data[consulta_id] = {
+                "id": consulta_id,
+                "vc_type": consulta_id,
+                "created_at": now.isoformat(),
+                "text": msg_text,
+                "missions": missions,
+                "parsed": {},
+                "status": "active",
+                "locked": False,
+                "deadline": None,
+                "recipients": [],
+            }
+            _save_data(data)
+            _resolved_vc = consulta_id
+        else:
+            logger.warning("Consulta não encontrada: %s", consulta_id)
+            return
+    logger.info("Resolved: vc=%s action=%s", _resolved_vc, action)
 
     consulta = data[_resolved_vc]
 
@@ -329,31 +388,62 @@ async def callback_handler(update: Update, context):
                 break
 
     if not recipient:
-        await query.answer("⚠️ Você não é destinatário desta consulta.", show_alert=True)
-        return
+        # Auto-adicionar tripulante como recipient
+        user = query.from_user
+        recipient = {
+            "chat_id": user_id,
+            "name": f"{user.first_name or ''} {user.last_name or ''}".strip() or str(user_id),
+            "responses": {},
+            "confirmed": False,
+            "delivered": True,
+        }
+        consulta["recipients"].append(recipient)
+        logger.info("Auto-adicionado recipient: %s (%s)", recipient["name"], user_id)
 
+    logger.info("Recipient encontrado: %s, confirmed=%s", recipient.get("name"), recipient.get("confirmed"))
     if recipient.get("confirmed"):
-        await query.answer("✅ Você já confirmou sua resposta.", show_alert=True)
         return
 
     missions = consulta.get("missions", [])
 
     if action == "toggle":
         mission = parts[2] if len(parts) > 2 else ""
-        current = recipient.get("responses", {}).get(mission)
         if "responses" not in recipient:
             recipient["responses"] = {}
-        recipient["responses"][mission] = not current if current is not None else True
+        current = recipient["responses"].get(mission)
+        if current is not None and current > 0:
+            # Já tem prioridade → remove (volta pra pendente) e reordena
+            removed_prio = current
+            recipient["responses"][mission] = None
+            # Reordenar prioridades dos restantes
+            for m2 in missions:
+                p = recipient["responses"].get(m2)
+                if p is not None and p > removed_prio:
+                    recipient["responses"][m2] = p - 1
+        else:
+            # Pendente ou indisponível → atribui próxima prioridade
+            max_prio = max([v for v in recipient["responses"].values() if v is not None and v > 0], default=0)
+            recipient["responses"][mission] = max_prio + 1
+
+    elif action == "allyes":
+        if "responses" not in recipient:
+            recipient["responses"] = {}
+        for m in missions:
+            recipient["responses"][m] = 1
 
     elif action == "allno":
         if "responses" not in recipient:
             recipient["responses"] = {}
         for m in missions:
-            recipient["responses"][m] = False
+            recipient["responses"][m] = 0
+
+    elif action == "reset":
+        recipient["responses"] = {}
+        logger.info("Respostas resetadas: %s", recipient.get("name", user_id))
 
     elif action == "confirm":
         responses = recipient.get("responses", {})
-        missing = [m for m in missions if m not in responses]
+        missing = [m for m in missions if responses.get(m) is None]
         if missing:
             await query.answer(f"⚠️ Responda primeiro: {', '.join(missing)}", show_alert=True)
             return
@@ -373,27 +463,52 @@ async def callback_handler(update: Update, context):
     responses = recipient.get("responses", {})
     vc_display = _vc_display(consulta.get("vc_type", vc_key_found or "vc1"))
 
-    if recipient.get("confirmed"):
-        avail = [m for m, v in responses.items() if v]
-        unavail = [m for m, v in responses.items() if not v]
-        text = (
-            f"🛩️ *CONSULTA {vc_display}*\n"
-            f"ID: `{consulta_id}`\n\n"
-            f"✅ *RESPOSTA CONFIRMADA*\n"
-            f"Disponível: {', '.join(avail) or 'nenhuma'}\n"
-            f"Indisponível: {', '.join(unavail) or 'nenhuma'}"
-        )
-        await query.edit_message_text(text=text, parse_mode="Markdown")
-    else:
-        keyboard = _build_keyboard(consulta_id, missions, responses)
-        text = (
-            f"🛩️ *CONSULTA {vc_display}*\n"
-            f"ID: `{consulta_id}`\n\n"
-            f"{consulta.get('text', '')}\n\n"
-            f"*Missões:* {', '.join(missions)}\n\n"
-            "Toque nas missões, depois confirme."
-        )
-        await query.edit_message_text(text=text, reply_markup=keyboard, parse_mode="Markdown")
+    try:
+        if recipient.get("confirmed"):
+            # Montar resumo com prioridades
+            prio_lines = []
+            unavail_list = []
+            for m in missions:
+                p = responses.get(m)
+                if p is not None and p > 0:
+                    emoji = PRIO_EMOJIS.get(p, f"#{p}")
+                    prio_lines.append((p, f"  {emoji} {m}"))
+                elif p == 0:
+                    unavail_list.append(m)
+            prio_lines.sort(key=lambda x: x[0])
+            lines = [l for _, l in prio_lines]
+            if unavail_list:
+                lines.append(f"  ❌ {', '.join(unavail_list)}")
+            text = (
+                f"🛩️ CONSULTA {vc_display}\n\n"
+                f"✅ RESPOSTA CONFIRMADA\n\n"
+                f"Suas prioridades:\n" + "\n".join(lines)
+            )
+            await query.edit_message_text(text=text)
+        else:
+            keyboard = _build_keyboard(consulta_id, missions, responses)
+            status_lines = []
+            for m in missions:
+                p = responses.get(m)
+                if p is not None and p > 0:
+                    emoji = PRIO_EMOJIS.get(p, f"#{p}")
+                    status_lines.append(f"  {emoji} {m}")
+                elif p == 0:
+                    status_lines.append(f"  ❌ {m} — Indisponível")
+                else:
+                    status_lines.append(f"  ⬜ {m} — Pendente")
+            status_text = "\n".join(status_lines)
+            text = (
+                f"🛩️ CONSULTA {vc_display}\n\n"
+                f"{consulta.get('text', '')}\n\n"
+                f"Suas respostas:\n{status_text}\n\n"
+                f"Toque na missão = define prioridade (ordem do clique)\n"
+                f"Toque de novo = remove\n"
+                f"🔄 LIMPAR = recomeçar"
+            )
+            await query.edit_message_text(text=text, reply_markup=keyboard)
+    except Exception as e:
+        logger.error("Erro ao editar mensagem: %s", e)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -1,51 +1,75 @@
 {
   "vc1": {
     "id": "vc1",
-    "created_at": "2026-03-08T20:00:00",
-    "text": "Teste",
+    "vc_type": "vc1",
+    "created_at": "2026-03-08T20:49:53.889905",
+    "text": "Senhores, bom dia. Consulta para o dia 08 de março, VC-1:\n\nA) BR-BR",
     "missions": [
-      "A",
-      "B"
+      "A"
     ],
-    "deadline": null,
+    "parsed": {},
     "status": "active",
     "locked": false,
+    "deadline": null,
     "recipients": [
       {
         "chat_id": 673591486,
-        "name": "Major Machado",
-        "rank": "MJ",
-        "message_id": null,
-        "delivered": true,
+        "name": "Mauro Machado",
         "responses": {
-          "A": true,
-          "B": false
+          "A": 1
         },
         "confirmed": true,
-        "confirmed_at": "2026-03-08T20:05:47.136719"
+        "delivered": true,
+        "confirmed_at": "2026-03-08T20:50:01.574370"
       }
-    ],
-    "parsed": {
-      "missoes": [
-        {
-          "letra": "A",
-          "descricao": "BR-ZM-BR",
-          "is_saviso": false,
-          "escalados": [],
-          "om": null,
-          "cientes": []
-        },
-        {
-          "letra": "B",
-          "descricao": "SAVISO SAB",
-          "is_saviso": true,
-          "escalados": [],
-          "om": null,
-          "cientes": []
-        }
-      ]
-    }
+    ]
   },
   "vc2": null,
-  "archive": []
+  "archive": [
+    {
+      "id": "vc1",
+      "created_at": "2026-03-08T20:00:00",
+      "text": "Teste",
+      "missions": [
+        "A",
+        "B",
+        "C"
+      ],
+      "deadline": null,
+      "status": "active",
+      "locked": false,
+      "recipients": [
+        {
+          "chat_id": 673591486,
+          "name": "Major Machado",
+          "rank": "MJ",
+          "message_id": null,
+          "delivered": true,
+          "responses": {},
+          "confirmed": false,
+          "confirmed_at": "2026-03-08T20:44:55.346650"
+        }
+      ],
+      "parsed": {
+        "missoes": [
+          {
+            "letra": "A",
+            "descricao": "BR-ZM-BR",
+            "is_saviso": false,
+            "escalados": [],
+            "om": null,
+            "cientes": []
+          },
+          {
+            "letra": "B",
+            "descricao": "SAVISO SAB",
+            "is_saviso": true,
+            "escalados": [],
+            "om": null,
+            "cientes": []
+          }
+        ]
+      }
+    }
+  ]
 }

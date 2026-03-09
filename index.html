@@ -3160,12 +3160,13 @@ async function fetchConsultasJson(){
   consultasJsonCache=_consultaLocalLoad();consultasJsonLastFetch=Date.now();
   return consultasJsonCache;
 }
-// Buscar respostas da planilha via Apps Script
-async function fetchRespostasSheet(vc){
+// Buscar respostas do GitHub raw (publicado pelo bot)
+var RESPOSTAS_URL='https://raw.githubusercontent.com/mauromamachado-creator/sisescala-tv/main/data/respostas_pub.json';
+async function fetchRespostasPublic(){
   try{
-    var r=await fetch(CONSULTA_GAS+'?action=get&vc='+vc+'&t='+Date.now(),{signal:AbortSignal.timeout(10000)});
-    if(r.ok){var d=await r.json();if(d.ok) return d.data;}
-  }catch(e){console.warn('Erro fetch planilha VC-'+vc,e);}
+    var r=await fetch(RESPOSTAS_URL+'?t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(8000)});
+    if(r.ok) return await r.json();
+  }catch(e){console.warn('Erro fetch respostas',e);}
   return null;
 }
 
