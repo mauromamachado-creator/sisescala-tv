@@ -4295,30 +4295,9 @@ async function consultaArchiveConfirm(vcKey, enviarMsg){
     mensagem=saudacao+', Consulta '+vcLabel2+' encerrada.';
   }
   // Envia mensagem via Telegram se solicitado
-  if(mensagem){
-    try{
-      var data=await fetchConsultasJson();
-      var consulta=data&&data[vcKey];
-      // Fallback: pega recipients do localStorage se fetchConsultasJson vier vazio
-      if(!consulta||!(consulta.recipients&&consulta.recipients.length)){
-        var _local=_consultaLocalLoad();
-        consulta=_local&&_local[vcKey]||consulta;
-      }
-      var recipients=(consulta&&consulta.recipients)||[];
-      var tgBase='https://api.telegram.org/bot'+CONSULTA_TOKEN;
-      for(var i=0;i<recipients.length;i++){
-        var chatId=recipients[i].chat_id||recipients[i].chatId;
-        if(!chatId) continue;
-        await fetch(tgBase+'/sendMessage',{
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({chat_id:chatId,text:mensagem})
-        }).catch(function(){});
-      }
-    }catch(e){console.warn('Erro ao enviar mensagem de encerramento:',e);}
-  }
-  // Arquiva normalmente
+  // Arquiva e envia mensagem via bot (bot usa seus próprios recipients)
   try{
-    var result=await consultaApiPost({action:'archive',vc:vcKey});
+    var result=await consultaApiPost({action:'archive',vc:vcKey,mensagem:mensagem||null});
     if(result.ok||(result.error&&result.error.indexOf('Nenhuma consulta')>=0)){
       if(!result.ok){var _d=_consultaLocalLoad();_d[vcKey]=null;_consultaLocalSave(_d);}
       consultasJsonLastFetch=0;s3RenderActiveTab();

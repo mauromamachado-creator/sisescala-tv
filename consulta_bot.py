@@ -1181,6 +1181,19 @@ async def api_post_consulta(request):
         await _backup_consulta_arquivada(consulta_arquivada)
         # Limpa o VC arquivado do respostas_pub.json no GitHub
         await _sync_response_to_sheet(vc, "archive", {}, motivo="arquivado")
+        # Envia mensagem de encerramento aos recipients se solicitado
+        mensagem_enc = body.get("mensagem")
+        if mensagem_enc:
+            recipients = consulta_arquivada.get("recipients", [])
+            for r in recipients:
+                chat_id = r.get("chat_id")
+                if not chat_id:
+                    continue
+                try:
+                    await app.bot.send_message(chat_id=chat_id, text=mensagem_enc)
+                    logger.info("Mensagem encerramento enviada para %s (%s)", r.get("name","?"), chat_id)
+                except Exception as e:
+                    logger.warning("Falha ao enviar encerramento para %s: %s", chat_id, e)
         return web.json_response({"ok": True})
 
     # ─── UPDATE_OM ────────────────────────────────────────────────────────
