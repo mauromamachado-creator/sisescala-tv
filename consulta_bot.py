@@ -745,8 +745,7 @@ async def callback_handler(update: Update, context):
     # Verificar se consulta está encerrada (vale pra todos os callbacks)
     if consulta.get("locked") and action != "ciente":
         await query.edit_message_text(
-            f"🔒 Consulta encerrada.
-Para dúvidas--> {TELEFONE_CONTATO}"
+            f"🔒 Consulta encerrada.\nPara dúvidas--> {TELEFONE_CONTATO}"
         )
         return
 
@@ -755,8 +754,7 @@ Para dúvidas--> {TELEFONE_CONTATO}"
         missao_letra = parts[2] if len(parts) > 2 else ""
         if consulta.get("locked"):
             await query.answer(
-                f"🔒 Consulta encerrada.
-Para dúvidas--> {TELEFONE_CONTATO}",
+                f"🔒 Consulta encerrada.\nPara dúvidas--> {TELEFONE_CONTATO}",
                 show_alert=True,
             )
             return
