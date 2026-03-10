@@ -3937,7 +3937,7 @@ function s3RenderConsultaV2(container){
         try{
           var gasSetParams=new URLSearchParams({
             action:'set_consulta',
-            vc:vcType,
+            vcid:vcType,
             text:text,
             missions:JSON.stringify(missionLetters),
             recipients:JSON.stringify(recipientsList),

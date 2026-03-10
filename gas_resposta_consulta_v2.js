@@ -111,7 +111,7 @@ function _dispatch(p) {
 
   // ── set_consulta — salva dados da consulta (ScriptProperties + aba visual) ──
   if (action === 'set_consulta') {
-    var vcKey = (p.vc || 'vc1').toLowerCase().replace('-','');
+    var vcKey = (p.vcid || p.vc || 'vc1').toLowerCase().replace('-','');
     var missions  = typeof p.missions   === 'string' ? p.missions   : JSON.stringify(p.missions   || []);
     var recips    = typeof p.recipients === 'string' ? p.recipients : JSON.stringify(p.recipients || []);
     var createdAt = p.created_at || new Date().toISOString();
@@ -145,7 +145,7 @@ function _dispatch(p) {
 
   // ── get_consulta — lê dados (ScriptProperties + fallback aba) ───
   if (action === 'get_consulta') {
-    var vcKey2 = (p.vc || 'vc1').toLowerCase().replace('-','');
+    var vcKey2 = (p.vcid || p.vc || 'vc1').toLowerCase().replace('-','');
     var raw = PropertiesService.getScriptProperties().getProperty('consulta_' + vcKey2);
     if (raw) {
       var c = JSON.parse(raw);
