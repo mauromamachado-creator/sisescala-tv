@@ -3273,7 +3273,10 @@ function s3RenderEscalaV2(container){
     fetchJSON(RAIO_VC1),
     fetchJSON(RAIO_VC2)
   ]).then(function(results){
-    var gasAll=results[0]||{};
+    // Usa resultado do GAS, mas mantém cache anterior se falhar
+    var _gasCache={};try{_gasCache=JSON.parse(sessionStorage.getItem('sisgopa_gas_cache')||'{}');}catch(e){}
+    var gasAll=results[0]||(Object.keys(_gasCache).length?_gasCache:{});
+    if(results[0]&&(results[0].vc1||results[0].vc2))try{sessionStorage.setItem('sisgopa_gas_cache',JSON.stringify(results[0]));}catch(e){}
     // Texto da consulta ativa — lê do localStorage (fonte garantida)
     var _lsData={};try{_lsData=JSON.parse(localStorage.getItem('consultas_data')||'{}');}catch(e){}
     var textoVC1=((_lsData.vc1&&_lsData.vc1.text)||'')||(results[1][0]&&results[1][0][0])||'';
