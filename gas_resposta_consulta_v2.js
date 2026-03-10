@@ -125,12 +125,35 @@ function _dispatch(p) {
     return _json({ok:true, tripulantes:list});
   }
 
+  // ── lock_vc — encerra consulta (SisGOPA chama direto) ──────────
+  // action=lock_vc1 ou lock_vc2 (GET param único) → lock_vc + vc
+  if (action === 'lock_vc1') { action = 'lock_vc'; p.vc = 'VC-1'; }
+  if (action === 'lock_vc2') { action = 'lock_vc'; p.vc = 'VC-2'; }
+  if (action === 'lock_vc') {
+    var vcLock = p.vc || 'VC-1';
+    var keyLock = 'locked_' + vcLock.replace('-','').toLowerCase();
+    PropertiesService.getScriptProperties().setProperty(keyLock, 'true');
+    return _json({ok:true, locked:true, vc:vcLock});
+  }
+
+  // ── unlock_vc — reabre consulta ─────────────────────────────────
+  if (action === 'unlock_vc1') { action = 'unlock_vc'; p.vc = 'VC-1'; }
+  if (action === 'unlock_vc2') { action = 'unlock_vc'; p.vc = 'VC-2'; }
+  if (action === 'unlock_vc') {
+    var vcUnlock = p.vc || 'VC-1';
+    var keyUnlock = 'locked_' + vcUnlock.replace('-','').toLowerCase();
+    PropertiesService.getScriptProperties().setProperty(keyUnlock, 'false');
+    return _json({ok:true, locked:false, vc:vcUnlock});
+  }
+
   // ── get (padrão) — retorna raio + respostas de VC-1 e VC-2 ─────
   var props = PropertiesService.getScriptProperties();
   var result = {
     ok:true, vc1:[], vc2:[],
     data_raio_vc1: props.getProperty('data_raio_vc1') || '',
-    data_raio_vc2: props.getProperty('data_raio_vc2') || ''
+    data_raio_vc2: props.getProperty('data_raio_vc2') || '',
+    locked_vc1: props.getProperty('locked_vc1') === 'true',
+    locked_vc2: props.getProperty('locked_vc2') === 'true'
   };
   var sh1 = ss.getSheetByName('VC-1');
   var sh2b = ss.getSheetByName('VC-2');
