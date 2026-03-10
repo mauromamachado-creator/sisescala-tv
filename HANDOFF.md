@@ -38,7 +38,8 @@ PLANILHAS GOOGLE → SISTEMA WEB (SisGOPA) → CELULAR DO MAURO (Telegram)
 ### As 3 peças do sistema
 
 **Peça 1 — O site (SisGOPA)**
-- Endereço: https://mauromamachado-creator.github.io/sisescala-tv/
+- Endereço principal: https://mauromamachado-creator.github.io/sisescala-tv/
+- Endereço espelho: https://sisgopa.netlify.app/ (backup — atualiza junto com o GitHub)
 - É um único arquivo chamado `index.html` hospedado gratuitamente no GitHub
 - Lê os dados das planilhas Google e mostra na tela
 - Não precisa de servidor — funciona como qualquer site normal
