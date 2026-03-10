@@ -267,11 +267,11 @@
       {
         "origem": "SBBR",
         "origem_nome": "SBBR (EST AUT)",
-        "etd": "10/03/26 - 13:00 Z",
+        "etd": "10/03/26 - 12:00 Z",
         "ete": "01:00",
         "destino": "SBBR",
         "destino_nome": "SBBR (EST AUT)",
-        "eta": "10/03/26 - 14:00 Z",
+        "eta": "10/03/26 - 13:00 Z",
         "alternativa": "SBCF",
         "comb_min": 5500,
         "comb_rec": 9000
@@ -301,11 +301,11 @@
       {
         "origem": "SBBR",
         "origem_nome": "SBBR (EST AUT)",
-        "etd": "10/03/26 - 14:00 Z",
+        "etd": "10/03/26 - 13:00 Z",
         "ete": "01:00",
         "destino": "SBBR",
         "destino_nome": "SBBR (EST AUT)",
-        "eta": "10/03/26 - 15:00 Z",
+        "eta": "10/03/26 - 14:00 Z",
         "alternativa": "SBCF",
         "comb_min": 5500,
         "comb_rec": 7500
@@ -325,17 +325,17 @@
     "fab": "FAB 2101",
     "data": "10/03/26",
     "tripulacao": [
-      "MJ MACHADO",
-      "CP THIAGO VASCONCELOS",
-      "CP PEDRO CIRIACO",
-      "CP J. OLIVEIRA",
-      "SO CIROMAR",
-      "1S DANIEL",
-      "1S LORENA (PR)",
-      "1S PEREIRA (PR)",
-      "2S ANDRESSA",
-      "2S LUDMYLLA (PR)",
-      "2S AGOSTINI"
+      "MJ MACHADO (MAC / 502.537)",
+      "CP THIAGO VASCONCELOS (TVS / 563.133)",
+      "CP PEDRO CIRIACO (PCI / 574.168)",
+      "CP J. OLIVEIRA (447.720)",
+      "SO CIROMAR (520.531)",
+      "1S DANIEL (522.613)",
+      "1S LORENA (PR) (545.673)",
+      "1S PEREIRA (PR) (527.615)",
+      "2S ANDRESSA (559.987)",
+      "2S LUDMYLLA (PR) (582.959)",
+      "2S AGOSTINI (567.034)"
     ],
     "pernas": [
       {
@@ -346,7 +346,9 @@
         "destino": "SCVM",
         "destino_nome": "SCVM (AEROP)",
         "eta": "10/03/26 - 23:25 Z",
-        "alternativa": "SCIE"
+        "alternativa": "SCIE",
+        "comb_min": 14500,
+        "comb_rec": 15500
       },
       {
         "origem": "SCVM",
@@ -356,7 +358,9 @@
         "destino": "SBBR",
         "destino_nome": "SBBR (EST AUT)",
         "eta": "11/03/26 - 21:10 Z",
-        "alternativa": "SBCF"
+        "alternativa": "SBCF",
+        "comb_min": 14000,
+        "comb_rec": 15000
       }
     ],
     "file_id": "19CmDInuYwDHWLcQoDsf1YsaFBbW3RGX6",
@@ -372,17 +376,17 @@
     "fab": "FAB 2590",
     "data": "10/03/26",
     "tripulacao": [
-      "MJ FARIAS",
-      "MJ SAMIR",
-      "CP CAMPOS",
-      "CP GABRIEL TODESCO",
-      "SO VINÍCIUS",
-      "2S ALCANTARA",
-      "2S NOGUEIRA",
-      "1S SANTIAGO (PR)",
-      "2S LOPES (PR)",
-      "2S NEVES",
-      "2S LUCAS SOUZA"
+      "MJ FARIAS (FAI / 552.925)",
+      "MJ SAMIR (SMR / 557.877)",
+      "CP CAMPOS (CPO / 563.414)",
+      "CP GABRIEL TODESCO (TOD / 515.359)",
+      "SO VINÍCIUS (474.042)",
+      "2S ALCANTARA (575.028)",
+      "2S NOGUEIRA (535.280)",
+      "1S SANTIAGO (PR) (525.328)",
+      "2S LOPES (PR) (530.806)",
+      "2S NEVES (543.527)",
+      "2S LUCAS SOUZA (581.915)"
     ],
     "pernas": [
       {
@@ -393,14 +397,27 @@
         "destino": "SCVM",
         "destino_nome": "SCVM (AEROP)",
         "eta": "10/03/26 - 23:25 Z",
-        "alternativa": "SCIE"
+        "alternativa": "SCIE",
+        "comb_min": 11500,
+        "comb_rec": 12500
+      },
+      {
+        "origem": "SCVM",
+        "origem_nome": "SCVM (AEROP)",
+        "etd": "11/03/26 - 16:50 Z / UTC-3",
+        "ete": "04:20",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "11/03/26 - 21:10 Z / UTC-3",
+        "alternativa": "SBCF",
+        "comb_min": 12000,
+        "comb_rec": 12500
       }
     ],
     "file_id": "1AxBqHSQwJJ8p7S4uQzo61Yq29mmXrek3",
     "file_ids": [
       "1AxBqHSQwJJ8p7S4uQzo61Yq29mmXrek3"
     ],
-    "obs": "REALIZA O ALERTA SOLO APENAS EM SBBR.",
     "tipo": "ALT"
   },
   {
