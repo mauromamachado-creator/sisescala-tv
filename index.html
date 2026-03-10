@@ -3945,6 +3945,11 @@ function s3RenderConsultaV2(container){
           });
           await fetch(CONSULTA_GAS+'?'+gasSetParams.toString(),{redirect:'follow'});
         }catch(e){console.warn('GAS set_consulta falhou:',e);}
+        // Garante desbloqueio no GAS (direto, sem tunnel — igual ao ENCERRAR)
+        try{
+          var unlockVcParam = vcType === 'vc1' ? 'unlock_vc1' : 'unlock_vc2';
+          await fetch(CONSULTA_GAS+'?action='+unlockVcParam,{redirect:'follow'});
+        }catch(e){console.warn('GAS unlock falhou:',e);}
         // Reseta lock no bot local (best-effort)
         try{await consultaApiPost({action:'unlock',vc:vcType});}catch(e){console.warn('Bot unlock falhou:',e);}
 
