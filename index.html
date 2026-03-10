@@ -3277,10 +3277,13 @@ function s3RenderEscalaV2(container){
     var _gasCache={};try{_gasCache=JSON.parse(sessionStorage.getItem('sisgopa_gas_cache')||'{}');}catch(e){}
     var gasAll=results[0]||(Object.keys(_gasCache).length?_gasCache:{});
     if(results[0]&&(results[0].vc1||results[0].vc2))try{sessionStorage.setItem('sisgopa_gas_cache',JSON.stringify(results[0]));}catch(e){}
-    // Texto da consulta ativa — lê do localStorage (fonte garantida)
-    var _lsData={};try{_lsData=JSON.parse(localStorage.getItem('consultas_data')||'{}');}catch(e){}
-    var textoVC1=((_lsData.vc1&&_lsData.vc1.text)||'')||(results[1][0]&&results[1][0][0])||'';
-    var textoVC2=((_lsData.vc2&&_lsData.vc2.text)||'')||(results[2][0]&&results[2][0][0])||'';
+    // Texto da consulta ativa — lê do localStorage (ambas as chaves) ou do bot
+    var _lsData={};
+    try{_lsData=JSON.parse(localStorage.getItem('consultas_data')||'{}');}catch(e){}
+    var _lsData2={};
+    try{_lsData2=JSON.parse(localStorage.getItem('sisgopa_consultas_v2')||'{}');}catch(e){}
+    var textoVC1=((_lsData.vc1&&_lsData.vc1.text)||(_lsData2.vc1&&_lsData2.vc1.text)||'')||(results[1][0]&&results[1][0][0])||'';
+    var textoVC2=((_lsData.vc2&&_lsData.vc2.text)||(_lsData2.vc2&&_lsData2.vc2.text)||'')||(results[2][0]&&results[2][0][0])||'';
     var dataRaioVC1=gasAll.data_raio_vc1||'';
     var dataRaioVC2=gasAll.data_raio_vc2||'';
     var raioVC1=results[3];
