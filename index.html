@@ -3316,6 +3316,16 @@ function consultaApiLocal(body){
   if(body.action==='archive'&&data[vc]){
     if(!data.archive)data.archive=[];
     var arquivada=Object.assign({},data[vc],{archivedAt:new Date().toISOString()});
+    // Envia mensagem de encerramento diretamente (fallback — tunnel off)
+    if(body.mensagem){
+      var tgBase='https://api.telegram.org/bot'+CONSULTA_TOKEN;
+      (arquivada.recipients||[]).forEach(function(r){
+        var cid=r.chat_id||r.chatId;
+        if(!cid)return;
+        fetch(tgBase+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({chat_id:cid,text:body.mensagem})}).catch(function(){});
+      });
+    }
     data.archive.push(arquivada);
     data[vc]=null;
     _consultaLocalSave(data);
