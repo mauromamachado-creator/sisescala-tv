@@ -9,13 +9,13 @@
     "expires": "2026-03-20T00:00:00-03:00"
   },
   {
-    "id": "viagem-20260311-chile",
+    "id": "cancela-20260310-chile",
     "type": "viagem",
-    "title": "✈️ POSSÍVEL VIAGEM PR",
-    "body": "Lula viaja ao <b>Chile</b> em <b>11/03/2026</b> para posse do presidente eleito José Antonio Kast, em Valparaíso.",
-    "source": "Agência Brasil / CNN Brasil",
-    "date": "03/03/2026",
-    "expires": "2026-03-12T00:00:00-03:00"
+    "title": "❌ VIAGEM PR CANCELADA",
+    "body": "Lula <b>desistiu</b> de comparecer à posse do presidente do Chile, José Antonio Kast, prevista para <b>11/03/2026</b> em Valparaíso. Decisão anunciada na véspera.",
+    "source": "Tribuna do Norte / Agência Brasil",
+    "date": "10/03/2026",
+    "expires": "2026-03-17T00:00:00-03:00"
   },
   {
     "id": "viagem-20260417-espanha",
