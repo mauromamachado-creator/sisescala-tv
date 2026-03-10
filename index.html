@@ -4173,8 +4173,11 @@ async function consultaAction(action,vcKey){
   if(!confirm(msg)) return;
   try{
     var result=await consultaApiPost({action:action,vc:vcKey});
-    if(result.ok){consultasJsonLastFetch=0;s3RenderActiveTab();}
-    else alert('Erro: '+result.error);
+    if(result.ok||(action==='archive'&&result.error&&result.error.indexOf('Nenhuma consulta')>=0)){
+      // Se já estava arquivada no bot, limpa localStorage também
+      if(!result.ok){var _d=_consultaLocalLoad();_d[vcKey]=null;_consultaLocalSave(_d);}
+      consultasJsonLastFetch=0;s3RenderActiveTab();
+    } else alert('Erro: '+result.error);
   }catch(e){alert('Erro de conexão com o bot: '+e.message);}
 }
 
