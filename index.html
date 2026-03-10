@@ -4311,6 +4311,11 @@ async function consultaArchiveConfirm(vcKey, enviarMsg){
       var _data=await fetchConsultasJson();
       var _consulta=(_data&&_data[vcKey])||(_consultaLocalLoad()[vcKey]);
       var _recipients=(_consulta&&_consulta.recipients)||[];
+      // Fallback: usa lista de tripulantes do VC se recipients estiver vazio
+      if(!_recipients.length){
+        var _fallback=vcKey==='vc1'?CONSULTA_RECIPIENTS_VC1:CONSULTA_RECIPIENTS_VC2;
+        _recipients=_fallback.map(function(r){return{chat_id:r.chatId,name:r.name};});
+      }
       console.log('[ARCHIVE] recipients para envio:', _recipients);
       var tgBase='https://api.telegram.org/bot'+CONSULTA_TOKEN;
       for(var _i=0;_i<_recipients.length;_i++){
