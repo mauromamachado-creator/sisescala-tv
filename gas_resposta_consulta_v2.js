@@ -109,6 +109,30 @@ function _dispatch(p) {
     return _json({ok:true, vc: vcR});
   }
 
+  // ── set_consulta — armazena dados da consulta (sem tunnel) ──────
+  if (action === 'set_consulta') {
+    var vcKey = (p.vc || 'vc1').toLowerCase().replace('-','');
+    var payload = {
+      text:       p.text || '',
+      missions:   typeof p.missions === 'string' ? JSON.parse(p.missions) : (p.missions || []),
+      recipients: typeof p.recipients === 'string' ? JSON.parse(p.recipients) : (p.recipients || []),
+      created_at: p.created_at || new Date().toISOString(),
+      status:     'active'
+    };
+    PropertiesService.getScriptProperties().setProperty('consulta_' + vcKey, JSON.stringify(payload));
+    // Reseta lock ao criar nova consulta
+    PropertiesService.getScriptProperties().setProperty('locked_' + vcKey, 'false');
+    return _json({ok: true});
+  }
+
+  // ── get_consulta — retorna dados da consulta ─────────────────────
+  if (action === 'get_consulta') {
+    var vcKey2 = (p.vc || 'vc1').toLowerCase().replace('-','');
+    var raw = PropertiesService.getScriptProperties().getProperty('consulta_' + vcKey2);
+    if (!raw) return _json({ok: false, error: 'Nenhuma consulta registrada para ' + vcKey2});
+    return _json({ok: true, consulta: JSON.parse(raw)});
+  }
+
   // ── get_dados_tripulantes — lê aba "dados tripulantes" ──────────
   if (action === 'get_dados_tripulantes') {
     var shD = ss.getSheetByName('dados tripulantes');

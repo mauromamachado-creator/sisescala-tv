@@ -3932,14 +3932,23 @@ function s3RenderConsultaV2(container){
       var recipientsList=recipients.map(function(r){return{chat_id:r.chatId,name:r.name,rank:r.rank};});
 
       try{
-        // 0. Resetar lock no GAS para nova consulta
-        var gasUnlockAction='unlock_'+vcType; // unlock_vc1 ou unlock_vc2
-        try{await fetch(CONSULTA_GAS+'?action='+gasUnlockAction,{redirect:'follow'});}catch(e){console.warn('GAS unlock falhou:',e);}
-        // Reseta lock no bot local também
+        // 0. Registrar consulta no GAS (fonte autoritativa — sem tunnel)
+        var missionLetters=missions.map(function(m){return m.letra;});
+        var gasConsultaPayload={
+          action:'set_consulta',
+          vc:vcType,
+          text:text,
+          missions:JSON.stringify(missionLetters),
+          recipients:JSON.stringify(recipientsList),
+          created_at:new Date().toISOString()
+        };
+        try{
+          await fetch(CONSULTA_GAS,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(gasConsultaPayload),redirect:'follow'});
+        }catch(e){console.warn('GAS set_consulta falhou:',e);}
+        // Reseta lock no bot local (best-effort)
         try{await consultaApiPost({action:'unlock',vc:vcType});}catch(e){console.warn('Bot unlock falhou:',e);}
 
-        // 1. Salvar consulta localmente (e tentar API se disponível)
-        var missionLetters=missions.map(function(m){return m.letra;});
+        // 1. Salvar consulta no bot local (best-effort — pode falhar se tunnel cair)
         var result=await consultaApiPost({
           action:'create',
           vc:vcType,
