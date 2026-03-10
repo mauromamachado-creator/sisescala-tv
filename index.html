@@ -3086,14 +3086,6 @@ function s3SwitchTab(tab){
     var t=b.textContent.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     b.classList.toggle('active',t===tab);
   });
-  // Auto-refresh a cada 30s nas abas consulta e escalav2
-  if(window._s3AutoRefresh) clearInterval(window._s3AutoRefresh);
-  if(tab==='consulta'||tab==='escalav2'){
-    window._s3AutoRefresh=setInterval(function(){
-      if(s3ActiveTab===tab){consultasJsonLastFetch=0;s3RenderActiveTab();}
-      else clearInterval(window._s3AutoRefresh);
-    },30000);
-  }
   s3RenderActiveTab();
 }
 function s3RenderActiveTab(){
@@ -3568,7 +3560,7 @@ function s3RenderConsultaV2(container){
   container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
   fetchConsultasJson().then(function(data){
     if(!data) data={vc1:null,vc2:null,archive:[]};
-    var h='<h2 style="color:var(--vc1)">📨 Consulta de Escalação</h2>';
+    var h='<h2 style="color:var(--vc1)">📨 Consulta de Escalação <button onclick="consultasJsonLastFetch=0;s3RenderConsultaV2(document.getElementById(\'s3-content\'))" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:.72rem;vertical-align:middle">↻ Atualizar</button></h2>';
 
     // ─── 1. CRIAR CONSULTA (formulário estruturado) ─────────────────────
     h+='<div class="consulta-card" id="consulta-create-section">';
