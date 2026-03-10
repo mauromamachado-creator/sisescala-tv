@@ -1340,34 +1340,6 @@ async def check_deadlines(app):
 
 # ─── Error handler ────────────────────────────────────────────────────────────
 
-async def sync_gas_lock_loop():
-    """Sincroniza lock/unlock com GAS a cada 10s — sem tunnel."""
-    while True:
-        await asyncio.sleep(10)
-        try:
-            data = _load_data()
-            changed = False
-            for vc_key in ("vc1", "vc2"):
-                c = data.get(vc_key)
-                if not c:
-                    continue
-                gas_locked = await _gas_is_locked(vc_key)
-                local_locked = c.get("locked", False)
-                if gas_locked and not local_locked:
-                    c["locked"] = True
-                    c["status"] = "locked"
-                    changed = True
-                    logger.info("[sync_gas] Travou %s (GAS=True, local=False)", vc_key)
-                elif not gas_locked and local_locked:
-                    c["locked"] = False
-                    c["status"] = "active"
-                    changed = True
-                    logger.info("[sync_gas] Destravou %s (GAS=False, local=True)", vc_key)
-            if changed:
-                _save_data(data)
-        except Exception as e:
-            logger.warning("[sync_gas] Erro: %s", e)
-
 
 async def error_handler(update: Update, context):
     logger.error("Erro: %s", context.error, exc_info=context.error)
@@ -1409,8 +1381,7 @@ def main():
         # Iniciar verificador de deadline
         asyncio.create_task(check_deadlines(app))
 
-        # Sincroniza lock/unlock com GAS a cada 60s
-        asyncio.create_task(sync_gas_lock_loop())
+
 
         # Iniciar bot Telegram
         await app.initialize()
