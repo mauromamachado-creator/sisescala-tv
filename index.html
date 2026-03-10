@@ -3790,6 +3790,10 @@ function s3RenderConsultaV2(container){
       var recipientsList=recipients.map(function(r){return{chat_id:r.chatId,name:r.name,rank:r.rank};});
 
       try{
+        // 0. Resetar lock no GAS para nova consulta
+        var gasUnlockAction='unlock_'+vcType; // unlock_vc1 ou unlock_vc2
+        try{await fetch(CONSULTA_GAS+'?action='+gasUnlockAction,{redirect:'follow'});}catch(e){console.warn('GAS unlock falhou:',e);}
+
         // 1. Salvar consulta localmente (e tentar API se disponível)
         var missionLetters=missions.map(function(m){return m.letra;});
         var result=await consultaApiPost({
