@@ -5446,6 +5446,8 @@ document.addEventListener('click',e=>{
   if(panel&&!panel.contains(e.target)&&e.target!==dot)panel.classList.remove('open');
 });
 async function loadAllData(){
+  // Não atualizar enquanto estiver na tela S3 (tela operacional)
+  if(currentScreen===14) return;
   document.getElementById('errorOverlay').style.display='none';
   document.getElementById('loadingMsg').style.display='block';
   const dot=document.getElementById('statusDot');
