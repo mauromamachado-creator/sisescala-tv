@@ -109,51 +109,54 @@ function _dispatch(p) {
     return _json({ok:true, vc: vcR});
   }
 
-  // ── set_consulta — salva dados na aba "texto consulta" ──────────
-  // Colunas: vc | texto | missoes | recipients | status | criado_em
+  // ── set_consulta — salva dados da consulta (ScriptProperties + aba visual) ──
   if (action === 'set_consulta') {
     var vcKey = (p.vc || 'vc1').toLowerCase().replace('-','');
     var missions  = typeof p.missions   === 'string' ? p.missions   : JSON.stringify(p.missions   || []);
     var recips    = typeof p.recipients === 'string' ? p.recipients : JSON.stringify(p.recipients || []);
     var createdAt = p.created_at || new Date().toISOString();
-    var shTC = _getOrCreateSheet(ss, 'texto consulta');
-    // Garante cabeçalho
-    if (shTC.getLastRow() < 1) {
-      shTC.getRange(1,1,1,6).setValues([['vc','texto','missoes','recipients','status','criado_em']]);
-    }
-    // Procura linha existente para esse vc e atualiza; senão appenda
-    var rowsTC = shTC.getDataRange().getValues();
-    var foundTC = false;
-    for (var ti = 1; ti < rowsTC.length; ti++) {
-      if (String(rowsTC[ti][0]).toLowerCase() === vcKey) {
-        shTC.getRange(ti+1,1,1,6).setValues([[vcKey, p.text||'', missions, recips, 'active', createdAt]]);
-        foundTC = true; break;
+    var props = PropertiesService.getScriptProperties();
+    // Salva em ScriptProperties (primário — confiável)
+    props.setProperty('consulta_' + vcKey, JSON.stringify({
+      text: p.text || '', missions: missions, recipients: recips, created_at: createdAt, status: 'active'
+    }));
+    // Reseta lock
+    props.setProperty('locked_' + vcKey, 'false');
+    // Tenta salvar na aba visual (secundário — não bloqueia se falhar)
+    try {
+      var shTC = ss.getSheetByName('texto consulta');
+      if (shTC) {
+        if (shTC.getLastRow() < 1) {
+          shTC.getRange(1,1,1,6).setValues([['vc','texto','missoes','recipients','status','criado_em']]);
+        }
+        var rowsTC = shTC.getDataRange().getValues();
+        var foundTC = false;
+        for (var ti = 1; ti < rowsTC.length; ti++) {
+          if (String(rowsTC[ti][0]).toLowerCase() === vcKey) {
+            shTC.getRange(ti+1,1,1,6).setValues([[vcKey, p.text||'', missions, recips, 'active', createdAt]]);
+            foundTC = true; break;
+          }
+        }
+        if (!foundTC) shTC.appendRow([vcKey, p.text||'', missions, recips, 'active', createdAt]);
       }
-    }
-    if (!foundTC) shTC.appendRow([vcKey, p.text||'', missions, recips, 'active', createdAt]);
-    // Reseta lock ao criar nova consulta
-    PropertiesService.getScriptProperties().setProperty('locked_' + vcKey, 'false');
+    } catch(eSheet) { /* ignora erro na aba */ }
     return _json({ok: true});
   }
 
-  // ── get_consulta — lê dados da aba "texto consulta" ─────────────
+  // ── get_consulta — lê dados (ScriptProperties + fallback aba) ───
   if (action === 'get_consulta') {
     var vcKey2 = (p.vc || 'vc1').toLowerCase().replace('-','');
-    var shTC2 = ss.getSheetByName('texto consulta');
-    if (!shTC2) return _json({ok: false, error: 'aba texto consulta não encontrada'});
-    var rowsTC2 = shTC2.getDataRange().getValues();
-    for (var ti2 = 1; ti2 < rowsTC2.length; ti2++) {
-      if (String(rowsTC2[ti2][0]).toLowerCase() === vcKey2) {
-        var r2 = rowsTC2[ti2];
-        return _json({ok: true, consulta: {
-          vc:         r2[0],
-          text:       r2[1],
-          missions:   JSON.parse(r2[2] || '[]'),
-          recipients: JSON.parse(r2[3] || '[]'),
-          status:     r2[4],
-          created_at: r2[5]
-        }});
-      }
+    var raw = PropertiesService.getScriptProperties().getProperty('consulta_' + vcKey2);
+    if (raw) {
+      var c = JSON.parse(raw);
+      return _json({ok: true, consulta: {
+        vc: vcKey2,
+        text: c.text || '',
+        missions: typeof c.missions === 'string' ? JSON.parse(c.missions || '[]') : (c.missions || []),
+        recipients: typeof c.recipients === 'string' ? JSON.parse(c.recipients || '[]') : (c.recipients || []),
+        status: c.status || 'active',
+        created_at: c.created_at || ''
+      }});
     }
     return _json({ok: false, error: 'Nenhuma consulta para ' + vcKey2});
   }
