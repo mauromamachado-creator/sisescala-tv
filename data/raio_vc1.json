@@ -1,7 +1,8 @@
 {
   "vc": "vc1",
   "data_consulta": "2026-03-09",
-  "gerado_em": "2026-03-09T00:03:48.679790",
+  "data_raio": "08/08/2026",
+  "gerado_em": "2026-03-09T19:17:41.921081",
   "enviado_por": "MJ MACHADO",
   "pilotos": [
     {
@@ -36,23 +37,23 @@
     },
     {
       "pos": 7,
-      "posto": "CP",
-      "nome": "THIAGO VASCONCELOS"
-    },
-    {
-      "pos": 8,
       "posto": "MJ",
       "nome": "OSVALDO"
     },
     {
-      "pos": 9,
+      "pos": 8,
       "posto": "CP",
-      "nome": "PEDRO CIRIACO"
+      "nome": "THIAGO VASCONCELOS"
+    },
+    {
+      "pos": 9,
+      "posto": "MJ",
+      "nome": "MACHADO"
     },
     {
       "pos": 10,
-      "posto": "MJ",
-      "nome": "MACHADO"
+      "posto": "CP",
+      "nome": "PEDRO CIRIACO"
     }
   ]
 }
