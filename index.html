@@ -3107,8 +3107,7 @@ function s3RenderOM(container){
   for(var ki=0;ki<sortedKeys.length;ki++){
     var isoKey=sortedKeys[ki];
     var dObj=new Date(isoKey+'T12:00:00');
-    var diffDays=Math.round((dObj-td2)/86400000);
-    var dayLabel=diffDays===0?'Hoje':diffDays===1?'Amanhã':diffDays===-1?'Ontem':(dayNames2[dObj.getDay()]+' '+String(dObj.getDate()).padStart(2,'0')+'/'+String(dObj.getMonth()+1).padStart(2,'0'));
+    var dayLabel=isoKey===todayISO2?'Hoje':(dayNames2[dObj.getDay()]+' '+String(dObj.getDate()).padStart(2,'0')+'/'+String(dObj.getMonth()+1).padStart(2,'0'));
     html+='<div style="font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:14px 0 8px">'+dayLabel+'</div>';
     var dayOMs=grouped[isoKey];
   for(var i=0;i<dayOMs.length;i++){
