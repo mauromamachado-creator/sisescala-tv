@@ -4304,10 +4304,26 @@ async function consultaArchiveConfirm(vcKey, enviarMsg){
     var vcLabel2=vcKey==='vc1'?'VC-1':'VC-2';
     mensagem=saudacao+', Consulta '+vcLabel2+' encerrada.';
   }
-  // Envia mensagem via Telegram se solicitado
-  // Arquiva e envia mensagem via bot (bot usa seus próprios recipients)
+  // Envia mensagem diretamente via Telegram API (igual ao envio da consulta)
+  if(mensagem){
+    try{
+      var _localD=_consultaLocalLoad();
+      var _consulta=_localD&&_localD[vcKey];
+      var _recipients=(_consulta&&_consulta.recipients)||[];
+      var tgBase='https://api.telegram.org/bot'+CONSULTA_TOKEN;
+      for(var _i=0;_i<_recipients.length;_i++){
+        var _cid=_recipients[_i].chat_id||_recipients[_i].chatId;
+        if(!_cid)continue;
+        await fetch(tgBase+'/sendMessage',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({chat_id:_cid,text:mensagem})
+        }).catch(function(){});
+      }
+    }catch(_e){console.warn('Erro ao enviar mensagem encerramento:',_e);}
+  }
+  // Arquiva no bot (best-effort)
   try{
-    var result=await consultaApiPost({action:'archive',vc:vcKey,mensagem:mensagem||null});
+    var result=await consultaApiPost({action:'archive',vc:vcKey,mensagem:null});
     if(result.ok||(result.error&&result.error.indexOf('Nenhuma consulta')>=0)){
       if(!result.ok){var _d=_consultaLocalLoad();_d[vcKey]=null;_consultaLocalSave(_d);}
       consultasJsonLastFetch=0;s3RenderActiveTab();
