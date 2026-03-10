@@ -3153,7 +3153,23 @@ function _consultaLocalSave(d){localStorage.setItem('sisgopa_consultas_v2',JSON.
 
 async function fetchConsultasJson(){
   if(consultasJsonCache && Date.now()-consultasJsonLastFetch<5000) return consultasJsonCache;
-  // Carregar do localStorage como base
+  // Buscar estado real do bot
+  try{
+    var r=await fetch(CONSULTA_API+'/api/consulta',{
+      method:'POST',headers:{'Content-Type':'application/json','X-API-Secret':CONSULTA_API_SECRET},
+      body:JSON.stringify({action:'state'}),signal:AbortSignal.timeout(8000)
+    });
+    if(r.ok){
+      var botData=await r.json();
+      if(botData.ok && botData.data){
+        consultasJsonCache=botData.data;
+        _consultaLocalSave(botData.data);
+        consultasJsonLastFetch=Date.now();
+        return consultasJsonCache;
+      }
+    }
+  }catch(e){console.warn('Bot offline, usando localStorage:',e);}
+  // Fallback: localStorage
   consultasJsonCache=_consultaLocalLoad();consultasJsonLastFetch=Date.now();
   return consultasJsonCache;
 }
