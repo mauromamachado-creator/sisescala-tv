@@ -4169,7 +4169,7 @@ async function consultaArchiveConfirm(vcKey, enviarMsg){
   var mensagem=null;
   if(enviarMsg){
     var hora=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'numeric',hour12:false})*1;
-    var saudacao=hora>=5&&hora<12?'🌅 Bom dia':hora>=12&&hora<18?'🌇 Boa tarde':'🌙 Boa noite';
+    var saudacao=hora>=5&&hora<12?'Bom dia':hora>=12&&hora<18?'Boa tarde':'Boa noite';
     var vcLabel2=vcKey==='vc1'?'VC-1':'VC-2';
     mensagem=saudacao+', Consulta '+vcLabel2+' encerrada.';
   }
