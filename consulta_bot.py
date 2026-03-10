@@ -727,6 +727,16 @@ async def callback_handler(update: Update, context):
 
     consulta = data[_resolved_vc]
 
+    # Se texto da consulta estiver vazio, busca do GAS
+    if not consulta.get("text"):
+        gas_c = await _gas_get_consulta(_resolved_vc)
+        if gas_c and gas_c.get("text"):
+            consulta["text"] = gas_c["text"]
+            if not consulta.get("missions") and gas_c.get("missions"):
+                consulta["missions"] = gas_c["missions"]
+            _save_data(data)
+            logger.info("Texto da consulta recuperado do GAS: %s", _resolved_vc)
+
     # Sincroniza lock com GAS — força checagem sem cache se local está travado
     if consulta.get("locked"):
         _gas_lock_cache.pop(_resolved_vc, None)  # invalida cache para checar fresco
