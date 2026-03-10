@@ -350,10 +350,8 @@ def _build_keyboard(consulta_id: str, missions: list[str], responses: dict, conf
             row = []
     if row:
         buttons.append(row)
-    buttons.append([
-        InlineKeyboardButton("✅ FULL DISP", callback_data=f"allyes|{consulta_id}"),
-        InlineKeyboardButton("❌ INDISPONÍVEL TODAS", callback_data=f"allno|{consulta_id}"),
-    ])
+    buttons.append([InlineKeyboardButton("✅ DISPONÍVEL TODAS", callback_data=f"allyes|{consulta_id}")])
+    buttons.append([InlineKeyboardButton("❌ INDISPONÍVEL TODAS", callback_data=f"allno|{consulta_id}")])
     buttons.append([
         InlineKeyboardButton("📨 CONFIRMAR", callback_data=f"confirm|{consulta_id}"),
     ])
