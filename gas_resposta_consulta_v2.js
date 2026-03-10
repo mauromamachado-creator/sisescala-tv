@@ -122,22 +122,22 @@ function _dispatch(p) {
     }));
     // Reseta lock
     props.setProperty('locked_' + vcKey, 'false');
-    // Tenta salvar na aba visual (secundário — não bloqueia se falhar)
+    // Tenta salvar na aba visual + escreve 1 em G2/G3 (aberto)
     try {
       var shTC = ss.getSheetByName('texto consulta');
       if (shTC) {
         if (shTC.getLastRow() < 1) {
-          shTC.getRange(1,1,1,6).setValues([['vc','texto','missoes','recipients','status','criado_em']]);
+          shTC.getRange(1,1,1,7).setValues([['vc','texto','missoes','recipients','status','criado_em','aberto']]);
         }
         var rowsTC = shTC.getDataRange().getValues();
         var foundTC = false;
         for (var ti = 1; ti < rowsTC.length; ti++) {
           if (String(rowsTC[ti][0]).toLowerCase() === vcKey) {
-            shTC.getRange(ti+1,1,1,6).setValues([[vcKey, p.text||'', missions, recips, 'active', createdAt]]);
+            shTC.getRange(ti+1,1,1,7).setValues([[vcKey, p.text||'', missions, recips, 'active', createdAt, 1]]);
             foundTC = true; break;
           }
         }
-        if (!foundTC) shTC.appendRow([vcKey, p.text||'', missions, recips, 'active', createdAt]);
+        if (!foundTC) shTC.appendRow([vcKey, p.text||'', missions, recips, 'active', createdAt, 1]);
       }
     } catch(eSheet) { /* ignora erro na aba */ }
     return _json({ok: true});
@@ -197,14 +197,18 @@ function _dispatch(p) {
     return _json({ok:true, tripulantes:list});
   }
 
-  // ── lock_vc — encerra consulta (SisGOPA chama direto) ──────────
-  // action=lock_vc1 ou lock_vc2 (GET param único) → lock_vc + vc
+  // ── lock_vc — encerra consulta ──────────────────────────────────
   if (action === 'lock_vc1') { action = 'lock_vc'; p.vc = 'VC-1'; }
   if (action === 'lock_vc2') { action = 'lock_vc'; p.vc = 'VC-2'; }
   if (action === 'lock_vc') {
     var vcLock = p.vc || 'VC-1';
     var keyLock = 'locked_' + vcLock.replace('-','').toLowerCase();
     PropertiesService.getScriptProperties().setProperty(keyLock, 'true');
+    // Escreve 0 na célula G2 (VC-1) ou G3 (VC-2) da aba "texto consulta"
+    try {
+      var shLock = ss.getSheetByName('texto consulta');
+      if (shLock) { var rowLock = vcLock === 'VC-1' ? 2 : 3; shLock.getRange(rowLock, 7).setValue(0); }
+    } catch(e2) {}
     return _json({ok:true, locked:true, vc:vcLock});
   }
 
@@ -215,17 +219,39 @@ function _dispatch(p) {
     var vcUnlock = p.vc || 'VC-1';
     var keyUnlock = 'locked_' + vcUnlock.replace('-','').toLowerCase();
     PropertiesService.getScriptProperties().setProperty(keyUnlock, 'false');
+    // Escreve 1 na célula G2 (VC-1) ou G3 (VC-2) da aba "texto consulta"
+    try {
+      var shUnlock = ss.getSheetByName('texto consulta');
+      if (shUnlock) { var rowUnlock = vcUnlock === 'VC-1' ? 2 : 3; shUnlock.getRange(rowUnlock, 7).setValue(1); }
+    } catch(e3) {}
     return _json({ok:true, locked:false, vc:vcUnlock});
   }
 
   // ── get (padrão) — retorna raio + respostas de VC-1 e VC-2 ─────
   var props = PropertiesService.getScriptProperties();
+  // Lê status da célula G2/G3 (1=aberto, 0=fechado) — fonte visual primária
+  var locked_vc1 = true, locked_vc2 = true;
+  try {
+    var shGet = ss.getSheetByName('texto consulta');
+    if (shGet) {
+      var g2 = shGet.getRange(2, 7).getValue();
+      var g3 = shGet.getRange(3, 7).getValue();
+      locked_vc1 = (g2 !== 1 && g2 !== '1');
+      locked_vc2 = (g3 !== 1 && g3 !== '1');
+    } else {
+      locked_vc1 = props.getProperty('locked_vc1') === 'true';
+      locked_vc2 = props.getProperty('locked_vc2') === 'true';
+    }
+  } catch(e4) {
+    locked_vc1 = props.getProperty('locked_vc1') === 'true';
+    locked_vc2 = props.getProperty('locked_vc2') === 'true';
+  }
   var result = {
     ok:true, vc1:[], vc2:[],
     data_raio_vc1: props.getProperty('data_raio_vc1') || '',
     data_raio_vc2: props.getProperty('data_raio_vc2') || '',
-    locked_vc1: props.getProperty('locked_vc1') === 'true',
-    locked_vc2: props.getProperty('locked_vc2') === 'true'
+    locked_vc1: locked_vc1,
+    locked_vc2: locked_vc2
   };
   var sh1 = ss.getSheetByName('VC-1');
   var sh2b = ss.getSheetByName('VC-2');
