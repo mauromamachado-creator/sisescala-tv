@@ -4153,6 +4153,8 @@ async function consultaAction(action,vcKey){
       var gasUrl=CONSULTA_GAS+'?action='+gasAction;
       var gasRes=await fetch(gasUrl,{redirect:'follow'}).then(function(r){return r.json();});
       if(gasRes.ok){
+        // Atualiza bot local também (best-effort, não bloqueia se tunnel cair)
+        try{await consultaApiPost({action:'lock',vc:vcKey});}catch(e){console.warn('Bot lock falhou (ok, GAS é autoritativo):',e);}
         // Atualiza localStorage local também
         var _ld=_consultaLocalLoad();
         if(_ld[vcKey]){_ld[vcKey].locked=true;}
