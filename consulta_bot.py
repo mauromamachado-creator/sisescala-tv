@@ -923,9 +923,11 @@ Para dúvidas--> {TELEFONE_CONTATO}",
             lines = [l for _, l in prio_lines]
             if unavail_list:
                 lines.append(f"  ❌ {', '.join(unavail_list)}")
+            consulta_text = consulta.get('text', '')
             text = (
                 f"🛩️ CONSULTA {vc_display}\n\n"
-                f"✅ RESPOSTA CONFIRMADA\n\n"
+                + (f"{consulta_text}\n\n" if consulta_text else "")
+                + f"✅ RESPOSTA CONFIRMADA\n\n"
                 f"Suas prioridades:\n" + "\n".join(lines)
             )
             keyboard = _build_keyboard(consulta_id, missions, responses, confirmed=True)
