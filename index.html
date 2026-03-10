@@ -3975,11 +3975,16 @@ function s3RenderConsultaV2(container){
         // 2. Enviar via Telegram Bot API DIRETO do frontend
         var tgBase='https://api.telegram.org/bot'+CONSULTA_TOKEN;
         var buttons=[];
+        // Botões de missão (até 4 por linha)
+        var mRow=[];
         missions.forEach(function(m){
           if(!m.is_saviso){
-            buttons.push([{text:'✅ '+m.letra+') DISPONÍVEL',callback_data:'toggle|'+vcType+'|'+m.letra}]);
+            mRow.push({text:'⬜ '+m.letra,callback_data:'toggle|'+vcType+'|'+m.letra});
+            if(mRow.length>=4){buttons.push(mRow);mRow=[];}
           }
         });
+        if(mRow.length>0) buttons.push(mRow);
+        buttons.push([{text:'✅ DISPONÍVEL TODAS',callback_data:'allyes|'+vcType}]);
         buttons.push([{text:'❌ INDISPONÍVEL TODAS',callback_data:'allno|'+vcType}]);
         buttons.push([{text:'📨 CONFIRMAR RESPOSTA',callback_data:'confirm|'+vcType}]);
 
