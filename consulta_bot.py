@@ -562,12 +562,24 @@ async def msg_handler(update: Update, context):
 
 async def callback_handler(update: Update, context):
     query = update.callback_query
-    await query.answer()
     user_id = query.from_user.id
     logger.info("CALLBACK RECEBIDO: data=%s user=%s", query.data, user_id)
 
     parts = query.data.split("|")
     action = parts[0]
+
+    # Feedback imediato — toast visível por 2s (exceto para ações com show_alert)
+    _consulta_actions = {"toggle", "allyes", "allno", "confirm", "alterar", "reset"}
+    if action in _consulta_actions:
+        _feedback = {
+            "toggle": "⏳ Processando...",
+            "allyes": "⏳ Processando...",
+            "allno": "⏳ Processando...",
+            "confirm": "⏳ Confirmando...",
+            "alterar": "⏳ Processando...",
+            "reset": "⏳ Processando...",
+        }
+        await query.answer(_feedback.get(action, "⏳"))
 
     # ─── PDF_TIPO: controlão ──────────────────────────────────────────────
     if action == "pdf_tipo":
