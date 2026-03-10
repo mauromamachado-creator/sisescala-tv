@@ -3678,65 +3678,8 @@ function s3RenderConsultaV2(container){
 
       // ─── 4. ENVIAR OM (pós encerramento) ──────────────────────────────
       if(consulta.locked){
+        // ─── 5. ENVIAR CONFIRMAÇÃO ──────────────────────────────────────
         var missoes=(consulta.parsed||{}).missoes||[];
-        var nonSaviso=missoes.filter(function(m){return !m.is_saviso;});
-        if(nonSaviso.length){
-          h+='<div style="margin-top:16px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">';
-          h+='<div style="font-size:.85rem;font-weight:900;margin-bottom:10px">📋 Ordem de Missão (OM)</div>';
-          nonSaviso.forEach(function(mm){
-            var hasOm=mm.om?'✅':'';
-            h+='<div style="margin-bottom:10px;padding:8px;border:1px solid var(--border);border-radius:6px">';
-            h+='<div style="font-size:.82rem;font-weight:700;margin-bottom:6px">Missão '+mm.letra+' '+hasOm+'</div>';
-            h+='<input class="consulta-input" id="om-trechos-'+vcKey+'-'+mm.letra+'" placeholder="Trechos: SBBR/SBKP, SBKP/SBSP" value="'+(mm.om&&mm.om.trechos?mm.om.trechos.join(', '):'')+'" style="margin-bottom:4px">';
-            h+='<div style="display:flex;gap:8px"><input class="consulta-input" id="om-anv-'+vcKey+'-'+mm.letra+'" placeholder="ANV: 2101" value="'+(mm.om&&mm.om.anv?mm.om.anv:'')+'" style="max-width:120px">';
-            h+='<input class="consulta-input" id="om-obs-'+vcKey+'-'+mm.letra+'" placeholder="Observações" value="'+(mm.om&&mm.om.obs?mm.om.obs:'')+'" style="flex:1"></div>';
-            h+='<button class="consulta-btn" style="margin-top:6px" onclick="consultaSaveOM(\''+vcKey+'\',\''+mm.letra+'\')">💾 Salvar OM '+mm.letra+'</button>';
-            h+='</div>';
-          });
-          h+='</div>';
-        }
-
-        // ─── 5. SAVISO ──────────────────────────────────────────────────
-        var savisoMissoes=missoes.filter(function(m){return m.is_saviso;});
-        if(savisoMissoes.length){
-          h+='<div style="margin-top:16px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">';
-          h+='<div style="font-size:.85rem;font-weight:900;margin-bottom:10px">📋 SAVISO — Nomes Escalados</div>';
-          savisoMissoes.forEach(function(mm){
-            h+='<div style="margin-bottom:8px">';
-            h+='<span style="font-size:.82rem;font-weight:700">'+mm.letra+') SAVISO '+(mm.saviso_dia||'')+': </span>';
-            h+='<input class="consulta-input" id="saviso-nomes-'+vcKey+'-'+mm.letra+'" placeholder="MJ MACHADO / MJ OSVALDO" value="'+(mm.escalados||[]).join(' / ')+'" style="max-width:400px">';
-            h+='<button class="consulta-btn" style="margin-left:8px" onclick="consultaSaveSAVISO(\''+vcKey+'\',\''+mm.letra+'\')">💾</button>';
-            h+='</div>';
-          });
-          h+='</div>';
-        }
-
-        // ─── 6. DEFINIR ESCALADOS ───────────────────────────────────────
-        if(missions.length&&recipients.length){
-          h+='<div style="margin-top:16px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">';
-          h+='<div style="font-size:.85rem;font-weight:900;margin-bottom:10px">👥 Definir Escalados por Missão</div>';
-          missoes.filter(function(m){return !m.is_saviso;}).forEach(function(mm){
-            // Quem respondeu disponível para esta missão
-            var disponiveis=recipients.filter(function(r){return r.confirmed&&r.responses&&r.responses[mm.letra]===true;});
-            var escaladosAtuais=mm.escalados||[];
-            h+='<div style="margin-bottom:10px;padding:8px;border:1px solid var(--border);border-radius:6px">';
-            h+='<div style="font-size:.82rem;font-weight:700;margin-bottom:6px">Missão '+mm.letra+' — Disponíveis: '+disponiveis.length+'</div>';
-            if(disponiveis.length){
-              disponiveis.forEach(function(r){
-                var nomeCompleto=(r.rank||'')+' '+(r.name||'');
-                var checked=escaladosAtuais.indexOf(nomeCompleto.trim())>=0?'checked':'';
-                h+='<label style="display:block;font-size:.82rem;color:var(--text);cursor:pointer;margin-bottom:2px"><input type="checkbox" class="escal-cb-'+vcKey+'-'+mm.letra+'" value="'+nomeCompleto.trim()+'" '+checked+'> '+nomeCompleto+'</label>';
-              });
-            } else {
-              h+='<div style="font-size:.82rem;color:var(--text2)">Nenhum tripulante disponível.</div>';
-            }
-            h+='<button class="consulta-btn" style="margin-top:6px" onclick="consultaSaveEscalados(\''+vcKey+'\',\''+mm.letra+'\')">💾 Salvar Escalados '+mm.letra+'</button>';
-            h+='</div>';
-          });
-          h+='</div>';
-        }
-
-        // ─── 7. ENVIAR CONFIRMAÇÃO ──────────────────────────────────────
         var anyEscalados=missoes.some(function(m){return m.escalados&&m.escalados.length;});
         if(anyEscalados){
           h+='<div style="margin-top:16px;padding:12px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.25);border-radius:8px">';
