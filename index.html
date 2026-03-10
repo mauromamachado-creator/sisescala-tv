@@ -438,7 +438,8 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <span style="position:absolute;top:12px;right:16px;font-size:22px;color:var(--text2);cursor:pointer" onclick="document.getElementById('novidadesModal').style.display='none'">✕</span>
     <div style="font-size:1.1rem;font-weight:700;color:var(--green);margin-bottom:16px">📋 Novidades - SisGOPA</div>
 
-    <div style="margin-bottom:16px">
+    <!-- v5.1 — aberta por padrão -->
+    <div style="margin-bottom:8px">
       <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v5.1 - 10/03/2026</div>
       <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
         <li>📋 <b>Aba OM no S3</b> — cards de missão com OM, mesmo estilo do Dashboard, com checkbox para marcar cancelamento</li>
@@ -449,80 +450,74 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
       </ul>
     </div>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v5.0 - 09/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
+    <!-- versões anteriores colapsáveis -->
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v5.0 - 09/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
         <li>✈️ <b>Missões Hoje / Próximos Dias</b> — agora usa a data do ETD do voo, não a data do documento da OM</li>
         <li>📋 <b>Confirmação de Missão</b> — nova aba no S3: envie o controlão pelo @SISGOP_BOT e acompanhe o status CIENTE de cada oficial</li>
         <li>📡 <b>ESCALA V2</b> — exibe mensagem da consulta ativa e data de atualização do raio</li>
         <li>🔄 <b>OMs automáticas</b> — sistema verifica a pasta Drive a cada 30 min e atualiza automaticamente</li>
         <li>🔒 <b>API local protegida</b> — secret header + binding 127.0.0.1</li>
-        <li>🐛 <b>Correção</b> — modal de detalhes da OM não mostrava "undefined" em campos de tripulação e pernas</li>
-        <li>🐛 <b>Correção</b> — "Próximos Dias" não mostrava mais NaN/NaN nas datas</li>
-        <li>🐛 <b>Correção</b> — tela de Diárias mostrava OMs em branco (filtro de missão removido)</li>
+        <li>🐛 Correção — modal de detalhes da OM sem "undefined"</li>
+        <li>🐛 Correção — datas NaN/NaN em Próximos Dias</li>
+        <li>🐛 Correção — Diárias com OMs em branco</li>
       </ul>
-    </div>
+    </details>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.8 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>🌍 <b>METAR Internacional</b> — agora aceita aeródromos fora do Brasil (OMAA, KJFK, etc)</li>
-        <li>📊 <b>Status do sistema</b> — contador de tripulantes corrigido</li>
-        <li>🔴 <b>Escala</b> marcada como fonte crítica no status</li>
-        <li>📌 <b>Ordens Especiais</b> agora aparecem nos detalhes da OM</li>
-        <li>🐛 <b>Correção</b> — tabela de diárias alinhada no mobile (botão remover visível)</li>
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v4.8 - 07/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>🌍 <b>METAR Internacional</b> — aceita aeródromos fora do Brasil</li>
+        <li>📊 Status do sistema — contador de tripulantes corrigido</li>
+        <li>🔴 Escala marcada como fonte crítica</li>
+        <li>📌 Ordens Especiais nos detalhes da OM</li>
+        <li>🐛 Tabela de diárias alinhada no mobile</li>
       </ul>
-    </div>
+    </details>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.7 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>📞 <b>Telefone e e-mail</b> na busca de tripulantes (clicáveis)</li>
-        <li>📋 <b>DIÁRIAS</b> só para missões PR, Reserva PR ou ESCAV</li>
-        <li>⚡ <b>Cache de status</b> — carregamento mais rápido</li>
-        <li>🌤️ <b>Proxy METAR dedicado</b> via Cloudflare Worker (mais estável)</li>
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v4.7 - 07/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>📞 Telefone e e-mail clicáveis na busca</li>
+        <li>📋 DIÁRIAS só para missões PR, Reserva PR ou ESCAV</li>
+        <li>⚡ Cache de status — carregamento mais rápido</li>
+        <li>🌤️ Proxy METAR dedicado via Cloudflare Worker</li>
       </ul>
-    </div>
+    </details>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.6 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>🚨 <b>Alertas Pop-up</b> - notificações automáticas de viagens internacionais do PR (confirmadas e canceladas)</li>
-        <li>📋 <b>Clique em "OM"</b> para ver tripulação completa + combustível de cada missão</li>
-        <li>👥 <b>Missões para todos</b> - mecânicos, comissários e demais tripulantes veem suas próximas missões na BUSCA</li>
-        <li>📱 <b>Barra do Safari/Chrome</b> minimiza ao rolar no celular</li>
-        <li>📋 <b>Novidades</b> - link no rodapé com changelog e dicas</li>
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v4.6 - 07/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>🚨 Alertas Pop-up de viagens internacionais do PR</li>
+        <li>📋 Modal de detalhes da OM (tripulação + combustível)</li>
+        <li>👥 Missões visíveis para todos os tripulantes na BUSCA</li>
+        <li>📱 Barra do Safari/Chrome minimiza ao rolar</li>
+        <li>📋 Link Novidades no rodapé</li>
       </ul>
-    </div>
+    </details>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.5 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>🤖 <b>Tela BOT</b> - METAR, TAF, NOTAMs, combustível, planejamento de voo e mais</li>
-        <li>📩 <b>Tela REPORTAR</b> - envie bugs ou sugestões direto do sistema</li>
-        <li>✈️ <b>Animação de loading</b> - avião SVG voando durante carregamento</li>
-        <li>🔍 <b>Decodificar METAR/TAF</b> - tradução completa em português</li>
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v4.5 - 07/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>🤖 Tela BOT — METAR, TAF, NOTAMs, combustível, planejamento</li>
+        <li>📩 Tela REPORTAR — bugs e sugestões direto do sistema</li>
+        <li>✈️ Animação de loading (avião SVG)</li>
+        <li>🔍 Decodificar METAR/TAF em português</li>
       </ul>
-    </div>
+    </details>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.4 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>💳 <b>Tela CARTÕES</b> - validade de documentos de todos os tripulantes</li>
-        <li>☰ <b>Menu hamburger</b> no celular</li>
-        <li>🔍 <b>Busca expandida</b> - encontra qualquer tripulante (não só pilotos)</li>
-        <li>⏱ <b>Timeout 15s</b> - sistema não trava mais se Google Sheets demorar</li>
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v4.4 - 07/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>💳 Tela CARTÕES — validade de documentos de todos os tripulantes</li>
+        <li>☰ Menu hamburger no celular</li>
+        <li>🔍 Busca expandida — qualquer tripulante por nome ou trigrama</li>
+        <li>⏱ Timeout 15s — sistema não trava se Google Sheets demorar</li>
       </ul>
-    </div>
+    </details>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.3 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>📺 <b>TV melhorada</b> - alertas por prioridade, horas voadas com glow</li>
-        <li>🎖 <b>Missões Cumpridas</b> - KPI renomeado</li>
-        <li>💳 <b>CARTÕES</b> - nova tela com validade de todos os tripulantes</li>
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v4.3 - 07/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>📺 TV melhorada — alertas por prioridade, horas voadas com glow</li>
+        <li>🎖 Missões Cumpridas — KPI renomeado</li>
+        <li>💳 CARTÕES — nova tela com validade</li>
       </ul>
-    </div>
+    </details>
 
     <div>
       <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">💡 Dicas</div>
