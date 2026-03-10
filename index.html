@@ -3935,6 +3935,8 @@ function s3RenderConsultaV2(container){
         // 0. Resetar lock no GAS para nova consulta
         var gasUnlockAction='unlock_'+vcType; // unlock_vc1 ou unlock_vc2
         try{await fetch(CONSULTA_GAS+'?action='+gasUnlockAction,{redirect:'follow'});}catch(e){console.warn('GAS unlock falhou:',e);}
+        // Reseta lock no bot local também
+        try{await consultaApiPost({action:'unlock',vc:vcType});}catch(e){console.warn('Bot unlock falhou:',e);}
 
         // 1. Salvar consulta localmente (e tentar API se disponível)
         var missionLetters=missions.map(function(m){return m.letra;});
