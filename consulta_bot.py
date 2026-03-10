@@ -47,7 +47,7 @@ from telegram.ext import (
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 BOT_TOKEN = os.environ.get("SISGOP_BOT_TOKEN") or "8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU"
-TELEFONE_CONTATO = "(21) 99524-2702"
+TELEFONE_CONTATO = "Escala GTE-1: (61) 99965-5801"
 
 # ─── Escalantes autorizados a enviar raio e consultas ─────────────────────────
 # Para adicionar: incluir chat_id e nome do escalante
@@ -740,7 +740,8 @@ async def callback_handler(update: Update, context):
     # Verificar se consulta está encerrada (vale pra todos os callbacks)
     if consulta.get("locked") and action != "ciente":
         await query.edit_message_text(
-            f"🔒 Consulta encerrada. Para dúvidas, entre em contato: {TELEFONE_CONTATO}"
+            f"🔒 Consulta encerrada.
+Para dúvidas--> {TELEFONE_CONTATO}"
         )
         return
 
@@ -749,7 +750,8 @@ async def callback_handler(update: Update, context):
         missao_letra = parts[2] if len(parts) > 2 else ""
         if consulta.get("locked"):
             await query.answer(
-                f"🔒 Consulta encerrada. Para dúvidas: {TELEFONE_CONTATO}",
+                f"🔒 Consulta encerrada.
+Para dúvidas--> {TELEFONE_CONTATO}",
                 show_alert=True,
             )
             return
