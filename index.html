@@ -3082,17 +3082,18 @@ function s3RenderOM(container){
     return;
   }
 
-  // Agrupa OMs por data
+  // Agrupa OMs por data — cada OM aparece em TODAS as datas que tem pernas
   var td2=new Date();td2.setHours(0,0,0,0);
   var todayISO2=td2.getFullYear()+'-'+String(td2.getMonth()+1).padStart(2,'0')+'-'+String(td2.getDate()).padStart(2,'0');
   var grouped={};
   omData.forEach(function(om){
-    var dates=getOMDates(om);
-    if(!dates.length)dates=[omPrimeiraDataVoo(om)||todayISO2];
-    // Usa a primeira data como chave de agrupamento
-    var key=dates[0]||todayISO2;
-    if(!grouped[key])grouped[key]=[];
-    grouped[key].push(om);
+    var dates=getOMDates(om).filter(function(d){return d>=todayISO2;});
+    if(!dates.length){var p=omPrimeiraDataVoo(om);if(p&&p>=todayISO2)dates=[p];}
+    dates.forEach(function(key){
+      if(!grouped[key])grouped[key]=[];
+      // Evita duplicata da mesma OM na mesma data
+      if(!grouped[key].find(function(x){return x.om===om.om;}))grouped[key].push(om);
+    });
   });
   var sortedKeys=Object.keys(grouped).sort().filter(function(k){return k>=todayISO2;});
 
