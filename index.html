@@ -3087,14 +3087,32 @@ function s3RenderOM(container){
     return;
   }
 
-  // Ordena OMs por data (mais recente primeiro)
-  var oms=[...omData].sort(function(a,b){
-    return (omPrimeiraDataVoo(b)||'').localeCompare(omPrimeiraDataVoo(a)||'');
+  // Agrupa OMs por data
+  var td2=new Date();td2.setHours(0,0,0,0);
+  var todayISO2=td2.getFullYear()+'-'+String(td2.getMonth()+1).padStart(2,'0')+'-'+String(td2.getDate()).padStart(2,'0');
+  var grouped={};
+  omData.forEach(function(om){
+    var dates=getOMDates(om);
+    if(!dates.length)dates=[omPrimeiraDataVoo(om)||todayISO2];
+    // Usa a primeira data como chave de agrupamento
+    var key=dates[0]||todayISO2;
+    if(!grouped[key])grouped[key]=[];
+    grouped[key].push(om);
   });
+  var sortedKeys=Object.keys(grouped).sort();
 
   var html='<div style="padding:4px 0 16px">';
-  for(var i=0;i<oms.length;i++){
-    var om=oms[i];
+  var dayNames2=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  var omIdx=0;
+  for(var ki=0;ki<sortedKeys.length;ki++){
+    var isoKey=sortedKeys[ki];
+    var dObj=new Date(isoKey+'T12:00:00');
+    var diffDays=Math.round((dObj-td2)/86400000);
+    var dayLabel=diffDays===0?'Hoje':diffDays===1?'Amanhã':diffDays===-1?'Ontem':(dayNames2[dObj.getDay()]+' '+String(dObj.getDate()).padStart(2,'0')+'/'+String(dObj.getMonth()+1).padStart(2,'0'));
+    html+='<div style="font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:14px 0 8px">'+dayLabel+'</div>';
+    var dayOMs=grouped[isoKey];
+  for(var i=0;i<dayOMs.length;i++){
+    var om=dayOMs[i];
     var omId=om.om||om.om_numero||('om_'+i);
     var isCancelled=!!canceladas[omId];
     var anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
@@ -3134,7 +3152,9 @@ function s3RenderOM(container){
     if(pilotos.length)html+='<div style="font-size:.7rem;color:var(--text2);margin-top:4px">👨‍✈️ '+pilotos.join(' / ')+'</div>';
 
     html+='</div>'; // end card
-  }
+    omIdx++;
+  } // end dayOMs loop
+  } // end sortedKeys loop
   html+='</div>';
   container.innerHTML=html;
 }
