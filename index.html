@@ -4307,17 +4307,22 @@ async function consultaArchiveConfirm(vcKey, enviarMsg){
   // Envia mensagem diretamente via Telegram API (igual ao envio da consulta)
   if(mensagem){
     try{
-      var _localD=_consultaLocalLoad();
-      var _consulta=_localD&&_localD[vcKey];
+      // Busca recipients do bot (tunnel) OU localStorage como fallback
+      var _data=await fetchConsultasJson();
+      var _consulta=(_data&&_data[vcKey])||(_consultaLocalLoad()[vcKey]);
       var _recipients=(_consulta&&_consulta.recipients)||[];
+      console.log('[ARCHIVE] recipients para envio:', _recipients);
       var tgBase='https://api.telegram.org/bot'+CONSULTA_TOKEN;
       for(var _i=0;_i<_recipients.length;_i++){
         var _cid=_recipients[_i].chat_id||_recipients[_i].chatId;
-        if(!_cid)continue;
-        await fetch(tgBase+'/sendMessage',{
+        if(!_cid){console.warn('[ARCHIVE] recipient sem chat_id:',_recipients[_i]);continue;}
+        console.log('[ARCHIVE] enviando para',_cid);
+        var _r=await fetch(tgBase+'/sendMessage',{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({chat_id:_cid,text:mensagem})
-        }).catch(function(){});
+        });
+        var _rj=await _r.json();
+        console.log('[ARCHIVE] resultado Telegram:',_rj);
       }
     }catch(_e){console.warn('Erro ao enviar mensagem encerramento:',_e);}
   }
