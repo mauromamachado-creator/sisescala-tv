@@ -481,7 +481,7 @@ async def raio_handler(update: Update, context):
         await update.message.reply_text(f"❌ Erro ao processar PDF: {e}")
 
 
-async def _register_tripulante(chat_id: int, tg_name: str, nome_guerra: str):
+async def _register_tripulante(chat_id: int, tg_name: str, nome_guerra: str, posto: str = "", vc: str = ""):
     """Cadastra ou atualiza o tripulante na aba Tripulantes do GAS."""
     try:
         import httpx
@@ -489,7 +489,9 @@ async def _register_tripulante(chat_id: int, tg_name: str, nome_guerra: str):
             "action": "register",
             "chat_id": str(chat_id),
             "tg_name": tg_name,
+            "posto": posto.upper().strip(),
             "nome_guerra": nome_guerra.upper().strip(),
+            "vc": vc,
         }
         async with httpx.AsyncClient(timeout=10) as client:
             r = await client.post(GAS_URL, json=payload, follow_redirects=True)
@@ -541,10 +543,10 @@ async def msg_handler(update: Update, context):
 
     # Busca posto e vc na aba dados tripulantes
     posto, vc = await _lookup_dados_tripulante(nome)
+
+    await _register_tripulante(user.id, user.full_name or user.username or "", nome, posto=posto, vc=vc)
+
     nome_completo = f"{posto} {nome}".strip() if posto else nome
-
-    await _register_tripulante(user.id, user.username or "", nome_completo)
-
     vc_txt = f" — {vc}" if vc else ""
     await update.message.reply_text(
         f"✅ *{nome_completo}*{vc_txt} cadastrado com sucesso!\n\n"
@@ -960,8 +962,7 @@ async def callback_handler(update: Update, context):
                 f"{consulta.get('text', '')}\n\n"
                 f"Suas respostas:\n{status_text}\n\n"
                 f"Toque na missão = define prioridade (ordem do clique)\n"
-                f"Toque de novo = remove\n"
-                f"🔄 LIMPAR = recomeçar"
+                f"Toque de novo = remove"
             )
             await query.edit_message_text(text=text, reply_markup=keyboard)
     except Exception as e:
