@@ -727,7 +727,9 @@ async def callback_handler(update: Update, context):
 
     consulta = data[_resolved_vc]
 
-    # Sincroniza lock com GAS (fonte autoritativa) — cache 30s para não sobrecarregar
+    # Sincroniza lock com GAS — força checagem sem cache se local está travado
+    if consulta.get("locked"):
+        _gas_lock_cache.pop(_resolved_vc, None)  # invalida cache para checar fresco
     gas_locked = await _gas_is_locked(_resolved_vc)
     if gas_locked and not consulta.get("locked"):
         consulta["locked"] = True
