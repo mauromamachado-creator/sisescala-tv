@@ -3673,7 +3673,9 @@ function s3RenderConsultaV2(container){
       if(!consulta.locked){
         h+='<button class="consulta-btn-danger" onclick="consultaAction(\'lock\',\''+vcKey+'\')">🔒 ENCERRAR RESPOSTAS</button>';
       }
-      h+='<button class="consulta-btn" onclick="consultaArchiveModal(\''+vcKey+'\')">📦 ARQUIVAR</button>';
+      if(consulta.locked){
+        h+='<button class="consulta-btn" onclick="consultaArchiveModal(\''+vcKey+'\')">📦 ARQUIVAR</button>';
+      }
       h+='</div>';
 
       // ─── 4. ENVIAR OM (pós encerramento) ──────────────────────────────
