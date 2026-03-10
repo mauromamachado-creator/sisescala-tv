@@ -3673,7 +3673,7 @@ function s3RenderConsultaV2(container){
       if(!consulta.locked){
         h+='<button class="consulta-btn-danger" onclick="consultaAction(\'lock\',\''+vcKey+'\')">🔒 ENCERRAR RESPOSTAS</button>';
       }
-      h+='<button class="consulta-btn" onclick="consultaAction(\'archive\',\''+vcKey+'\')">📦 ARQUIVAR</button>';
+      h+='<button class="consulta-btn" onclick="consultaArchiveModal(\''+vcKey+'\')">📦 ARQUIVAR</button>';
       h+='</div>';
 
       // ─── 4. ENVIAR OM (pós encerramento) ──────────────────────────────
@@ -4139,6 +4139,59 @@ async function _enviarConfirmacao(){
     alert('Erro: '+e.message);
     if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}
   }
+}
+
+// ─── Modal de arquivar com opção de mensagem ────────────────────────────────
+function consultaArchiveModal(vcKey){
+  var vcLabel=vcKey==='vc1'?'VC-1':'VC-2';
+  // Remove modal anterior se existir
+  var old=document.getElementById('archiveModal');if(old)old.remove();
+  var overlay=document.createElement('div');
+  overlay.id='archiveModal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML=`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:340px;width:90%;text-align:center">
+      <div style="font-size:1rem;font-weight:700;margin-bottom:6px">📦 Arquivar consulta ${vcLabel}</div>
+      <div style="font-size:.82rem;color:var(--text2);margin-bottom:18px">Deseja enviar uma mensagem de encerramento para os tripulantes?</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button onclick="consultaArchiveConfirm('${vcKey}','🌅 Bom dia, Escalação encerrada.')" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px;cursor:pointer;font-size:.85rem">🌅 Bom dia</button>
+        <button onclick="consultaArchiveConfirm('${vcKey}','🌇 Boa tarde, Escalação encerrada.')" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px;cursor:pointer;font-size:.85rem">🌇 Boa tarde</button>
+        <button onclick="consultaArchiveConfirm('${vcKey}','🌙 Boa noite, Escalação encerrada.')" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px;cursor:pointer;font-size:.85rem">🌙 Boa noite</button>
+        <button onclick="consultaArchiveConfirm('${vcKey}',null)" style="background:none;border:1px solid var(--border);color:var(--text2);padding:10px;border-radius:8px;cursor:pointer;font-size:.82rem">Arquivar sem mensagem</button>
+        <button onclick="document.getElementById('archiveModal').remove()" style="background:none;border:none;color:var(--text2);padding:6px;cursor:pointer;font-size:.78rem">Cancelar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function consultaArchiveConfirm(vcKey, mensagem){
+  document.getElementById('archiveModal')?.remove();
+  var vcLabel=vcKey==='vc1'?'VC-1':'VC-2';
+  // Envia mensagem via Telegram se solicitado
+  if(mensagem){
+    try{
+      var data=await fetchConsultasJson();
+      var consulta=data&&data[vcKey];
+      var recipients=(consulta&&consulta.recipients)||[];
+      var tgBase='https://api.telegram.org/bot'+CONSULTA_TOKEN;
+      for(var i=0;i<recipients.length;i++){
+        var chatId=recipients[i].chat_id||recipients[i].chatId;
+        if(!chatId) continue;
+        await fetch(tgBase+'/sendMessage',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({chat_id:chatId,text:mensagem})
+        }).catch(function(){});
+      }
+    }catch(e){console.warn('Erro ao enviar mensagem de encerramento:',e);}
+  }
+  // Arquiva normalmente
+  try{
+    var result=await consultaApiPost({action:'archive',vc:vcKey});
+    if(result.ok||(result.error&&result.error.indexOf('Nenhuma consulta')>=0)){
+      if(!result.ok){var _d=_consultaLocalLoad();_d[vcKey]=null;_consultaLocalSave(_d);}
+      consultasJsonLastFetch=0;s3RenderActiveTab();
+    } else alert('Erro ao arquivar: '+result.error);
+  }catch(e){alert('Erro: '+e.message);}
 }
 
 // ─── Ações de consulta (encerrar/arquivar) ──────────────────────────────────
