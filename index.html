@@ -3099,7 +3099,7 @@ function s3RenderOM(container){
     if(!grouped[key])grouped[key]=[];
     grouped[key].push(om);
   });
-  var sortedKeys=Object.keys(grouped).sort();
+  var sortedKeys=Object.keys(grouped).sort().filter(function(k){return k>=todayISO2;});
 
   var html='<div style="padding:4px 0 16px">';
   var dayNames2=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
