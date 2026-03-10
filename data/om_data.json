@@ -267,11 +267,11 @@
       {
         "origem": "SBBR",
         "origem_nome": "SBBR (EST AUT)",
-        "etd": "10/03/26 - 12:00 Z",
+        "etd": "10/03/26 - 13:00 Z",
         "ete": "01:00",
         "destino": "SBBR",
         "destino_nome": "SBBR (EST AUT)",
-        "eta": "10/03/26 - 13:00 Z",
+        "eta": "10/03/26 - 14:00 Z",
         "alternativa": "SBCF",
         "comb_min": 5500,
         "comb_rec": 9000
