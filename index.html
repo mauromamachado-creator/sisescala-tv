@@ -4154,19 +4154,24 @@ function consultaArchiveModal(vcKey){
       <div style="font-size:1rem;font-weight:700;margin-bottom:6px">📦 Arquivar consulta ${vcLabel}</div>
       <div style="font-size:.82rem;color:var(--text2);margin-bottom:18px">Deseja enviar uma mensagem de encerramento para os tripulantes?</div>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <button onclick="consultaArchiveConfirm('${vcKey}','🌅 Bom dia, Escalação encerrada.')" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px;cursor:pointer;font-size:.85rem">🌅 Bom dia</button>
-        <button onclick="consultaArchiveConfirm('${vcKey}','🌇 Boa tarde, Escalação encerrada.')" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px;cursor:pointer;font-size:.85rem">🌇 Boa tarde</button>
-        <button onclick="consultaArchiveConfirm('${vcKey}','🌙 Boa noite, Escalação encerrada.')" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px;cursor:pointer;font-size:.85rem">🌙 Boa noite</button>
-        <button onclick="consultaArchiveConfirm('${vcKey}',null)" style="background:none;border:1px solid var(--border);color:var(--text2);padding:10px;border-radius:8px;cursor:pointer;font-size:.82rem">Arquivar sem mensagem</button>
+        <button onclick="consultaArchiveConfirm('${vcKey}',true)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px;cursor:pointer;font-size:.85rem">📨 Arquivar e enviar mensagem</button>
+        <button onclick="consultaArchiveConfirm('${vcKey}',false)" style="background:none;border:1px solid var(--border);color:var(--text2);padding:10px;border-radius:8px;cursor:pointer;font-size:.82rem">Arquivar sem mensagem</button>
         <button onclick="document.getElementById('archiveModal').remove()" style="background:none;border:none;color:var(--text2);padding:6px;cursor:pointer;font-size:.78rem">Cancelar</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
 }
 
-async function consultaArchiveConfirm(vcKey, mensagem){
+async function consultaArchiveConfirm(vcKey, enviarMsg){
   document.getElementById('archiveModal')?.remove();
   var vcLabel=vcKey==='vc1'?'VC-1':'VC-2';
+  // Calcula saudação automática pelo horário (BRT)
+  var mensagem=null;
+  if(enviarMsg){
+    var hora=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'numeric',hour12:false})*1;
+    var saudacao=hora>=5&&hora<12?'🌅 Bom dia':hora>=12&&hora<18?'🌇 Boa tarde':'🌙 Boa noite';
+    mensagem=saudacao+', Escalação encerrada.';
+  }
   // Envia mensagem via Telegram se solicitado
   if(mensagem){
     try{
