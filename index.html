@@ -3086,6 +3086,14 @@ function s3SwitchTab(tab){
     var t=b.textContent.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     b.classList.toggle('active',t===tab);
   });
+  // Auto-refresh a cada 30s nas abas consulta e escalav2
+  if(window._s3AutoRefresh) clearInterval(window._s3AutoRefresh);
+  if(tab==='consulta'||tab==='escalav2'){
+    window._s3AutoRefresh=setInterval(function(){
+      if(s3ActiveTab===tab){consultasJsonLastFetch=0;s3RenderActiveTab();}
+      else clearInterval(window._s3AutoRefresh);
+    },30000);
+  }
   s3RenderActiveTab();
 }
 function s3RenderActiveTab(){
