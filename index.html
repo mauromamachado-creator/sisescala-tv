@@ -442,37 +442,32 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <div style="margin-bottom:8px">
       <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v5.3 - 10/03/2026</div>
       <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>⏳ <b>Feedback imediato no bot</b> — toast "Processando..." ao clicar qualquer botão</li>
-        <li>⬜ <b>Botões consulta corrigidos</b> — layout padronizado: missão por missão + DISPONÍVEL TODAS + INDISPONÍVEL TODAS</li>
-        <li>📝 <b>Texto consulta recuperado do GAS</b> — bot busca texto automaticamente se estiver vazio localmente</li>
-        <li>👤 <b>Registro de tripulante corrigido</b> — posto e nome de guerra separados corretamente (ex: CP SAMPAIO)</li>
-        <li>🔒 <b>Lock via G2/G3</b> — aba "texto consulta" col G indica status: 1=aberto, 0=encerrado</li>
+        <li>⏳ O bot confirma o clique imediatamente — sem dúvida se a mensagem foi recebida</li>
+        <li>📨 Mensagem de encerramento ao arquivar agora chega corretamente aos tripulantes</li>
+        <li>✅ Botões de consulta no Telegram padronizados (missão + DISPONÍVEL TODAS + INDISPONÍVEL TODAS)</li>
       </ul>
     </div>
     <!-- v5.2 — colapsável -->
     <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v5.2 - 10/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
     <ul style="margin:4px 0 8px;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>🔓 <b>Desbloqueio automático via GAS</b> — criar consulta destrava o bot diretamente (sem tunnel)</li>
-        <li>🔒 <b>ENCERRAR via GAS direto</b> — trava o bot sem depender do tunnel</li>
-        <li>📋 <b>Consulta salva no GAS</b> — missões e texto armazenados em ScriptProperties (fonte autoritativa)</li>
-        <li>✅ <b>Bot confirmado simplificado</b> — após confirmar, exibe só botão ALTERAR RESPOSTA</li>
-        <li>📞 <b>Contato correto</b> — mensagem de encerrada mostra Escala GTE-1: (61) 99965-5801</li>
+        <li>🔒 ENCERRAR e criar consulta funcionam de forma confiável — sem depender de conexão extra</li>
+        <li>✅ Após confirmar resposta, bot exibe só o botão ALTERAR (interface mais limpa)</li>
+        <li>📞 Consulta encerrada mostra contato da Escala GTE-1 automaticamente</li>
     </ul></details>
     <!-- v5.1 — colapsável -->
     <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v5.1 - 10/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
     <ul style="margin:4px 0 8px;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>📋 <b>Aba OM no S3</b> — cards de missão com OM, mesmo estilo do Dashboard, com checkbox para marcar cancelamento</li>
-        <li>🔒 <b>Login S3</b> — tela de senha no padrão visual do sistema (substituiu o prompt nativo do browser)</li>
-        <li>📦 <b>Arquivar Consulta</b> — modal com opção de enviar mensagem de encerramento aos tripulantes (saudação automática por horário)</li>
-        <li>⛔ <b>Consulta encerrada</b> — qualquer botão bloqueado exibe mensagem de encerramento com contato</li>
-        <li>🔒 <b>ARQUIVAR só após ENCERRAR</b> — botão Arquivar só aparece quando respostas estão encerradas</li>
+        <li>📋 Aba OM no S3 — cards de missão com checkbox para marcar cancelamento</li>
+        <li>🔒 Login S3 com tela de senha no padrão visual do sistema</li>
+        <li>📦 Arquivar consulta com opção de enviar mensagem de encerramento (saudação automática por horário)</li>
+        <li>⛔ Botões bloqueados após encerrar — exibe contato automaticamente</li>
       </ul></details>
 
-    <!-- versões anteriores colapsáveis -->
+    <!-- v5.0 — colapsável -->
     <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v5.0 - 09/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
       <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
-        <li>✈️ <b>Missões Hoje / Próximos Dias</b> — agora usa a data do ETD do voo, não a data do documento da OM</li>
-        <li>📋 <b>Confirmação de Missão</b> — nova aba no S3: envie o controlão pelo @SISGOP_BOT e acompanhe o status CIENTE de cada oficial</li>
+        <li>✈️ Missões Hoje / Próximos Dias com datas corretas</li>
+        <li>📋 Nova aba CONFIRMAÇÃO no S3 — acompanhe quem deu CIENTE no controlão</li>
         <li>📡 <b>ESCALA V2</b> — exibe mensagem da consulta ativa e data de atualização do raio</li>
         <li>🔄 <b>OMs automáticas</b> — sistema verifica a pasta Drive a cada 30 min e atualiza automaticamente</li>
         <li>🔒 <b>API local protegida</b> — secret header + binding 127.0.0.1</li>
