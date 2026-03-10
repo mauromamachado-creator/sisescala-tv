@@ -109,6 +109,26 @@ function _dispatch(p) {
     return _json({ok:true, vc: vcR});
   }
 
+  // ── get_dados_tripulantes — lê aba "dados tripulantes" ──────────
+  if (action === 'get_dados_tripulantes') {
+    var shD = ss.getSheetByName('dados tripulantes');
+    if (!shD) return _json({ok:false, error:'aba dados tripulantes não encontrada'});
+    var rowsD = shD.getDataRange().getValues();
+    var listD = [];
+    for (var d = 1; d < rowsD.length; d++) {
+      var rd = rowsD[d];
+      if (!rd[0]) continue; // linha vazia
+      listD.push({
+        posto: String(rd[0]||'').trim(),
+        nome_completo: String(rd[1]||'').trim(),
+        nome_guerra: String(rd[2]||'').trim().toUpperCase(),
+        trigrama: String(rd[3]||'').trim().toUpperCase(),
+        vc: String(rd[16]||'').trim()
+      });
+    }
+    return _json({ok:true, tripulantes:listD});
+  }
+
   // ── get_tripulantes ─────────────────────────────────────────────
   if (action === 'get_tripulantes') {
     var shT2 = ss.getSheetByName('Tripulantes');
