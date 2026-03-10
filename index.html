@@ -4304,6 +4304,11 @@ async function consultaArchiveConfirm(vcKey, enviarMsg){
     try{
       var data=await fetchConsultasJson();
       var consulta=data&&data[vcKey];
+      // Fallback: pega recipients do localStorage se fetchConsultasJson vier vazio
+      if(!consulta||!(consulta.recipients&&consulta.recipients.length)){
+        var _local=_consultaLocalLoad();
+        consulta=_local&&_local[vcKey]||consulta;
+      }
       var recipients=(consulta&&consulta.recipients)||[];
       var tgBase='https://api.telegram.org/bot'+CONSULTA_TOKEN;
       for(var i=0;i<recipients.length;i++){
