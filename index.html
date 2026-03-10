@@ -3121,7 +3121,7 @@ function s3RenderOM(container){
     html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
     html+='<span style="font-weight:900;color:'+anvColor+';font-size:.9rem">'+om.aeronave+' / '+om.fab+'</span>';
     html+='<div style="display:flex;align-items:center;gap:10px">';
-    html+='<span style="font-size:.7rem;background:var(--green);color:#000;padding:2px 8px;border-radius:4px;font-weight:700">📋 '+omId+'</span>';
+    html+='<span style="font-size:.7rem;background:var(--green);color:#000;padding:2px 8px;border-radius:4px;font-weight:700;cursor:pointer;text-decoration:underline" onclick="showOMDetail(\''+omId+'\')">📋 '+omId+'</span>';
     html+='<label style="display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text2);cursor:pointer;text-decoration:none">';
     html+='<input type="checkbox" '+(isCancelled?'checked':'')+' onchange="toggleOMCancelada(\''+omId+'\',this.checked)" style="width:14px;height:14px;cursor:pointer"> Cancelada';
     html+='</label>';
