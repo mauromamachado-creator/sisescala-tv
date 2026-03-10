@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>SisGOPA - Gestão de Operações Aéreas</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -354,7 +357,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <button onclick="goScreen(2)" id="btn2">HORAS DE VOO</button>
     <button onclick="goScreen(3)" id="btn3">FERIAS/ALERTAS</button>
     <button onclick="goScreen(14)" id="btn14">S3</button>
-    <button onclick="goScreen(5)" id="btn5">ACNT/ALTR</button>
+
     <button onclick="goScreen(6)" id="btn6">CALENDÁRIO</button>
     <button onclick="goScreen(10)" id="btn10">CARTÕES</button>
     <button onclick="goScreen(11)" id="btn11">BOT</button>
@@ -370,6 +373,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
       <div class="status-panel" id="statusPanel"></div>
     </span>
     <span id="lastUpdate" style="color:var(--text2);font-size:.75rem"></span>
+    <button id="alertBtn" onclick="fetchAllAlerts(true)" title="Ver alertas" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;margin-right:4px">🔔</button>
     <button class="ctrl-btn" onclick="goFullscreen()">TELA CHEIA</button>
   </div>
 </header>
@@ -423,7 +427,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 </style>
 
 <footer>
-  <span>SisGOPA v4.8 - Desenvolvido para o GTE por Major Machado</span>
+  <span>SisGOPA v5.0 - Desenvolvido para o GTE por Major Machado</span>
   <a onclick="loadAllData()">Atualizar dados</a>
   <a onclick="showNovidades()" style="cursor:pointer;text-decoration:underline;margin-left:8px">Novidades</a>
 </footer>
@@ -434,66 +438,86 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <span style="position:absolute;top:12px;right:16px;font-size:22px;color:var(--text2);cursor:pointer" onclick="document.getElementById('novidadesModal').style.display='none'">✕</span>
     <div style="font-size:1.1rem;font-weight:700;color:var(--green);margin-bottom:16px">📋 Novidades - SisGOPA</div>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.8 - 07/03/2026</div>
+    <!-- v5.1 — aberta por padrão -->
+    <div style="margin-bottom:8px">
+      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v5.1 - 10/03/2026</div>
       <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>🌍 <b>METAR Internacional</b> — agora aceita aeródromos fora do Brasil (OMAA, KJFK, etc)</li>
-        <li>📊 <b>Status do sistema</b> — contador de tripulantes corrigido</li>
-        <li>🔴 <b>Escala</b> marcada como fonte crítica no status</li>
-        <li>📌 <b>Ordens Especiais</b> agora aparecem nos detalhes da OM</li>
-        <li>🐛 <b>Correção</b> — tabela de diárias alinhada no mobile (botão remover visível)</li>
+        <li>📋 <b>Aba OM no S3</b> — cards de missão com OM, mesmo estilo do Dashboard, com checkbox para marcar cancelamento</li>
+        <li>🔒 <b>Login S3</b> — tela de senha no padrão visual do sistema (substituiu o prompt nativo do browser)</li>
+        <li>📦 <b>Arquivar Consulta</b> — modal com opção de enviar mensagem de encerramento aos tripulantes (saudação automática por horário)</li>
+        <li>⛔ <b>Consulta encerrada</b> — qualquer botão bloqueado exibe mensagem de encerramento com contato</li>
+        <li>🔒 <b>ARQUIVAR só após ENCERRAR</b> — botão Arquivar só aparece quando respostas estão encerradas</li>
       </ul>
     </div>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.7 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>📞 <b>Telefone e e-mail</b> na busca de tripulantes (clicáveis)</li>
-        <li>📋 <b>DIÁRIAS</b> só para missões PR, Reserva PR ou ESCAV</li>
-        <li>⚡ <b>Cache de status</b> — carregamento mais rápido</li>
-        <li>🌤️ <b>Proxy METAR dedicado</b> via Cloudflare Worker (mais estável)</li>
+    <!-- versões anteriores colapsáveis -->
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v5.0 - 09/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>✈️ <b>Missões Hoje / Próximos Dias</b> — agora usa a data do ETD do voo, não a data do documento da OM</li>
+        <li>📋 <b>Confirmação de Missão</b> — nova aba no S3: envie o controlão pelo @SISGOP_BOT e acompanhe o status CIENTE de cada oficial</li>
+        <li>📡 <b>ESCALA V2</b> — exibe mensagem da consulta ativa e data de atualização do raio</li>
+        <li>🔄 <b>OMs automáticas</b> — sistema verifica a pasta Drive a cada 30 min e atualiza automaticamente</li>
+        <li>🔒 <b>API local protegida</b> — secret header + binding 127.0.0.1</li>
+        <li>🐛 Correção — modal de detalhes da OM sem "undefined"</li>
+        <li>🐛 Correção — datas NaN/NaN em Próximos Dias</li>
+        <li>🐛 Correção — Diárias com OMs em branco</li>
       </ul>
-    </div>
+    </details>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.6 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>🚨 <b>Alertas Pop-up</b> - notificações automáticas de viagens internacionais do PR (confirmadas e canceladas)</li>
-        <li>📋 <b>Clique em "OM"</b> para ver tripulação completa + combustível de cada missão</li>
-        <li>👥 <b>Missões para todos</b> - mecânicos, comissários e demais tripulantes veem suas próximas missões na BUSCA</li>
-        <li>📱 <b>Barra do Safari/Chrome</b> minimiza ao rolar no celular</li>
-        <li>📋 <b>Novidades</b> - link no rodapé com changelog e dicas</li>
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v4.8 - 07/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>🌍 <b>METAR Internacional</b> — aceita aeródromos fora do Brasil</li>
+        <li>📊 Status do sistema — contador de tripulantes corrigido</li>
+        <li>🔴 Escala marcada como fonte crítica</li>
+        <li>📌 Ordens Especiais nos detalhes da OM</li>
+        <li>🐛 Tabela de diárias alinhada no mobile</li>
       </ul>
-    </div>
+    </details>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.5 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>🤖 <b>Tela BOT</b> - METAR, TAF, NOTAMs, combustível, planejamento de voo e mais</li>
-        <li>📩 <b>Tela REPORTAR</b> - envie bugs ou sugestões direto do sistema</li>
-        <li>✈️ <b>Animação de loading</b> - avião SVG voando durante carregamento</li>
-        <li>🔍 <b>Decodificar METAR/TAF</b> - tradução completa em português</li>
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v4.7 - 07/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>📞 Telefone e e-mail clicáveis na busca</li>
+        <li>📋 DIÁRIAS só para missões PR, Reserva PR ou ESCAV</li>
+        <li>⚡ Cache de status — carregamento mais rápido</li>
+        <li>🌤️ Proxy METAR dedicado via Cloudflare Worker</li>
       </ul>
-    </div>
+    </details>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.4 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>💳 <b>Tela CARTÕES</b> - validade de documentos de todos os tripulantes</li>
-        <li>☰ <b>Menu hamburger</b> no celular</li>
-        <li>🔍 <b>Busca expandida</b> - encontra qualquer tripulante (não só pilotos)</li>
-        <li>⏱ <b>Timeout 15s</b> - sistema não trava mais se Google Sheets demorar</li>
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v4.6 - 07/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>🚨 Alertas Pop-up de viagens internacionais do PR</li>
+        <li>📋 Modal de detalhes da OM (tripulação + combustível)</li>
+        <li>👥 Missões visíveis para todos os tripulantes na BUSCA</li>
+        <li>📱 Barra do Safari/Chrome minimiza ao rolar</li>
+        <li>📋 Link Novidades no rodapé</li>
       </ul>
-    </div>
+    </details>
 
-    <div style="margin-bottom:16px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v4.3 - 07/03/2026</div>
-      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
-        <li>📺 <b>TV melhorada</b> - alertas por prioridade, horas voadas com glow</li>
-        <li>🎖 <b>Missões Cumpridas</b> - KPI renomeado</li>
-        <li>💳 <b>CARTÕES</b> - nova tela com validade de todos os tripulantes</li>
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v4.5 - 07/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>🤖 Tela BOT — METAR, TAF, NOTAMs, combustível, planejamento</li>
+        <li>📩 Tela REPORTAR — bugs e sugestões direto do sistema</li>
+        <li>✈️ Animação de loading (avião SVG)</li>
+        <li>🔍 Decodificar METAR/TAF em português</li>
       </ul>
-    </div>
+    </details>
+
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v4.4 - 07/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>💳 Tela CARTÕES — validade de documentos de todos os tripulantes</li>
+        <li>☰ Menu hamburger no celular</li>
+        <li>🔍 Busca expandida — qualquer tripulante por nome ou trigrama</li>
+        <li>⏱ Timeout 15s — sistema não trava se Google Sheets demorar</li>
+      </ul>
+    </details>
+
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v4.3 - 07/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 0;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
+        <li>📺 TV melhorada — alertas por prioridade, horas voadas com glow</li>
+        <li>🎖 Missões Cumpridas — KPI renomeado</li>
+        <li>💳 CARTÕES — nova tela com validade</li>
+      </ul>
+    </details>
 
     <div>
       <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">💡 Dicas</div>
@@ -746,7 +770,7 @@ async function _sendReport(type,desc,diagnostics){
     });
   }catch(e){}
   if(sent){
-    if(status)status.innerHTML='<span style="color:#4ecdc4">✅ Reporte enviado! Ravi vai analisar e corrigir automaticamente.</span>';
+    if(status)status.innerHTML='<span style="color:#4ecdc4">✅ Reporte enviado! o Setor de Operações vai analisar e corrigir.</span>';
     const ta=document.getElementById('emDesc')||document.getElementById('reportDesc');
     if(ta)ta.value='';
   }else{
@@ -768,9 +792,16 @@ let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[], diari
 let cartoesData=[];let cartoesFailed=false;let pauDeSeboData={};
 let metarMulti={};
 let anualVC1={voadas:0,esforco:650}, anualVC2={voadas:0,esforco:1220};
-let escalaData={vc1:{consulta:'',raio:[]},vc2:{consulta:'',raio:[]}};
 let confirmaData=[];
 let omData=[];let dadosPessoais={};
+function parseOMDate(s,end){const m=s&&s.match(/^(\d{2})\/(\d{2})\/(\d{2})$/);const iso=m?('20'+m[3]+'-'+m[2]+'-'+m[1]):s;return new Date(iso+'T'+(end?'23:59':'12:00')+':00');}
+function omDataISO(s){const m=s&&s.match(/^(\d{2})\/(\d{2})\/(\d{2})$/);return m?('20'+m[3]+'-'+m[2]+'-'+m[1]):s;}
+// Retorna a data mais cedo de voo de uma OM (primeiro ETD das pernas, fallback om.data)
+function omPrimeiraDataVoo(om){for(const p of(om.pernas||[])){const m=p.etd&&p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(m)return'20'+m[3]+'-'+m[2]+'-'+m[1];}return omDataISO(om.data);}
+// Verifica se alguma perna da OM tem ETD em determinada data ISO
+function omTemEtdNaData(om,isoDate){const dates=new Set();(om.pernas||[]).forEach(p=>{const m=p.etd&&p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(m)dates.add('20'+m[3]+'-'+m[2]+'-'+m[1]);});if(!dates.size)dates.add(omDataISO(om.data));return dates.has(isoDate);}
+// Retorna todas as datas ISO de voo de uma OM (ETD das pernas + om.data como fallback)
+function getOMDates(om){const dates=new Set([omDataISO(om.data)]);(om.pernas||[]).forEach(p=>{const m=p.etd&&p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(m)dates.add('20'+m[3]+'-'+m[2]+'-'+m[1]);const m2=p.eta&&p.eta.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(m2)dates.add('20'+m2[3]+'-'+m2[2]+'-'+m2[1]);});return[...dates].filter(d=>!!d&&!d.includes('undefined'));}
 
 function parseCSV(text){
   const rows=[];let row=[],field='',inQ=false;
@@ -983,11 +1014,11 @@ function parseDiario(rows){
   // Flight rows: rows index 4,5,6 (main legs) and look for extra flights around row 20
   const flightRowIdxs=[4,5,6];
   // Find extra flight rows (look for rows where col 1 has task name and has route-like data)
-  for(let ri=15;ri<Math.min(rows.length,30);ri++){
+  for(let ri=15;ri<rows.length;ri++){
     const rr=rows[ri];if(!rr)continue;
     // Check if any date column has route-like data (contains hyphen, looks like ICAO codes)
     let hasFlightData=false;
-    for(const dc of dateColMap.slice(0,5)){
+    for(const dc of dateColMap.slice(0,10)){
       const dep=String(rr[dc.col]||'').trim();
       const route=String(rr[dc.col+1]||'').trim();
       if(dep&&route&&route.includes('-')&&!route.includes('Status')&&!route.includes('Origem')&&!route.includes('Marco')&&
@@ -1107,9 +1138,11 @@ function decodeMetar(raw){
 const METAR_WORKER=''; // URL do Cloudflare Worker quando deployado, ex: 'https://metar-proxy.seu-user.workers.dev'
 const CORS_PROXIES=[
   ...(METAR_WORKER?[u=>{try{const p=new URL(u);return METAR_WORKER+'?ids='+(p.searchParams.get('ids')||'SBBR')+'&format='+(p.searchParams.get('format')||'raw');}catch(e){return METAR_WORKER+'?url='+encodeURIComponent(u);}}]:[]),
+  u=>'https://corsproxy.io/?'+encodeURIComponent(u),
   u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u),
   u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
-  u=>'https://corsproxy.io/?'+encodeURIComponent(u)
+  u=>'https://thingproxy.freeboard.io/fetch/'+u,
+  u=>'https://cors-anywhere.herokuapp.com/'+u
 ];
 async function proxyFetch(url){
   for(const mk of CORS_PROXIES){
@@ -1128,7 +1161,7 @@ async function fetchMetar(){
     const text=await proxyFetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw');
     if(!text)throw new Error('Sem dados');
     metarRaw=text;metarDecoded=decodeMetar(metarRaw);
-  }catch(e){console.error('METAR fetch error',e);throw e;}
+  }catch(e){console.warn('METAR fetch error',e);}
 }
 async function fetchMetarMulti(){
   try{
@@ -1305,7 +1338,7 @@ function renderScreen0(){
   html+=`<div class="panel-title"><span class="icon">📋</span> Missões de Hoje - ${todayStr} (${dayNames[td.getDay()]})</div>`;
   const todayDayNameDash=dayNames[td.getDay()];
   const todayISO=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
-  const todayOM=omData.filter(o=>o.data===todayISO);
+  const todayOM=omData.filter(o=>omTemEtdNaData(o,todayISO));
   const todayConfirmDash=confirmaData.filter(c=>c.dia.toUpperCase()===todayDayNameDash);
   if(todayOM.length){
     for(const om of todayOM){
@@ -1320,10 +1353,14 @@ function renderScreen0(){
         html+=`<span style="color:var(--text2)">→</span>`;
         html+=`<span style="font-weight:700;min-width:40px">${p.destino}</span>`;
         html+=`<span style="color:var(--text2);font-size:.7rem">${p.etd.split(' ')[1]||''}</span>`;
-        html+=`<span class="mission-tipo">${p.missao}</span>`;
+        html+=`<span class="mission-tipo">${p.missao||om.tipo||''}</span>`;
         html+=`</div>`;
       }
-      const pilotos=om.tripulacao.filter(t=>t.trigrama).map(t=>`${t.posto} ${t.nome}`).join(' / ');
+      // Só pilotos: quem tem trigrama (3 letras antes do /)
+      const pilotos=om.tripulacao.map(t=>{
+        if(typeof t==='string'){const m=t.match(/^(\S+)\s+([^(]+?)\s*\(([A-Z]{3})\s*\//);return m?`${m[2].trim()} (${m[3]})`:null;}
+        return t.trigrama?`${t.nome} (${t.trigrama})`:null;
+      }).filter(Boolean).join(' / ');
       html+=`<div style="font-size:.7rem;color:var(--text2);margin-top:4px">👨‍✈️ ${pilotos}</div>`;
       html+=`</div>`;
     }
@@ -1362,9 +1399,9 @@ function renderScreen0(){
   // Próximos dias: coleta datas do diário + OMs futuras, OM tem prioridade
   const weekDays=diarioData.filter(d=>{const diff=(d.date-td)/(86400000);return diff>0&&diff<=7&&d.legs.length>0;});
   const tdMid=new Date(td);tdMid.setHours(12,0,0,0);
-  const futureOMs=omData.filter(o=>{const od=new Date(o.data+'T12:00:00');const diff=(od-tdMid)/86400000;return diff>0&&diff<=7;});
+  const futureOMs=omData.filter(o=>{const iso=omPrimeiraDataVoo(o);const od=new Date(iso+"T12:00:00");const diff=(od-tdMid)/86400000;return diff>0&&diff<=7;});
   // Extrair todas as datas de pernas das OMs (para missões multi-dia)
-  function getOMDates(om){const dates=new Set([om.data]);om.pernas.forEach(p=>{const m=p.etd.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(m)dates.add('20'+m[3]+'-'+m[2]+'-'+m[1]);const m2=p.eta.match(/(\d{2})\/(\d{2})\/(\d{2})/);if(m2)dates.add('20'+m2[3]+'-'+m2[2]+'-'+m2[1]);});return[...dates];}
+  // getOMDates definida globalmente
   // Juntar todas as datas únicas
   const allDates=new Set();
   weekDays.forEach(d=>{const iso=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');allDates.add(iso);});
@@ -1390,8 +1427,8 @@ function renderScreen0(){
               <span style="font-weight:900;color:var(--text)">${pi===0?dateStr:''}</span>
               <span style="color:var(--text2);font-size:.7rem">${pi===0?dayName:''}</span>
               <span style="color:${anvColor};font-weight:700">${pi===0?om.fab:''}</span>
-              <span>${p.origem}→${p.destino} <span style="color:var(--yellow)">${p.missao||''}</span></span>
-              <span>${pi===0?`<span style="font-size:.6rem;color:var(--green);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();showOMDetail('${om.om}')">📋 OM</span>`:''}</span>
+              <span>${p.origem}→${p.destino} <span style="color:var(--yellow)">${p.missao||om.tipo||''}</span></span>
+              <span>${pi===0?`<button onclick="event.stopPropagation();showOMDetail('${om.om}')" style="background:rgba(0,255,136,.15);border:1px solid var(--green);color:var(--green);padding:3px 8px;border-radius:5px;cursor:pointer;font-size:.7rem;font-weight:700;white-space:nowrap">📋 OM</button>`:''}</span>
             </div>`;
           }
         }
@@ -1509,11 +1546,11 @@ function renderScreen0(){
   {
     const _done=getDiariasDownloaded();const _conc=getDiariasConcluidas();
     const _brP=['SB','SD','SN','SI','SS','SW'];
-    const _diarias=(omData||[]).filter(om=>om.pernas.every(p=>_brP.some(pf=>p.origem.startsWith(pf))&&_brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>{const m=(p.missao||'').toUpperCase();return m.includes('PR')||m.includes('ESCAV');}));
+    const _diarias=(omData||[]).filter(om=>om.pernas.every(p=>_brP.some(pf=>p.origem.startsWith(pf))&&_brP.some(pf=>p.destino.startsWith(pf))));
     const _pend=_diarias.filter(om=>!_conc[om.om]);
     const _nBiz=d=>{const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;};
     const _hj=nowBRT();_hj.setHours(0,0,0,0);
-    const _venc=_pend.filter(om=>{const p=_nBiz(new Date(om.data+'T23:59:00'));p.setHours(0,0,0,0);return p<_hj;}).length;
+    const _venc=_pend.filter(om=>{const p=_nBiz(parseOMDate(om.data,true));p.setHours(0,0,0,0);return p<_hj;}).length;
     const _naoGeradas=_pend.filter(om=>!_done[om.om]).length;
     if(_pend.length){
       html+=`<div class="dash-panel" style="grid-column:1/-1;border-top:3px solid ${_venc?'var(--red)':'#64b4ff'}">
@@ -1868,7 +1905,7 @@ function getOMsForCrew(nome,trigrama){
   const nomeUp=(nome||'').toUpperCase();
   const triUp=(trigrama||'').toUpperCase();
   return omData.filter(om=>{
-    const omDate=new Date(om.data+'T12:00:00');
+    const omDate=parseOMDate(om.data);
     if(omDate<td)return false;
     return om.tripulacao.some(t=>{
       if(triUp&&t.trigrama&&t.trigrama.toUpperCase()===triUp)return true;
@@ -1876,15 +1913,15 @@ function getOMsForCrew(nome,trigrama){
       if(nomeUp){const tNome=(t.nome||'').toUpperCase();if(nomeUp.includes(tNome)&&tNome.length>=3)return true;}
       return false;
     });
-  }).sort((a,b)=>a.data.localeCompare(b.data));
+  }).sort((a,b)=>omDataISO(a.data).localeCompare(omDataISO(b.data)));
 }
 function renderOMsNaBusca(nome,trigrama){
   const oms=getOMsForCrew(nome,trigrama);
   if(!oms.length)return'';
   let html=`<div class="sc-item" style="grid-column:1/-1"><div class="sc-item-label">Próximas Missões (OM)</div><div style="margin-top:4px">`;
   oms.forEach(om=>{
-    const dateStr=new Date(om.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
-    const rotas=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
+    const dateStr=parseOMDate(om.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    const rotas=om.pernas.map(p=>(p.origem||_icaoOrig(p))+'→'+(p.destino||_icaoDest(p))).join(' / ');
     const missoes=om.pernas.map(p=>p.missao).filter(Boolean).join(' / ');
     html+=`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.78rem;border-bottom:1px solid rgba(255,255,255,.05)">
       <span style="font-weight:700;min-width:40px">${dateStr}</span>
@@ -2059,170 +2096,6 @@ function doSearch(val){
   searchTimeout=setTimeout(()=>renderScreenSearch(val),200);
 }
 
-// ===== ESCALAÇÃO =====
-async function fetchEscalaCSV(sheetName){
-  const url=`https://docs.google.com/spreadsheets/d/${ESCALA_SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-  const r=await fetch(url,{cache:'no-store'});if(!r.ok)return[];return parseCSV(await r.text());
-}
-async function fetchEscala(){
-  try{
-    const [c1,c2,r1,r2,sav]=await Promise.all([
-      fetchEscalaCSV('Consulta VC-1'),fetchEscalaCSV('Consulta VC-2'),
-      fetchEscalaCSV('Raio Final VC-1'),fetchEscalaCSV('Raio Final VC-2'),
-      fetchEscalaCSV('SAVISO')]);
-    escalaData.vc1.consulta=c1.length?String(c1[0][0]||''):'';
-    escalaData.vc2.consulta=c2.length?String(c2[0][0]||''):'';
-    const parseRaio=(rows)=>{
-      if(!rows.length)return[];
-      // Header row has mission columns starting at col6 (A,B,C...)
-      const hdr=rows[0];const missions=[];
-      for(let i=6;i<hdr.length;i++){const v=String(hdr[i]||'').trim();if(v&&v.length<=2)missions.push({idx:i,label:v});else break;}
-      const pilots=[];
-      for(let r=1;r<rows.length;r++){
-        const row=rows[r];const name=String(row[3]||'').trim();if(!name||name==='X')continue;
-        const qual=String(row[4]||'').trim();const op=String(row[5]||'').trim();
-        const reason=String(row[16]||'').trim();
-        const responses={};let answered=false;
-        for(const m of missions){
-          const v=String(row[m.idx]||'').trim();
-          responses[m.label]=v;if(v)answered=true;
-        }
-        pilots.push({name,qual,op,reason,responses,answered});
-      }
-      return pilots;
-    };
-    escalaData.vc1.raio=parseRaio(r1);
-    escalaData.vc2.raio=parseRaio(r2);
-    // Extract mission labels from header
-    const getMissions=(rows)=>{
-      if(!rows.length)return[];
-      const hdr=rows[0];const m=[];
-      for(let i=6;i<hdr.length;i++){const v=String(hdr[i]||'').trim();if(v&&v.length<=2)m.push(v);else break;}
-      return m;
-    };
-    escalaData.vc1.missions=getMissions(r1);
-    escalaData.vc2.missions=getMissions(r2);
-    // Parse SAVISO (confirmed missions)
-    confirmaData=[];
-    if(sav.length>1){
-      for(let i=1;i<sav.length;i++){
-        const row=sav[i];
-        const dia=String(row[1]||'').trim();if(!dia)continue;
-        const escalados=String(row[2]||'').trim().split('\n').map(s=>s.trim()).filter(Boolean);
-        const anv=String(row[8]||'').trim();
-        const num=String(row[9]||'').trim();
-        const letra=String(row[10]||'').trim();
-        if(escalados.length)confirmaData.push({dia,escalados,anv,num,letra});
-      }
-    }
-  }catch(e){console.warn('fetchEscala error',e);}
-}
-
-function renderScreenEscala(){
-  let html='<h2>📋 Escalação de Missões</h2>';
-
-  // Escala Confirmada
-  if(confirmaData.length){
-    html+=`<div style="margin-bottom:24px;padding:16px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.25);border-radius:10px">`;
-    html+=`<div style="font-size:.9rem;font-weight:900;color:var(--green);margin-bottom:12px">✅ ESCALA ENCERRADA - TRIPULAÇÕES CONFIRMADAS</div>`;
-    // Extract dates from consultas
-    const dateInfo=[];
-    [escalaData.vc1.consulta,escalaData.vc2.consulta].forEach(c=>{
-      if(!c)return;const m=c.match(/dias?\s+([\d,\s]+e?\s*\d*)\s+de\s+(\w+)/i);
-      if(m)dateInfo.push(m[0]);
-    });
-    if(dateInfo.length)html+=`<div style="font-size:.78rem;color:var(--text2);margin-bottom:10px">📅 ${dateInfo[0]}</div>`;
-
-    for(const conf of confirmaData){
-      const anvColor=conf.anv==='VC-1'?'var(--vc1)':'var(--vc2)';
-      html+=`<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">`;
-      html+=`<div style="min-width:36px;font-weight:900;color:${anvColor};font-size:.8rem">${conf.anv}</div>`;
-      html+=`<div style="min-width:28px;font-weight:900;color:var(--text);font-size:.8rem">${conf.letra})</div>`;
-      html+=`<div style="min-width:50px;font-size:.78rem;color:var(--text2)">SAVISO ${conf.dia}</div>`;
-      html+=`<div style="font-size:.8rem;font-weight:700">${conf.escalados.join(' / ')}</div>`;
-      html+=`</div>`;
-    }
-    html+=`</div>`;
-  }
-
-  const renderAnv=(label,data,colorVar)=>{
-    html+=`<div style="margin-bottom:24px">`;
-    html+=`<h3 style="color:var(${colorVar});border-bottom:2px solid var(${colorVar});padding-bottom:6px">${label}</h3>`;
-
-    // Consulta ativa
-    if(data.consulta){
-      html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.5">${data.consulta.replace(/</g,'&lt;')}</div>`;
-    }
-
-    const missions=data.missions||[];
-    const pilots=data.raio||[];
-    if(!pilots.length){html+=`<div class="no-data">Sem dados de escalação.</div></div>`;return;}
-
-    // Stats
-    const total=pilots.length;
-    const responded=pilots.filter(p=>p.answered).length;
-    const pending=total-responded;
-    html+=`<div style="display:flex;gap:16px;margin-bottom:12px;font-size:.82rem">`;
-    html+=`<span>👥 ${total} pilotos</span>`;
-    html+=`<span style="color:var(--green)">✅ ${responded} responderam</span>`;
-    html+=`<span style="color:var(--yellow)">⏳ ${pending} pendentes</span>`;
-    html+=`</div>`;
-
-    // Matrix table
-    if(missions.length){
-      html+=`<div style="overflow-x:auto;margin-bottom:16px"><table style="width:100%;border-collapse:collapse;font-size:.78rem">`;
-      html+=`<thead><tr style="border-bottom:2px solid var(--border)">`;
-      html+=`<th style="text-align:left;padding:8px 6px;color:var(--text2);min-width:140px">Piloto</th>`;
-      html+=`<th style="text-align:center;padding:8px 4px;color:var(--text2);width:40px">Qual.</th>`;
-      for(const m of missions)html+=`<th style="text-align:center;padding:8px 4px;color:var(${colorVar});font-weight:900;width:36px">${m}</th>`;
-      html+=`<th style="text-align:left;padding:8px 6px;color:var(--text2)">Obs</th>`;
-      html+=`</tr></thead><tbody>`;
-
-      for(const p of pilots){
-        html+=`<tr style="border-bottom:1px solid rgba(255,255,255,.05)">`;
-        html+=`<td style="padding:6px;font-weight:700">${p.name}</td>`;
-        html+=`<td style="text-align:center;padding:6px;font-size:.72rem;color:var(--text2)">${p.qual}</td>`;
-        for(const m of missions){
-          const v=p.responses[m]||'';
-          let bg='',color='var(--text2)',display=v||'-';
-          if(v&&v!=='-'){
-            // Number = wants it
-            bg='rgba(0,255,136,.15)';color='var(--green)';display=v;
-          }else if(v==='-'){
-            bg='rgba(255,80,80,.1)';color='var(--red)';display='✗';
-          }else{
-            bg='';color='rgba(255,255,255,.2)';display='-';
-          }
-          html+=`<td style="text-align:center;padding:6px;background:${bg};color:${color};font-weight:900;border-radius:4px">${display}</td>`;
-        }
-        html+=`<td style="padding:6px;font-size:.72rem;color:var(--text2)">${p.reason||''}</td>`;
-        html+=`</tr>`;
-      }
-      html+=`</tbody></table></div>`;
-    }
-
-
-
-    // Pendentes
-    const pendList=pilots.filter(p=>!p.answered);
-    if(pendList.length){
-      html+=`<div style="margin-top:12px;padding:10px;background:rgba(255,200,50,.06);border:1px solid rgba(255,200,50,.2);border-radius:8px">`;
-      html+=`<div style="font-size:.78rem;font-weight:700;color:var(--yellow);margin-bottom:4px">⏳ Aguardando resposta (${pendList.length})</div>`;
-      html+=`<div style="font-size:.75rem;color:var(--text2)">${pendList.map(p=>p.name.split('(')[0].trim()).join(' · ')}</div>`;
-      html+=`</div>`;
-    }
-
-    html+=`</div>`;
-  };
-
-  renderAnv('VC-1',escalaData.vc1,'--vc1');
-  renderAnv('VC-2',escalaData.vc2,'--vc2');
-
-  document.getElementById('screen8').innerHTML=html;
-  const s3c=document.getElementById('s3-content');
-  if(s3c && s3ActiveTab==='escala') s3c.innerHTML=html;
-}
-
 function renderScreenTV(){
   const td=nowBRT();const todayStr=`${String(td.getDate()).padStart(2,'0')}/${String(td.getMonth()+1).padStart(2,'0')}/${td.getFullYear()}`;
   const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
@@ -2274,7 +2147,7 @@ function renderScreenTV(){
   html+=`<div style="font-weight:900;color:var(--vc1);margin-bottom:8px;font-size:.78rem">✈️ MISSÕES DE HOJE - ${dayNames[td.getDay()]} ${todayStr}</div>`;
   const todayDayName=dayNames[td.getDay()];
   const todayISOtv=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
-  const todayOMtv=omData.filter(o=>o.data===todayISOtv);
+  const todayOMtv=omData.filter(o=>omTemEtdNaData(o,todayISOtv));
   const todayConfirm=confirmaData.filter(c=>c.dia.toUpperCase()===todayDayName);
   if(todayOMtv.length){
     for(const om of todayOMtv){
@@ -2285,7 +2158,7 @@ function renderScreenTV(){
         html+=`<div style="display:flex;gap:4px;align-items:center;padding:2px 0;font-size:.72rem">`;
         html+=`<span style="font-weight:700">${p.origem}→${p.destino}</span>`;
         html+=`<span style="color:var(--text2);font-size:.65rem">${p.etd.split(' ')[1]||''}</span>`;
-        html+=`<span style="font-size:.65rem;color:var(--yellow)">${p.missao}</span>`;
+        html+=`<span style="font-size:.65rem;color:var(--yellow)">${p.missao||om.tipo||''}</span>`;
         html+=`</div>`;
       }
       const pilotos=om.tripulacao.filter(t=>t.trigrama).map(t=>t.trigrama).join('/');
@@ -2407,22 +2280,22 @@ function renderScreenTV(){
   // Próximos dias TV: OM tem prioridade, sem duplicar
   const weekDaysTV=diarioData.filter(d=>{const diff=(d.date-td)/86400000;return diff>0&&diff<=5&&d.legs.length>0;});
   const tdMidTV=new Date(td);tdMidTV.setHours(12,0,0,0);
-  const futureOMsTV=omData.filter(o=>{const od=new Date(o.data+'T12:00:00');const diff=(od-tdMidTV)/86400000;return diff>0&&diff<=5;});
+  const futureOMsTV=omData.filter(o=>{const iso=omPrimeiraDataVoo(o);const od=new Date(iso+"T12:00:00");const diff=(od-tdMidTV)/86400000;return diff>0&&diff<=5;});
   const allDatesTV=new Set();
   weekDaysTV.forEach(d=>{const iso=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');allDatesTV.add(iso);});
-  futureOMsTV.forEach(o=>allDatesTV.add(o.data));
+  futureOMsTV.forEach(o=>getOMDates(o).forEach(d=>allDatesTV.add(d)));
   const sortedDatesTV=[...allDatesTV].sort();
   if(sortedDatesTV.length){
     for(const isoDate of sortedDatesTV){
       const dObj=new Date(isoDate+'T12:00:00');
       const dateStr=String(dObj.getDate()).padStart(2,'0')+'/'+String(dObj.getMonth()+1).padStart(2,'0');
       const dayName2=dayNames[dObj.getDay()];
-      const dayOMs=omData.filter(o=>o.data===isoDate);
+      const dayOMs=omData.filter(o=>getOMDates(o).includes(isoDate));
       const dayDiario=weekDaysTV.find(d=>{const di=d.date.getFullYear()+'-'+String(d.date.getMonth()+1).padStart(2,'0')+'-'+String(d.date.getDate()).padStart(2,'0');return di===isoDate;});
       if(dayOMs.length){
         for(const om of dayOMs){
           const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
-          const route=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
+          const route=om.pernas.map(p=>(p.origem||_icaoOrig(p))+'→'+(p.destino||_icaoDest(p))).join(' / ');
           html+=`<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem;align-items:center">`;
           html+=`<span style="font-weight:900;min-width:40px">${dateStr}</span>`;
           html+=`<span style="color:var(--text2);min-width:28px">${dayName2}</span>`;
@@ -2468,14 +2341,22 @@ function showOMDetail(omId){
   const c=document.getElementById('omModalContent');
   let html=`<div style="margin-bottom:16px">
     <div style="font-size:1.1rem;font-weight:700;color:var(--green)">📋 OM ${om.om}</div>
-    <div style="color:var(--text2);font-size:.8rem;margin-top:4px">${om.fab||om.aeronave} • ${new Date(om.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    <div style="color:var(--text2);font-size:.8rem;margin-top:4px">${om.fab||om.aeronave} • ${parseOMDate(om.data).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
   </div>`;
+  // Normaliza tripulação: aceita string "TC VERAS (VRS / 529.456)" ou objeto {posto,nome,trigrama}
+  const tripNorm=(om.tripulacao||[]).map(t=>{
+    if(typeof t==='string'){
+      const m=t.match(/^(\S+)\s+(.+?)(?:\s*\(([^/]+?)(?:\s*\/[^)]+)?\))?$/);
+      return m?{posto:m[1],nome:m[2].trim(),trigrama:(m[3]||'').trim()}:{posto:'',nome:t,trigrama:''};
+    }
+    return t;
+  });
   // Tripulação
   html+=`<div style="margin-bottom:16px">
-    <div style="font-weight:700;color:#64b4ff;font-size:.85rem;margin-bottom:8px;border-bottom:1px solid #1a2a40;padding-bottom:4px">👥 TRIPULAÇÃO (${om.tripulacao.length})</div>`;
+    <div style="font-weight:700;color:#64b4ff;font-size:.85rem;margin-bottom:8px;border-bottom:1px solid #1a2a40;padding-bottom:4px">👥 TRIPULAÇÃO (${tripNorm.length})</div>`;
   // Group by role
-  const pilotos=om.tripulacao.filter(t=>['MJ','CP','TC','1T','2T'].includes(t.posto));
-  const outros=om.tripulacao.filter(t=>!['MJ','CP','TC','1T','2T'].includes(t.posto));
+  const pilotos=tripNorm.filter(t=>['MJ','CP','TC','1T','2T'].includes(t.posto));
+  const outros=tripNorm.filter(t=>!['MJ','CP','TC','1T','2T'].includes(t.posto));
   if(pilotos.length){
     html+=`<div style="color:var(--text2);font-size:.7rem;margin-bottom:4px;font-weight:600">PILOTOS</div>`;
     pilotos.forEach(t=>{
@@ -2498,8 +2379,11 @@ function showOMDetail(omId){
     html+=`<div style="margin-bottom:16px">
       <div style="font-weight:700;color:#64b4ff;font-size:.85rem;margin-bottom:8px;border-bottom:1px solid #1a2a40;padding-bottom:4px">🛫 PERNAS DE VOO</div>`;
     om.pernas.forEach((p,i)=>{
+      // Extrai origem/destino do campo etd ou do raw se não tiver campos separados
+      const orig=p.origem||(p.etd&&p.etd.match(/^([A-Z]{4})/)?p.etd.match(/^([A-Z]{4})/)[1]:'?');
+      const dest=p.destino||(p.eta&&p.eta.match(/([A-Z]{4})$/)?p.eta.match(/([A-Z]{4})$/)[1]:'?');
       html+=`<div style="background:#0d1220;border-radius:8px;padding:10px;margin-bottom:6px;border-left:3px solid var(--green)">
-        <div style="font-weight:700;font-size:.85rem">${p.origem} → ${p.destino}</div>
+        <div style="font-weight:700;font-size:.85rem">${orig} → ${dest}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;font-size:.75rem;color:var(--text2)">
           <span>🕐 ETD: ${p.etd||'-'}</span>
           <span>🕐 ETA: ${p.eta||'-'}</span>
@@ -2543,10 +2427,15 @@ const BRASAO_IMG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADKCAYAAADg
 function parseDadosPessoais(rows){
   const map={};
   rows.forEach(r=>{
-    const nome=r[22]||'';const tri=r[23]||'';const cpf=r[34]||'';const posto=r[20]||'';const nomeCompleto=r[21]||'';
+    const nome=r[22]||'';const tri=r[23]||'';
+    // MP às vezes muda coluna; CPF tem formato 000.000.000-00. Se vier SARAM (ex: 529.456), não usar como CPF.
+    const cpfRaw=(r[34]||r[33]||r[32]||'');
+    const cpf=(/\d{3}\.\d{3}\.\d{3}-\d{2}/.test(String(cpfRaw))?String(cpfRaw).trim():'');
+    const saram=(!cpf && /\d{3}\.\d{3}/.test(String(cpfRaw))?String(cpfRaw).trim():'');
+    const posto=r[20]||'';const nomeCompleto=r[21]||'';
     const celular=r[26]||'';const email=r[30]||'';
     if(!nomeCompleto)return;
-    const obj={cpf,posto,nomeCompleto,trigrama:tri,celular,email};
+    const obj={cpf,saram,posto,nomeCompleto,trigrama:tri,celular,email};
     // Key by nome guerra (uppercase) and by trigrama
     const key=nome.toUpperCase().trim();
     if(key)map[key]=obj;
@@ -2561,14 +2450,17 @@ function parseDadosPessoais(rows){
 
 function findCPF(nome){
   if(!dadosPessoais||!Object.keys(dadosPessoais).length)return '';
-  const n=nome.toUpperCase().trim();
-  // Direct match by nome guerra
-  if(dadosPessoais[n])return dadosPessoais[n].cpf;
-  // Try by trigrama
-  if(dadosPessoais['TRI_'+n])return dadosPessoais['TRI_'+n].cpf;
-  // Partial match on full name
+  const n=String(nome||'').toUpperCase().trim();
+  const pick=(o)=>{
+    if(!o)return '';
+    if(o.cpf) return o.cpf;
+    // Se não tiver CPF, não inventar (SARAM não entra no campo CPF)
+    return '';
+  };
+  if(dadosPessoais[n])return pick(dadosPessoais[n]);
+  if(dadosPessoais['TRI_'+n])return pick(dadosPessoais['TRI_'+n]);
   for(const k of Object.keys(dadosPessoais)){
-    if(k.startsWith('FULL_')&&k.includes(n))return dadosPessoais[k].cpf;
+    if(k.startsWith('FULL_')&&k.includes(n))return pick(dadosPessoais[k]);
   }
   return '';
 }
@@ -2585,11 +2477,12 @@ function findDadosPessoais(nome){
 
 function findNomeCompleto(nome){
   if(!dadosPessoais||!Object.keys(dadosPessoais).length)return nome;
-  const n=nome.toUpperCase().trim();
-  if(dadosPessoais[n])return dadosPessoais[n].nomeCompleto;
-  if(dadosPessoais['TRI_'+n])return dadosPessoais['TRI_'+n].nomeCompleto;
+  const n=String(nome||'').toUpperCase().trim();
+  const pick=(o)=>o&&o.nomeCompleto?o.nomeCompleto:nome;
+  if(dadosPessoais[n])return pick(dadosPessoais[n]);
+  if(dadosPessoais['TRI_'+n])return pick(dadosPessoais['TRI_'+n]);
   for(const k of Object.keys(dadosPessoais)){
-    if(k.startsWith('FULL_')&&k.includes(n))return dadosPessoais[k].nomeCompleto;
+    if(k.startsWith('FULL_')&&k.includes(n))return pick(dadosPessoais[k]);
   }
   return nome;
 }
@@ -2611,48 +2504,34 @@ function getDiariasDownloaded(){
 // Busca status de PDF do GitHub (ao vivo, compartilhado)
 // Limpa o VC do respostas_pub.json no GitHub ao arquivar consulta
 async function _consultaLimparVcGitHub(vc, arquivada){
+  // Limpa respostas do VC no GAS (fonte de verdade do ESCALA V2)
+  const vcSheet = vc==='vc1'?'VC-1':'VC-2';
   try{
-    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
-    const owner='mauromamachado-creator', repo='sisescala-tv', path='data/respostas_pub.json';
-    // Lê estado atual
-    const r=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`,{
-      headers:{'Authorization':'token '+ghToken,'Accept':'application/vnd.github.v3+json'},cache:'no-store'
-    });
-    if(!r.ok) return;
-    const meta=await r.json();
-    const pub=JSON.parse(atob(meta.content.replace(/\n/g,'')));
-    pub[vc]=null; // Limpa o VC arquivado
-    const content=btoa(unescape(encodeURIComponent(JSON.stringify(pub,null,2))));
-    await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`,{
-      method:'PUT',
-      headers:{'Authorization':'token '+ghToken,'Content-Type':'application/json'},
-      body:JSON.stringify({message:`archive: consulta ${vc} arquivada`,content,sha:meta.sha,committer:{name:'SisGOPA',email:'sisgopa@gte1.fab'}})
-    });
-    console.log('Consulta '+vc+' removida do ESCALA V2');
-  }catch(e){console.warn('Erro ao limpar GitHub após archive:',e);}
+    // Parâmetro único evita HTTP 400 no redirect do GAS
+    var archAction=vc==='vc1'?'archive_vc1':'archive_vc2';
+    await fetch(CONSULTA_GAS+'?action='+archAction+'&t='+Date.now(),{cache:'no-store'});
+    console.log('GAS: consulta '+vc+' limpa ('+vcSheet+')');
+  }catch(e){console.warn('Erro ao limpar GAS após archive:',e);}
 }
 
 async function fetchPdfGerado(){
+  // Agora a fonte de verdade é a planilha (DIARIAS_API) — compartilhado entre todos
   try{
-    // Usar API do GitHub para obter SHA + conteúdo
-    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
-    const r=await fetch(`https://api.github.com/repos/${_GH_OWNER}/${_GH_REPO}/contents/${_GH_PDF_PATH}`,{
-      headers:{'Authorization':'token '+ghToken,'Accept':'application/vnd.github.v3+json'},
-      cache:'no-store'
-    });
+    const r=await fetch(DIARIAS_API+'?t='+Date.now(),{cache:'no-store'});
     if(r.ok){
-      const meta=await r.json();
-      _pdfGeradoSha=meta.sha;
-      const data=JSON.parse(atob(meta.content.replace(/\n/g,'')));
-      _pdfGeradoCache=data;
-      localStorage.setItem('sisgopa_diarias_done',JSON.stringify(data));
-      return data;
+      const payload=await r.json();
+      const list=Array.isArray(payload)?[]:(payload.pdfs_gerados||[]);
+      const map={};
+      (list||[]).forEach(x=>{if(x&&x.om_id)map[x.om_id]=new Date(x.data_geracao||Date.now()).getTime();});
+      _pdfGeradoCache=map;
+      localStorage.setItem('sisgopa_diarias_done',JSON.stringify(map));
+      return map;
     }
   }catch(e){console.warn('fetchPdfGerado erro:',e);}
   return getDiariasDownloaded();
 }
 
-// Marca PDF como gerado e salva no GitHub
+// Marca PDF como gerado e salva na planilha (DIARIAS_API)
 async function setDiariaDownloaded(omId){
   // Atualiza local imediatamente
   const d=getDiariasDownloaded();
@@ -2660,25 +2539,27 @@ async function setDiariaDownloaded(omId){
   _pdfGeradoCache=d;
   localStorage.setItem('sisgopa_diarias_done',JSON.stringify(d));
 
-  // Sincroniza com GitHub em background
-  try{
-    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
-    const content=btoa(unescape(encodeURIComponent(JSON.stringify(d,null,2))));
-    const body={message:`pdf: OM ${omId} gerada`,content,committer:{name:'SisGOPA',email:'sisgopa@gte1.fab'}};
-    if(_pdfGeradoSha) body.sha=_pdfGeradoSha;
-    const r=await fetch(`https://api.github.com/repos/${_GH_OWNER}/${_GH_REPO}/contents/${_GH_PDF_PATH}`,{
-      method:'PUT',
-      headers:{'Authorization':'token '+ghToken,'Content-Type':'application/json'},
-      body:JSON.stringify(body)
-    });
-    if(r.ok){const resp=await r.json();_pdfGeradoSha=resp.content.sha;console.log('PDF status salvo no GitHub:',omId);}
-    else console.warn('GitHub PUT pdf_gerado falhou:',await r.text());
-  }catch(e){console.warn('setDiariaDownloaded GitHub erro:',e);}
+  // Sincroniza com Sheets em background
+  fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'pdf_gerado',om_id:omId})})
+    .catch(e=>console.warn('Erro ao salvar PDF gerado na API:',e));
 }
+// Diárias (concluídas + PDF gerado) — fonte de verdade na planilha (Google Sheets via Apps Script)
 const DIARIAS_API='https://script.google.com/macros/s/AKfycbyUm_PXR8M9yU1jLhUQC60SYNF_WEUmsxsb3hMigElzBOwI2LYEGKVkXyC_A1g1bOf4/exec';
 let _diariasCache=null;
 function getDiariasConcluidas(){if(_diariasCache)return _diariasCache;return JSON.parse(localStorage.getItem('sisgopa_diarias_concluidas')||'{}');}
-async function fetchDiariasConcluidas(){try{const r=await fetch(DIARIAS_API);const rows=await r.json();const map={};rows.forEach(row=>{if(row.status==='CONCLUIDA')map[row.om_id]=new Date(row.data_conclusao).getTime();});_diariasCache=map;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(map));return map;}catch(e){console.warn('Falha ao buscar diárias da API:',e);return getDiariasConcluidas();}}
+async function fetchDiariasConcluidas(){
+  try{
+    const r=await fetch(DIARIAS_API+'?t='+Date.now(),{cache:'no-store'});
+    const payload=await r.json();
+    const rows=Array.isArray(payload)?payload:(payload.concluidas||[]);
+    const map={};
+    (rows||[]).forEach(row=>{if(row&&row.status==='CONCLUIDA'&&row.om_id)map[row.om_id]=new Date(row.data_conclusao||Date.now()).getTime();});
+    _diariasCache=map;
+    localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(map));
+    return map;
+  }catch(e){console.warn('fetchDiariasConcluidas erro:',e);}
+  return getDiariasConcluidas();
+}
 function setDiariaConcluida(omId){
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .3s ease';
@@ -2695,17 +2576,17 @@ function setDiariaConcluida(omId){
   const close=()=>{ov.style.opacity='0';setTimeout(()=>ov.remove(),300);};
   ov.addEventListener('click',e=>{if(e.target===ov)close();});
   ov.querySelector('#_dcCancel').onclick=close;
-  ov.querySelector('#_dcConfirm').onclick=()=>{close();const d=getDiariasConcluidas();d[omId]=Date.now();_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'concluir',om_id:omId})}).catch(e=>console.warn('Erro ao salvar diária na API:',e));};
+  ov.querySelector('#_dcConfirm').onclick=()=>{close();const d=getDiariasConcluidas();d[omId]=Date.now();_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'concluir',om_id:omId})}).catch(e=>console.warn('Erro ao salvar:',e));};
 }
 function undoDiariaConcluida(omId){const d=getDiariasConcluidas();delete d[omId];_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'desfazer',om_id:omId})}).catch(e=>console.warn('Erro ao desfazer diária na API:',e));}
 function exportDiariasCSV(){
   const done=getDiariasDownloaded();const conc=getDiariasConcluidas();
   const brP=['SB','SD','SN','SI','SS','SW'];
-  const list=(omData||[]).filter(om=>om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>{const m=(p.missao||'').toUpperCase();return m.includes('PR')||m.includes('ESCAV');}));
+  const list=(omData||[]).filter(om=>om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf))));
   if(!list.length){alert('Nenhuma diária para exportar');return;}
   let csv='OM;Data;Aeronave;Rota;Tripulantes;Status;Data Conclusão\n';
   list.forEach(om=>{
-    const rotas=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
+    const rotas=om.pernas.map(p=>(p.origem||_icaoOrig(p))+'→'+(p.destino||_icaoDest(p))).join(' / ');
     const nomes=om.tripulacao.map(t=>t.nome).join(', ');
     const status=conc[om.om]?'Concluída':done[om.om]?'PDF Gerado':'Pendente';
     const dtConc=conc[om.om]?new Date(conc[om.om]).toLocaleDateString('pt-BR'):'';
@@ -2730,19 +2611,21 @@ function renderScreenDiarias(){
     c.innerHTML=html;return;
   }
   const brPrefixes=['SB','SD','SN','SI','SS','SW'];
-  const isNacional=om=>om.pernas.every(p=>brPrefixes.some(pf=>p.origem.startsWith(pf))&&brPrefixes.some(pf=>p.destino.startsWith(pf)));
-  const temMissaoDiaria=om=>om.pernas.some(p=>{const m=(p.missao||'').toUpperCase();return m.includes('PR')||m.includes('ESCAV');});
-  const sorted=[...omData].filter(om=>isNacional(om)&&temMissaoDiaria(om)).sort((a,b)=>b.data.localeCompare(a.data));
+  function _icaoOrig(p){return p.origem||(p.etd&&p.etd.match(/^([A-Z]{4})/)?p.etd.match(/^([A-Z]{4})/)[1]:'');}
+  function _icaoDest(p){return p.destino||(p.eta&&p.eta.match(/([A-Z]{4})$/)?p.eta.match(/([A-Z]{4})$/)[1]:'');}
+  const isNacional=om=>om.pernas.every(p=>brPrefixes.some(pf=>_icaoOrig(p).startsWith(pf))&&brPrefixes.some(pf=>_icaoDest(p).startsWith(pf)));
+  const temMissaoDiaria=om=>true;
+  const sorted=[...omData].filter(om=>isNacional(om)&&temMissaoDiaria(om)).sort((a,b)=>omDataISO(b.data).localeCompare(omDataISO(a.data)));
   const pendentes=sorted.filter(om=>!concluidas[om.om]);
   const arquivadas=sorted.filter(om=>!!concluidas[om.om]);
   function nextBizDay(d){const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;}
   const hoje=nowBRT();hoje.setHours(0,0,0,0);
   function renderDiariaCard(om,isArquivada){
     const isDone=done[om.om];
-    const dateStr=new Date(om.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const dateStr=parseOMDate(om.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
     const anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
-    const rotas=om.pernas.map(p=>p.origem+'→'+p.destino).join(' / ');
-    const omDate=new Date(om.data+'T23:59:00');
+    const rotas=om.pernas.map(p=>(p.origem||_icaoOrig(p))+'→'+(p.destino||_icaoDest(p))).join(' / ');
+    const omDate=parseOMDate(om.data,true);
     const prazo=nextBizDay(omDate);prazo.setHours(0,0,0,0);
     const diffPrazo=Math.floor((prazo-hoje)/(86400000));
     let prazoTag='';
@@ -2798,10 +2681,25 @@ function renderScreenDiarias(){
 function openDiariaForm(omId){
   const om=omData.find(o=>o.om===omId);
   if(!om)return;
-  const dateStr=new Date(om.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const dateStr=parseOMDate(om.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
 
   let tripRows='';
-  om.tripulacao.forEach((t,i)=>{
+  om.tripulacao.forEach((raw,i)=>{
+    // Normaliza: suporta string "TC VERAS (VRS / 529.456)" ou objeto {posto,nome,trigrama,funcao}
+    let t=raw;
+    if(typeof raw==='string'){
+      // Formato com trigrama:  "TC VERAS (VRS / 529.456)"
+      const mTri=raw.match(/^(\S+)\s+(.+?)\s*\((\w+)\s*\/\s*[\d.]+\)\s*$/);
+      // Formato sem trigrama:  "2S ANDRÉ PEDRO (545.601)"
+      const mNum=!mTri&&raw.match(/^(\S+)\s+(.+?)\s*\([\d.]+\)\s*$/);
+      if(mTri) t={posto:mTri[1],nome:mTri[2].trim(),trigrama:mTri[3],funcao:''};
+      else if(mNum) t={posto:mNum[1],nome:mNum[2].trim(),trigrama:'',funcao:''};
+      else{
+        // fallback: primeiro token = posto, resto = nome
+        const parts=raw.trim().split(/\s+/);
+        t={posto:parts[0]||'',nome:parts.slice(1).join(' '),trigrama:'',funcao:''};
+      }
+    }
     let funcao=t.funcao||'';
     if(!funcao){
       let ct=null;
@@ -3120,7 +3018,7 @@ function renderScreenReport(){
       <div id="reportDiag" style="font-size:.75rem;color:var(--text2);font-family:monospace;line-height:1.6"></div>
     </div>
     <div style="margin-top:16px;padding:12px;border-radius:8px;background:#1a2a1a;border:1px solid #2a4a2a">
-      <p style="color:#4ecdc4;margin:0;font-size:.8rem">🤖 <b>Bugs</b> serão verificados e corrigidos automaticamente pelo Ravi (sem alterar funcionalidades).<br>
+      <p style="color:#4ecdc4;margin:0;font-size:.8rem">🤖 <b>Bugs</b> serão verificados e corrigidos pelo Setor de Operações (sem alterar funcionalidades).<br>
       💡 <b>Sugestões</b> serão compiladas em relatório para aprovação do Major Machado.</p>
     </div>
   </div>`;
@@ -3173,15 +3071,149 @@ async function submitReport(){
   await _sendReport(_reportType,clean,checks);
 }
 
+// ===== ABA OM =====
+function s3RenderOM(container){
+  // Cancelamentos persistidos no localStorage
+  var cancelKey='sisgopa_om_canceladas';
+  var canceladas=JSON.parse(localStorage.getItem(cancelKey)||'{}');
+
+  if(!omData||!omData.length){
+    container.innerHTML='<div class="no-data" style="margin-top:24px">Nenhuma OM carregada.</div>';
+    return;
+  }
+
+  // Agrupa OMs por data — cada OM aparece em TODAS as datas que tem pernas
+  var td2=new Date();td2.setHours(0,0,0,0);
+  var todayISO2=td2.getFullYear()+'-'+String(td2.getMonth()+1).padStart(2,'0')+'-'+String(td2.getDate()).padStart(2,'0');
+  var grouped={};
+  omData.forEach(function(om){
+    var dates=getOMDates(om).filter(function(d){return d>=todayISO2;});
+    if(!dates.length){var p=omPrimeiraDataVoo(om);if(p&&p>=todayISO2)dates=[p];}
+    dates.forEach(function(key){
+      if(!grouped[key])grouped[key]=[];
+      // Evita duplicata da mesma OM na mesma data
+      if(!grouped[key].find(function(x){return x.om===om.om;}))grouped[key].push(om);
+    });
+  });
+  var sortedKeys=Object.keys(grouped).sort().filter(function(k){return k>=todayISO2;});
+
+  var html='<div style="padding:4px 0 16px">';
+  var dayNames2=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  var omIdx=0;
+  for(var ki=0;ki<sortedKeys.length;ki++){
+    var isoKey=sortedKeys[ki];
+    var dObj=new Date(isoKey+'T12:00:00');
+    var dayLabel=isoKey===todayISO2?'Hoje':(dayNames2[dObj.getDay()]+' '+String(dObj.getDate()).padStart(2,'0')+'/'+String(dObj.getMonth()+1).padStart(2,'0'));
+    html+='<div style="font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:14px 0 8px">'+dayLabel+'</div>';
+    var dayOMs=grouped[isoKey];
+  for(var i=0;i<dayOMs.length;i++){
+    var om=dayOMs[i];
+    var omId=om.om||om.om_numero||('om_'+i);
+    var isCancelled=!!canceladas[omId];
+    var anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
+    var cardStyle=isCancelled
+      ?'background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;opacity:.45;text-decoration:line-through'
+      :'background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);border-radius:8px;padding:12px;margin-bottom:10px';
+
+    html+='<div id="omcard_'+i+'" style="'+cardStyle+'">';
+
+    // Header: aeronave + OM label + checkbox cancelar
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+    html+='<span style="font-weight:900;color:'+anvColor+';font-size:.9rem">'+om.aeronave+' / '+om.fab+'</span>';
+    html+='<div style="display:flex;align-items:center;gap:10px">';
+    html+='<span style="font-size:.7rem;background:var(--green);color:#000;padding:2px 8px;border-radius:4px;font-weight:700">📋 '+omId+'</span>';
+    html+='<label style="display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text2);cursor:pointer;text-decoration:none">';
+    html+='<input type="checkbox" '+(isCancelled?'checked':'')+' onchange="toggleOMCancelada(\''+omId+'\',this.checked)" style="width:14px;height:14px;cursor:pointer"> Cancelada';
+    html+='</label>';
+    html+='</div></div>';
+
+    // Pernas
+    for(var j=0;j<(om.pernas||[]).length;j++){
+      var p=om.pernas[j];
+      html+='<div style="display:flex;gap:8px;align-items:center;padding:4px 0;font-size:.78rem">';
+      html+='<span style="font-weight:700;min-width:40px">'+(p.origem||'')+'</span>';
+      html+='<span style="color:var(--text2)">→</span>';
+      html+='<span style="font-weight:700;min-width:40px">'+(p.destino||'')+'</span>';
+      html+='<span style="color:var(--text2);font-size:.7rem">'+(p.etd?(p.etd.split(' ')[1]||''):'')+'</span>';
+      html+='<span class="mission-tipo">'+(p.missao||om.tipo||'')+'</span>';
+      html+='</div>';
+    }
+
+    // Tripulação (só pilotos)
+    var pilotos=(om.tripulacao||[]).map(function(t){
+      if(typeof t==='string'){var m=t.match(/^(\S+)\s+([^(]+?)\s*\(([A-Z]{3})\s*\//);return m?(m[2].trim()+' ('+m[3]+')'):'';} 
+      return t.trigrama?(t.nome+' ('+t.trigrama+')'):'';
+    }).filter(Boolean);
+    if(pilotos.length)html+='<div style="font-size:.7rem;color:var(--text2);margin-top:4px">👨‍✈️ '+pilotos.join(' / ')+'</div>';
+
+    html+='</div>'; // end card
+    omIdx++;
+  } // end dayOMs loop
+  } // end sortedKeys loop
+  html+='</div>';
+  container.innerHTML=html;
+}
+
+function toggleOMCancelada(omId, cancelled){
+  var cancelKey='sisgopa_om_canceladas';
+  var canceladas=JSON.parse(localStorage.getItem(cancelKey)||'{}');
+  if(cancelled) canceladas[omId]=true;
+  else delete canceladas[omId];
+  localStorage.setItem(cancelKey,JSON.stringify(canceladas));
+  s3RenderOM(document.getElementById('s3-content'));
+}
+
+// ===== S3 LOGIN MODAL =====
+function _showS3LoginModal(){
+  var old=document.getElementById('s3LoginModal');if(old)old.remove();
+  var overlay=document.createElement('div');
+  overlay.id='s3LoginModal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML=`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px 24px;width:300px;max-width:90vw;text-align:center">
+      <div style="font-size:1.3rem;margin-bottom:4px">🔒</div>
+      <div style="font-size:1rem;font-weight:700;margin-bottom:4px">Área Restrita</div>
+      <div style="font-size:.8rem;color:var(--text2);margin-bottom:20px">S3 — Operações</div>
+      <input id="s3PwInput" type="password" placeholder="Senha" autocomplete="off"
+        style="width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.95rem;box-sizing:border-box;outline:none;margin-bottom:12px"
+        onkeydown="if(event.key==='Enter')_s3LoginSubmit()">
+      <div id="s3PwError" style="font-size:.78rem;color:var(--red);min-height:18px;margin-bottom:8px"></div>
+      <button onclick="_s3LoginSubmit()" style="width:100%;padding:10px;background:var(--blue,#3b82f6);border:none;border-radius:8px;color:#fff;font-size:.9rem;font-weight:700;cursor:pointer">Entrar</button>
+      <button onclick="document.getElementById('s3LoginModal').remove()" style="margin-top:8px;width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:.8rem;cursor:pointer">Cancelar</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(function(){var i=document.getElementById('s3PwInput');if(i)i.focus();},100);
+}
+async function _s3LoginSubmit(){
+  var input=document.getElementById('s3PwInput');
+  if(!input)return;
+  var pw=input.value;
+  if(!pw){document.getElementById('s3PwError').textContent='Digite a senha.';return;}
+  var enc=new TextEncoder().encode(pw);
+  var buf=await crypto.subtle.digest('SHA-256',enc);
+  var h=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  if(h==='ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'){
+    s3Unlocked=true;
+    document.getElementById('s3LoginModal').remove();
+    goScreen(14);
+  }else{
+    document.getElementById('s3PwError').textContent='Senha incorreta.';
+    input.value='';input.focus();
+    _trackEscalaAttempt(false);
+  }
+}
+
 // ===== S3 SCREEN =====
-let s3ActiveTab='escala';
+let s3ActiveTab='escalav2';
 function renderScreenS3(){
   let html='<h2>📋 S3 — Operações</h2>';
   html+='<div class="s3-subnav">';
-  html+='<button class="'+(s3ActiveTab==='escala'?'active':'')+'" onclick="s3SwitchTab(\'escala\')">ESCALA</button>';
-  html+='<button class="'+(s3ActiveTab==='diario'?'active':'')+'" onclick="s3SwitchTab(\'diario\')">DIÁRIO</button>';
-  html+='<button class="'+(s3ActiveTab==='consulta'?'active':'')+'" onclick="s3SwitchTab(\'consulta\')">CONSULTA</button>';
-  html+='<button class="'+(s3ActiveTab==='escalav2'?'active':'')+'" onclick="s3SwitchTab(\'escalav2\')">ESCALA V2</button>';
+  html+='<button data-tab="diario" class="'+(s3ActiveTab==='diario'?'active':'')+'" onclick="s3SwitchTab(\'diario\')">DIÁRIO</button>';
+  html+='<button data-tab="consulta" class="'+(s3ActiveTab==='consulta'?'active':'')+'" onclick="s3SwitchTab(\'consulta\')">CONSULTA</button>';
+  html+='<button data-tab="om" class="'+(s3ActiveTab==='om'?'active':'')+'" onclick="s3SwitchTab(\'om\')">OM</button>';
+  html+='<button data-tab="escalav2" class="'+(s3ActiveTab==='escalav2'?'active':'')+'" onclick="s3SwitchTab(\'escalav2\')">ESCALA V2</button>';
+  html+='<button data-tab="confirmacao" class="'+(s3ActiveTab==='confirmacao'?'active':'')+'" onclick="s3SwitchTab(\'confirmacao\')">CONFIRMAÇÃO</button>';
+  html+='<button data-tab="acnt" class="'+(s3ActiveTab==='acnt'?'active':'')+'" onclick="s3SwitchTab(\'acnt\')">ACNT/ALTR</button>';
   html+='</div>';
   html+='<div id="s3-content"></div>';
   document.getElementById('screen14').innerHTML=html;
@@ -3190,21 +3222,22 @@ function renderScreenS3(){
 function s3SwitchTab(tab){
   s3ActiveTab=tab;
   document.querySelectorAll('.s3-subnav button').forEach(function(b){
-    var t=b.textContent.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    b.classList.toggle('active',t===tab);
+    b.classList.toggle('active', b.dataset.tab===tab);
   });
   s3RenderActiveTab();
 }
 function s3RenderActiveTab(){
   var container=document.getElementById('s3-content');
   if(!container)return;
-  if(s3ActiveTab==='escala'){s3RenderEscala(container);}
   else if(s3ActiveTab==='diario'){s3RenderDiario(container);}
   else if(s3ActiveTab==='consulta'){s3RenderConsultaV2(container);}
+  else if(s3ActiveTab==='om'){s3RenderOM(container);}
   else if(s3ActiveTab==='escalav2'){s3RenderEscalaV2(container);}
+  else if(s3ActiveTab==='confirmacao'){s3RenderConfirmacao(container);}
+  else if(s3ActiveTab==='acnt'){s3RenderAcnt(container);}
 }
 function s3RenderEscala(container){
-  renderScreenEscala();
+  
   var src=document.getElementById('screen8');
   if(src) container.innerHTML=src.innerHTML;
 }
@@ -3216,11 +3249,29 @@ function s3RenderDiario(container){
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONFIG CONSULTA — API e Destinatários
 // ═══════════════════════════════════════════════════════════════════════════════
-var CONSULTA_API = 'http://localhost:8085';
-var CONSULTA_GAS = 'https://script.google.com/macros/s/AKfycbz8wQqdiHoKOlh4XR2tBJ3KcWBTtR0ooafEEjGdq6hecoPDBvVFoLYi4S8s7UU4S1nk/exec';
+var CONSULTA_API = 'https://arbitrary-august-bio-permit.trycloudflare.com';
+var CONSULTA_API_SECRET = 'sisgopa-gte-2026';
+var CONSULTA_GAS = 'https://script.google.com/macros/s/AKfycbyDdqWqCKLoCVwgajS3kr4o6q2MHx3UYxwe2o-28JbFCS__NhV2l2OqFlUT-cyRu-Vg/exec';
+var CONF_GAS = 'https://script.google.com/macros/s/AKfycbwAkuMtXPes8ciLZw_EYT6a4EAHz6wGwdBUj5Bqm5eM--rkO2Yj7uJy8USXTjTWNkEYhg/exec';
+var CONF_RAW = 'https://raw.githubusercontent.com/mauromamachado-creator/sisescala-tv/main/data/conf_missao.json';
 var CONSULTA_TOKEN = '8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU';
-var CONSULTA_RECIPIENTS_VC1 = [{name:'Major Machado', chatId:'673591486', rank:'MJ'}];
-var CONSULTA_RECIPIENTS_VC2 = [{name:'Major Machado', chatId:'673591486', rank:'MJ'}];
+var CONSULTA_RECIPIENTS_VC1 = [];
+var CONSULTA_RECIPIENTS_VC2 = [];
+// Carrega destinatários dinamicamente da aba Tripulantes
+(function(){
+  fetch(CONSULTA_GAS+'?action=get_tripulantes&t='+Date.now(),{cache:'no-store'})
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(d){
+      if(!d||!d.ok) return;
+      (d.tripulantes||[]).forEach(function(t){
+        var rec={name:(t.posto||'')+' '+(t.nome_guerra||''), chatId:t.chat_id, rank:t.posto||''};
+        var vc=(t.vc||'').toUpperCase().replace('VC-','').trim();
+        if(vc==='1') CONSULTA_RECIPIENTS_VC1.push(rec);
+        else if(vc==='2') CONSULTA_RECIPIENTS_VC2.push(rec);
+      });
+      console.log('Destinatários carregados: VC-1='+CONSULTA_RECIPIENTS_VC1.length+' VC-2='+CONSULTA_RECIPIENTS_VC2.length);
+    }).catch(function(){});
+})();
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ESCALA V2 - Lê do JSON via API do bot
@@ -3241,8 +3292,37 @@ function _consultaLocalSave(d){localStorage.setItem('sisgopa_consultas_v2',JSON.
 
 async function fetchConsultasJson(){
   if(consultasJsonCache && Date.now()-consultasJsonLastFetch<5000) return consultasJsonCache;
-  // Carregar do localStorage como base
-  consultasJsonCache=_consultaLocalLoad();consultasJsonLastFetch=Date.now();
+  // Buscar lock status do GAS (fonte autoritativa para encerramento)
+  var gasLocks={locked_vc1:false,locked_vc2:false};
+  try{
+    var gasR=await fetch(CONSULTA_GAS+'?action=get',{redirect:'follow',signal:AbortSignal.timeout(6000)});
+    if(gasR.ok){var gd=await gasR.json();gasLocks.locked_vc1=!!gd.locked_vc1;gasLocks.locked_vc2=!!gd.locked_vc2;}
+  }catch(e){console.warn('GAS lock check falhou:',e);}
+  // Buscar estado real do bot
+  try{
+    var r=await fetch(CONSULTA_API+'/api/consulta',{
+      method:'POST',headers:{'Content-Type':'application/json','X-API-Secret':CONSULTA_API_SECRET},
+      body:JSON.stringify({action:'state'}),signal:AbortSignal.timeout(8000)
+    });
+    if(r.ok){
+      var botData=await r.json();
+      if(botData.ok && botData.data){
+        var d=botData.data;
+        // Aplica lock do GAS (fonte autoritativa)
+        if(gasLocks.locked_vc1 && d.vc1){d.vc1.locked=true;}
+        if(gasLocks.locked_vc2 && d.vc2){d.vc2.locked=true;}
+        consultasJsonCache=d;
+        _consultaLocalSave(d);
+        consultasJsonLastFetch=Date.now();
+        return consultasJsonCache;
+      }
+    }
+  }catch(e){console.warn('Bot offline, usando localStorage:',e);}
+  // Fallback: localStorage + GAS locks
+  var local=_consultaLocalLoad();
+  if(gasLocks.locked_vc1 && local.vc1){local.vc1.locked=true;}
+  if(gasLocks.locked_vc2 && local.vc2){local.vc2.locked=true;}
+  consultasJsonCache=local;consultasJsonLastFetch=Date.now();
   return consultasJsonCache;
 }
 // Buscar respostas do GitHub raw (publicado pelo bot)
@@ -3258,8 +3338,8 @@ async function fetchRespostasPublic(){
 // Helper: POST para API do bot
 async function consultaApiPost(body){
   try{var r=await fetch(CONSULTA_API+'/api/consulta',{
-    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),
-    signal:AbortSignal.timeout(3000)
+    method:'POST',headers:{'Content-Type':'application/json','X-API-Secret':CONSULTA_API_SECRET},body:JSON.stringify(body),
+    signal:AbortSignal.timeout(10000)
   });
   return r.json();
   }catch(e){
@@ -3332,101 +3412,111 @@ function parseConsultaMessageJS(text){
 // O refresh só acontece quando o usuário navega entre abas ou faz uma ação
 
 function s3RenderEscalaV2(container){
-  // Lê respostas do bot (@SISGOP_BOT) via GitHub raw + raio de pilotos em ordem
+  // Lê respostas do bot (@SISGOP_BOT) via Apps Script (fonte nova) + raio de pilotos em ordem
   container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando respostas...</div>';
   var BASE='https://raw.githubusercontent.com/mauromamachado-creator/sisescala-tv/main/';
-  var RESP_URL=BASE+'data/respostas_pub.json';
   var RAIO_VC1=BASE+'data/raio_vc1.json';
   var RAIO_VC2=BASE+'data/raio_vc2.json';
   var fetchJSON=function(url){return fetch(url+'?t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(10000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});};
   Promise.all([
-    fetchJSON(RESP_URL),
+    fetch(CONSULTA_GAS+'?action=get&t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(10000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
     fetchCSVByName('Consulta VC-1').catch(function(){return[];}),
     fetchCSVByName('Consulta VC-2').catch(function(){return[];}),
     fetchJSON(RAIO_VC1),
     fetchJSON(RAIO_VC2)
   ]).then(function(results){
-    var pub=results[0]||{};
-    var textoVC1=(results[1][0]&&results[1][0][0])||'';
-    var textoVC2=(results[2][0]&&results[2][0][0])||'';
+    // Usa resultado do GAS, mas mantém cache anterior se falhar
+    var _gasCache={};try{_gasCache=JSON.parse(sessionStorage.getItem('sisgopa_gas_cache')||'{}');}catch(e){}
+    var gasAll=results[0]||(Object.keys(_gasCache).length?_gasCache:{});
+    if(results[0]&&(results[0].vc1||results[0].vc2))try{sessionStorage.setItem('sisgopa_gas_cache',JSON.stringify(results[0]));}catch(e){}
+    // Texto da consulta ativa — lê do localStorage (ambas as chaves) ou do bot
+    var _lsData={};
+    try{_lsData=JSON.parse(localStorage.getItem('consultas_data')||'{}');}catch(e){}
+    var _lsData2={};
+    try{_lsData2=JSON.parse(localStorage.getItem('sisgopa_consultas_v2')||'{}');}catch(e){}
+    var textoVC1=((_lsData.vc1&&_lsData.vc1.text)||(_lsData2.vc1&&_lsData2.vc1.text)||'')||(results[1][0]&&results[1][0][0])||'';
+    var textoVC2=((_lsData.vc2&&_lsData.vc2.text)||(_lsData2.vc2&&_lsData2.vc2.text)||'')||(results[2][0]&&results[2][0][0])||'';
+    var dataRaioVC1=gasAll.data_raio_vc1||'';
+    var dataRaioVC2=gasAll.data_raio_vc2||'';
     var raioVC1=results[3];
     var raioVC2=results[4];
 
-    function renderVC(vcKey,colorVar,textoPlnilha,raio){
-      var c=pub[vcKey];
-      var texto=c&&c.text?c.text:textoPlnilha;
-      var html='';
-      if(texto) html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.5;max-height:160px;overflow-y:auto">'+texto.replace(/</g,'&lt;')+'</div>';
-      if(!c&&!raio){html+='<div style="color:var(--text2);padding:10px">Nenhuma consulta ativa.</div>';return html;}
-
-      // Montar lista de pilotos: raio define a ordem; respostas do bot complementam
-      var missions=c?c.missions||[]:[];
-      var respostasMap={}; // nome.upper -> recipient
-      if(c){(c.recipients||[]).forEach(function(r){respostasMap[(r.name||'').toUpperCase()]=r;});}
-
-      // Lista base: raio (em ordem) ou só respondentes se não houver raio
-      var lista=[];
-      if(raio&&raio.pilotos){
-        raio.pilotos.forEach(function(p,i){
-          var nomeCompleto=p.posto+' '+p.nome;
-          var resp=respostasMap[nomeCompleto.toUpperCase()]||respostasMap[p.nome.toUpperCase()]||null;
-          lista.push({pos:p.pos,label:nomeCompleto,resp:resp});
-        });
-      } else if(c){
-        (c.recipients||[]).forEach(function(r,i){lista.push({pos:i+1,label:r.name||'',resp:r});});
+    // Nova estrutura GAS: [ordem, posto, nome_guerra, respostas, confirmado, atualizado]
+    // Header na linha 0 é 'ordem','posto','nome_guerra',...
+    function parseRaioGAS(rows){
+      // Retorna [{pos,posto,nome_guerra,respostas,confirmado}]
+      if(!Array.isArray(rows)||rows.length<2) return [];
+      var list=[];
+      for(var i=1;i<rows.length;i++){
+        var r=rows[i];
+        var ng=String(r[2]||'').trim();
+        if(!ng||ng==='nome_guerra') continue;
+        var respTxt=String(r[3]||'');
+        var conf=r[4]===true||String(r[4]).toLowerCase()==='true';
+        var responses={};
+        try{responses=JSON.parse(respTxt||'{}')||{};}catch(e){responses={};}
+        list.push({pos:Number(r[0])||i,posto:String(r[1]||''),nome_guerra:ng,responses:responses,confirmed:conf});
       }
+      return list;
+    }
 
-      var confirmed=lista.filter(function(l){return l.resp&&l.resp.confirmed;}).length;
-      html+='<div style="display:flex;gap:16px;margin-bottom:10px;font-size:.82rem">';
-      if(raio) html+='<span style="color:var(--text2)">📋 Raio '+raio.data_consulta+'</span>';
+    function renderVC(vcKey,colorVar,textoPlnilha,dataRaio){
+      var rows=gasAll[vcKey]||[];
+      var lista=parseRaioGAS(rows);
+      var texto=textoPlnilha;
+      var html='';
+      html+='<div style="background:var(--bg2);border-left:3px solid var('+colorVar+');border-radius:8px;padding:12px;margin-bottom:14px;font-size:.82rem;white-space:pre-wrap;line-height:1.6;max-height:200px;overflow-y:auto;color:var(--text)"><span style="font-size:.7rem;color:var('+colorVar+');font-weight:900;display:block;margin-bottom:6px">📋 MENSAGEM DA CONSULTA</span>'+(texto?texto.replace(/</g,'&lt;'):'<span style="color:var(--text2);font-style:italic">Nenhuma consulta ativa no momento.</span>')+'</div>';
+      if(!lista.length){html+='<div style="color:var(--text2);padding:10px">Nenhum raio carregado. Envie o PDF pelo @SISGOP_BOT.</div>';return html;}
+
+      // Detectar missões a partir das respostas existentes
+      var missionsSet={};
+      lista.forEach(function(p){Object.keys(p.responses||{}).forEach(function(k){missionsSet[k]=1;});});
+      var missions=Object.keys(missionsSet).sort();
+
+      var confirmed=lista.filter(function(p){return p.confirmed;}).length;
+      if(dataRaio) html+='<div style="font-size:.72rem;color:var(--text2);margin-bottom:8px">📅 Raio atualizado em: <strong style="color:var('+colorVar+')">'+dataRaio+'</strong></div>';
+      html+='<div style="display:flex;gap:16px;margin-bottom:10px;font-size:.82rem;flex-wrap:wrap">';
       html+='<span>👥 '+lista.length+'</span>';
       html+='<span style="color:var(--green)">✅ '+confirmed+' confirmaram</span>';
       html+='<span style="color:var(--yellow)">⏳ '+(lista.length-confirmed)+' pendentes</span>';
-      if(c&&c.locked) html+='<span style="color:var(--red)">🔒 Encerrada</span>';
       html+='</div>';
-
-      if(!lista.length){html+='<div style="color:var(--text2);padding:8px">Sem pilotos no raio.</div>';return html;}
 
       html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">';
       html+='<thead><tr style="border-bottom:2px solid var(--border)">';
-      html+='<th style="text-align:center;padding:8px 4px;color:var(--text2);width:32px">#</th>';
+
       html+='<th style="text-align:left;padding:8px 6px;color:var(--text2)">Tripulante</th>';
       missions.forEach(function(m){html+='<th style="text-align:center;padding:8px 6px;color:var('+colorVar+');font-weight:900">'+m+'</th>';});
       html+='<th style="text-align:center;padding:8px 6px;color:var(--text2)">Status</th>';
       html+='</tr></thead><tbody>';
-      lista.forEach(function(item){
-        var r=item.resp;
+      lista.forEach(function(p){
         html+='<tr style="border-bottom:1px solid rgba(255,255,255,.05)">';
-        html+='<td style="text-align:center;padding:6px;color:var(--text2);font-size:.72rem">'+item.pos+'</td>';
-        html+='<td style="padding:6px;font-weight:700">'+item.label+'</td>';
-        if(missions.length){
-          missions.forEach(function(m){
-            var v=r&&r.responses?r.responses[m]:undefined;
-            var bg,color,disp;
-            if(!r||v===undefined||v===null){bg='rgba(255,200,50,.04)';color='var(--text2)';disp='—';}
-            else if(v===0||v===false){bg='rgba(255,80,80,.1)';color='var(--red)';disp='❌';}
-            else{bg='rgba(0,255,136,.15)';color='var(--green)';disp=(typeof v==='number'&&v>0)?v+'º':'✅';}
-            html+='<td style="text-align:center;padding:6px;background:'+bg+';color:'+color+';font-weight:900;border-radius:4px">'+disp+'</td>';
-          });
-        }
+
+        html+='<td style="padding:6px;font-weight:700">'+p.posto+' '+p.nome_guerra+'</td>';
+        missions.forEach(function(m){
+          var v=p.responses[m];
+          var bg,color,disp;
+          if(!p.confirmed||v===undefined||v===null){bg='rgba(255,200,50,.04)';color='var(--text2)';disp='—';}
+          else if(v===0||v===false){bg='rgba(255,80,80,.1)';color='var(--red)';disp='❌';}
+          else{bg='rgba(0,255,136,.15)';color='var(--green)';disp=(typeof v==='number'&&v>0)?String(v):'✅';}
+          html+='<td style="text-align:center;padding:6px;background:'+bg+';color:'+color+';font-weight:900;border-radius:4px">'+disp+'</td>';
+        });
         var statusTd;
-        if(!r) statusTd='<td style="text-align:center;padding:6px;color:var(--text2)">⏳ Aguardando</td>';
-        else if(r.confirmed) statusTd='<td style="text-align:center;padding:6px;color:var(--green)">✅ Confirmado</td>';
+        if(!p.confirmed&&!Object.keys(p.responses).length) statusTd='<td style="text-align:center;padding:6px;color:var(--text2)">⏳ Aguardando</td>';
+        else if(p.confirmed) statusTd='<td style="text-align:center;padding:6px;color:var(--green)">✅ Confirmado</td>';
         else statusTd='<td style="text-align:center;padding:6px;color:var(--yellow)">⏳ Respondendo...</td>';
-        html+=statusTd;
-        html+='</tr>';
+        html+=statusTd+'</tr>';
       });
       html+='</tbody></table></div>';
       return html;
     }
 
-    var upd=pub.updated?'<span style="color:var(--text2)"> · atualizado '+pub.updated.substring(11,16)+'</span>':'';
+    var upd='';
     var html='<div style="display:flex;gap:8px;margin-bottom:16px;font-size:.75rem;color:var(--text2);align-items:center">';
     html+='<span>🤖 Respostas via @SISGOP_BOT'+upd+'</span>';
     html+='<button onclick="s3RenderEscalaV2(document.getElementById(\'s3-content\'))" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:.72rem">↻ Atualizar</button>';
     html+='</div>';
-    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc1);border-bottom:2px solid var(--vc1);padding-bottom:6px">🔵 VC-1</h3>'+renderVC('vc1','--vc1',textoVC1,raioVC1)+'</div>';
-    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc2);border-bottom:2px solid var(--vc2);padding-bottom:6px">🟢 VC-2</h3>'+renderVC('vc2','--vc2',textoVC2,raioVC2)+'</div>';
+    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc1);border-bottom:2px solid var(--vc1);padding-bottom:6px">🔵 VC-1</h3>'+renderVC('vc1','--vc1',textoVC1,dataRaioVC1)+'</div>';
+    html+='<div style="margin-bottom:28px"><h3 style="color:var(--vc2);border-bottom:2px solid var(--vc2);padding-bottom:6px">🟢 VC-2</h3>'+renderVC('vc2','--vc2',textoVC2,dataRaioVC2)+'</div>';
     container.innerHTML=html;
   }).catch(function(e){
     container.innerHTML='<div style="color:var(--red);padding:20px">❌ Erro: '+e.message+'</div>';
@@ -3625,7 +3715,7 @@ function s3RenderConsultaV2(container){
   container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
   fetchConsultasJson().then(function(data){
     if(!data) data={vc1:null,vc2:null,archive:[]};
-    var h='<h2 style="color:var(--vc1)">📨 Consulta de Escalação</h2>';
+    var h='<h2 style="color:var(--vc1)">📨 Consulta de Escalação <button onclick="consultasJsonLastFetch=0;s3RenderConsultaV2(document.getElementById(\'s3-content\'))" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:.72rem;vertical-align:middle">↻ Atualizar</button></h2>';
 
     // ─── 1. CRIAR CONSULTA (formulário estruturado) ─────────────────────
     h+='<div class="consulta-card" id="consulta-create-section">';
@@ -3667,7 +3757,6 @@ function s3RenderConsultaV2(container){
 
     // Botões
     h+='<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">';
-    h+='<button class="consulta-btn" id="consulta-preview-btn">👁 PRÉVIA (popup)</button>';
     h+='<button class="consulta-btn-primary" id="consulta-send-btn">📤 CRIAR E ENVIAR</button></div>';
     h+='<div class="consulta-preview" id="consulta-preview-box"></div>';
     h+='<div id="consulta-send-status" style="margin-top:10px"></div>';
@@ -3724,70 +3813,15 @@ function s3RenderConsultaV2(container){
       if(!consulta.locked){
         h+='<button class="consulta-btn-danger" onclick="consultaAction(\'lock\',\''+vcKey+'\')">🔒 ENCERRAR RESPOSTAS</button>';
       }
-      h+='<button class="consulta-btn" onclick="consultaAction(\'archive\',\''+vcKey+'\')">📦 ARQUIVAR</button>';
+      if(consulta.locked){
+        h+='<button class="consulta-btn" onclick="consultaArchiveModal(\''+vcKey+'\')">📦 ARQUIVAR</button>';
+      }
       h+='</div>';
 
       // ─── 4. ENVIAR OM (pós encerramento) ──────────────────────────────
       if(consulta.locked){
+        // ─── 5. ENVIAR CONFIRMAÇÃO ──────────────────────────────────────
         var missoes=(consulta.parsed||{}).missoes||[];
-        var nonSaviso=missoes.filter(function(m){return !m.is_saviso;});
-        if(nonSaviso.length){
-          h+='<div style="margin-top:16px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">';
-          h+='<div style="font-size:.85rem;font-weight:900;margin-bottom:10px">📋 Ordem de Missão (OM)</div>';
-          nonSaviso.forEach(function(mm){
-            var hasOm=mm.om?'✅':'';
-            h+='<div style="margin-bottom:10px;padding:8px;border:1px solid var(--border);border-radius:6px">';
-            h+='<div style="font-size:.82rem;font-weight:700;margin-bottom:6px">Missão '+mm.letra+' '+hasOm+'</div>';
-            h+='<input class="consulta-input" id="om-trechos-'+vcKey+'-'+mm.letra+'" placeholder="Trechos: SBBR/SBKP, SBKP/SBSP" value="'+(mm.om&&mm.om.trechos?mm.om.trechos.join(', '):'')+'" style="margin-bottom:4px">';
-            h+='<div style="display:flex;gap:8px"><input class="consulta-input" id="om-anv-'+vcKey+'-'+mm.letra+'" placeholder="ANV: 2101" value="'+(mm.om&&mm.om.anv?mm.om.anv:'')+'" style="max-width:120px">';
-            h+='<input class="consulta-input" id="om-obs-'+vcKey+'-'+mm.letra+'" placeholder="Observações" value="'+(mm.om&&mm.om.obs?mm.om.obs:'')+'" style="flex:1"></div>';
-            h+='<button class="consulta-btn" style="margin-top:6px" onclick="consultaSaveOM(\''+vcKey+'\',\''+mm.letra+'\')">💾 Salvar OM '+mm.letra+'</button>';
-            h+='</div>';
-          });
-          h+='</div>';
-        }
-
-        // ─── 5. SAVISO ──────────────────────────────────────────────────
-        var savisoMissoes=missoes.filter(function(m){return m.is_saviso;});
-        if(savisoMissoes.length){
-          h+='<div style="margin-top:16px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">';
-          h+='<div style="font-size:.85rem;font-weight:900;margin-bottom:10px">📋 SAVISO — Nomes Escalados</div>';
-          savisoMissoes.forEach(function(mm){
-            h+='<div style="margin-bottom:8px">';
-            h+='<span style="font-size:.82rem;font-weight:700">'+mm.letra+') SAVISO '+(mm.saviso_dia||'')+': </span>';
-            h+='<input class="consulta-input" id="saviso-nomes-'+vcKey+'-'+mm.letra+'" placeholder="MJ MACHADO / MJ OSVALDO" value="'+(mm.escalados||[]).join(' / ')+'" style="max-width:400px">';
-            h+='<button class="consulta-btn" style="margin-left:8px" onclick="consultaSaveSAVISO(\''+vcKey+'\',\''+mm.letra+'\')">💾</button>';
-            h+='</div>';
-          });
-          h+='</div>';
-        }
-
-        // ─── 6. DEFINIR ESCALADOS ───────────────────────────────────────
-        if(missions.length&&recipients.length){
-          h+='<div style="margin-top:16px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">';
-          h+='<div style="font-size:.85rem;font-weight:900;margin-bottom:10px">👥 Definir Escalados por Missão</div>';
-          missoes.filter(function(m){return !m.is_saviso;}).forEach(function(mm){
-            // Quem respondeu disponível para esta missão
-            var disponiveis=recipients.filter(function(r){return r.confirmed&&r.responses&&r.responses[mm.letra]===true;});
-            var escaladosAtuais=mm.escalados||[];
-            h+='<div style="margin-bottom:10px;padding:8px;border:1px solid var(--border);border-radius:6px">';
-            h+='<div style="font-size:.82rem;font-weight:700;margin-bottom:6px">Missão '+mm.letra+' — Disponíveis: '+disponiveis.length+'</div>';
-            if(disponiveis.length){
-              disponiveis.forEach(function(r){
-                var nomeCompleto=(r.rank||'')+' '+(r.name||'');
-                var checked=escaladosAtuais.indexOf(nomeCompleto.trim())>=0?'checked':'';
-                h+='<label style="display:block;font-size:.82rem;color:var(--text);cursor:pointer;margin-bottom:2px"><input type="checkbox" class="escal-cb-'+vcKey+'-'+mm.letra+'" value="'+nomeCompleto.trim()+'" '+checked+'> '+nomeCompleto+'</label>';
-              });
-            } else {
-              h+='<div style="font-size:.82rem;color:var(--text2)">Nenhum tripulante disponível.</div>';
-            }
-            h+='<button class="consulta-btn" style="margin-top:6px" onclick="consultaSaveEscalados(\''+vcKey+'\',\''+mm.letra+'\')">💾 Salvar Escalados '+mm.letra+'</button>';
-            h+='</div>';
-          });
-          h+='</div>';
-        }
-
-        // ─── 7. ENVIAR CONFIRMAÇÃO ──────────────────────────────────────
         var anyEscalados=missoes.some(function(m){return m.escalados&&m.escalados.length;});
         if(anyEscalados){
           h+='<div style="margin-top:16px;padding:12px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.25);border-radius:8px">';
@@ -3880,10 +3914,28 @@ function s3RenderConsultaV2(container){
       var deadline=null;
       if(consultaPrazo!=='sem'){deadline=new Date(Date.now()+parseInt(consultaPrazo)*3600000).toISOString();}
 
+      // Recarrega destinatários do GAS antes de enviar (garante lista atualizada)
+      try{
+        var _gtr=await fetch(CONSULTA_GAS+'?action=get_tripulantes&t='+Date.now(),{cache:'no-store'});
+        var _gtd=await _gtr.json();
+        if(_gtd&&_gtd.ok){
+          CONSULTA_RECIPIENTS_VC1=[];CONSULTA_RECIPIENTS_VC2=[];
+          (_gtd.tripulantes||[]).forEach(function(t){
+            var rec={name:(t.posto||'')+' '+(t.nome_guerra||''),chatId:t.chat_id,rank:t.posto||''};
+            var vc=(t.vc||'').toUpperCase().replace('VC-','').trim();
+            if(vc==='1')CONSULTA_RECIPIENTS_VC1.push(rec);
+            else if(vc==='2')CONSULTA_RECIPIENTS_VC2.push(rec);
+          });
+        }
+      }catch(e){console.warn('reload tripulantes falhou:',e);}
       var recipients=vcType==='vc1'?CONSULTA_RECIPIENTS_VC1:CONSULTA_RECIPIENTS_VC2;
       var recipientsList=recipients.map(function(r){return{chat_id:r.chatId,name:r.name,rank:r.rank};});
 
       try{
+        // 0. Resetar lock no GAS para nova consulta
+        var gasUnlockAction='unlock_'+vcType; // unlock_vc1 ou unlock_vc2
+        try{await fetch(CONSULTA_GAS+'?action='+gasUnlockAction,{redirect:'follow'});}catch(e){console.warn('GAS unlock falhou:',e);}
+
         // 1. Salvar consulta localmente (e tentar API se disponível)
         var missionLetters=missions.map(function(m){return m.letra;});
         var result=await consultaApiPost({
@@ -3941,16 +3993,384 @@ function s3RenderConsultaV2(container){
   });
 }
 
+// ─── ACNT/ALTR como submenu S3 ──────────────────────────────────────────────
+function s3RenderAcnt(container){
+  let html='';
+  if(!acntData.length){
+    html='<div style="padding:24px;color:var(--text2)">Sem dados de ACNT/ALTR disponíveis.</div>';
+    container.innerHTML=html;return;
+  }
+  html+='<h2 style="font-size:1rem;margin-bottom:16px">ACNT/ALTR — Checklist de Missões</h2>';
+  html+='<div class="acnt-grid">';
+  for(const m of acntData){
+    const pctCls=m.pctDone>80?'pct-high':m.pctDone>=50?'pct-mid':'pct-low';
+    const barColor=m.pctDone>80?'var(--green)':m.pctDone>=50?'var(--yellow)':'var(--red)';
+    html+=`<div class="acnt-card ${pctCls}">`;
+    html+=`<div class="acnt-header"><span class="date">📅 ${m.data}</span><span class="anv">FAB ${m.anvNum} - ${m.anvType}</span></div>`;
+    html+=`<div class="acnt-progress"><div class="prog-label"><span style="font-size:.78rem">Progresso</span><span style="color:${barColor};font-weight:900">${m.pctDone.toFixed(1)}%</span></div>`;
+    html+=`<div class="prog-track"><div class="prog-fill" style="width:${Math.min(m.pctDone,100)}%;background:${barColor}" data-pct="${m.pctDone.toFixed(0)}%"></div></div></div>`;
+    html+='<ul class="acnt-items">';
+    for(const item of m.items){
+      const icon=item.status==='done'?'✅':'⬜';
+      const style=item.status==='done'?'':'color:var(--text2)';
+      html+=`<li style="${style}"><span class="icon">${icon}</span>${item.name}</li>`;
+    }
+    html+='</ul></div>';
+  }
+  html+='</div>';
+  container.innerHTML=html;
+}
+
+// ─── Confirmação de Missão ───────────────────────────────────────────────────
+var _confLetra='A';
+var _confLetras={};
+function _confSetLetra(nome,val){_confLetras[nome]=val.toUpperCase();var el=document.getElementById('confprev_'+nome.replace(/\W/g,'_'));if(el&&_confDados)el.textContent=_buildMsgOficial(val.toUpperCase(),_confDados._postoOf&&_confDados._postoOf[nome]||'',nome,_confDados);}
+function _buildMsgOficial(letra,posto,nome,dados){
+  var oms=(dados&&dados.oms)||[];
+  var msg='Prezado tripulante, informo que o senhor está escalado para a consulta '+letra+'\n\n';
+  var nomeUp=nome.toUpperCase();
+  var omsDoOficial=oms.length?oms.filter(function(om){return(om.tripulantes||[]).some(function(t){return(t.nome||'').toUpperCase().includes(nomeUp)||(t.posto+' '+t.nome).toUpperCase().includes(nomeUp);});}):[];
+  var omsExibir=omsDoOficial.length?omsDoOficial:oms;
+  if(omsExibir.length){omsExibir.forEach(function(om){msg+='📋 OM '+om.om_num+' — '+(om.anv||'')+' FAB '+(om.fab||'')+'\n\n';var trip=(om.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');msg+=trip+'\n\n';(om.pernas||[]).forEach(function(p){msg+='  '+(p.raw||p)+'\n';});if(om.obs)msg+='\n  OBS: '+om.obs+'\n';msg+='\n';});}
+  else{var trip=(dados.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');msg+=trip+'\n\n';(dados.pernas||[]).forEach(function(p){msg+=p+'\n';});msg+='\n';}
+  msg+='FAVOR ACUSAR CIENTE\nOPR GTE-1';return msg.toUpperCase();
+}
+var _confDados=null;
+var _confCientes={};
+var _confSobreaviso=[]; // [{chat_id, nome, posto, letra}]
+var _confTripulantes=[]; // lista de cadastrados no GAS
+
+function s3RenderConfirmacao(container){
+  container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
+
+  Promise.all([
+    fetch(CONF_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetch(CONF_GAS+'?action=get_conf&t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetch(CONSULTA_GAS+'?action=get_tripulantes&t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+  ]).then(function(results){
+    var raw=results[0];
+    var gasConf=results[1];
+    var gt=results[2];
+    _confDados=raw&&raw.dados?raw.dados:null;
+    // Cientes vêm do GAS (fonte de verdade)
+    _confCientes={};
+    if(gasConf&&gasConf.oficiais){
+      gasConf.oficiais.forEach(function(o){
+        if(o.ciente) _confCientes[o.chat_id]={nome:o.posto+' '+o.nome,timestamp:o.timestamp};
+      });
+      // Preserva missão/ANV/pernas do GAS se não tiver no raw
+      if(_confDados&&!_confDados.missao_ativa) _confDados._missao=gasConf.missao||'';
+    }
+    _confTripulantes=gt&&gt.tripulantes?gt.tripulantes:[];
+    _renderConfView(container);
+  }).catch(function(e){
+    console.error('s3RenderConfirmacao erro:',e);
+    _confDados=null; _confCientes={}; _confTripulantes=[];
+    _renderConfView(container);
+  });
+}
+
+function consultaApiFetch(path){
+  return fetch('http://127.0.0.1:8085'+path,{
+    headers:{'X-API-Secret':CONSULTA_API_SECRET},
+    signal:AbortSignal.timeout(4000)
+  }).then(function(r){return r.ok?r.json():null;});
+}
+
+function _escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+
+
+function _renderConfView(container){
+  var dados=_confDados;
+  var html='<div style="max-width:720px">';
+
+  // Cabeçalho
+  html+='<div style="display:flex;gap:12px;align-items:center;margin-bottom:18px;flex-wrap:wrap">';
+  html+='<h2 style="margin:0;font-size:1.1rem;color:var(--text)">✈️ Confirmação de Missão</h2>';
+  html+='<button onclick="s3RenderConfirmacao(document.getElementById(\'s3-content\'))" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:.72rem">↻ Atualizar</button>';
+  html+='</div>';
+
+  // Status do controlão
+  if(!dados){
+    html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;color:var(--text2);font-size:.85rem">';
+    html+='📄 Nenhum controlão carregado.<br><br>Envie o PDF do controlão pelo <strong>@SISGOP_BOT</strong> e selecione <strong>Controlão</strong> no menu.';
+    html+='</div>';
+  } else {
+    var trip=dados.tripulantes||[];
+    var pernas=dados.pernas||[];
+    html+='<div style="background:var(--bg2);border-left:3px solid var(--green);border-radius:8px;padding:14px;margin-bottom:16px;font-size:.82rem">';
+    html+='<div style="font-weight:900;color:var(--green);margin-bottom:8px">📄 Controlão carregado</div>';
+    html+='<div style="color:var(--text2);margin-bottom:4px">👥 '+trip.length+' tripulantes &nbsp;|&nbsp; ✈️ '+pernas.length+' pernas';
+    if(dados.anv) html+=' &nbsp;|&nbsp; 🛩 ANV '+dados.anv;
+    html+='</div>';
+    // Lista tripulação
+    html+='<div style="margin-top:8px;color:var(--text);font-size:.8rem">'+trip.map(function(t){
+      var isOficial=['TC','MJ','CP'].indexOf(t.posto)>=0;
+      return '<span style="color:'+(isOficial?'var(--yellow)':'var(--text2)')+'">'+t.posto+' '+t.nome+'</span>';
+    }).join(' <span style="color:var(--text2)">/</span> ')+'</div>';
+    html+='<div style="font-size:.7rem;color:var(--text2);margin-top:4px">🟡 Oficiais (recebem a mensagem)</div>';
+    html+='</div>';
+  }
+
+  // Campo letra da missão + botão enviar
+  html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px">';
+  html+='<label style="font-size:.82rem;font-weight:900;color:var(--text)">Missão:</label> ';
+  html+='<input id="conf-letra" type="text" value="'+_confLetra+'" maxlength="3" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;width:60px;font-size:1rem;font-weight:900;text-transform:uppercase" oninput="this.value=this.value.toUpperCase();_confLetra=this.value;_atualizarPreviaConf()">';
+  html+='<span style="font-size:.78rem;color:var(--text2);margin-left:8px">Ex: A, B, C...</span>';
+  html+='</div>';
+
+  // Mensagens individuais por oficial
+  if(dados){
+    var cientes_gas=_confCientes||{};
+    var oficiais_all=(dados.tripulantes||[]).filter(function(t){return['TC','MJ','CP'].indexOf(t.posto)>=0;});
+    // Adiciona sobreaviso
+    var todos_dest=oficiais_all.slice();
+    _confSobreaviso.forEach(function(s){
+      todos_dest.push({posto:s.posto,nome:s.nome,_letra:s.letra,_saviso:true});
+    });
+    if(todos_dest.length){
+      html+='<div style="margin-bottom:16px">';
+      html+='<div style="font-size:.75rem;font-weight:900;color:var(--text2);margin-bottom:8px">📨 MENSAGENS QUE SERÃO ENVIADAS ('+todos_dest.length+')</div>';
+      todos_dest.forEach(function(t){
+        var nome_key=t.nome.toUpperCase();
+        var letra_dest=_confLetras[nome_key]||t._letra||_confLetra||'A';
+        var confirmou=Object.values(cientes_gas).some(function(c){var n=(c.nome||'').toUpperCase();return n.includes(nome_key)||nome_key.includes(n);});
+        // Busca chat_id no GAS para mostrar status cadastrado
+        var cadastrado=_confTripulantes.some(function(tr){return (tr.nome_guerra||'').toUpperCase()===nome_key||(tr.nome_guerra||'').toUpperCase().includes(nome_key);});
+        var borderColor=confirmou?'var(--green)':t._saviso?'var(--yellow)':'var(--border)';
+        var tagColor=confirmou?'var(--green)':cadastrado?'var(--text2)':'var(--red)';
+        var tag=confirmou?'✅ CIENTE':cadastrado?'⏳ Aguardando':'⚠️ Não cadastrado';
+        html+='<div style="background:var(--bg2);border:1px solid '+borderColor+';border-radius:8px;padding:12px;margin-bottom:10px">';
+        var safeNome=nome_key.replace(/[^A-Z0-9]/g,'_');
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">';
+        html+='<span style="font-weight:900;font-size:.85rem;color:var(--text)">'+t.posto+' '+t.nome+(t._saviso?' <span style="color:var(--yellow);font-size:.7rem">SOBREAVISO</span>':'')+'</span>';
+        html+='<div style="display:flex;align-items:center;gap:6px">';
+        html+='<label style="font-size:.75rem;color:var(--text2)">Consulta:</label>';
+        html+='<input type="text" maxlength="3" value="'+letra_dest+'" data-nome="'+safeNome+'" onchange="_confLetras[\''+nome_key.replace(/'/g,"\\'")+'\']=this.value.toUpperCase();document.getElementById(\'pr_'+safeNome+'\').textContent=_buildMsgOficial(this.value.toUpperCase(),\''+t.posto.replace(/'/g,"\\'")+'\',\''+t.nome.replace(/'/g,"\\'")+'\',_confDados)" style="width:44px;text-align:center;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:.9rem;font-weight:900;text-transform:uppercase">';
+        html+='<span style="font-size:.72rem;color:'+tagColor+'">'+tag+'</span>';
+        html+='</div></div>';
+        html+='<pre id="pr_'+safeNome+'" style="margin:0;background:var(--bg3);padding:10px;border-radius:6px;font-size:.74rem;white-space:pre-wrap;color:var(--text);max-height:200px;overflow-y:auto">'+_escHtml(_buildMsgOficial(letra_dest,t.posto,t.nome,dados))+'</pre>';
+        html+='</div>';
+      });
+      html+='</div>';
+    }
+  }
+
+  // ─── Sobreaviso ───────────────────────────────────────────────────────────
+  html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px">';
+  html+='<div style="font-weight:900;font-size:.85rem;color:var(--yellow);margin-bottom:10px">🔔 Sobreaviso</div>';
+  html+='<div style="font-size:.78rem;color:var(--text2);margin-bottom:8px">Selecione os pilotos em sobreaviso e a letra que representam:</div>';
+  // Lista de sobreaviso já adicionados
+  if(_confSobreaviso.length){
+    html+='<div id="conf-saviso-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">';
+    _confSobreaviso.forEach(function(s,i){
+      html+='<div style="background:rgba(255,200,50,.12);border:1px solid var(--yellow);border-radius:6px;padding:4px 10px;font-size:.78rem;color:var(--yellow);display:flex;align-items:center;gap:6px">';
+      html+=s.posto+' '+s.nome+' ('+s.letra+')';
+      html+='<span onclick="_confRemoveSaviso('+i+')" style="cursor:pointer;color:var(--red);font-weight:900;margin-left:4px">×</span>';
+      html+='</div>';
+    });
+    html+='</div>';
+  } else {
+    html+='<div style="font-size:.75rem;color:var(--text2);margin-bottom:10px;font-style:italic">Nenhum sobreaviso adicionado.</div>';
+  }
+  // Form para adicionar
+  html+='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">';
+  html+='<select id="conf-saviso-piloto" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-size:.8rem;flex:1;min-width:160px">';
+  html+='<option value="">— Selecionar piloto —</option>';
+  _confTripulantes.forEach(function(t){
+    html+='<option value="'+t.chat_id+'|'+t.posto+'|'+t.nome_guerra+'">'+t.posto+' '+t.nome_guerra+'</option>';
+  });
+  html+='</select>';
+  html+='<input id="conf-saviso-letra" type="text" placeholder="Letra (ex: B)" maxlength="3" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;width:70px;font-size:.8rem;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">';
+  html+='<button onclick="_confAddSaviso()" style="background:var(--yellow);color:#000;border:none;border-radius:4px;padding:5px 12px;font-size:.8rem;font-weight:900;cursor:pointer">+ Adicionar</button>';
+  html+='</div>';
+  html+='</div>';
+
+  // Botão enviar
+  html+='<button id="conf-send-btn" onclick="_enviarConfirmacao()" style="background:var(--green);color:#000;border:none;border-radius:6px;padding:10px 24px;font-weight:900;font-size:.9rem;cursor:pointer;width:100%">📨 ENVIAR CONFIRMAÇÃO</button>';
+
+  // Resumo de cientes
+  var cientes=_confCientes||{};
+  var nCientes=Object.keys(cientes).length;
+  if(dados&&dados.tripulantes){
+    var oficiais=(dados.tripulantes||[]).filter(function(t){return['TC','MJ','CP'].indexOf(t.posto)>=0;});
+    if(oficiais.length&&nCientes>0){
+      html+='<div style="margin-top:4px;padding:10px;background:rgba(0,255,136,.08);border-radius:6px;font-size:.78rem;color:var(--green)">✅ '+nCientes+' de '+oficiais.length+' oficial(is) confirmaram ciente.</div>';
+    }
+  }
+
+  html+='</div>';
+  container.innerHTML=html;
+}
+
+function _confAddSaviso(){
+  var sel=document.getElementById('conf-saviso-piloto');
+  var letraEl=document.getElementById('conf-saviso-letra');
+  if(!sel||!sel.value){alert('Selecione um piloto.');return;}
+  var letra=(letraEl&&letraEl.value.trim())||_confLetra;
+  var parts=sel.value.split('|');
+  var chat_id=parts[0],posto=parts[1],nome=parts[2];
+  // Evita duplicata
+  if(_confSobreaviso.some(function(s){return s.chat_id===chat_id;})){
+    alert('Piloto já adicionado.');return;
+  }
+  _confSobreaviso.push({chat_id:chat_id,posto:posto,nome:nome,letra:letra});
+  _renderConfView(document.getElementById('s3-content'));
+}
+
+function _confRemoveSaviso(idx){
+  _confSobreaviso.splice(idx,1);
+  _renderConfView(document.getElementById('s3-content'));
+}
+
+function _buildConfPreview(letra,dados){
+  if(!dados) return '';
+  var trip=(dados.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');
+  var pernas=(dados.pernas||[]).join('\n');
+  var obs=dados.obs?'OBS:\n'+dados.obs+'\n\n':'';
+  var anv=dados.anv?'ANV PREVISTA: '+dados.anv+'\n\n':'';
+  return 'SR. [NOME], ESCALADO MISSÃO '+letra+':\n\n'+trip+'\n\n'+pernas+'\n\n'+obs+anv+'FAVOR ACUSAR CIENTE\nOPR GTE-1';
+}
+
+function _atualizarPreviaConf(){
+  var el=document.getElementById('conf-preview');
+  if(el&&_confDados) el.textContent=_buildConfPreview(_confLetra,_confDados);
+}
+
+async function _enviarConfirmacao(){
+  var btn=document.getElementById('conf-send-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Enviando...';}
+  try{
+    if(!_confDados){alert('Nenhum controlão carregado.');if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}return;}
+    var dados=_confDados;
+    var trip=dados.tripulantes||[];
+    var oficiais=trip.filter(function(t){return['TC','MJ','CP'].indexOf(t.posto)>=0;});
+    // Monta lista de mensagens com chat_id por oficial
+    var gasTrip=_confTripulantes||[];
+    var messages=[];
+    oficiais.forEach(function(t){
+      var ng=t.nome.toUpperCase();
+      var tg=gasTrip.find(function(tr){var n=(tr.nome_guerra||'').toUpperCase();return n===ng||n.includes(ng)||ng.includes(n);});
+      if(!tg||!tg.chat_id) return;
+      var letra=_confLetras[ng]||_confLetra||'A';
+      var texto=_buildMsgOficial(letra,t.posto,t.nome,dados);
+      messages.push({chat_id:tg.chat_id,texto:texto,letra:letra,nome:t.nome});
+    });
+    // Sobreaviso
+    (_confSobreaviso||[]).forEach(function(s){
+      var letra=s.letra||_confLetra||'A';
+      var texto=_buildMsgOficial(letra,s.posto,s.nome,dados);
+      messages.push({chat_id:s.chat_id,texto:texto,letra:letra,nome:s.nome});
+    });
+    if(!messages.length){alert('Nenhum oficial cadastrado no bot encontrado na tripulação.');if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}return;}
+    // Envia via CONF_GAS (sem depender do bot local)
+    var gasUrl=CONF_GAS+'?t='+Date.now();
+    var resp=await fetch(gasUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'send_conf',messages:messages}),signal:AbortSignal.timeout(30000)});
+    var r=await resp.json();
+    if(r&&r.ok){
+      var msg='✅ Enviado para '+r.enviados+' oficial(is).';
+      if(r.erros) msg+=' ⚠️ '+r.erros+' sem cadastro.';
+      alert(msg);
+      setTimeout(function(){s3RenderConfirmacao(document.getElementById('s3-content'));},1000);
+    } else {
+      alert('Erro: '+((r&&r.error)||'Falha ao enviar'));
+      if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}
+    }
+  }catch(e){
+    alert('Erro: '+e.message);
+    if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}
+  }
+}
+
+// ─── Modal de arquivar com opção de mensagem ────────────────────────────────
+function consultaArchiveModal(vcKey){
+  var vcLabel=vcKey==='vc1'?'VC-1':'VC-2';
+  // Remove modal anterior se existir
+  var old=document.getElementById('archiveModal');if(old)old.remove();
+  var overlay=document.createElement('div');
+  overlay.id='archiveModal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML=`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:340px;width:90%;text-align:center">
+      <div style="font-size:1rem;font-weight:700;margin-bottom:6px">📦 Arquivar consulta ${vcLabel}</div>
+      <div style="font-size:.82rem;color:var(--text2);margin-bottom:18px">Deseja enviar uma mensagem de encerramento para os tripulantes?</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button onclick="consultaArchiveConfirm('${vcKey}',true)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px;cursor:pointer;font-size:.85rem">📨 Arquivar e enviar mensagem</button>
+        <button onclick="consultaArchiveConfirm('${vcKey}',false)" style="background:none;border:1px solid var(--border);color:var(--text2);padding:10px;border-radius:8px;cursor:pointer;font-size:.82rem">Arquivar sem mensagem</button>
+        <button onclick="document.getElementById('archiveModal').remove()" style="background:none;border:none;color:var(--text2);padding:6px;cursor:pointer;font-size:.78rem">Cancelar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function consultaArchiveConfirm(vcKey, enviarMsg){
+  document.getElementById('archiveModal')?.remove();
+  var vcLabel=vcKey==='vc1'?'VC-1':'VC-2';
+  // Calcula saudação automática pelo horário (BRT)
+  var mensagem=null;
+  if(enviarMsg){
+    var hora=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'numeric',hour12:false})*1;
+    var saudacao=hora>=5&&hora<12?'Bom dia':hora>=12&&hora<18?'Boa tarde':'Boa noite';
+    var vcLabel2=vcKey==='vc1'?'VC-1':'VC-2';
+    mensagem=saudacao+', Consulta '+vcLabel2+' encerrada.';
+  }
+  // Envia mensagem via Telegram se solicitado
+  if(mensagem){
+    try{
+      var data=await fetchConsultasJson();
+      var consulta=data&&data[vcKey];
+      var recipients=(consulta&&consulta.recipients)||[];
+      var tgBase='https://api.telegram.org/bot'+CONSULTA_TOKEN;
+      for(var i=0;i<recipients.length;i++){
+        var chatId=recipients[i].chat_id||recipients[i].chatId;
+        if(!chatId) continue;
+        await fetch(tgBase+'/sendMessage',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({chat_id:chatId,text:mensagem})
+        }).catch(function(){});
+      }
+    }catch(e){console.warn('Erro ao enviar mensagem de encerramento:',e);}
+  }
+  // Arquiva normalmente
+  try{
+    var result=await consultaApiPost({action:'archive',vc:vcKey});
+    if(result.ok||(result.error&&result.error.indexOf('Nenhuma consulta')>=0)){
+      if(!result.ok){var _d=_consultaLocalLoad();_d[vcKey]=null;_consultaLocalSave(_d);}
+      consultasJsonLastFetch=0;s3RenderActiveTab();
+    } else alert('Erro ao arquivar: '+result.error);
+  }catch(e){alert('Erro: '+e.message);}
+}
+
 // ─── Ações de consulta (encerrar/arquivar) ──────────────────────────────────
 async function consultaAction(action,vcKey){
   var vcLabel=vcKey==='vc1'?'VC-1':'VC-2';
   var msg=action==='lock'?'Encerrar respostas de '+vcLabel+'?':'Arquivar consulta de '+vcLabel+'?';
   if(!confirm(msg)) return;
   try{
+    // LOCK: chama GAS diretamente (sem depender do tunnel local)
+    if(action==='lock'){
+      var gasAction='lock_'+vcKey; // lock_vc1 ou lock_vc2
+      var gasUrl=CONSULTA_GAS+'?action='+gasAction;
+      var gasRes=await fetch(gasUrl,{redirect:'follow'}).then(function(r){return r.json();});
+      if(gasRes.ok){
+        // Atualiza bot local também (best-effort, não bloqueia se tunnel cair)
+        try{await consultaApiPost({action:'lock',vc:vcKey});}catch(e){console.warn('Bot lock falhou (ok, GAS é autoritativo):',e);}
+        // Atualiza localStorage local também
+        var _ld=_consultaLocalLoad();
+        if(_ld[vcKey]){_ld[vcKey].locked=true;}
+        _consultaLocalSave(_ld);
+        consultasJsonLastFetch=0;s3RenderActiveTab();
+      } else alert('Erro ao encerrar: '+(gasRes.error||'desconhecido'));
+      return;
+    }
+    // ARCHIVE: chama bot local (tunnel) ou fallback local
     var result=await consultaApiPost({action:action,vc:vcKey});
-    if(result.ok){consultasJsonLastFetch=0;s3RenderActiveTab();}
-    else alert('Erro: '+result.error);
-  }catch(e){alert('Erro de conexão com o bot: '+e.message);}
+    if(result.ok||(action==='archive'&&result.error&&result.error.indexOf('Nenhuma consulta')>=0)){
+      if(!result.ok){var _d=_consultaLocalLoad();_d[vcKey]=null;_consultaLocalSave(_d);}
+      consultasJsonLastFetch=0;s3RenderActiveTab();
+    } else alert('Erro: '+result.error);
+  }catch(e){alert('Erro: '+e.message);}
 }
 
 // ─── Salvar OM ──────────────────────────────────────────────────────────────
@@ -4020,7 +4440,7 @@ function renderAll(){
   document.getElementById('kpi-miss').textContent=uniqueOMs.size;
   // Busca diárias concluídas + status de PDF gerado em paralelo, depois renderiza
   Promise.all([fetchDiariasConcluidas(),fetchPdfGerado()]).then(()=>{renderScreenDiarias();}).catch(()=>{renderScreenDiarias();});
-  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenEscala();renderScreenTV();renderScreenCartoes();renderScreenBot();renderScreenDiarias();renderScreenReport();renderScreenS3();
+  renderScreen0();renderScreen1();renderScreen2();renderScreen3();renderScreenDiario();renderScreenACNT();renderScreenCalendar();renderScreenSearch();renderScreenTV();renderScreenCartoes();renderScreenBot();renderScreenDiarias();renderScreenReport();renderScreenS3();
 }
 
 // ===== CARTÕES =====
@@ -5135,7 +5555,6 @@ const STATUS_SOURCES=[
   {id:'metarMulti',label:'METAR Multi',critical:false},
   {id:'anual',label:'Horas Anual',critical:true},
   {id:'om',label:'Ordens de Missão',critical:false},
-  {id:'escala',label:'Escala',critical:true},
   {id:'cartoes',label:'Cartões',critical:false},
   {id:'pauSebo',label:'Pau de Sebo',critical:false},
   {id:'brAirports',label:'Aeroportos BR',critical:false},
@@ -5203,6 +5622,8 @@ document.addEventListener('click',e=>{
   if(panel&&!panel.contains(e.target)&&e.target!==dot)panel.classList.remove('open');
 });
 async function loadAllData(){
+  // Não atualizar enquanto estiver na tela S3 (tela operacional)
+  if(currentScreen===14) return;
   document.getElementById('errorOverlay').style.display='none';
   document.getElementById('loadingMsg').style.display='block';
   const dot=document.getElementById('statusDot');
@@ -5226,8 +5647,7 @@ async function loadAllData(){
     const missingIcaos=expectedIcaos.filter(i=>!metarMulti[i]);
     if(missingIcaos.length&&sourceStatus.metarMulti==='ok')sourceStatus.metarMulti='fail';
     await fetchAnual().then(()=>{sourceStatus.anual='ok';}).catch(()=>{sourceStatus.anual='fail';});
-    await fetchWithTimeout('om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;sourceStatus.om='ok';}).catch(()=>{omData=[];sourceStatus.om='fail';});
-    await fetchEscala().then(()=>{sourceStatus.escala='ok';}).catch(()=>{sourceStatus.escala='fail';});
+    await fetchWithTimeout('data/om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;sourceStatus.om='ok';}).catch(()=>{omData=[];sourceStatus.om='fail';});
     await fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);cartoesFailed=false;sourceStatus.cartoes='ok';}).catch(()=>{cartoesData=[];cartoesFailed=true;sourceStatus.cartoes='fail';});
     await fetchCSVByName('dados').then(rows=>{dadosPessoais=parseDadosPessoais(rows);sourceStatus.dados='ok';}).catch(()=>{dadosPessoais={};sourceStatus.dados='fail';});
     pilotData=parseDisponibilidade(dispRows);
@@ -5260,10 +5680,7 @@ async function loadAllData(){
 let s3Unlocked=false;
 function goScreen(n){
   if(n===14&&!s3Unlocked){
-    const pw=prompt('🔒 Área restrita S3. Digite a senha:');
-    if(!pw){return;}
-    async function verifyPw(p){const enc=new TextEncoder().encode(p);const buf=await crypto.subtle.digest('SHA-256',enc);return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-    verifyPw(pw).then(h=>{if(h==='eb9eaaaaf29e9838c97791fbf68ac2483f2aa3f93c6dc39c6bf0162cc51a6322'){s3Unlocked=true;goScreen(14);}else{alert('Senha incorreta.');_trackEscalaAttempt(false);}});
+    _showS3LoginModal();
     return;
   }
   _trackScreen(n);
@@ -5304,11 +5721,11 @@ function getDiariasAlerts(){
     if(!omData||!omData.length)return items;
     const conc=getDiariasConcluidas();
     const brP=['SB','SD','SN','SI','SS','SW'];
-    const list=omData.filter(om=>!conc[om.om]&&om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>{const m=(p.missao||'').toUpperCase();return m.includes('PR')||m.includes('ESCAV');}));
+    const list=omData.filter(om=>!conc[om.om]&&om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf))));
     const nBiz=d=>{const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;};
     const hj=nowBRT();hj.setHours(0,0,0,0);
     list.forEach(om=>{
-      const p=nBiz(new Date(om.data+'T23:59:00'));p.setHours(0,0,0,0);
+      const p=nBiz(parseOMDate(om.data,true));p.setHours(0,0,0,0);
       const diff=Math.floor((p-hj)/86400000);
       if(diff<=0){
         items.push({id:'diaria-'+om.om,icon:'💰',color:diff<0?'var(--red)':'#ffaa00',
@@ -5320,7 +5737,7 @@ function getDiariasAlerts(){
   }catch(e){}
   return items;
 }
-async function fetchAllAlerts(){
+async function fetchAllAlerts(force=false){
   const allItems=[];
   // 1) alerts.json (viagens PR, etc)
   try{
@@ -5345,7 +5762,7 @@ async function fetchAllAlerts(){
   // 2) Diárias vencendo
   getDiariasAlerts().forEach(a=>allItems.push(a));
   // Filter dismissed (1h cooldown)
-  const fresh=allItems.filter(a=>{
+  const fresh=force?allItems:allItems.filter(a=>{
     const d=_alertDismissed[a.id];
     return !d||(Date.now()-d)>3600000;
   });
