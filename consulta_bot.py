@@ -1341,9 +1341,9 @@ async def check_deadlines(app):
 # ─── Error handler ────────────────────────────────────────────────────────────
 
 async def sync_gas_lock_loop():
-    """Sincroniza lock/unlock com GAS a cada 60s — sem tunnel."""
+    """Sincroniza lock/unlock com GAS a cada 10s — sem tunnel."""
     while True:
-        await asyncio.sleep(60)
+        await asyncio.sleep(10)
         try:
             data = _load_data()
             changed = False
