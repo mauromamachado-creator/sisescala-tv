@@ -3070,11 +3070,11 @@ let s3ActiveTab='escalav2';
 function renderScreenS3(){
   let html='<h2>📋 S3 — Operações</h2>';
   html+='<div class="s3-subnav">';
-  html+='<button class="'+(s3ActiveTab==='diario'?'active':'')+'" onclick="s3SwitchTab(\'diario\')">DIÁRIO</button>';
-  html+='<button class="'+(s3ActiveTab==='consulta'?'active':'')+'" onclick="s3SwitchTab(\'consulta\')">CONSULTA</button>';
-  html+='<button class="'+(s3ActiveTab==='escalav2'?'active':'')+'" onclick="s3SwitchTab(\'escalav2\')">ESCALA V2</button>';
-  html+='<button class="'+(s3ActiveTab==='confirmacao'?'active':'')+'" onclick="s3SwitchTab(\'confirmacao\')">CONFIRMAÇÃO</button>';
-  html+='<button class="'+(s3ActiveTab==='acnt'?'active':'')+'" onclick="s3SwitchTab(\'acnt\')">ACNT/ALTR</button>';
+  html+='<button data-tab="diario" class="'+(s3ActiveTab==='diario'?'active':'')+'" onclick="s3SwitchTab(\'diario\')">DIÁRIO</button>';
+  html+='<button data-tab="consulta" class="'+(s3ActiveTab==='consulta'?'active':'')+'" onclick="s3SwitchTab(\'consulta\')">CONSULTA</button>';
+  html+='<button data-tab="escalav2" class="'+(s3ActiveTab==='escalav2'?'active':'')+'" onclick="s3SwitchTab(\'escalav2\')">ESCALA V2</button>';
+  html+='<button data-tab="confirmacao" class="'+(s3ActiveTab==='confirmacao'?'active':'')+'" onclick="s3SwitchTab(\'confirmacao\')">CONFIRMAÇÃO</button>';
+  html+='<button data-tab="acnt" class="'+(s3ActiveTab==='acnt'?'active':'')+'" onclick="s3SwitchTab(\'acnt\')">ACNT/ALTR</button>';
   html+='</div>';
   html+='<div id="s3-content"></div>';
   document.getElementById('screen14').innerHTML=html;
@@ -3083,8 +3083,7 @@ function renderScreenS3(){
 function s3SwitchTab(tab){
   s3ActiveTab=tab;
   document.querySelectorAll('.s3-subnav button').forEach(function(b){
-    var t=b.textContent.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    b.classList.toggle('active',t===tab);
+    b.classList.toggle('active', b.dataset.tab===tab);
   });
   s3RenderActiveTab();
 }
@@ -3110,7 +3109,7 @@ function s3RenderDiario(container){
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONFIG CONSULTA — API e Destinatários
 // ═══════════════════════════════════════════════════════════════════════════════
-var CONSULTA_API = 'https://mrna-harvest-shakira-filed.trycloudflare.com';
+var CONSULTA_API = 'https://warranties-guys-venice-balloon.trycloudflare.com';
 var CONSULTA_API_SECRET = 'sisgopa-gte-2026';
 var CONSULTA_GAS = 'https://script.google.com/macros/s/AKfycbyDdqWqCKLoCVwgajS3kr4o6q2MHx3UYxwe2o-28JbFCS__NhV2l2OqFlUT-cyRu-Vg/exec';
 var CONF_GAS = 'https://script.google.com/macros/s/AKfycbwAkuMtXPes8ciLZw_EYT6a4EAHz6wGwdBUj5Bqm5eM--rkO2Yj7uJy8USXTjTWNkEYhg/exec';
