@@ -3824,6 +3824,12 @@ function s3RenderConsultaV2(container){
           recipients:recipientsList
         });
 
+        if(result.mode==='local'){
+          statusEl.innerHTML='<span style="color:var(--red)">❌ Erro: não foi possível conectar ao bot. Verifique a conexão e tente novamente.</span>';
+          sendBtn.disabled=false;sendBtn.textContent='📤 CRIAR E ENVIAR';
+          return;
+        }
+
         // 2. Enviar via Telegram Bot API DIRETO do frontend
         var tgBase='https://api.telegram.org/bot'+CONSULTA_TOKEN;
         var buttons=[];
