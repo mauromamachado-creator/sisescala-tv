@@ -4304,31 +4304,22 @@ async function consultaArchiveConfirm(vcKey, enviarMsg){
     var vcLabel2=vcKey==='vc1'?'VC-1':'VC-2';
     mensagem=saudacao+', Consulta '+vcLabel2+' encerrada.';
   }
-  // Envia mensagem diretamente via Telegram API (igual ao envio da consulta)
+  // Envia mensagem para todos os tripulantes do VC (aba Tripulantes da planilha)
   if(mensagem){
     try{
-      // Busca recipients do bot (tunnel) OU localStorage como fallback
-      var _data=await fetchConsultasJson();
-      var _consulta=(_data&&_data[vcKey])||(_consultaLocalLoad()[vcKey]);
-      var _recipients=(_consulta&&_consulta.recipients)||[];
-      // Fallback: usa lista de tripulantes do VC se recipients estiver vazio
-      if(!_recipients.length){
-        var _fallback=vcKey==='vc1'?CONSULTA_RECIPIENTS_VC1:CONSULTA_RECIPIENTS_VC2;
-        _recipients=_fallback.map(function(r){return{chat_id:r.chatId,name:r.name};});
-      }
-      console.log('[ARCHIVE] recipients para envio:', _recipients);
+      var vcSheet=vcKey==='vc1'?'VC-1':'VC-2';
+      var _gasR=await fetch(CONSULTA_GAS+'?action=get_tripulantes',{redirect:'follow',signal:AbortSignal.timeout(8000)});
+      var _gasD=await _gasR.json();
       var tgBase='https://api.telegram.org/bot'+CONSULTA_TOKEN;
-      for(var _i=0;_i<_recipients.length;_i++){
-        var _cid=_recipients[_i].chat_id||_recipients[_i].chatId;
-        if(!_cid){console.warn('[ARCHIVE] recipient sem chat_id:',_recipients[_i]);continue;}
-        console.log('[ARCHIVE] enviando para',_cid);
-        var _r=await fetch(tgBase+'/sendMessage',{
+      (_gasD.tripulantes||[]).forEach(function(t){
+        if(t.vc!==vcSheet)return;
+        var _cid=t.chat_id;
+        if(!_cid)return;
+        fetch(tgBase+'/sendMessage',{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({chat_id:_cid,text:mensagem})
-        });
-        var _rj=await _r.json();
-        console.log('[ARCHIVE] resultado Telegram:',_rj);
-      }
+        }).catch(function(){});
+      });
     }catch(_e){console.warn('Erro ao enviar mensagem encerramento:',_e);}
   }
   // Arquiva no bot (best-effort)
