@@ -733,7 +733,12 @@ async def callback_handler(update: Update, context):
         consulta["locked"] = True
         consulta["status"] = "locked"
         _save_data(data)
-        logger.info("Lock sincronizado do GAS: %s", _resolved_vc)
+        logger.info("Lock sincronizado do GAS (travou): %s", _resolved_vc)
+    elif not gas_locked and consulta.get("locked"):
+        consulta["locked"] = False
+        consulta["status"] = "active"
+        _save_data(data)
+        logger.info("Lock sincronizado do GAS (destravou): %s", _resolved_vc)
 
     # Verificar se consulta está encerrada (vale pra todos os callbacks)
     if consulta.get("locked") and action != "ciente":
