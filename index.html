@@ -3152,6 +3152,12 @@ function _consultaLocalSave(d){localStorage.setItem('sisgopa_consultas_v2',JSON.
 
 async function fetchConsultasJson(){
   if(consultasJsonCache && Date.now()-consultasJsonLastFetch<5000) return consultasJsonCache;
+  // Buscar lock status do GAS (fonte autoritativa para encerramento)
+  var gasLocks={locked_vc1:false,locked_vc2:false};
+  try{
+    var gasR=await fetch(CONSULTA_GAS+'?action=get',{redirect:'follow',signal:AbortSignal.timeout(6000)});
+    if(gasR.ok){var gd=await gasR.json();gasLocks.locked_vc1=!!gd.locked_vc1;gasLocks.locked_vc2=!!gd.locked_vc2;}
+  }catch(e){console.warn('GAS lock check falhou:',e);}
   // Buscar estado real do bot
   try{
     var r=await fetch(CONSULTA_API+'/api/consulta',{
@@ -3161,15 +3167,22 @@ async function fetchConsultasJson(){
     if(r.ok){
       var botData=await r.json();
       if(botData.ok && botData.data){
-        consultasJsonCache=botData.data;
-        _consultaLocalSave(botData.data);
+        var d=botData.data;
+        // Aplica lock do GAS (fonte autoritativa)
+        if(gasLocks.locked_vc1 && d.vc1){d.vc1.locked=true;}
+        if(gasLocks.locked_vc2 && d.vc2){d.vc2.locked=true;}
+        consultasJsonCache=d;
+        _consultaLocalSave(d);
         consultasJsonLastFetch=Date.now();
         return consultasJsonCache;
       }
     }
   }catch(e){console.warn('Bot offline, usando localStorage:',e);}
-  // Fallback: localStorage
-  consultasJsonCache=_consultaLocalLoad();consultasJsonLastFetch=Date.now();
+  // Fallback: localStorage + GAS locks
+  var local=_consultaLocalLoad();
+  if(gasLocks.locked_vc1 && local.vc1){local.vc1.locked=true;}
+  if(gasLocks.locked_vc2 && local.vc2){local.vc2.locked=true;}
+  consultasJsonCache=local;consultasJsonLastFetch=Date.now();
   return consultasJsonCache;
 }
 // Buscar respostas do GitHub raw (publicado pelo bot)
