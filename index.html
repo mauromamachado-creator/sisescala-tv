@@ -3934,16 +3934,16 @@ function s3RenderConsultaV2(container){
       try{
         // 0. Registrar consulta no GAS (fonte autoritativa — sem tunnel)
         var missionLetters=missions.map(function(m){return m.letra;});
-        var gasConsultaPayload={
-          action:'set_consulta',
-          vc:vcType,
-          text:text,
-          missions:JSON.stringify(missionLetters),
-          recipients:JSON.stringify(recipientsList),
-          created_at:new Date().toISOString()
-        };
         try{
-          await fetch(CONSULTA_GAS,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(gasConsultaPayload),redirect:'follow'});
+          var gasSetParams=new URLSearchParams({
+            action:'set_consulta',
+            vc:vcType,
+            text:text,
+            missions:JSON.stringify(missionLetters),
+            recipients:JSON.stringify(recipientsList),
+            created_at:new Date().toISOString()
+          });
+          await fetch(CONSULTA_GAS+'?'+gasSetParams.toString(),{redirect:'follow'});
         }catch(e){console.warn('GAS set_consulta falhou:',e);}
         // Reseta lock no bot local (best-effort)
         try{await consultaApiPost({action:'unlock',vc:vcType});}catch(e){console.warn('Bot unlock falhou:',e);}
