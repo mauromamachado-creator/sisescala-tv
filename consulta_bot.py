@@ -330,7 +330,7 @@ def _build_keyboard(consulta_id: str, missions: list[str], responses: dict, conf
     # Quando confirmado: só botão de editar (limpo)
     if confirmed:
         return InlineKeyboardMarkup([[
-            InlineKeyboardButton("✅ CONFIRMADO — ✏️ ALTERAR RESPOSTA", callback_data=f"alterar|{consulta_id}"),
+            InlineKeyboardButton("✏️ ALTERAR RESPOSTA", callback_data=f"alterar|{consulta_id}"),
         ]])
 
     buttons = []
