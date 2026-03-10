@@ -3065,6 +3065,118 @@ async function submitReport(){
   await _sendReport(_reportType,clean,checks);
 }
 
+// ===== ABA OM =====
+function s3RenderOM(container){
+  // Cancelamentos persistidos no localStorage
+  var cancelKey='sisgopa_om_canceladas';
+  var canceladas=JSON.parse(localStorage.getItem(cancelKey)||'{}');
+
+  if(!omData||!omData.length){
+    container.innerHTML='<div class="no-data" style="margin-top:24px">Nenhuma OM carregada.</div>';
+    return;
+  }
+
+  // Ordena OMs por data (mais recente primeiro)
+  var oms=[...omData].sort(function(a,b){
+    return (omPrimeiraDataVoo(b)||'').localeCompare(omPrimeiraDataVoo(a)||'');
+  });
+
+  var html='<div style="padding:4px 0 16px">';
+  for(var i=0;i<oms.length;i++){
+    var om=oms[i];
+    var omId=om.om||om.om_numero||('om_'+i);
+    var isCancelled=!!canceladas[omId];
+    var anvColor=om.aeronave==='VC-1'?'var(--vc1)':'var(--vc2)';
+    var cardStyle=isCancelled
+      ?'background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;opacity:.45;text-decoration:line-through'
+      :'background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);border-radius:8px;padding:12px;margin-bottom:10px';
+
+    html+='<div id="omcard_'+i+'" style="'+cardStyle+'">';
+
+    // Header: aeronave + OM label + checkbox cancelar
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+    html+='<span style="font-weight:900;color:'+anvColor+';font-size:.9rem">'+om.aeronave+' / '+om.fab+'</span>';
+    html+='<div style="display:flex;align-items:center;gap:10px">';
+    html+='<span style="font-size:.7rem;background:var(--green);color:#000;padding:2px 8px;border-radius:4px;font-weight:700">📋 '+omId+'</span>';
+    html+='<label style="display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text2);cursor:pointer;text-decoration:none">';
+    html+='<input type="checkbox" '+(isCancelled?'checked':'')+' onchange="toggleOMCancelada(\''+omId+'\',this.checked)" style="width:14px;height:14px;cursor:pointer"> Cancelada';
+    html+='</label>';
+    html+='</div></div>';
+
+    // Pernas
+    for(var j=0;j<(om.pernas||[]).length;j++){
+      var p=om.pernas[j];
+      html+='<div style="display:flex;gap:8px;align-items:center;padding:4px 0;font-size:.78rem">';
+      html+='<span style="font-weight:700;min-width:40px">'+(p.origem||'')+'</span>';
+      html+='<span style="color:var(--text2)">→</span>';
+      html+='<span style="font-weight:700;min-width:40px">'+(p.destino||'')+'</span>';
+      html+='<span style="color:var(--text2);font-size:.7rem">'+(p.etd?(p.etd.split(' ')[1]||''):'')+'</span>';
+      html+='<span class="mission-tipo">'+(p.missao||om.tipo||'')+'</span>';
+      html+='</div>';
+    }
+
+    // Tripulação (só pilotos)
+    var pilotos=(om.tripulacao||[]).map(function(t){
+      if(typeof t==='string'){var m=t.match(/^(\S+)\s+([^(]+?)\s*\(([A-Z]{3})\s*\//);return m?(m[2].trim()+' ('+m[3]+')'):'';} 
+      return t.trigrama?(t.nome+' ('+t.trigrama+')'):'';
+    }).filter(Boolean);
+    if(pilotos.length)html+='<div style="font-size:.7rem;color:var(--text2);margin-top:4px">👨‍✈️ '+pilotos.join(' / ')+'</div>';
+
+    html+='</div>'; // end card
+  }
+  html+='</div>';
+  container.innerHTML=html;
+}
+
+function toggleOMCancelada(omId, cancelled){
+  var cancelKey='sisgopa_om_canceladas';
+  var canceladas=JSON.parse(localStorage.getItem(cancelKey)||'{}');
+  if(cancelled) canceladas[omId]=true;
+  else delete canceladas[omId];
+  localStorage.setItem(cancelKey,JSON.stringify(canceladas));
+  s3RenderOM(document.getElementById('s3-content'));
+}
+
+// ===== S3 LOGIN MODAL =====
+function _showS3LoginModal(){
+  var old=document.getElementById('s3LoginModal');if(old)old.remove();
+  var overlay=document.createElement('div');
+  overlay.id='s3LoginModal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML=`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px 24px;width:300px;max-width:90vw;text-align:center">
+      <div style="font-size:1.3rem;margin-bottom:4px">🔒</div>
+      <div style="font-size:1rem;font-weight:700;margin-bottom:4px">Área Restrita</div>
+      <div style="font-size:.8rem;color:var(--text2);margin-bottom:20px">S3 — Operações</div>
+      <input id="s3PwInput" type="password" placeholder="Senha" autocomplete="off"
+        style="width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.95rem;box-sizing:border-box;outline:none;margin-bottom:12px"
+        onkeydown="if(event.key==='Enter')_s3LoginSubmit()">
+      <div id="s3PwError" style="font-size:.78rem;color:var(--red);min-height:18px;margin-bottom:8px"></div>
+      <button onclick="_s3LoginSubmit()" style="width:100%;padding:10px;background:var(--blue,#3b82f6);border:none;border-radius:8px;color:#fff;font-size:.9rem;font-weight:700;cursor:pointer">Entrar</button>
+      <button onclick="document.getElementById('s3LoginModal').remove()" style="margin-top:8px;width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:.8rem;cursor:pointer">Cancelar</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(function(){var i=document.getElementById('s3PwInput');if(i)i.focus();},100);
+}
+async function _s3LoginSubmit(){
+  var input=document.getElementById('s3PwInput');
+  if(!input)return;
+  var pw=input.value;
+  if(!pw){document.getElementById('s3PwError').textContent='Digite a senha.';return;}
+  var enc=new TextEncoder().encode(pw);
+  var buf=await crypto.subtle.digest('SHA-256',enc);
+  var h=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  if(h==='ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'){
+    s3Unlocked=true;
+    document.getElementById('s3LoginModal').remove();
+    goScreen(14);
+  }else{
+    document.getElementById('s3PwError').textContent='Senha incorreta.';
+    input.value='';input.focus();
+    _trackEscalaAttempt(false);
+  }
+}
+
 // ===== S3 SCREEN =====
 let s3ActiveTab='escalav2';
 function renderScreenS3(){
@@ -3072,6 +3184,7 @@ function renderScreenS3(){
   html+='<div class="s3-subnav">';
   html+='<button data-tab="diario" class="'+(s3ActiveTab==='diario'?'active':'')+'" onclick="s3SwitchTab(\'diario\')">DIÁRIO</button>';
   html+='<button data-tab="consulta" class="'+(s3ActiveTab==='consulta'?'active':'')+'" onclick="s3SwitchTab(\'consulta\')">CONSULTA</button>';
+  html+='<button data-tab="om" class="'+(s3ActiveTab==='om'?'active':'')+'" onclick="s3SwitchTab(\'om\')">OM</button>';
   html+='<button data-tab="escalav2" class="'+(s3ActiveTab==='escalav2'?'active':'')+'" onclick="s3SwitchTab(\'escalav2\')">ESCALA V2</button>';
   html+='<button data-tab="confirmacao" class="'+(s3ActiveTab==='confirmacao'?'active':'')+'" onclick="s3SwitchTab(\'confirmacao\')">CONFIRMAÇÃO</button>';
   html+='<button data-tab="acnt" class="'+(s3ActiveTab==='acnt'?'active':'')+'" onclick="s3SwitchTab(\'acnt\')">ACNT/ALTR</button>';
@@ -3092,6 +3205,7 @@ function s3RenderActiveTab(){
   if(!container)return;
   else if(s3ActiveTab==='diario'){s3RenderDiario(container);}
   else if(s3ActiveTab==='consulta'){s3RenderConsultaV2(container);}
+  else if(s3ActiveTab==='om'){s3RenderOM(container);}
   else if(s3ActiveTab==='escalav2'){s3RenderEscalaV2(container);}
   else if(s3ActiveTab==='confirmacao'){s3RenderConfirmacao(container);}
   else if(s3ActiveTab==='acnt'){s3RenderAcnt(container);}
@@ -5540,10 +5654,7 @@ async function loadAllData(){
 let s3Unlocked=false;
 function goScreen(n){
   if(n===14&&!s3Unlocked){
-    const pw=prompt('🔒 Área restrita S3. Digite a senha:');
-    if(!pw){return;}
-    async function verifyPw(p){const enc=new TextEncoder().encode(p);const buf=await crypto.subtle.digest('SHA-256',enc);return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-    verifyPw(pw).then(h=>{if(h==='ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'){s3Unlocked=true;goScreen(14);}else{alert('Senha incorreta.');_trackEscalaAttempt(false);}});
+    _showS3LoginModal();
     return;
   }
   _trackScreen(n);
