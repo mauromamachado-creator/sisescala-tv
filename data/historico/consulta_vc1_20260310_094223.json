@@ -1,0 +1,56 @@
+{
+  "id": "VC1-2026-03-10-093602",
+  "vc_type": "vc1",
+  "created_at": "2026-03-10T09:36:02.261863",
+  "text": "Senhores, bom dia. Consulta para o dia 10 de março, VC-1:\n\nA) BR",
+  "missions": [
+    "A"
+  ],
+  "parsed": {
+    "tipo": "VC-1",
+    "datas": [
+      "10/03/2026"
+    ],
+    "missoes": [
+      {
+        "letra": "A",
+        "descricao": "BR",
+        "trechos": [
+          "BR"
+        ],
+        "is_saviso": false,
+        "escalados": [],
+        "om": null,
+        "cientes": []
+      }
+    ],
+    "observacoes": "",
+    "texto_original": "Senhores, bom dia. Consulta para o dia 10 de março, VC-1:\n\nA) BR"
+  },
+  "status": "active",
+  "locked": false,
+  "deadline": null,
+  "recipients": [
+    {
+      "chat_id": 1022713803,
+      "name": "MJ OSVALDO",
+      "rank": "MJ",
+      "message_id": 128,
+      "delivered": true,
+      "responses": {},
+      "confirmed": false,
+      "confirmed_at": null
+    },
+    {
+      "chat_id": 673591486,
+      "name": "MJ MACHADO",
+      "rank": "MJ",
+      "message_id": 129,
+      "delivered": true,
+      "responses": {},
+      "confirmed": false,
+      "confirmed_at": null
+    }
+  ],
+  "archived_at": "2026-03-10T09:42:23.220350"
+}
