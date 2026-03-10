@@ -53,8 +53,9 @@ TELEFONE_CONTATO = "(21) 99524-2702"
 # Para adicionar: incluir chat_id e nome do escalante
 ESCALANTES_AUTORIZADOS = {
     673591486: "MJ MACHADO",   # Mauro Machado (admin)
+    827091454: "CP BARCELOS",  # Escala GTE-1
 }
-GAS_URL = "https://script.google.com/macros/s/AKfycbz8wQqdiHoKOlh4XR2tBJ3KcWBTtR0ooafEEjGdq6hecoPDBvVFoLYi4S8s7UU4S1nk/exec"
+GAS_URL = "https://script.google.com/macros/s/AKfycbyDdqWqCKLoCVwgajS3kr4o6q2MHx3UYxwe2o-28JbFCS__NhV2l2OqFlUT-cyRu-Vg/exec"
 API_PORT = 8085
 API_SECRET = os.environ.get("SISGOP_API_SECRET", "sisgopa-gte-2026")
 
@@ -121,6 +122,70 @@ async def _backup_consulta_arquivada(consulta: dict):
         logger.info("Backup consulta arquivada: %s", filename)
     except Exception as e:
         logger.error("Erro backup consulta: %s", e)
+
+_gas_lock_cache: dict = {}  # {vc_key: (locked: bool, timestamp: float)}
+_gas_consulta_cache: dict = {}  # {vc_key: (consulta: dict, timestamp: float)}
+
+async def _gas_is_locked(vc_key: str) -> bool:
+    """Consulta GAS se a consulta está encerrada. Cache de 30s."""
+    import time
+    cached = _gas_lock_cache.get(vc_key)
+    if cached and (time.time() - cached[1]) < 30:
+        return cached[0]
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.get(GAS_URL, params={"action": "get"}, follow_redirects=True)
+        result = r.json()
+        key = "locked_vc1" if vc_key == "vc1" else "locked_vc2"
+        locked = bool(result.get(key, False))
+        _gas_lock_cache[vc_key] = (locked, time.time())
+        return locked
+    except Exception:
+        return False  # Em caso de erro, não bloqueia
+
+
+async def _gas_get_consulta(vc_key: str) -> dict | None:
+    """Busca dados da consulta no GAS (missões, texto, recipients). Cache 60s."""
+    import time
+    cached = _gas_consulta_cache.get(vc_key)
+    if cached and (time.time() - cached[1]) < 60:
+        return cached[0]
+    try:
+        import httpx
+        vc_param = "vc1" if vc_key == "vc1" else "vc2"
+        async with httpx.AsyncClient(timeout=8) as client:
+            r = await client.get(GAS_URL, params={"action": "get_consulta", "vc": vc_param}, follow_redirects=True)
+        result = r.json()
+        if result.get("ok") and result.get("consulta"):
+            consulta = result["consulta"]
+            _gas_consulta_cache[vc_key] = (consulta, time.time())
+            return consulta
+    except Exception as e:
+        logger.warning("_gas_get_consulta erro: %s", e)
+    return None
+
+
+async def _save_response_to_gas(vc_key: str, name: str, responses: dict):
+    """Salva resposta confirmada na planilha via GAS (ação save_response)."""
+    try:
+        import httpx
+        vc_sheet = "VC-1" if vc_key == "vc1" else "VC-2"
+        respostas_str = json.dumps(responses, ensure_ascii=False)
+        payload = {
+            "action": "save_response",
+            "vc": vc_sheet,
+            "nome_guerra": name.upper(),
+            "respostas": respostas_str,
+            "confirmado": True,
+        }
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.post(GAS_URL, json=payload, follow_redirects=True)
+        resp = r.json() if r.status_code == 200 else {}
+        logger.info("GAS save_response: %s %s → %s", vc_sheet, name, resp)
+    except Exception as e:
+        logger.error("Erro GAS save_response: %s", e)
+
 
 async def _sync_response_to_sheet(vc_key: str, name: str, responses: dict, motivo: str = ""):
     """Sincroniza respostas publicando JSON no GitHub (raw) pra SisGOPA ler."""
@@ -257,11 +322,17 @@ def parse_consulta_message(text: str) -> dict:
 
 PRIO_EMOJIS = {0: "❌", 1: "1️⃣", 2: "2️⃣", 3: "3️⃣", 4: "4️⃣", 5: "5️⃣", 6: "6️⃣", 7: "7️⃣", 8: "8️⃣", 9: "9️⃣"}
 
-def _build_keyboard(consulta_id: str, missions: list[str], responses: dict) -> InlineKeyboardMarkup:
+def _build_keyboard(consulta_id: str, missions: list[str], responses: dict, confirmed: bool = False) -> InlineKeyboardMarkup:
     """Monta teclado inline com botões de missão.
     responses[m] = int: 0=indisponível, 1+=prioridade, None=pendente
     Ordem de clique define prioridade automaticamente.
     """
+    # Quando confirmado: só botão de editar (limpo)
+    if confirmed:
+        return InlineKeyboardMarkup([[
+            InlineKeyboardButton("✅ CONFIRMADO — ✏️ ALTERAR RESPOSTA", callback_data=f"alterar|{consulta_id}"),
+        ]])
+
     buttons = []
     row = []
     for m in missions:
@@ -321,11 +392,16 @@ async def raio_handler(update: Update, context):
     else:
         # Sem caption — guardar file_id em memória e perguntar com botões
         _raio_pending[f"u{user_id}"] = update.message.document.file_id
-        keyboard = InlineKeyboardMarkup([[
-            InlineKeyboardButton("🔵 VC-1", callback_data=f"raio_vc|vc1|u{user_id}"),
-            InlineKeyboardButton("🟢 VC-2", callback_data=f"raio_vc|vc2|u{user_id}"),
-        ]])
-        await update.message.reply_text("📄 Raio recebido! Este raio é para:", reply_markup=keyboard)
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🔵 Raio VC-1", callback_data=f"raio_vc|vc1|u{user_id}"),
+                InlineKeyboardButton("🟢 Raio VC-2", callback_data=f"raio_vc|vc2|u{user_id}"),
+            ],
+            [
+                InlineKeyboardButton("📋 Controlão", callback_data=f"pdf_tipo|controlao|pdf_{user_id}"),
+            ],
+        ])
+        await update.message.reply_text("📄 PDF recebido! O que é esse arquivo?", reply_markup=keyboard)
         return
 
     await update.message.reply_text(f"📄 Processando raio {vc.upper()}...")
@@ -407,12 +483,75 @@ async def raio_handler(update: Update, context):
         await update.message.reply_text(f"❌ Erro ao processar PDF: {e}")
 
 
+async def _register_tripulante(chat_id: int, tg_name: str, nome_guerra: str):
+    """Cadastra ou atualiza o tripulante na aba Tripulantes do GAS."""
+    try:
+        import httpx
+        payload = {
+            "action": "register",
+            "chat_id": str(chat_id),
+            "tg_name": tg_name,
+            "nome_guerra": nome_guerra.upper().strip(),
+        }
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.post(GAS_URL, json=payload, follow_redirects=True)
+        logger.info("Tripulante cadastrado no GAS: %s (%s) — %s", nome_guerra, chat_id, r.status_code)
+    except Exception as e:
+        logger.warning("Falha ao cadastrar tripulante no GAS: %s", e)
+
+
+# Dicionário temporário para armazenar quem está em processo de cadastro
+_aguardando_nome: dict = {}  # {chat_id: True}
+
+
 async def cmd_start(update: Update, context):
+    user = update.effective_user
+    _aguardando_nome[user.id] = True
     await update.message.reply_text(
         "🛩️ *SISGOP BOT — Consulta de Escala*\n\n"
-        "Este bot recebe suas respostas de disponibilidade para missões.\n"
+        "Para se cadastrar, digite seu *nome de guerra* (ex: CPO SAMPAIO):",
+        parse_mode="Markdown",
+    )
+
+
+async def _lookup_dados_tripulante(nome_guerra: str):
+    """Busca posto e vc na aba dados tripulantes pelo nome de guerra."""
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(GAS_URL, params={"action": "get_dados_tripulantes"}, follow_redirects=True)
+        lista = r.json().get("tripulantes", [])
+        nome_up = nome_guerra.strip().upper()
+        for t in lista:
+            if t.get("nome_guerra", "").upper() == nome_up or t.get("trigrama", "").upper() == nome_up:
+                return t.get("posto", ""), t.get("vc", "")
+    except Exception as e:
+        logger.warning("Erro lookup dados tripulante: %s", e)
+    return "", ""
+
+
+async def msg_handler(update: Update, context):
+    """Recebe nome de guerra no cadastro inicial."""
+    user = update.effective_user
+    if user.id not in _aguardando_nome:
+        return
+    nome = update.message.text.strip().upper()
+    if len(nome) < 2:
+        await update.message.reply_text("Nome muito curto. Digite seu nome de guerra:")
+        return
+    del _aguardando_nome[user.id]
+
+    # Busca posto e vc na aba dados tripulantes
+    posto, vc = await _lookup_dados_tripulante(nome)
+    nome_completo = f"{posto} {nome}".strip() if posto else nome
+
+    await _register_tripulante(user.id, user.username or "", nome_completo)
+
+    vc_txt = f" — {vc}" if vc else ""
+    await update.message.reply_text(
+        f"✅ *{nome_completo}*{vc_txt} cadastrado com sucesso!\n\n"
         "Quando receber uma consulta, use os botões para responder.\n\n"
-        f"Para dúvidas: {TELEFONE_CONTATO}",
+        f"Dúvidas: {TELEFONE_CONTATO}",
         parse_mode="Markdown",
     )
 
@@ -429,6 +568,40 @@ async def callback_handler(update: Update, context):
 
     parts = query.data.split("|")
     action = parts[0]
+
+    # ─── PDF_TIPO: controlão ──────────────────────────────────────────────
+    if action == "pdf_tipo":
+        if user_id not in ESCALANTES_AUTORIZADOS:
+            await query.answer("⛔ Não autorizado.", show_alert=True)
+            return
+        tipo = parts[1]   # "controlao"
+        cache_key = parts[2]  # "pdf_{user_id}"
+        file_id = _raio_pending.pop(f"u{user_id}", None)
+        if not file_id:
+            await query.edit_message_text("❌ PDF expirou. Manda o arquivo de novo.")
+            return
+        if tipo == "controlao":
+            await query.edit_message_text("📋 Controlão recebido! Processando...")
+            try:
+                import subprocess as _sp2
+                file = await context.bot.get_file(file_id)
+                pdf_path = DATA_DIR / f"controlao_{user_id}_temp.pdf"
+                await file.download_to_drive(str(pdf_path))
+                import pypdf as _pypdf3
+                reader3 = _pypdf3.PdfReader(str(pdf_path))
+                texto3 = "\n".join(p.extract_text() for p in reader3.pages if p.extract_text())
+                pdf_path.unlink(missing_ok=True)
+                # Salva texto extraído
+                ctrl_path = DATA_DIR / "controlao_ultimo.txt"
+                ctrl_path.write_text(texto3, encoding="utf-8")
+                _sp2.run(["git","add","data/controlao_ultimo.txt"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
+                _sp2.run(["git","commit","-m","controlao: atualizado"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
+                _sp2.run(["git","push","origin","main"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=30)
+                await query.edit_message_text("✅ Controlão recebido e salvo!")
+            except Exception as e:
+                logger.error("Erro controlão: %s", e)
+                await query.edit_message_text(f"❌ Erro ao processar controlão: {e}")
+        return
 
     # ─── RAIO_VC: usuário escolheu VC para o raio via botão ───────────────
     if action == "raio_vc":
@@ -500,29 +673,52 @@ async def callback_handler(update: Update, context):
     if not _resolved_vc:
         # Auto-criar consulta se callback veio com vc1/vc2 direto
         if consulta_id in ("vc1", "vc2"):
-            logger.info("Auto-criando consulta %s a partir do callback", consulta_id)
-            # Extrair missões do reply_markup da mensagem original
-            missions = []
-            if query.message and query.message.reply_markup:
-                for row in query.message.reply_markup.inline_keyboard:
-                    for btn in row:
-                        if btn.callback_data and btn.callback_data.startswith("toggle|"):
-                            parts_btn = btn.callback_data.split("|")
-                            if len(parts_btn) >= 3:
-                                missions.append(parts_btn[2])
-            msg_text = query.message.text or ""
+            logger.info("Consulta %s não encontrada localmente — buscando no GAS", consulta_id)
+            gas_consulta = await _gas_get_consulta(consulta_id)
             now = datetime.now()
+            if gas_consulta:
+                missions = gas_consulta.get("missions", [])
+                text_gas = gas_consulta.get("text", "")
+                recipients_gas = gas_consulta.get("recipients", [])
+                logger.info("Consulta recuperada do GAS: %s missões, %s recipients", len(missions), len(recipients_gas))
+            else:
+                # Fallback: extrai missões do reply_markup da mensagem
+                missions = []
+                if query.message and query.message.reply_markup:
+                    for row in query.message.reply_markup.inline_keyboard:
+                        for btn in row:
+                            if btn.callback_data and btn.callback_data.startswith("toggle|"):
+                                parts_btn = btn.callback_data.split("|")
+                                if len(parts_btn) >= 3:
+                                    missions.append(parts_btn[2])
+                text_gas = ""
+                recipients_gas = []
+                logger.warning("GAS não retornou consulta para %s — usando fallback do reply_markup", consulta_id)
+            # Monta recipients limpos
+            clean_recipients = []
+            for rec in recipients_gas:
+                chat_id_r = rec.get("chat_id") or rec.get("chatId")
+                if chat_id_r:
+                    clean_recipients.append({
+                        "chat_id": int(chat_id_r),
+                        "name": rec.get("name", ""),
+                        "rank": rec.get("rank", ""),
+                        "responses": {},
+                        "confirmed": False,
+                        "confirmed_at": None,
+                        "delivered": True,
+                    })
             data[consulta_id] = {
                 "id": consulta_id,
                 "vc_type": consulta_id,
                 "created_at": now.isoformat(),
-                "text": msg_text,
+                "text": text_gas,
                 "missions": missions,
                 "parsed": {},
                 "status": "active",
                 "locked": False,
                 "deadline": None,
-                "recipients": [],
+                "recipients": clean_recipients,
             }
             _save_data(data)
             _resolved_vc = consulta_id
@@ -533,36 +729,13 @@ async def callback_handler(update: Update, context):
 
     consulta = data[_resolved_vc]
 
-    # ─── Detectar nova consulta pelo message_id ───────────────────────────
-    # Se o callback vem de uma mensagem diferente da armazenada = nova consulta
-    # Reset automático dos recipients para evitar bloqueio de consultas anteriores
-    current_msg_id = query.message.message_id if query.message else None
-    stored_msg_id  = consulta.get("message_id")
-    if current_msg_id and stored_msg_id and current_msg_id != stored_msg_id:
-        logger.info("Nova consulta detectada (msg_id %s != %s) — resetando", current_msg_id, stored_msg_id)
-        # Atualizar texto e missões da nova mensagem
-        if query.message:
-            consulta["text"] = query.message.text or consulta.get("text", "")
-            # Re-extrair missões do teclado da nova mensagem
-            new_missions = []
-            if query.message.reply_markup:
-                for row in query.message.reply_markup.inline_keyboard:
-                    for btn in row:
-                        if btn.callback_data and btn.callback_data.startswith("toggle|"):
-                            m = btn.callback_data.split("|")
-                            if len(m) >= 3 and m[2] not in new_missions:
-                                new_missions.append(m[2])
-            if new_missions:
-                consulta["missions"] = new_missions
-        # Resetar recipients
-        consulta["recipients"] = []
-        consulta["message_id"] = current_msg_id
-        consulta["locked"] = False
+    # Sincroniza lock com GAS (fonte autoritativa) — cache 30s para não sobrecarregar
+    gas_locked = await _gas_is_locked(_resolved_vc)
+    if gas_locked and not consulta.get("locked"):
+        consulta["locked"] = True
+        consulta["status"] = "locked"
         _save_data(data)
-    elif current_msg_id and not stored_msg_id:
-        # Primeira vez que recebe callback — salva o message_id
-        consulta["message_id"] = current_msg_id
-        _save_data(data)
+        logger.info("Lock sincronizado do GAS: %s", _resolved_vc)
 
     # Verificar se consulta está encerrada (vale pra todos os callbacks)
     if consulta.get("locked") and action != "ciente":
@@ -626,10 +799,44 @@ async def callback_handler(update: Update, context):
         logger.info("Auto-adicionado recipient: %s (%s)", recipient["name"], user_id)
 
     logger.info("Recipient encontrado: %s, confirmed=%s", recipient.get("name"), recipient.get("confirmed"))
-    if recipient.get("confirmed"):
+
+    # ALTERAR: reseta confirmação e exibe teclado de missões novamente
+    if action == "alterar":
+        recipient["confirmed"] = False
+        recipient["confirmed_at"] = None
+        _save_data(data)
+        missions_alt = consulta.get("missions", [])
+        responses_alt = recipient.get("responses", {})
+        vc_display_alt = _vc_display(consulta.get("vc_type", _resolved_vc or "vc1"))
+        keyboard_alt = _build_keyboard(consulta_id, missions_alt, responses_alt, confirmed=False)
+        status_lines = []
+        for m in missions_alt:
+            p = responses_alt.get(m)
+            if p is not None and p > 0:
+                emoji = PRIO_EMOJIS.get(p, f"#{p}")
+                status_lines.append(f"  {emoji} {m}")
+            elif p == 0:
+                status_lines.append(f"  ❌ {m} — Indisponível")
+            else:
+                status_lines.append(f"  ⬜ {m} — Pendente")
+        status_text = "\n".join(status_lines) if status_lines else "  Nenhuma resposta ainda"
+        text_alt = (
+            f"🛩️ CONSULTA {vc_display_alt}\n\n"
+            f"{consulta.get('text', '')}\n\n"
+            f"Suas respostas:\n{status_text}\n\n"
+            f"Altere e confirme novamente."
+        )
+        await query.edit_message_text(text=text_alt, reply_markup=keyboard_alt, parse_mode=None)
         return
 
+    # Não bloqueia mais por confirmed=True — só locked=True bloqueia (tratado acima)
+
     missions = consulta.get("missions", [])
+
+    # Se clicar em toggle/allno/allyes/reset após confirmar → reseta confirmação automaticamente
+    if action in ("toggle", "allno", "allyes", "reset") and recipient.get("confirmed"):
+        recipient["confirmed"] = False
+        recipient["confirmed_at"] = None
 
     if action == "toggle":
         mission = parts[2] if len(parts) > 2 else ""
@@ -677,6 +884,11 @@ async def callback_handler(update: Update, context):
         logger.info("Resposta confirmada: %s para %s", recipient.get("name", user_id), consulta_id)
         # Salvar ANTES do sync para que confirmed=True apareça no JSON público
         _save_data(data)
+        await _save_response_to_gas(
+            vc_key_found,
+            recipient.get("name", str(user_id)),
+            responses,
+        )
         await _sync_response_to_sheet(
             vc_key_found,
             recipient.get("name", str(user_id)),
@@ -692,7 +904,7 @@ async def callback_handler(update: Update, context):
 
     try:
         if recipient.get("confirmed"):
-            # Montar resumo com prioridades
+            # Montar resumo com prioridades + botão ALTERAR
             prio_lines = []
             unavail_list = []
             for m in missions:
@@ -711,7 +923,8 @@ async def callback_handler(update: Update, context):
                 f"✅ RESPOSTA CONFIRMADA\n\n"
                 f"Suas prioridades:\n" + "\n".join(lines)
             )
-            await query.edit_message_text(text=text)
+            keyboard = _build_keyboard(consulta_id, missions, responses, confirmed=True)
+            await query.edit_message_text(text=text, reply_markup=keyboard)
         else:
             keyboard = _build_keyboard(consulta_id, missions, responses)
             status_lines = []
@@ -802,7 +1015,12 @@ async def api_post_consulta(request):
     # ─── CREATE ───────────────────────────────────────────────────────────
     if action == "create":
         if data.get(vc) is not None:
-            return web.json_response({"ok": False, "error": f"Já existe consulta ativa em {_vc_display(vc)}"})
+            # Arquiva a consulta anterior automaticamente antes de criar nova
+            old = data[vc].copy()
+            old["archived_at"] = datetime.now().isoformat()
+            data.setdefault("archive", []).append(old)
+            data[vc] = None
+            logger.info("Consulta anterior arquivada automaticamente para criar nova: %s", vc)
 
         text = body.get("text", "")
         missions_raw = body.get("missions", [])
@@ -903,6 +1121,21 @@ async def api_post_consulta(request):
         data[vc]["status"] = "locked"
         data[vc]["locked_at"] = datetime.now().isoformat()
         _save_data(data)
+        return web.json_response({"ok": True})
+
+    elif action == "unlock":
+        # SisGOPA chama antes de criar nova consulta — reseta lock e confirmed de todos
+        if data.get(vc):
+            data[vc]["locked"] = False
+            data[vc]["status"] = "active"
+            for r in data[vc].get("recipients", []):
+                r["confirmed"] = False
+                r["confirmed_at"] = None
+                r["responses"] = {}
+            _save_data(data)
+        # Limpa cache GAS para forçar re-fetch na próxima consulta
+        _gas_lock_cache.pop(vc, None)
+        _gas_consulta_cache.pop(vc, None)
         return web.json_response({"ok": True})
 
     # ─── ARCHIVE ──────────────────────────────────────────────────────────
@@ -1124,6 +1357,7 @@ def main():
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CallbackQueryHandler(callback_handler))
     app.add_handler(MessageHandler(filters.Document.PDF, raio_handler))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, msg_handler))
     app.add_error_handler(error_handler)
 
     # Iniciar API HTTP e verificador de prazos junto com o bot
