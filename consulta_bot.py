@@ -1420,6 +1420,33 @@ async def api_post_consulta(request):
 
         return web.json_response({"ok": True, "enviados": enviados, "erros": erros})
 
+    # ─── SEND_CONF (controlão → mensagens individuais) ────────────────────────
+    elif action == "send_conf":
+        messages = body.get("messages", [])
+        if not messages:
+            return web.json_response({"ok": False, "error": "Nenhuma mensagem"})
+        enviados = 0
+        erros = 0
+        for m in messages:
+            chat_id = str(m.get("chat_id", ""))
+            texto = m.get("texto", "")
+            letra = m.get("letra", "A")
+            if not chat_id or not texto:
+                erros += 1
+                continue
+            try:
+                kb = {"inline_keyboard": [[{"text": "✅ CIENTE", "callback_data": f"conf_ciente|{letra}"}]]}
+                await application.bot.send_message(
+                    chat_id=int(chat_id),
+                    text=texto,
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ CIENTE", callback_data=f"conf_ciente|{letra}")]]) 
+                )
+                enviados += 1
+            except Exception as e_send:
+                logger.error("send_conf erro chat_id=%s: %s", chat_id, e_send)
+                erros += 1
+        return web.json_response({"ok": True, "enviados": enviados, "erros": erros})
+
     else:
         return web.json_response({"ok": False, "error": f"Ação desconhecida: {action}"}, status=400)
 
