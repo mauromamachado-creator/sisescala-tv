@@ -607,8 +607,39 @@ async def callback_handler(update: Update, context):
                 # Salva texto extraído
                 ctrl_path = DATA_DIR / "controlao_ultimo.txt"
                 ctrl_path.write_text(texto3, encoding="utf-8")
-                _sp2.run(["git","add","data/controlao_ultimo.txt"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
-                _sp2.run(["git","commit","-m","controlao: atualizado"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
+                # Gera conf_missao.json para o SisGOPA ler na aba Confirmação
+                POSTOS_RE2 = r'(?:TEN-BRIG|MAJ-BRIG|BRIG|CEL|TC|MJ|CP|1T|2T|ST|SO|CB|SD|1S|2S|3S)'
+                om_m2 = re.search(r'ORDEM DE MISS[ÃA]O\s*\n(.*?)(?:\n(?:Origem|======))', texto3, re.DOTALL)
+                conf_json_data = {}
+                if om_m2:
+                    ohdr = om_m2.group(1).strip()
+                    anv_m2 = re.search(r'Aeronave:\s*(VC-\d+)\s*/\s*FAB\s*(\d+)', ohdr)
+                    om_n2 = re.search(r'Ordem de Miss[ãa]o:\s*(\d+)\s*/\s*(GTE-\d+)\s*/\s*(\d+)', ohdr)
+                    trip_raw2 = re.findall(r'^(IN|OC|CM|AD|SB|BJ|BO|PX|NA)\s+(' + POSTOS_RE2 + r')\s+(.+?)$', ohdr, re.MULTILINE)
+                    perna_raw2 = re.findall(r'([A-Z]{4})\s+\([^)]+\)\s+([\d/]+ - [\d:]+ Z[^P\n]*?)\s+[\d:]+\s+([A-Z]{4})\s+\([^)]+\)\s+([\d/]+ - [\d:]+ Z[^\n]*)', texto3)
+                    conf_json_data = {
+                        "dados": {
+                            "oms": [{
+                                "om_num": om_n2.group(1) if om_n2 else '',
+                                "esq": om_n2.group(2) if om_n2 else 'GTE-1',
+                                "ano": om_n2.group(3) if om_n2 else '',
+                                "anv": anv_m2.group(1) if anv_m2 else '',
+                                "fab": anv_m2.group(2) if anv_m2 else '',
+                                "tripulantes": [{"funcao": f, "posto": p, "nome": n.strip()} for f, p, n in trip_raw2],
+                                "pernas": [f"{o} {etd.strip()} → {d} {eta.strip()}" for o, etd, d, eta in perna_raw2]
+                            }],
+                            "missao_ativa": (om_n2.group(1)+'/'+om_n2.group(2)+'/'+om_n2.group(3)) if om_n2 else '',
+                            "anv": anv_m2.group(1) if anv_m2 else '',
+                            "fab": anv_m2.group(2) if anv_m2 else '',
+                            "tripulantes": [{"funcao": f, "posto": p, "nome": n.strip()} for f, p, n in trip_raw2],
+                            "pernas": [f"{o} {etd.strip()} → {d} {eta.strip()}" for o, etd, d, eta in perna_raw2],
+                            "gerado_em": datetime.now().isoformat()
+                        }
+                    }
+                    conf_json_path = DATA_DIR / "conf_missao.json"
+                    conf_json_path.write_text(json.dumps(conf_json_data, ensure_ascii=False, indent=2), encoding="utf-8")
+                _sp2.run(["git","add","data/controlao_ultimo.txt","data/conf_missao.json"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
+                _sp2.run(["git","commit","-m","controlao: atualizado + conf_missao.json"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
                 _sp2.run(["git","push","origin","main"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=30)
 
                 # ── Parser controlão → set_conf no GAS ──────────────────
