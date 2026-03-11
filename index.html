@@ -3581,6 +3581,17 @@ function consultaGerarTexto(){
     texto+='\n';
     if(m.tipo==='saviso'){
       texto+=letra+') SAVISO '+(m.savisoDia||'')+'\n';
+    } else if(m.tipo==='pernoite'){
+      // B) BR-SP-BR 08 DOM 1600 / 09 SEG 0800 PR
+      var pt=[letra+')'];
+      if(m.trecho) pt.push(m.trecho);
+      var saida=[m.dataDia,m.diaSemSaida,m.horario].filter(Boolean).join(' ');
+      var retorno=[m.dataDiaRet,m.diaSemRet,m.horarioRet].filter(Boolean).join(' ');
+      if(saida) pt.push(saida);
+      if(retorno) pt.push('/ '+retorno);
+      if(m.descricao) pt.push(m.descricao);
+      texto+=pt.join(' ')+'\n';
+      if(m.obs&&m.obs.trim()) texto+='\nOBS:\n'+m.obs.trim()+'\n';
     } else {
       var parts=[letra+')'];
       if(m.trecho) parts.push(m.trecho);
@@ -3629,6 +3640,15 @@ function consultaSalvarEstadoCampos(){
     if(obsEl) m.obs=obsEl.value;
     var savDiaEl=document.getElementById(prefix+'savisoDia');
     if(savDiaEl) m.savisoDia=savDiaEl.value;
+    // Pernoite: campos extras
+    var diaSemSaidaEl=document.getElementById(prefix+'diaSemSaida');
+    if(diaSemSaidaEl) m.diaSemSaida=diaSemSaidaEl.value;
+    var dataDiaRetEl=document.getElementById(prefix+'dataDiaRet');
+    if(dataDiaRetEl) m.dataDiaRet=dataDiaRetEl.value;
+    var diaSemRetEl=document.getElementById(prefix+'diaSemRet');
+    if(diaSemRetEl) m.diaSemRet=diaSemRetEl.value;
+    var horarioRetEl=document.getElementById(prefix+'horarioRet');
+    if(horarioRetEl) m.horarioRet=horarioRetEl.value;
   });
   // Salva campos globais
   var diasEl=document.getElementById('consulta-dias');
@@ -3698,6 +3718,28 @@ function consultaBuildMissoesHTML(){
         h+='<option value="'+d+'"'+(m.savisoDia===d?' selected':'')+'>'+d+'</option>';
       });
       h+='</select></div>';
+    } else if(m.tipo==='pernoite'){
+      // PERNOITE: trecho, saída (dia + diasem + hora), retorno (dia + diasem + hora), descrição, obs
+      h+='<div class="consulta-row"><span class="consulta-label">Trecho:</span>';
+      h+='<input class="consulta-input cmissao-input" id="'+prefix+'trecho" placeholder="BR-SP-BR" value="'+(m.trecho||'').replace(/"/g,'&quot;')+'" style="max-width:200px"></div>';
+      h+='<div class="consulta-row" style="flex-wrap:wrap;gap:6px"><span class="consulta-label">Saída:</span>';
+      h+='<input class="consulta-input cmissao-input" id="'+prefix+'dataDia" placeholder="08" value="'+(m.dataDia||'').replace(/"/g,'&quot;')+'" style="max-width:55px;text-align:center" title="Dia">';
+      h+='<select class="consulta-input cmissao-input" id="'+prefix+'diaSemSaida" style="max-width:90px">';
+      diasSemana.forEach(function(d){h+='<option value="'+d+'"'+((m.diaSemSaida||'')=== d?' selected':'')+'>'+d+'</option>';});
+      h+='</select>';
+      h+='<input class="consulta-input cmissao-input" id="'+prefix+'horario" placeholder="1600" value="'+(m.horario||'').replace(/"/g,'&quot;')+'" style="max-width:70px;text-align:center" title="Hora saída">';
+      h+='</div>';
+      h+='<div class="consulta-row" style="flex-wrap:wrap;gap:6px"><span class="consulta-label">Retorno:</span>';
+      h+='<input class="consulta-input cmissao-input" id="'+prefix+'dataDiaRet" placeholder="09" value="'+(m.dataDiaRet||'').replace(/"/g,'&quot;')+'" style="max-width:55px;text-align:center" title="Dia retorno">';
+      h+='<select class="consulta-input cmissao-input" id="'+prefix+'diaSemRet" style="max-width:90px">';
+      diasSemana.forEach(function(d){h+='<option value="'+d+'"'+((m.diaSemRet||'')=== d?' selected':'')+'>'+d+'</option>';});
+      h+='</select>';
+      h+='<input class="consulta-input cmissao-input" id="'+prefix+'horarioRet" placeholder="0800" value="'+(m.horarioRet||'').replace(/"/g,'&quot;')+'" style="max-width:70px;text-align:center" title="Hora retorno">';
+      h+='</div>';
+      h+='<div class="consulta-row"><span class="consulta-label">Descrição:</span>';
+      h+='<input class="consulta-input cmissao-input" id="'+prefix+'descricao" placeholder="PR" value="'+(m.descricao||'').replace(/"/g,'&quot;')+'"></div>';
+      h+='<div class="consulta-row"><span class="consulta-label">OBS (opcional):</span>';
+      h+='<textarea class="consulta-textarea cmissao-input" id="'+prefix+'obs" rows="2" placeholder="Observações...">'+(m.obs||'').replace(/</g,'&lt;')+'</textarea></div>';
     } else {
       // Missão normal: trecho, data/dia, horário, descrição, obs
       h+='<div class="consulta-row"><span class="consulta-label">Trecho:</span>';
