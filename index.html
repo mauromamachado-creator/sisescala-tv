@@ -4268,7 +4268,10 @@ function _renderConfView(container){
   html+='</div>';
 
   // Botão enviar
-  html+='<button id="conf-send-btn" onclick="_enviarConfirmacao()" style="background:var(--green);color:#000;border:none;border-radius:6px;padding:10px 24px;font-weight:900;font-size:.9rem;cursor:pointer;width:100%">📨 ENVIAR CONFIRMAÇÃO</button>';
+  html+='<div style="display:flex;gap:10px;margin-bottom:8px">';
+  html+='<button id="conf-send-btn" onclick="_enviarConfirmacao()" style="background:var(--green);color:#000;border:none;border-radius:6px;padding:10px 24px;font-weight:900;font-size:.9rem;cursor:pointer;flex:1">📨 ENVIAR MISSÃO</button>';
+  html+='<button id="conf-send-sv-btn" onclick="_enviarSobreaviso()" style="background:var(--yellow);color:#000;border:none;border-radius:6px;padding:10px 24px;font-weight:900;font-size:.9rem;cursor:pointer;flex:1">🔔 ENVIAR SAVISO</button>';
+  html+='</div>';
 
   // Resumo de cientes
   var cientes=_confCientes||{};
@@ -4323,11 +4326,10 @@ async function _enviarConfirmacao(){
   var btn=document.getElementById('conf-send-btn');
   if(btn){btn.disabled=true;btn.textContent='⏳ Enviando...';}
   try{
-    if(!_confDados){alert('Nenhum controlão carregado.');if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}return;}
+    if(!_confDados){alert('Nenhum controlão carregado.');if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR MISSÃO';}return;}
     var dados=_confDados;
     var trip=dados.tripulantes||[];
     var oficiais=trip.filter(function(t){return['TC','MJ','CP'].indexOf(t.posto)>=0;});
-    // Monta lista de mensagens com chat_id por oficial
     var gasTrip=_confTripulantes||[];
     var messages=[];
     oficiais.forEach(function(t){
@@ -4336,19 +4338,9 @@ async function _enviarConfirmacao(){
       if(!tg||!tg.chat_id) return;
       var letra=_confLetras[ng]||_confLetra||'A';
       var texto=_buildMsgOficial(letra,t.posto,t.nome,dados);
-      messages.push({chat_id:tg.chat_id,texto:texto,letra:letra,nome:t.nome});
+      messages.push({chat_id:tg.chat_id,texto:texto,om:dados.missao_ativa||letra,nome:t.nome});
     });
-    // Sobreaviso — formato diferente, sem pernas
-    var svGrupos={};
-    (_confSobreaviso||[]).forEach(function(s){svGrupos[s.letra]=s.dia||'';});
-    (_confSobreaviso||[]).forEach(function(s){
-      var letra=s.letra||_confLetra||'A';
-      var dadosSv={tipo:'sobreaviso',dia:s.dia||svGrupos[letra]||''};
-      var texto=_buildMsgOficial(letra,s.posto,s.nome,dadosSv);
-      messages.push({chat_id:s.chat_id,texto:texto,om:letra,nome:s.nome});
-    });
-    if(!messages.length){alert('Nenhum oficial cadastrado no bot encontrado na tripulação.');if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}return;}
-    // Envia via bot (tunnel)
+    if(!messages.length){alert('Nenhum oficial com chat_id encontrado na tripulação da OM.');if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR MISSÃO';}return;}
     var r=await consultaApiPost({action:'send_conf',messages:messages});
     if(r&&r.ok){
       var msg='✅ Enviado para '+r.enviados+' oficial(is).';
@@ -4357,12 +4349,40 @@ async function _enviarConfirmacao(){
       setTimeout(function(){s3RenderConfirmacao(document.getElementById('s3-content'));},1000);
     } else {
       alert('Erro: '+((r&&r.error)||'Falha ao enviar'));
-      if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}
+      if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR MISSÃO';}
     }
   }catch(e){
     alert('Erro: '+e.message);
-    if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}
+    if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR MISSÃO';}
   }
+}
+
+async function _enviarSobreaviso(){
+  var btn=document.getElementById('conf-send-sv-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Enviando...';}
+  try{
+    if(!_confSobreaviso||!_confSobreaviso.length){alert('Nenhum piloto adicionado no sobreaviso.');if(btn){btn.disabled=false;btn.textContent='🔔 ENVIAR SAVISO';}return;}
+    var messages=[];
+    _confSobreaviso.forEach(function(s){
+      if(!s.chat_id) return;
+      var letra=s.letra||'A';
+      var dadosSv={tipo:'sobreaviso',dia:s.dia||''};
+      var texto=_buildMsgOficial(letra,s.posto,s.nome,dadosSv);
+      messages.push({chat_id:s.chat_id,texto:texto,om:letra,nome:s.nome});
+    });
+    if(!messages.length){alert('Nenhum piloto com chat_id no sobreaviso.');if(btn){btn.disabled=false;btn.textContent='🔔 ENVIAR SAVISO';}return;}
+    var r=await consultaApiPost({action:'send_conf',messages:messages});
+    if(r&&r.ok){
+      var msg='✅ Sobreaviso enviado para '+r.enviados+' piloto(s).';
+      if(r.erros) msg+=' ⚠️ '+r.erros+' sem cadastro.';
+      alert(msg);
+    } else {
+      alert('Erro: '+((r&&r.error)||'Falha ao enviar'));
+    }
+  }catch(e){
+    alert('Erro: '+e.message);
+  }
+  if(btn){btn.disabled=false;btn.textContent='🔔 ENVIAR SAVISO';}
 }
 
 // ─── Modal de arquivar com opção de mensagem ────────────────────────────────
