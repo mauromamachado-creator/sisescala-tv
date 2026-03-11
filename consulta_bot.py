@@ -746,6 +746,13 @@ async def callback_handler(update: Update, context):
     # ─── CONF_CIENTE: tripulante confirmou ciência da missão ──────────────
     if action == "conf_ciente":
         om_id = parts[1] if len(parts) > 1 else ""
+        # Verifica se é a mensagem mais recente para esse chat+om
+        _conf_last_msg = getattr(context.bot, '_conf_last_msg', {})
+        key = f"{user_id}|{om_id}"
+        last_msg_id = _conf_last_msg.get(key)
+        if last_msg_id and query.message.message_id != last_msg_id:
+            await query.answer("⚠️ Existe uma confirmação mais recente. Use a última mensagem recebida.", show_alert=True)
+            return
         CONF_GAS_URL = "https://script.google.com/macros/s/AKfycbwAkuMtXPes8ciLZw_EYT6a4EAHz6wGwdBUj5Bqm5eM--rkO2Yj7uJy8USXTjTWNkEYhg/exec"
         import httpx as _hx2
         try:
@@ -1477,20 +1484,24 @@ async def api_post_consulta(request):
             return web.json_response({"ok": False, "error": "Nenhuma mensagem"})
         enviados = 0
         erros = 0
+        # Mapeia última msg_id por chat_id+om para invalidar antigas
+        _conf_last_msg = getattr(telegram_bot, '_conf_last_msg', {})
+        telegram_bot._conf_last_msg = _conf_last_msg
         for m in messages:
             chat_id = str(m.get("chat_id", ""))
             texto = m.get("texto", "")
-            letra = m.get("letra", "A")
+            om_id = str(m.get("om", m.get("letra", "A")))
             if not chat_id or not texto:
                 erros += 1
                 continue
             try:
-                kb = {"inline_keyboard": [[{"text": "✅ CIENTE", "callback_data": f"conf_ciente|{letra}"}]]}
-                await telegram_bot.send_message(
+                sent = await telegram_bot.send_message(
                     chat_id=int(chat_id),
                     text=texto,
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ CIENTE", callback_data=f"conf_ciente|{letra}")]])
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ CIENTE", callback_data=f"conf_ciente|{om_id}")]])
                 )
+                # Salva message_id mais recente para esse chat+om
+                _conf_last_msg[f"{chat_id}|{om_id}"] = sent.message_id
                 enviados += 1
             except Exception as e_send:
                 logger.error("send_conf erro chat_id=%s: %s", chat_id, e_send)
