@@ -424,10 +424,11 @@
     "om_numero": "102/GTE-1/2026",
     "om": "102/GTE-1/2026",
     "fab": "FAB 2590",
-    "data": "10/03/26",
+    "data": "11/03/26",
     "tripulacao": [
       "MJ FARIAS (FAI / 552.925)",
       "MJ SAMIR (SMR / 557.877)",
+      "CP CAMPOS (CPO / 563.414)",
       "CP GABRIEL TODESCO (TOD / 515.359)",
       "SO VINÍCIUS (474.042)",
       "2S ALCANTARA (575.028)",
@@ -441,35 +442,35 @@
       {
         "origem": "SBBR",
         "origem_nome": "SBBR (EST AUT)",
-        "etd": "10/03/26 - 17:00 Z / UTC-3",
+        "etd": "11/03/26 - 10:05 Z / UTC-3",
         "ete": "04:25",
         "destino": "SCVM",
         "destino_nome": "SCVM (AEROP)",
-        "eta": "10/03/26 - 21:25 Z / UTC-3",
+        "eta": "11/03/26 - 14:30 Z / UTC-3",
         "alternativa": "SCIE",
-        "comb_min": 12500,
-        "comb_rec": 14000
+        "comb_min": 11500,
+        "comb_rec": 12500
       },
       {
         "origem": "SCVM",
         "origem_nome": "SCVM (AEROP)",
-        "etd": "11/03/26 - 22:55 Z / UTC-3",
+        "etd": "11/03/26 - 17:50 Z / UTC-3",
         "ete": "03:00",
         "destino": "SBCG",
         "destino_nome": "SBCG (BACG)",
-        "eta": "12/03/26 - 01:55 Z / UTC-4",
+        "eta": "11/03/26 - 20:50 Z / UTC-3",
         "alternativa": "SBCY",
         "comb_min": 10000,
-        "comb_rec": 11000
+        "comb_rec": 11500
       },
       {
         "origem": "SBCG",
         "origem_nome": "SBCG (BACG)",
-        "etd": "11/03/26 - 02:55 Z / UTC-4",
+        "etd": "11/03/26 - 21:50 Z / UTC-3",
         "ete": "01:20",
         "destino": "SBBR",
         "destino_nome": "SBBR (EST AUT)",
-        "eta": "11/03/26 - 04:15 Z / UTC-3",
+        "eta": "11/03/26 - 23:10 Z / UTC-3",
         "alternativa": "SBCF",
         "comb_min": 5500,
         "comb_rec": 7500
