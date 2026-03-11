@@ -1880,12 +1880,13 @@ function renderScreenCalendar(){
     const wBars=spanEvents.filter(sp=>sp.end>=wStart&&sp.start<=wEnd);
     const nBars=wBars.length;
 
-    // Dias
-    html+='<div class="cal-week">';
+    // Dias — com padding-bottom para acomodar barras internamente
+    const barsH=nBars>0?nBars*(BAR_H+2)+4:0;
+    html+='<div class="cal-week" style="position:relative;margin-bottom:2px">';
     html+='<div class="cal-week-days">';
     wDays.forEach(function(c){
       const isToday=(!c.other&&c.day===td.getDate()&&calMonth===td.getMonth()&&calYear===td.getFullYear());
-      html+=`<div class="cal-day${c.other?' other-month':''}${isToday?' today':''}"><div class="day-num">${c.day}</div>`;
+      html+=`<div class="cal-day${c.other?' other-month':''}${isToday?' today':''}" style="padding-bottom:${barsH+4}px"><div class="day-num">${c.day}</div>`;
       if(!c.other&&events[c.day]){
         events[c.day].slice(0,2).forEach(ev=>{
           html+=`<div class="cal-event ${ev.cls}" title="${ev.text}">${ev.text}</div>`;
@@ -1896,9 +1897,9 @@ function renderScreenCalendar(){
     });
     html+='</div>';
 
-    // Camada de barras contínuas — logo abaixo dos dias
+    // Barras absolutas dentro do .cal-week, no fundo das células
     if(nBars>0){
-      html+=`<div class="cal-week-bars" style="height:${nBars*(BAR_H+2)+4}px">`;
+      html+=`<div style="position:absolute;bottom:4px;left:0;right:0;height:${barsH}px;pointer-events:none">`;
       wBars.forEach(function(sp,lane){
         const barStart=Math.max(sp.start,wStart);
         const barEnd=Math.min(sp.end,wEnd);
@@ -1909,7 +1910,7 @@ function renderScreenCalendar(){
         const rL=sp.isStart&&barStart===sp.start?'8px':'0';
         const rR=sp.isEnd&&barEnd===sp.end?'8px':'0';
         const showLabel=sp.isStart&&barStart===sp.start||barStart===wStart;
-        html+=`<div class="cal-span-bar ${sp.cls}" style="left:${leftPct}%;width:${widthPct}%;top:${lane*(BAR_H+2)}px;border-radius:${rL} ${rR} ${rR} ${rL}" title="${sp.text}">${showLabel?sp.text:''}</div>`;
+        html+=`<div class="cal-span-bar ${sp.cls}" style="left:${leftPct}%;width:${widthPct}%;top:${lane*(BAR_H+2)}px;border-radius:${rL} ${rR} ${rR} ${rL};pointer-events:auto" title="${sp.text}">${showLabel?sp.text:''}</div>`;
       });
       html+='</div>';
     }
