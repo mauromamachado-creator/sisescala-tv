@@ -3258,8 +3258,9 @@ async function renderScreenPimo(){
     }).join('')}
   </div>
 
-  <!-- Rankings -->
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+  <!-- Rankings — scroll horizontal no mobile -->
+  <div style="overflow-x:auto;margin-bottom:16px;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px;min-width:560px">
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
       <div style="font-size:.72rem;color:var(--text2);font-weight:700;margin-bottom:8px">🕐 TOP HORAS</div>
       ${rankHtml(topHoras,'horas',t=>t.horas)}
@@ -3274,6 +3275,7 @@ async function renderScreenPimo(){
       <div style="font-size:.72rem;color:var(--text2);font-weight:700;margin-bottom:8px">⚠️ MAIS AFASTADOS</div>
       ${rankHtml(topAfast,'afastamento',t=>t.afastamento>0?t.afastamento+'d':'Hoje')}
     </div>
+  </div>
   </div>
 
   <!-- Cards tripulantes -->
