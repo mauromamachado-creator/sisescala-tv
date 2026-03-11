@@ -96,16 +96,16 @@ function _dispatch(p) {
   }
 
   // ── GET padrão — retorna estado atual (pdfs + concluídas) ─────────────────
-  var shP = ss.getSheetByName('PDFs');
-  var shC = ss.getSheetByName('Concluidas');
-
+  // pdfs_gerados: lê aba Numeros (toda OM com número = PDF foi gerado)
+  var shN = ss.getSheetByName('Numeros');
   var pdfs = [];
-  if (shP && shP.getLastRow() > 1) {
-    pdfs = shP.getRange(2, 1, shP.getLastRow()-1, 1).getValues()
+  if (shN && shN.getLastRow() > 1) {
+    pdfs = shN.getRange(2, 2, shN.getLastRow()-1, 1).getValues()
               .map(function(r){ return String(r[0]); })
               .filter(function(v){ return v; });
   }
 
+  var shC = ss.getSheetByName('Concluidas');
   var conc = [];
   if (shC && shC.getLastRow() > 1) {
     conc = shC.getRange(2, 1, shC.getLastRow()-1, 1).getValues()
