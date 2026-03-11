@@ -2585,7 +2585,19 @@ function renderScreenDiarias(){
   function _icaoOrig(p){return p.origem||(p.etd&&p.etd.match(/^([A-Z]{4})/)?p.etd.match(/^([A-Z]{4})/)[1]:'');}
   function _icaoDest(p){return p.destino||(p.eta&&p.eta.match(/([A-Z]{4})$/)?p.eta.match(/([A-Z]{4})$/)[1]:'');}
   const isNacional=om=>om.pernas.every(p=>brPrefixes.some(pf=>_icaoOrig(p).startsWith(pf))&&brPrefixes.some(pf=>_icaoDest(p).startsWith(pf)));
-  const temMissaoDiaria=om=>true;
+  // Missões que fazem jus a diárias
+  const _MISSOES_DIARIA=['PR TRLD','PR ESCAV','PR','PR RES','ESCAV'];
+  const temMissaoDiaria=om=>{
+    // Se campo missao estiver preenchido, usa ele
+    if(om.missao){
+      const m=(om.missao||'').toUpperCase().trim();
+      // PR VER não gera diária; PR sozinho e derivados sim
+      if(m==='PR VER') return false;
+      return _MISSOES_DIARIA.some(t=>m===t||m.startsWith(t));
+    }
+    // Campo missao ausente → mostra (melhor incluir do que excluir enquanto cron não reprocessou)
+    return true;
+  };
   const sorted=[...omData].filter(om=>isNacional(om)&&temMissaoDiaria(om)).sort((a,b)=>omDataISO(b.data).localeCompare(omDataISO(a.data)));
   const pendentes=sorted.filter(om=>!concluidas[om.om]);
   const arquivadas=sorted.filter(om=>!!concluidas[om.om]);
