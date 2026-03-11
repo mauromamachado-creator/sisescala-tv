@@ -1806,43 +1806,51 @@ function renderScreenCalendar(){
   const spanEvents=[];
 
   // Missões nacionais multi-dia: agrupa voos do mesmo ANV+OM em dias consecutivos
-  // Busca trecho via omData (campo om = "92/GTE-1/2026")
-  function _omTrecho(omId){
-    if(!omData||!omId)return'';
-    const om=omData.find(o=>o.om===omId);
-    if(!om||!om.pernas||!om.pernas.length)return'';
-    const ics=[];
-    om.pernas.forEach(function(p,i){if(i===0)ics.push(p.origem||'');ics.push(p.destino||'');});
-    return ics.filter(Boolean).join('-');
-  }
-  const flightsByKey={};
+  // Agrupa voos do mês por ANV — multi-dia vira barra, dia único vira badge
+  const flightsByAnv={};
   flights.forEach(f=>{
     if(!f.data)return;
     const p=f.data.match(/(\d{2})\/(\d{2})\/(\d{4})/);
     if(!p)return;
     const fDay=+p[1],fMon=+p[2]-1,fYear=+p[3];
     if(fMon!==calMonth||fYear!==calYear)return;
-    const key=(f.anv||'?')+'|'+(f.om||'');
-    if(!flightsByKey[key])flightsByKey[key]={anv:f.anv,om:f.om,days:[]};
-    flightsByKey[key].days.push(fDay);
+    const key=f.anv||'?';
+    if(!flightsByAnv[key])flightsByAnv[key]=[];
+    flightsByAnv[key].push({day:fDay,om:f.om||''});
   });
-  Object.values(flightsByKey).forEach(function(entry){
-    const anv=entry.anv;
-    const trecho=_omTrecho(entry.om);
-    const label=trecho?anv+' '+trecho:anv;
-    const days=[...new Set(entry.days)].sort((a,b)=>a-b);
+  Object.keys(flightsByAnv).forEach(function(anv){
+    const entries=flightsByAnv[anv];
     const anv_cls=anv.includes('VC-1')?'ev-vc1':'ev-vc2';
-    let runStart=days[0],runEnd=days[0];
-    for(let i=1;i<days.length;i++){
-      if(days[i]<=runEnd+1) runEnd=days[i];
-      else{
-        if(runEnd>runStart) spanEvents.push({text:label,cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});
-        else{if(!events[runStart])events[runStart]=[];events[runStart].push({text:label,cls:anv_cls});}
-        runStart=days[i];runEnd=days[i];
+    // Agrupa dias únicos por OM (mesmo OM = mesma missão)
+    const byOm={};
+    entries.forEach(function(e){
+      const k=e.om||('__'+e.day);
+      if(!byOm[k])byOm[k]=[];
+      byOm[k].push(e.day);
+    });
+    Object.keys(byOm).forEach(function(omKey){
+      const days=[...new Set(byOm[omKey])].sort((a,b)=>a-b);
+      // Trecho a partir do omData
+      const omObj=omData&&omData.find(o=>o.om===omKey);
+      let trecho='';
+      if(omObj&&omObj.pernas&&omObj.pernas.length){
+        const ics=[];
+        omObj.pernas.forEach(function(p,i){if(i===0&&p.origem)ics.push(p.origem);if(p.destino)ics.push(p.destino);});
+        trecho=ics.filter(Boolean).join('-');
       }
-    }
-    if(runEnd>runStart) spanEvents.push({text:label,cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});
-    else{if(!events[runStart])events[runStart]=[];events[runStart].push({text:label,cls:anv_cls});}
+      const label=trecho?anv+' '+trecho:anv;
+      let runStart=days[0],runEnd=days[0];
+      for(let i=1;i<days.length;i++){
+        if(days[i]<=runEnd+1) runEnd=days[i];
+        else{
+          if(runEnd>runStart) spanEvents.push({text:label,cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});
+          else{if(!events[runStart])events[runStart]=[];events[runStart].push({text:label,cls:anv_cls});}
+          runStart=days[i];runEnd=days[i];
+        }
+      }
+      if(runEnd>runStart) spanEvents.push({text:label,cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});
+      else{if(!events[runStart])events[runStart]=[];events[runStart].push({text:label,cls:anv_cls});}
+    });
   });
   missionsData.forEach(m=>{
     if(!m.pais||!m.inicio)return;
