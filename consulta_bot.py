@@ -596,6 +596,7 @@ async def callback_handler(update: Update, context):
             await query.edit_message_text("📋 Controlão recebido! Processando...")
             try:
                 import subprocess as _sp2
+                import httpx as _httpx3
                 file = await context.bot.get_file(file_id)
                 pdf_path = DATA_DIR / f"controlao_{user_id}_temp.pdf"
                 await file.download_to_drive(str(pdf_path))
@@ -609,7 +610,72 @@ async def callback_handler(update: Update, context):
                 _sp2.run(["git","add","data/controlao_ultimo.txt"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
                 _sp2.run(["git","commit","-m","controlao: atualizado"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
                 _sp2.run(["git","push","origin","main"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=30)
-                await query.edit_message_text("✅ Controlão recebido e salvo!")
+
+                # ── Parser controlão → set_conf no GAS ──────────────────
+                CONF_GAS_URL = "https://script.google.com/macros/s/AKfycbz8wQqdiHoKOlh4XR2tBJ3KcWBTtR0ooafEEjGdq6hecoPDBvVFoLYi4S8s7UU4S1nk/exec"
+                POSTOS_RE = r'(?:TEN-BRIG|MAJ-BRIG|BRIG|CEL|TC|MJ|CP|1T|2T|ST|SO|CB|SD|1S|2S|3S)'
+
+                # Extrai seção ORDEM DE MISSÃO
+                om_match = re.search(r'ORDEM DE MISS[ÃA]O\s*\n(.*?)(?:\n(?:Origem|======))', texto3, re.DOTALL)
+                if om_match:
+                    om_header = om_match.group(1).strip()
+                    # Linha: "Ordem de Missão: 102 / GTE-1 / 2026 Aeronave: VC-2 / FAB 2590 Situação: PREVISTA"
+                    om_num_m = re.search(r'Ordem de Miss[ãa]o:\s*([\d]+\s*/\s*GTE-\d+\s*/\s*\d+)', om_header)
+                    anv_m = re.search(r'Aeronave:\s*(VC-\d+\s*/\s*FAB\s*\d+)', om_header)
+                    missao_num = om_num_m.group(1).replace(' ', '').strip() if om_num_m else ''
+                    anv_str = anv_m.group(1).strip() if anv_m else ''
+
+                    # Tripulantes: linhas "POSTO NOME_GUERRA" com função (IN/OC/CM etc)
+                    oficiais = []
+                    tripulantes_raw = re.findall(
+                        r'^(?:IN|OC|CM|AD|SB|BJ|BO|PX|NA)\s+(' + POSTOS_RE + r')\s+(.+?)$',
+                        om_header, re.MULTILINE
+                    )
+                    for posto, nome in tripulantes_raw:
+                        nome_clean = nome.strip()
+                        # Busca chat_id nos tripulantes cadastrados
+                        chat_id = ''
+                        try:
+                            trip_data = json.loads((DATA_DIR / "tripulantes.json").read_text()) if (DATA_DIR / "tripulantes.json").exists() else {}
+                            for tid, tinfo in trip_data.items():
+                                nome_cad = (tinfo.get('nome_guerra') or tinfo.get('name') or '').upper()
+                                if nome_clean.upper() in nome_cad or nome_cad in nome_clean.upper():
+                                    chat_id = str(tid)
+                                    break
+                        except Exception:
+                            pass
+                        oficiais.append({"posto": posto, "nome": nome_clean, "chat_id": chat_id})
+
+                    # Pernas de voo
+                    perna_re = re.findall(
+                        r'([A-Z]{4})\s+\([^)]+\)\s+([\d/]+ - [\d:]+ Z[^P\n]*?)\s+[\d:]+\s+([A-Z]{4})\s+\([^)]+\)\s+([\d/]+ - [\d:]+ Z[^\n]*)',
+                        texto3
+                    )
+                    pernas_list = [f"{o} {etd} → {d} {eta}" for o, etd, d, eta in perna_re]
+
+                    if oficiais:
+                        payload_conf = {
+                            "action": "set_conf",
+                            "missao": missao_num,
+                            "anv": anv_str,
+                            "obs": "",
+                            "pernas": pernas_list,
+                            "oficiais": oficiais
+                        }
+                        try:
+                            async with _httpx3.AsyncClient(follow_redirects=True, timeout=15) as _hc:
+                                r_conf = await _hc.post(CONF_GAS_URL, json=payload_conf)
+                            rj = r_conf.json()
+                            logger.info("SISGOP: set_conf GAS: %s", rj)
+                            n_conf = rj.get('count', len(oficiais))
+                            await query.edit_message_text(f"✅ Controlão processado!\n📋 {n_conf} tripulantes registrados na aba Confirmação.")
+                        except Exception as eg:
+                            logger.error("SISGOP: set_conf GAS erro: %s", eg)
+                            await query.edit_message_text("✅ Controlão salvo, mas falha ao enviar para planilha.")
+                    else:
+                        await query.edit_message_text("✅ Controlão salvo! (Nenhum tripulante extraído da OM)")
+                else:
+                    await query.edit_message_text("✅ Controlão salvo! (Seção OM não encontrada no PDF)")
             except Exception as e:
                 logger.error("Erro controlão: %s", e)
                 await query.edit_message_text(f"❌ Erro ao processar controlão: {e}")
