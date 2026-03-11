@@ -4063,6 +4063,19 @@ function s3RenderAcnt(container){
 var _confLetra='A';
 var _confLetras={};
 function _confSetLetra(nome,val){_confLetras[nome]=val.toUpperCase();var el=document.getElementById('confprev_'+nome.replace(/\W/g,'_'));if(el&&_confDados)el.textContent=_buildMsgOficial(val.toUpperCase(),_confDados._postoOf&&_confDados._postoOf[nome]||'',nome,_confDados);}
+function _limpaPerna(p){
+  // Entrada: "SBBR 06/03/26 - 11:00 Z (-3) → SBSC 06/03/26 - 12:20 Z (-3) SBGL 9000  PR TLD"
+  // Saída:   "SBBR 06/03/26 11:00 → SBSC 06/03/26 12:20"
+  var s=String(p.raw||p);
+  // Extrai origem/hora e destino/hora via regex
+  var m=s.match(/([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:]+)\s*Z[^→]*→\s*([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:]+)/);
+  if(m) return m[1]+' '+m[2]+' '+m[3]+' → '+m[4]+' '+m[5]+' '+m[6];
+  // Fallback: remove fuso e tudo após o destino
+  s=s.replace(/\s*Z\s*\([^)]+\)/g,'').replace(/\s*Z\b/g,'').replace(/-\s*/g,'').replace(/\s{2,}/g,' ');
+  s=s.replace(/([A-Z]{4}\s+[\d\/]+\s+[\d:]+\s*→\s*[A-Z]{4}\s+[\d\/]+\s+[\d:]+).*/,'$1');
+  return s.trim();
+}
+
 function _buildMsgOficial(letra,posto,nome,dados){
   // Sobreaviso: formato simplificado, sem pernas/ANV
   if(dados&&dados.tipo==='sobreaviso'){
@@ -4075,7 +4088,7 @@ function _buildMsgOficial(letra,posto,nome,dados){
   }
   // Missão OM: formato completo
   var trip=(dados.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');
-  var pernas=(dados.pernas||[]).map(function(p){return(p.raw||p);}).join('\n');
+  var pernas=(dados.pernas||[]).map(function(p){return _limpaPerna(p);}).join('\n');
   var anv=dados.anv||'';
   var obs=dados.obs||'';
   var msg='SR. TRIPULANTE, ESCALADO MISSÃO '+letra+':\n\n';
