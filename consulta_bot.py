@@ -509,7 +509,7 @@ async def cmd_start(update: Update, context):
     _aguardando_nome[user.id] = True
     await update.message.reply_text(
         "🛩️ *SISGOP BOT — Consulta de Escala*\n\n"
-        "Para se cadastrar, digite seu *nome de guerra* (ex: CPO SAMPAIO):",
+        "Para se cadastrar, digite seu *nome de guerra* (ex: SAMPAIO):",
         parse_mode="Markdown",
     )
 
