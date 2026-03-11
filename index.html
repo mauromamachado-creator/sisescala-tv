@@ -1806,18 +1806,14 @@ function renderScreenCalendar(){
   const spanEvents=[];
 
   // Missões nacionais multi-dia: agrupa voos do mesmo ANV+OM em dias consecutivos
-  function _omTrecho(omNum){
-    if(!omData||!omNum)return'';
-    const om=omData.find(o=>(o.numero||o.om||'').toString()===omNum.toString());
+  // Busca trecho via omData (campo om = "92/GTE-1/2026")
+  function _omTrecho(omId){
+    if(!omData||!omId)return'';
+    const om=omData.find(o=>o.om===omId);
     if(!om||!om.pernas||!om.pernas.length)return'';
     const ics=[];
-    om.pernas.forEach(function(p,i){
-      const orig=p.origem||(p.etd&&p.etd.match(/^([A-Z]{4})/)?p.etd.match(/^([A-Z]{4})/)[1]:'');
-      const dest=p.destino||(p.eta&&p.eta.match(/([A-Z]{4})$/)?p.eta.match(/([A-Z]{4})$/)[1]:'');
-      if(i===0&&orig)ics.push(orig);
-      if(dest)ics.push(dest);
-    });
-    return ics.join('-');
+    om.pernas.forEach(function(p,i){if(i===0)ics.push(p.origem||'');ics.push(p.destino||'');});
+    return ics.filter(Boolean).join('-');
   }
   const flightsByKey={};
   flights.forEach(f=>{
@@ -1826,13 +1822,14 @@ function renderScreenCalendar(){
     if(!p)return;
     const fDay=+p[1],fMon=+p[2]-1,fYear=+p[3];
     if(fMon!==calMonth||fYear!==calYear)return;
-    const key=(f.anv||'?')+(f.om||'');
+    const key=(f.anv||'?')+'|'+(f.om||'');
     if(!flightsByKey[key])flightsByKey[key]={anv:f.anv,om:f.om,days:[]};
     flightsByKey[key].days.push(fDay);
   });
   Object.values(flightsByKey).forEach(function(entry){
-    const anv=entry.anv,trecho=_omTrecho(entry.om)||anv;
-    const label=anv+' '+trecho;
+    const anv=entry.anv;
+    const trecho=_omTrecho(entry.om);
+    const label=trecho?anv+' '+trecho:anv;
     const days=[...new Set(entry.days)].sort((a,b)=>a-b);
     const anv_cls=anv.includes('VC-1')?'ev-vc1':'ev-vc2';
     let runStart=days[0],runEnd=days[0];
