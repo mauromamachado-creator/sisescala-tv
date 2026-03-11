@@ -4064,13 +4064,19 @@ var _confLetra='A';
 var _confLetras={};
 function _confSetLetra(nome,val){_confLetras[nome]=val.toUpperCase();var el=document.getElementById('confprev_'+nome.replace(/\W/g,'_'));if(el&&_confDados)el.textContent=_buildMsgOficial(val.toUpperCase(),_confDados._postoOf&&_confDados._postoOf[nome]||'',nome,_confDados);}
 function _buildMsgOficial(letra,posto,nome,dados){
-  // Monta tripulação completa
+  // Sobreaviso: formato simplificado, sem pernas/ANV
+  if(dados&&dados.tipo==='sobreaviso'){
+    // Tripulação = apenas quem tem a mesma letra
+    var trip_sv=(_confSobreaviso||[]).filter(function(s){return(s.letra||'').toUpperCase()===(letra||'').toUpperCase();}).map(function(s){return s.posto+' '+s.nome;}).join(' / ');
+    if(!trip_sv) trip_sv=posto+' '+nome;
+    var dia_sv=(dados.dia||'').toUpperCase();
+    var msg_sv='SR. TRIPULANTE, ESCALADO\n'+letra+') SAVISO '+dia_sv+':\n\n'+trip_sv+'\n\nFAVOR ACUSAR CIENTE\nOPR GTE-1';
+    return msg_sv.toUpperCase();
+  }
+  // Missão OM: formato completo
   var trip=(dados.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');
-  // Pernas
   var pernas=(dados.pernas||[]).map(function(p){return(p.raw||p);}).join('\n');
-  // ANV
   var anv=dados.anv||'';
-  // OBS
   var obs=dados.obs||'';
   var msg='SR. TRIPULANTE, ESCALADO MISSÃO '+letra+':\n\n';
   if(trip) msg+=trip+'\n\n';
@@ -4237,7 +4243,7 @@ function _renderConfView(container){
     html+='<div id="conf-saviso-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">';
     _confSobreaviso.forEach(function(s,i){
       html+='<div style="background:rgba(255,200,50,.12);border:1px solid var(--yellow);border-radius:6px;padding:4px 10px;font-size:.78rem;color:var(--yellow);display:flex;align-items:center;gap:6px">';
-      html+=s.posto+' '+s.nome+' ('+s.letra+')';
+      html+=s.posto+' '+s.nome+' ('+s.letra+(s.dia?' - '+s.dia:'')+' SAVISO)';
       html+='<span onclick="_confRemoveSaviso('+i+')" style="cursor:pointer;color:var(--red);font-weight:900;margin-left:4px">×</span>';
       html+='</div>';
     });
@@ -4254,6 +4260,9 @@ function _renderConfView(container){
   });
   html+='</select>';
   html+='<input id="conf-saviso-letra" type="text" placeholder="Letra (ex: B)" maxlength="3" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;width:70px;font-size:.8rem;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">';
+  html+='<select id="conf-saviso-dia" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-size:.8rem">';
+  html+='<option value="SEG">SEG</option><option value="TER">TER</option><option value="QUA">QUA</option><option value="QUI" selected>QUI</option><option value="SEX">SEX</option><option value="SÁB">SÁB</option><option value="DOM">DOM</option>';
+  html+='</select>';
   html+='<button onclick="_confAddSaviso()" style="background:var(--yellow);color:#000;border:none;border-radius:4px;padding:5px 12px;font-size:.8rem;font-weight:900;cursor:pointer">+ Adicionar</button>';
   html+='</div>';
   html+='</div>';
@@ -4278,15 +4287,16 @@ function _renderConfView(container){
 function _confAddSaviso(){
   var sel=document.getElementById('conf-saviso-piloto');
   var letraEl=document.getElementById('conf-saviso-letra');
+  var diaEl=document.getElementById('conf-saviso-dia');
   if(!sel||!sel.value){alert('Selecione um piloto.');return;}
   var letra=(letraEl&&letraEl.value.trim())||_confLetra;
+  var dia=(diaEl&&diaEl.value)||'';
   var parts=sel.value.split('|');
   var chat_id=parts[0],posto=parts[1],nome=parts[2];
-  // Evita duplicata
-  if(_confSobreaviso.some(function(s){return s.chat_id===chat_id;})){
-    alert('Piloto já adicionado.');return;
+  if(_confSobreaviso.some(function(s){return s.chat_id===chat_id&&s.letra===letra;})){
+    alert('Piloto já adicionado com esta letra.');return;
   }
-  _confSobreaviso.push({chat_id:chat_id,posto:posto,nome:nome,letra:letra});
+  _confSobreaviso.push({chat_id:chat_id,posto:posto,nome:nome,letra:letra,dia:dia});
   _renderConfView(document.getElementById('s3-content'));
 }
 
@@ -4328,11 +4338,14 @@ async function _enviarConfirmacao(){
       var texto=_buildMsgOficial(letra,t.posto,t.nome,dados);
       messages.push({chat_id:tg.chat_id,texto:texto,letra:letra,nome:t.nome});
     });
-    // Sobreaviso
+    // Sobreaviso — formato diferente, sem pernas
+    var svGrupos={};
+    (_confSobreaviso||[]).forEach(function(s){svGrupos[s.letra]=s.dia||'';});
     (_confSobreaviso||[]).forEach(function(s){
       var letra=s.letra||_confLetra||'A';
-      var texto=_buildMsgOficial(letra,s.posto,s.nome,dados);
-      messages.push({chat_id:s.chat_id,texto:texto,letra:letra,nome:s.nome});
+      var dadosSv={tipo:'sobreaviso',dia:s.dia||svGrupos[letra]||''};
+      var texto=_buildMsgOficial(letra,s.posto,s.nome,dadosSv);
+      messages.push({chat_id:s.chat_id,texto:texto,om:letra,nome:s.nome});
     });
     if(!messages.length){alert('Nenhum oficial cadastrado no bot encontrado na tripulação.');if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}return;}
     // Envia via bot (tunnel)
