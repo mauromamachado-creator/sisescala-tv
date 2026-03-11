@@ -66,7 +66,8 @@
     ],
     "om": "92/GTE-1/2026",
     "fab": "FAB 2101",
-    "tipo": "TRP"
+    "tipo": "TRP",
+    "missao": "PR, PR TLD"
   },
   {
     "aeronave": "VC-2",
@@ -112,7 +113,8 @@
     ],
     "om": "94/GTE-1/2026",
     "fab": "FAB 2590",
-    "tipo": "ESCAV"
+    "tipo": "ESCAV",
+    "missao": "PR TLD/PR VER, PR RES/PR ESCAV"
   },
   {
     "aeronave": "VC-2",
@@ -162,7 +164,8 @@
     ],
     "om": "95/GTE-1/2026",
     "fab": "FAB 2590",
-    "tipo": "ESCAV"
+    "tipo": "ESCAV",
+    "missao": "PR ESCAV, PR TLD"
   },
   {
     "aeronave": "VC-2",
@@ -206,7 +209,8 @@
     ],
     "om": "96/GTE-1/2026",
     "fab": "FAB 2590",
-    "tipo": "ESCAV"
+    "tipo": "ESCAV",
+    "missao": "PR TLD, PR ESCAV"
   },
   {
     "aeronave": "VC-1",
@@ -248,7 +252,8 @@
     "observacoes": "MNT (Manutenção). Autorizado embarque 2S Danilo Miguel para acompanhar serviço.",
     "om": "103/GTE-1/2026",
     "fab": "FAB 2101",
-    "tipo": "MMT"
+    "tipo": "MMT",
+    "missao": "MNT"
   },
   {
     "aeronave": "VC-1",
@@ -282,7 +287,8 @@
       "1HdMEz57OsDAHjAKQgdCqxFy4rS0QHp7-",
       "1_vCjipI2ZEjTx60d3GjClzimio2Hi-r9"
     ],
-    "tipo": "VER"
+    "tipo": "VER",
+    "missao": "PR VER"
   },
   {
     "aeronave": "VC-2",
@@ -316,7 +322,8 @@
       "1J-LSmtZ5RhfNGhmjByIflcB2vfz9Of12",
       "1r7R3Ovdb7ZyW4sbOCjo8KxCUEeTnwPuJ"
     ],
-    "tipo": "VER"
+    "tipo": "VER",
+    "missao": "PR VER"
   },
   {
     "aeronave": "VC-1",
@@ -367,7 +374,8 @@
     "file_ids": [
       "19CmDInuYwDHWLcQoDsf1YsaFBbW3RGX6"
     ],
-    "tipo": "TRP"
+    "tipo": "TRP",
+    "missao": "PR"
   },
   {
     "aeronave": "VC-2",
@@ -418,7 +426,8 @@
     "file_ids": [
       "1AxBqHSQwJJ8p7S4uQzo61Yq29mmXrek3"
     ],
-    "tipo": "ALT"
+    "tipo": "ALT",
+    "missao": "ALT SOLO"
   },
   {
     "aeronave": "VC-2",
@@ -481,6 +490,7 @@
       "1yPgLxKa2xEx-F2VcHokIxjTNvw19UA2O",
       "1ZMlzoh37qDhumr8K-yzB7g5lnszVeH-t"
     ],
-    "tipo": "ESCAV"
+    "tipo": "ESCAV",
+    "missao": "PR TLD/PR VER, PR RES/PR ESCAV, PR ESCAV"
   }
 ]
