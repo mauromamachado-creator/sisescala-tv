@@ -1805,9 +1805,8 @@ function renderScreenCalendar(){
   // spanEvents: [{text, cls, start, end, isStart, isEnd}] — dias do mês
   const spanEvents=[];
 
-  // Missões nacionais multi-dia: agrupa voos do mesmo ANV+OM em dias consecutivos
-  // Agrupa voos do mês por ANV — multi-dia vira barra, dia único vira badge
-  const flightsByAnv={};
+  // Missões nacionais multi-dia: agrupa voos do mesmo ANV em dias consecutivos
+  const flightsByDay={};
   flights.forEach(f=>{
     if(!f.data)return;
     const p=f.data.match(/(\d{2})\/(\d{2})\/(\d{4})/);
@@ -1815,42 +1814,25 @@ function renderScreenCalendar(){
     const fDay=+p[1],fMon=+p[2]-1,fYear=+p[3];
     if(fMon!==calMonth||fYear!==calYear)return;
     const key=f.anv||'?';
-    if(!flightsByAnv[key])flightsByAnv[key]=[];
-    flightsByAnv[key].push({day:fDay,om:f.om||''});
+    if(!flightsByDay[key])flightsByDay[key]=[];
+    flightsByDay[key].push(fDay);
   });
-  Object.keys(flightsByAnv).forEach(function(anv){
-    const entries=flightsByAnv[anv];
-    const anv_cls=anv.includes('VC-1')?'ev-vc1':'ev-vc2';
-    // Agrupa dias únicos por OM (mesmo OM = mesma missão)
-    const byOm={};
-    entries.forEach(function(e){
-      const k=e.om||('__'+e.day);
-      if(!byOm[k])byOm[k]=[];
-      byOm[k].push(e.day);
-    });
-    Object.keys(byOm).forEach(function(omKey){
-      const days=[...new Set(byOm[omKey])].sort((a,b)=>a-b);
-      // Trecho a partir do omData
-      const omObj=omData&&omData.find(o=>o.om===omKey);
-      let trecho='';
-      if(omObj&&omObj.pernas&&omObj.pernas.length){
-        const ics=[];
-        omObj.pernas.forEach(function(p,i){if(i===0&&p.origem)ics.push(p.origem);if(p.destino)ics.push(p.destino);});
-        trecho=ics.filter(Boolean).join('-');
+  Object.keys(flightsByDay).forEach(anv=>{
+    const days=[...new Set(flightsByDay[anv])].sort((a,b)=>a-b);
+    // Agrupa em sequências consecutivas
+    let runStart=days[0],runEnd=days[0];
+    for(let i=1;i<days.length;i++){
+      const anv_cls=anv.includes('VC-1')?'ev-vc1':'ev-vc2';
+    if(days[i]<=runEnd+1) runEnd=days[i];
+      else{
+        if(runEnd>runStart) spanEvents.push({text:anv,cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});
+        else{if(!events[runStart])events[runStart]=[];events[runStart].push({text:anv,cls:anv_cls});}
+        runStart=days[i];runEnd=days[i];
       }
-      const label=trecho?anv+' '+trecho:anv;
-      let runStart=days[0],runEnd=days[0];
-      for(let i=1;i<days.length;i++){
-        if(days[i]<=runEnd+1) runEnd=days[i];
-        else{
-          if(runEnd>runStart) spanEvents.push({text:label,cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});
-          else{if(!events[runStart])events[runStart]=[];events[runStart].push({text:label,cls:anv_cls});}
-          runStart=days[i];runEnd=days[i];
-        }
-      }
-      if(runEnd>runStart) spanEvents.push({text:label,cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});
-      else{if(!events[runStart])events[runStart]=[];events[runStart].push({text:label,cls:anv_cls});}
-    });
+    }
+    const anv_cls2=anv.includes('VC-1')?'ev-vc1':'ev-vc2';
+    if(runEnd>runStart) spanEvents.push({text:anv,cls:anv_cls2,start:runStart,end:runEnd,isStart:true,isEnd:true});
+    else{if(!events[runStart])events[runStart]=[];events[runStart].push({text:anv,cls:anv_cls2});}
   });
   missionsData.forEach(m=>{
     if(!m.pais||!m.inicio)return;
