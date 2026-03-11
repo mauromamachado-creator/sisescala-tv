@@ -288,16 +288,22 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 .check-summary .stat-label{font-size:.68rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
 
 /* Calendar */
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:12px}
+.cal-grid{margin-top:12px}
+.cal-header-row{display:grid;grid-template-columns:repeat(7,1fr);gap:0}
 .cal-header{text-align:center;font-size:.68rem;color:var(--text2);padding:6px 0;font-weight:900;text-transform:uppercase}
-.cal-day{min-height:80px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:.7rem;position:relative}
+.cal-week{margin-bottom:2px}
+.cal-week-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-day{min-height:56px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:.7rem;position:relative}
 .cal-day.today{border:2px solid var(--vc1);background:rgba(0,255,255,.05)}
 .cal-day.other-month{opacity:.3}
-.cal-day .day-num{font-weight:900;font-size:.78rem;margin-bottom:4px}
+.cal-day .day-num{font-weight:900;font-size:.78rem;margin-bottom:2px}
 .cal-day .cal-event{padding:2px 4px;border-radius:3px;font-size:.58rem;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default}
 .cal-event.ev-mission{background:rgba(0,255,136,.15);color:var(--green);border-left:2px solid var(--green)}
 .cal-event.ev-intl{background:rgba(0,255,255,.12);color:var(--vc1);border-left:2px solid var(--vc1)}
-.cal-event.ev-ferias{background:rgba(255,200,50,.12);color:var(--yellow);border-left:2px solid var(--yellow)}
+.cal-week-bars{position:relative;height:0}
+.cal-span-bar{position:absolute;height:18px;line-height:18px;font-size:.6rem;font-weight:700;padding:0 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:default;top:2px;z-index:2}
+.cal-span-bar.ev-intl{background:rgba(0,255,255,.25);color:var(--vc1);border-top:2px solid var(--vc1);border-bottom:2px solid var(--vc1)}
+.cal-span-bar.ev-mission{background:rgba(0,255,136,.25);color:var(--green);border-top:2px solid var(--green);border-bottom:2px solid var(--green)}
 .cal-nav{display:flex;align-items:center;gap:16px}
 .cal-nav button{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:900}
 .cal-nav button:hover{background:var(--bg3)}
@@ -309,11 +315,12 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 .s3-panel.active{display:block}
 .cal-month{font-size:1.2rem;font-weight:900;min-width:200px;text-align:center}
 @media(max-width:768px){
-  .cal-grid{gap:1px;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;min-width:340px}
+  .cal-grid{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;min-width:340px}
   .cal-header{font-size:.55rem;padding:4px 0}
   .cal-day{min-height:44px;padding:2px 1px;min-width:0;overflow:hidden}
   .cal-day .day-num{font-size:.6rem;margin-bottom:2px}
   .cal-event{font-size:.42rem!important;padding:1px 2px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+  .cal-span-bar{font-size:.5rem!important;padding:0 3px!important;height:16px!important;line-height:16px!important}
   .cal-month{font-size:1rem;min-width:auto}
 }
 
@@ -1779,7 +1786,9 @@ function renderScreenCalendar(){
   html+='</div>';
 
   html+='<div class="cal-grid">';
+  html+='<div class="cal-header-row">';
   dayNames.forEach(d=>html+=`<div class="cal-header">${d}</div>`);
+  html+='</div>';
 
   const firstDay=new Date(calYear,calMonth,1).getDay();
   const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
@@ -1789,21 +1798,38 @@ function renderScreenCalendar(){
   const events={};
   const addEvent=(day,text,cls)=>{if(!events[day])events[day]=[];if(!events[day].some(e=>e.text===text&&e.cls===cls))events[day].push({text,cls});};
 
-  // Domestic flights for this month
+  // Voos domésticos — tratados abaixo em spanEvents (multi-dia) ou events (dia único)
+
+  // spanEvents: [{text, cls, start, end, isStart, isEnd}] — dias do mês
+  const spanEvents=[];
+
+  // Missões nacionais multi-dia: agrupa voos do mesmo ANV em dias consecutivos
+  const flightsByDay={};
   flights.forEach(f=>{
     if(!f.data)return;
-    const parts=f.data.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-    if(!parts)return;
-    const fDay=parseInt(parts[1]),fMon=parseInt(parts[2])-1,fYear=parseInt(parts[3]);
-    if(fMon===calMonth&&fYear===calYear){
-      const label=`${f.anv||''} ${f.missao||''}`.trim();
-      addEvent(fDay,label||f.data,'ev-mission');
-    }
+    const p=f.data.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    if(!p)return;
+    const fDay=+p[1],fMon=+p[2]-1,fYear=+p[3];
+    if(fMon!==calMonth||fYear!==calYear)return;
+    const key=f.anv||'?';
+    if(!flightsByDay[key])flightsByDay[key]=[];
+    flightsByDay[key].push(fDay);
   });
-
-  // International missions — barras contínuas multi-dia
-  // spanEvents: [{text, cls, start, end}] — dias do mês
-  const spanEvents=[];
+  Object.keys(flightsByDay).forEach(anv=>{
+    const days=[...new Set(flightsByDay[anv])].sort((a,b)=>a-b);
+    // Agrupa em sequências consecutivas
+    let runStart=days[0],runEnd=days[0];
+    for(let i=1;i<days.length;i++){
+      if(days[i]<=runEnd+1) runEnd=days[i];
+      else{
+        if(runEnd>runStart) spanEvents.push({text:anv,cls:'ev-mission',start:runStart,end:runEnd,isStart:true,isEnd:true});
+        else{if(!events[runStart])events[runStart]=[];events[runStart].push({text:anv,cls:'ev-mission'});}
+        runStart=days[i];runEnd=days[i];
+      }
+    }
+    if(runEnd>runStart) spanEvents.push({text:anv,cls:'ev-mission',start:runStart,end:runEnd,isStart:true,isEnd:true});
+    else{if(!events[runStart])events[runStart]=[];events[runStart].push({text:anv,cls:'ev-mission'});}
+  });
   missionsData.forEach(m=>{
     if(!m.pais||!m.inicio)return;
     const sd=new Date(m.inicio);
@@ -1826,41 +1852,65 @@ function renderScreenCalendar(){
 
   // Férias removidas do calendário (só missões)
 
-  // Prev month padding
-  for(let i=firstDay-1;i>=0;i--){
-    const day=daysInPrev-i;
-    html+=`<div class="cal-day other-month"><div class="day-num">${day}</div></div>`;
+  // Monta semanas: array de arrays[7] de {day, otherMonth}
+  const weeks=[];
+  let week=[];
+  for(let i=0;i<firstDay;i++) week.push({day:daysInPrev-firstDay+i+1,other:true});
+  for(let d=1;d<=daysInMonth;d++){
+    week.push({day:d,other:false});
+    if(week.length===7){weeks.push(week);week=[];}
+  }
+  if(week.length>0){
+    let nd=1;
+    while(week.length<7) week.push({day:nd++,other:true});
+    weeks.push(week);
   }
 
-  // Current month
-  for(let d=1;d<=daysInMonth;d++){
-    const isToday=(d===td.getDate()&&calMonth===td.getMonth()&&calYear===td.getFullYear());
-    html+=`<div class="cal-day${isToday?' today':''}"><div class="day-num">${d}</div>`;
-    // Eventos pontuais (voos domésticos)
-    if(events[d]){
-      events[d].slice(0,2).forEach(ev=>{
-        html+=`<div class="cal-event ${ev.cls}" title="${ev.text}">${ev.text}</div>`;
-      });
-      if(events[d].length>2)html+=`<div style="font-size:.55rem;color:var(--text2)">+${events[d].length-2}</div>`;
-    }
-    // Barras multi-dia (missões internacionais)
-    spanEvents.forEach(sp=>{
-      if(d>=sp.start&&d<=sp.end){
-        const rL=sp.isStart&&d===sp.start?'8px':'0';
-        const rR=sp.isEnd&&d===sp.end?'8px':'0';
-        const showLabel=(d===sp.start)||(d===1);
-        html+=`<div class="cal-event ${sp.cls}" style="border-radius:${rL} ${rR} ${rR} ${rL};margin-left:${d===sp.start?'0':'-2px'};margin-right:${d===sp.end?'0':'-2px'};overflow:hidden;white-space:nowrap;font-size:.6rem" title="${sp.text}">${showLabel?sp.text:''}</div>`;
+  // Renderiza semana a semana
+  weeks.forEach(function(wDays){
+    const wStart=wDays.find(c=>!c.other).day;
+    const wEnd=[...wDays].reverse().find(c=>!c.other).day;
+    const BAR_H=20; // px por linha de barra
+
+    // Barras desta semana
+    const wBars=spanEvents.filter(sp=>sp.end>=wStart&&sp.start<=wEnd);
+    const nBars=wBars.length;
+
+    // Dias
+    html+='<div class="cal-week">';
+    html+='<div class="cal-week-days">';
+    wDays.forEach(function(c){
+      const isToday=(!c.other&&c.day===td.getDate()&&calMonth===td.getMonth()&&calYear===td.getFullYear());
+      html+=`<div class="cal-day${c.other?' other-month':''}${isToday?' today':''}"><div class="day-num">${c.day}</div>`;
+      if(!c.other&&events[c.day]){
+        events[c.day].slice(0,2).forEach(ev=>{
+          html+=`<div class="cal-event ${ev.cls}" title="${ev.text}">${ev.text}</div>`;
+        });
+        if(events[c.day].length>2) html+=`<div style="font-size:.5rem;color:var(--text2)">+${events[c.day].length-2}</div>`;
       }
+      html+='</div>';
     });
     html+='</div>';
-  }
 
-  // Next month padding
-  const totalCells=firstDay+daysInMonth;
-  const remaining=totalCells%7===0?0:7-(totalCells%7);
-  for(let d=1;d<=remaining;d++){
-    html+=`<div class="cal-day other-month"><div class="day-num">${d}</div></div>`;
-  }
+    // Camada de barras contínuas
+    if(nBars>0){
+      html+=`<div class="cal-week-bars" style="height:${nBars*(BAR_H+2)+4}px">`;
+      wBars.forEach(function(sp,lane){
+        const barStart=Math.max(sp.start,wStart);
+        const barEnd=Math.min(sp.end,wEnd);
+        const startCol=wDays.findIndex(c=>!c.other&&c.day===barStart);
+        const endCol=wDays.findIndex(c=>!c.other&&c.day===barEnd);
+        const leftPct=(startCol/7*100).toFixed(2);
+        const widthPct=((endCol-startCol+1)/7*100).toFixed(2);
+        const rL=sp.isStart&&barStart===sp.start?'8px':'0';
+        const rR=sp.isEnd&&barEnd===sp.end?'8px':'0';
+        const showLabel=sp.isStart&&barStart===sp.start||barStart===wStart;
+        html+=`<div class="cal-span-bar ${sp.cls}" style="left:${leftPct}%;width:${widthPct}%;top:${lane*(BAR_H+2)}px;border-radius:${rL} ${rR} ${rR} ${rL}" title="${sp.text}">${showLabel?sp.text:''}</div>`;
+      });
+      html+='</div>';
+    }
+    html+='</div>'; // .cal-week
+  });
 
   html+='</div>';
   document.getElementById('screen6').innerHTML=html;
