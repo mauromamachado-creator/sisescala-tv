@@ -4308,9 +4308,8 @@ async function _enviarConfirmacao(){
       messages.push({chat_id:s.chat_id,texto:texto,letra:letra,nome:s.nome});
     });
     if(!messages.length){alert('Nenhum oficial cadastrado no bot encontrado na tripulação.');if(btn){btn.disabled=false;btn.textContent='📨 ENVIAR CONFIRMAÇÃO';}return;}
-    // Envia via bot local (evita CORS do GAS)
-    var resp=await fetch('http://127.0.0.1:8085/api/consulta',{method:'POST',headers:{'Content-Type':'application/json','X-API-Secret':CONSULTA_API_SECRET},body:JSON.stringify({action:'send_conf',messages:messages}),signal:AbortSignal.timeout(30000)});
-    var r=await resp.json();
+    // Envia via bot (tunnel)
+    var r=await consultaApiPost({action:'send_conf',messages:messages});
     if(r&&r.ok){
       var msg='✅ Enviado para '+r.enviados+' oficial(is).';
       if(r.erros) msg+=' ⚠️ '+r.erros+' sem cadastro.';
