@@ -663,19 +663,28 @@ async def callback_handler(update: Update, context):
                         r'^(?:IN|OC|CM|AD|SB|BJ|BO|PX|NA)\s+(' + POSTOS_RE + r')\s+(.+?)$',
                         om_header, re.MULTILINE
                     )
+                    # Busca tripulantes cadastrados no GAS para obter chat_ids
+                    gas_trip_map = {}
+                    try:
+                        async with _httpx3.AsyncClient(follow_redirects=True, timeout=10) as _ht:
+                            _rt = await _ht.get("https://script.google.com/macros/s/AKfycbyDdqWqCKLoCVwgajS3kr4o6q2MHx3UYxwe2o-28JbFCS__NhV2l2OqFlUT-cyRu-Vg/exec?action=get_tripulantes")
+                            _td = _rt.json()
+                            for t in _td.get("tripulantes", []):
+                                ng = (t.get("nome_guerra") or "").upper().strip()
+                                if ng:
+                                    gas_trip_map[ng] = str(t.get("chat_id", ""))
+                    except Exception as _egt:
+                        logger.warning("Falha ao buscar tripulantes GAS: %s", _egt)
+
                     for posto, nome in tripulantes_raw:
                         nome_clean = nome.strip()
-                        # Busca chat_id nos tripulantes cadastrados
+                        nome_upper = nome_clean.upper()
                         chat_id = ''
-                        try:
-                            trip_data = json.loads((DATA_DIR / "tripulantes.json").read_text()) if (DATA_DIR / "tripulantes.json").exists() else {}
-                            for tid, tinfo in trip_data.items():
-                                nome_cad = (tinfo.get('nome_guerra') or tinfo.get('name') or '').upper()
-                                if nome_clean.upper() in nome_cad or nome_cad in nome_clean.upper():
-                                    chat_id = str(tid)
-                                    break
-                        except Exception:
-                            pass
+                        # Busca exata ou parcial
+                        for ng, cid in gas_trip_map.items():
+                            if nome_upper == ng or nome_upper in ng or ng in nome_upper:
+                                chat_id = cid
+                                break
                         oficiais.append({"posto": posto, "nome": nome_clean, "chat_id": chat_id})
 
                     # Pernas de voo
