@@ -2768,7 +2768,7 @@ function openDiariaForm(omId){
         </div>
       </div>
 
-      <button onclick="gerarDiariaPDF('${om.om}')" style="width:100%;padding:14px;border-radius:8px;border:none;background:var(--green);color:#000;font-weight:700;font-size:1rem;cursor:pointer">📥 BAIXAR PDF</button>
+      <button onclick="gerarDiariaPDFBtn(this,'${om.om}')" style="width:100%;padding:14px;border-radius:8px;border:none;background:var(--green);color:#000;font-weight:700;font-size:1rem;cursor:pointer">📥 BAIXAR PDF</button>
     </div>
   </div>`;
 
@@ -2799,7 +2799,20 @@ function addDiariaTrip(){
   </tr>`);
 }
 
-function gerarDiariaPDF(omId){
+async function gerarDiariaPDFBtn(btn,omId){
+  const orig=btn.textContent;
+  btn.disabled=true;btn.textContent='⏳ Obtendo número...';
+  let numSolicitacao=null;
+  try{
+    const r=await fetch(DIARIAS_API+'?action=get_numero&om_id='+encodeURIComponent(omId)+'&t='+Date.now(),{cache:'no-store'});
+    const j=await r.json();
+    if(j.ok && j.numero) numSolicitacao=j.numero;
+  }catch(e){console.warn('Erro ao obter número:',e);}
+  btn.textContent='📥 BAIXAR PDF';btn.disabled=false;
+  gerarDiariaPDF(omId,numSolicitacao);
+}
+
+function gerarDiariaPDF(omId,numSolicitacao){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
   const modal=document.getElementById('diariaModal');
@@ -2824,7 +2837,16 @@ function gerarDiariaPDF(omId){
   doc.text(titulo,cx,y,{align:'center'});
   const tW=doc.getTextWidth(titulo);
   doc.setLineWidth(0.4);doc.line(cx-tW/2,y+1,cx+tW/2,y+1);
-  y+=10;
+  y+=7;
+
+  // ═══ NÚMERO DA SOLICITAÇÃO ═══
+  if(numSolicitacao){
+    const ano=new Date().getFullYear();
+    const numStr='Solicitação nº '+String(numSolicitacao).padStart(3,'0')+'/GTE1/'+ano;
+    doc.setFont('times','italic');doc.setFontSize(10);
+    doc.text(numStr,cx,y,{align:'center'});
+    y+=7;
+  } else { y+=3; }
 
   // ═══ VOCATIVO + INTRO ═══
   doc.setFont('times','normal');doc.setFontSize(11);
