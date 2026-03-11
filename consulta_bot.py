@@ -589,15 +589,31 @@ async def _enrich_chat_ids(oms_list: list) -> list:
     return oms_list
 
 
-async def _processar_ctrl_all(query, context, oms_list: list):
-    """Manda todas as OMs do controlão para o GAS de Confirmação."""
+async def _processar_ctrl_all(query, context, oms_list: list, sobreavisos: list = None):
+    """Manda todas as OMs + sobreaviso do controlão para o GAS de Confirmação."""
     import httpx as _hx
     CONF_GAS_URL = "https://script.google.com/macros/s/AKfycbwAkuMtXPes8ciLZw_EYT6a4EAHz6wGwdBUj5Bqm5eM--rkO2Yj7uJy8USXTjTWNkEYhg/exec"
-    await query.edit_message_text(f"⏳ Registrando {len(oms_list)} OMs na planilha...")
+    sb = sobreavisos or []
+    await query.edit_message_text(f"⏳ Registrando {len(oms_list)} OMs + {len(sb)} grupos sobreaviso...")
     oms_enriched = await _enrich_chat_ids(oms_list)
+    # Enriquece chat_ids do sobreaviso também
+    if sb:
+        gas_trip_map = {}
+        try:
+            async with _hx.AsyncClient(follow_redirects=True, timeout=10) as _ht:
+                _rt = await _ht.get("https://script.google.com/macros/s/AKfycbyDdqWqCKLoCVwgajS3kr4o6q2MHx3UYxwe2o-28JbFCS__NhV2l2OqFlUT-cyRu-Vg/exec?action=get_tripulantes")
+                _td = _rt.json()
+                for t in _td.get("tripulantes", []):
+                    ng = (t.get("nome_guerra") or "").upper().strip()
+                    if ng: gas_trip_map[ng] = str(t.get("chat_id", ""))
+        except Exception: pass
+        for grupo in sb:
+            for p in grupo.get("pilotos", []):
+                nu = p["nome"].upper()
+                p["chat_id"] = next((cid for ng, cid in gas_trip_map.items() if nu==ng or nu in ng or ng in nu), "")
     try:
         async with _hx.AsyncClient(follow_redirects=True, timeout=15) as _hc:
-            r_conf = await _hc.post(CONF_GAS_URL, json={"action": "set_conf_all", "oms": oms_enriched})
+            r_conf = await _hc.post(CONF_GAS_URL, json={"action": "set_conf_all", "oms": oms_enriched, "sobreavisos": sb})
         rj = r_conf.json()
         logger.info("SISGOP: set_conf_all GAS: %s", rj)
         n_oms = rj.get("oms", len(oms_list))
@@ -605,7 +621,7 @@ async def _processar_ctrl_all(query, context, oms_list: list):
         om_ids = ", ".join(o["om"] for o in oms_list)
         await query.edit_message_text(
             f"✅ Controlão registrado!\n"
-            f"📋 {n_oms} OMs | 👥 {n_trip} tripulantes\n"
+            f"📋 {n_oms} OMs | 👥 {n_trip} trip | 🔔 {len(sb)} sobreaviso\n"
             f"OMs: {om_ids}"
         )
     except Exception as eg:
@@ -681,6 +697,26 @@ async def callback_handler(update: Update, context):
                             "pernas": [f"{o} {etd.strip()} → {d} {eta.strip()}" for o, etd, d, eta in pernas_b]
                         })
 
+                # ── Extrai sobreaviso ────────────────────────────────────
+                sobreavisos = []
+                sb_blocks2 = re.findall(
+                    r'Sobreaviso para o dia (\d{2}/\d{2}/\d{4})\s*\([^)]+\)(.*?)(?=Sobreaviso para o dia|ORDEM DE MISS|\Z)',
+                    texto3, re.DOTALL
+                )
+                for sb_dia, sb_bloco in sb_blocks2:
+                    sb_grupos = re.split(r'\*\s*(\d[ºo])\s*SOBREAVISO\s*\*', sb_bloco)
+                    i_g = 1
+                    while i_g < len(sb_grupos) - 1:
+                        sb_num = sb_grupos[i_g].strip()
+                        sb_cont = sb_grupos[i_g+1] if i_g+1 < len(sb_grupos) else ''
+                        pilotos_sb = re.findall(r'(' + _POSTOS_R + r')\s+([A-ZÁÉÍÓÚÃÕÂÊÔÇÀ][^\n\(]+?)(?:\s+\([^)]+\))?\s+-\s+[\d\-X]+', sb_cont)
+                        if pilotos_sb:
+                            sobreavisos.append({
+                                "dia": sb_dia, "grupo": sb_num,
+                                "pilotos": [{"posto": p, "nome": n.strip()} for p, n in pilotos_sb]
+                            })
+                        i_g += 2
+
                 # Salva texto e lista de OMs para uso posterior
                 ctrl_path = DATA_DIR / "controlao_ultimo.txt"
                 ctrl_path.write_text(texto3, encoding="utf-8")
@@ -690,12 +726,12 @@ async def callback_handler(update: Update, context):
                 _sp2.run(["git","commit","-m","controlao: atualizado"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=10)
                 _sp2.run(["git","push","origin","main"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=30)
 
-                if not oms_encontradas:
-                    await query.edit_message_text("✅ Controlão salvo! (Nenhuma OM encontrada no PDF)")
+                if not oms_encontradas and not sobreavisos:
+                    await query.edit_message_text("✅ Controlão salvo! (Nenhuma OM/sobreaviso encontrado no PDF)")
                     return
 
-                # Manda TODAS as OMs direto pro GAS — SisGOPA faz a seleção
-                await _processar_ctrl_all(query, context, oms_encontradas)
+                # Manda TODAS as OMs + sobreaviso pro GAS
+                await _processar_ctrl_all(query, context, oms_encontradas, sobreavisos)
                 return
             except Exception as e:
                 logger.error("Erro controlão: %s", e)

@@ -4082,8 +4082,9 @@ function _limpaPerna(p){
 function _buildMsgOficial(letra,posto,nome,dados){
   // Sobreaviso: formato simplificado, sem pernas/ANV
   if(dados&&dados.tipo==='sobreaviso'){
-    // Tripulação = apenas quem tem a mesma letra
-    var trip_sv=(_confSobreaviso||[]).filter(function(s){return(s.letra||'').toUpperCase()===(letra||'').toUpperCase();}).map(function(s){return s.posto+' '+s.nome;}).join(' / ');
+    // Tripulação = pilotos do grupo com mesma letra no controlão
+    var grupoSv=(_confCtrlSobreavisos||[]).find(function(g){return(g.letra||'').toUpperCase()===(letra||'').toUpperCase();});
+    var trip_sv=grupoSv?(grupoSv.pilotos||[]).map(function(p){return p.posto+' '+p.nome;}).join(' / '):(posto+' '+nome);
     if(!trip_sv) trip_sv=posto+' '+nome;
     var dia_sv=(dados.dia||'').toUpperCase();
     var msg_sv='SR. TRIPULANTE, ESCALADO\n'+letra+') SAVISO '+dia_sv+':\n\n'+trip_sv+'\n\nFAVOR ACUSAR CIENTE\nOPR GTE-1';
@@ -4106,7 +4107,8 @@ function _buildMsgOficial(letra,posto,nome,dados){
 }
 var _confDados=null;
 var _confCientes={};
-var _confSobreaviso=[]; // [{chat_id, nome, posto, letra}]
+var _confSobreaviso=[]; // [{chat_id, nome, posto, letra, dia}] — adicionados manualmente
+var _confCtrlSobreavisos=[]; // grupos extraídos do controlão [{dia, grupo, pilotos, letra}]
 var _confTripulantes=[]; // lista de cadastrados no GAS
 var _confOMs=[]; // todas as OMs do controlão
 var _confOmSel=0; // índice da OM selecionada
@@ -4120,13 +4122,14 @@ function s3RenderConfirmacao(container){
     var gasConf=results[0]; var gt=results[1];
     _confTripulantes=gt&&gt.tripulantes?gt.tripulantes:[];
     _confOMs=(gasConf&&gasConf.oms&&gasConf.oms.length>0)?gasConf.oms:[];
+    _confCtrlSobreavisos=(gasConf&&gasConf.sobreavisos&&gasConf.sobreavisos.length>0)?gasConf.sobreavisos:[];
     // preserva seleção se ainda válida
     if(_confOmSel>=_confOMs.length) _confOmSel=0;
     _confCarregarOm(_confOmSel);
     _renderConfView(container);
   }).catch(function(e){
     console.error('s3RenderConfirmacao erro:',e);
-    _confOMs=[]; _confDados=null; _confCientes={}; _confTripulantes=[];
+    _confOMs=[]; _confCtrlSobreavisos=[]; _confDados=null; _confCientes={}; _confTripulantes=[];
     _renderConfView(container);
   });
 }
@@ -4253,34 +4256,23 @@ function _renderConfView(container){
   // ─── Sobreaviso ───────────────────────────────────────────────────────────
   html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px">';
   html+='<div style="font-weight:900;font-size:.85rem;color:var(--yellow);margin-bottom:10px">🔔 Sobreaviso</div>';
-  html+='<div style="font-size:.78rem;color:var(--text2);margin-bottom:8px">Selecione os pilotos em sobreaviso e a letra que representam:</div>';
-  // Lista de sobreaviso já adicionados
-  if(_confSobreaviso.length){
-    html+='<div id="conf-saviso-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">';
-    _confSobreaviso.forEach(function(s,i){
-      html+='<div style="background:rgba(255,200,50,.12);border:1px solid var(--yellow);border-radius:6px;padding:4px 10px;font-size:.78rem;color:var(--yellow);display:flex;align-items:center;gap:6px">';
-      html+=s.posto+' '+s.nome+' ('+s.letra+(s.dia?' - '+s.dia:'')+' SAVISO)';
-      html+='<span onclick="_confRemoveSaviso('+i+')" style="cursor:pointer;color:var(--red);font-weight:900;margin-left:4px">×</span>';
+  if(_confCtrlSobreavisos&&_confCtrlSobreavisos.length){
+    html+='<div style="font-size:.75rem;color:var(--text2);margin-bottom:8px">Grupos extraídos do controlão. Acerte a letra e clique em ENVIAR SAVISO:</div>';
+    _confCtrlSobreavisos.forEach(function(g,gi){
+      var letraAtual=g.letra||'';
+      var nomes=( g.pilotos||[]).map(function(p){return p.posto+' '+p.nome;}).join(', ');
+      var diaSb=g.dia?(' - '+g.dia):'';
+      html+='<div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px">';
+      html+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
+      html+='<span style="font-weight:900;color:var(--yellow);font-size:.8rem">'+g.grupo+' SAVISO'+diaSb+'</span>';
+      html+='<input type="text" maxlength="3" placeholder="Letra" value="'+letraAtual+'" oninput="_confCtrlSobreavisos['+gi+'].letra=this.value.toUpperCase()" style="width:50px;text-align:center;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:.9rem;font-weight:900;text-transform:uppercase">';
+      html+='</div>';
+      html+='<div style="font-size:.73rem;color:var(--text2);margin-top:4px">'+nomes+'</div>';
       html+='</div>';
     });
-    html+='</div>';
   } else {
-    html+='<div style="font-size:.75rem;color:var(--text2);margin-bottom:10px;font-style:italic">Nenhum sobreaviso adicionado.</div>';
+    html+='<div style="font-size:.75rem;color:var(--text2)">Nenhum sobreaviso no controlão. Mande o controlão pelo bot primeiro.</div>';
   }
-  // Form para adicionar
-  html+='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">';
-  html+='<select id="conf-saviso-piloto" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-size:.8rem;flex:1;min-width:160px">';
-  html+='<option value="">— Selecionar piloto —</option>';
-  _confTripulantes.forEach(function(t){
-    html+='<option value="'+t.chat_id+'|'+t.posto+'|'+t.nome_guerra+'">'+t.posto+' '+t.nome_guerra+'</option>';
-  });
-  html+='</select>';
-  html+='<input id="conf-saviso-letra" type="text" placeholder="Letra (ex: B)" maxlength="3" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;width:70px;font-size:.8rem;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">';
-  html+='<select id="conf-saviso-dia" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-size:.8rem">';
-  html+='<option value="SEG">SEG</option><option value="TER">TER</option><option value="QUA">QUA</option><option value="QUI" selected>QUI</option><option value="SEX">SEX</option><option value="SÁB">SÁB</option><option value="DOM">DOM</option>';
-  html+='</select>';
-  html+='<button onclick="_confAddSaviso()" style="background:var(--yellow);color:#000;border:none;border-radius:4px;padding:5px 12px;font-size:.8rem;font-weight:900;cursor:pointer">+ Adicionar</button>';
-  html+='</div>';
   html+='</div>';
 
   // Botão enviar
@@ -4377,20 +4369,26 @@ async function _enviarSobreaviso(){
   var btn=document.getElementById('conf-send-sv-btn');
   if(btn){btn.disabled=true;btn.textContent='⏳ Enviando...';}
   try{
-    if(!_confSobreaviso||!_confSobreaviso.length){alert('Nenhum piloto adicionado no sobreaviso.');if(btn){btn.disabled=false;btn.textContent='🔔 ENVIAR SAVISO';}return;}
+    var grupos=_confCtrlSobreavisos||[];
+    if(!grupos.length){alert('Nenhum sobreaviso no controlão. Mande o controlão pelo bot primeiro.');if(btn){btn.disabled=false;btn.textContent='🔔 ENVIAR SAVISO';}return;}
+    var semLetra=grupos.filter(function(g){return!g.letra;});
+    if(semLetra.length){alert('Acerte a letra de todos os grupos antes de enviar.');if(btn){btn.disabled=false;btn.textContent='🔔 ENVIAR SAVISO';}return;}
     var messages=[];
-    _confSobreaviso.forEach(function(s){
-      if(!s.chat_id) return;
-      var letra=s.letra||'A';
-      var dadosSv={tipo:'sobreaviso',dia:s.dia||''};
-      var texto=_buildMsgOficial(letra,s.posto,s.nome,dadosSv);
-      messages.push({chat_id:s.chat_id,texto:texto,om:letra,nome:s.nome});
+    grupos.forEach(function(g){
+      var letra=g.letra.toUpperCase();
+      var diaSb=g.dia?g.dia.replace(/.*\//,'').replace('/26',''):'';
+      (g.pilotos||[]).forEach(function(p){
+        if(!p.chat_id) return;
+        var dadosSv={tipo:'sobreaviso',dia:diaSb};
+        var texto=_buildMsgOficial(letra,p.posto,p.nome,dadosSv);
+        messages.push({chat_id:p.chat_id,texto:texto,om:letra,nome:p.nome});
+      });
     });
-    if(!messages.length){alert('Nenhum piloto com chat_id no sobreaviso.');if(btn){btn.disabled=false;btn.textContent='🔔 ENVIAR SAVISO';}return;}
+    if(!messages.length){alert('Nenhum piloto com chat_id cadastrado no bot.');if(btn){btn.disabled=false;btn.textContent='🔔 ENVIAR SAVISO';}return;}
     var r=await consultaApiPost({action:'send_conf',messages:messages});
     if(r&&r.ok){
       var msg='✅ Sobreaviso enviado para '+r.enviados+' piloto(s).';
-      if(r.erros) msg+=' ⚠️ '+r.erros+' sem cadastro.';
+      if(r.erros) msg+=' ⚠️ '+r.erros+' sem chat_id.';
       alert(msg);
     } else {
       alert('Erro: '+((r&&r.error)||'Falha ao enviar'));

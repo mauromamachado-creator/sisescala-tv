@@ -31,6 +31,15 @@ function _dispatch(p) {
     shOMs.clearContents();
     shOMs.getRange(1,1).setValue(JSON.stringify(oms));
 
+    // Salva sobreaviso na aba "Sobreavisos"
+    var sbs = p.sobreavisos;
+    if (typeof sbs === 'string') sbs = JSON.parse(sbs);
+    if (Array.isArray(sbs) && sbs.length > 0) {
+      var shSb = _getOrCreate(ss, 'Sobreavisos');
+      shSb.clearContents();
+      shSb.getRange(1,1).setValue(JSON.stringify(sbs));
+    }
+
     // Aba Confirmação — todos tripulantes de todas OMs
     var sh2 = _getOrCreate(ss, 'Confirmação');
     sh2.clearContents();
@@ -81,7 +90,14 @@ function _dispatch(p) {
       });
     });
 
-    return _json({ ok: true, oms: oms2 });
+    // Lê sobreaviso
+    var shSb2 = ss.getSheetByName('Sobreavisos');
+    var sbs2 = [];
+    if (shSb2 && shSb2.getLastRow() > 0) {
+      try { sbs2 = JSON.parse(shSb2.getRange(1,1).getValue() || '[]'); } catch(e3) { sbs2 = []; }
+    }
+
+    return _json({ ok: true, oms: oms2, sobreavisos: sbs2 });
   }
 
   // ── conf_ciente ───────────────────────────────────────────────────────────
