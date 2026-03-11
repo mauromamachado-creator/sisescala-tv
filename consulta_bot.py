@@ -743,6 +743,27 @@ async def callback_handler(update: Update, context):
         return
 
     # ─── RAIO_VC: usuário escolheu VC para o raio via botão ───────────────
+    # ─── CONF_CIENTE: tripulante confirmou ciência da missão ──────────────
+    if action == "conf_ciente":
+        letra = parts[1] if len(parts) > 1 else ""
+        CONF_GAS_URL = "https://script.google.com/macros/s/AKfycbwAkuMtXPes8ciLZw_EYT6a4EAHz6wGwdBUj5Bqm5eM--rkO2Yj7uJy8USXTjTWNkEYhg/exec"
+        import httpx as _hx2
+        try:
+            async with _hx2.AsyncClient(follow_redirects=True, timeout=10) as _hc2:
+                r2 = await _hc2.post(CONF_GAS_URL, json={
+                    "action": "conf_ciente",
+                    "chat_id": str(user_id),
+                    "missao": letra
+                })
+            rj2 = r2.json()
+            logger.info("SISGOP: conf_ciente GAS user=%s missao=%s resp=%s", user_id, letra, rj2)
+            await query.edit_message_reply_markup(reply_markup=None)
+            await query.answer("✅ Ciente registrado!", show_alert=False)
+        except Exception as _ec:
+            logger.error("SISGOP: conf_ciente erro: %s", _ec)
+            await query.answer("❌ Erro ao registrar. Tenta de novo.", show_alert=True)
+        return
+
     if action == "raio_vc":
         if user_id not in ESCALANTES_AUTORIZADOS:
             await query.answer("⛔ Não autorizado.", show_alert=True)
