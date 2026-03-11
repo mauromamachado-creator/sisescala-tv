@@ -3101,8 +3101,8 @@ function gerarDiariaPDF(omId,numSolicitacao){
 // PIMO/TRP — Programa de Instrução e Manutenção Operacional
 // ═══════════════════════════════════════════════════════
 const PIMO_SHEET_ID='1Tnw8l_YXD22WB8kvpzXl53lpq7D_BFQTBFM-GkqZ5ts';
-const PIMO_LANC_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:json&sheet=Lan%C3%A7amentos`;
-const PIMO_GER_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:json&sheet=RELAT%C3%93RIO%20GERENCIAL`;
+const PIMO_LANC_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Lan%C3%A7amentos`;
+const PIMO_GER_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=RELAT%C3%93RIO%20GERENCIAL`;
 let _pimoCache=null;
 
 async function loadPimoData(){
@@ -3113,13 +3113,20 @@ async function loadPimoData(){
       fetch(PIMO_LANC_URL+'&t='+Date.now()).then(r=>r.text()),
       fetch(PIMO_GER_URL+'&t='+Date.now()).then(r=>r.text())
     ]);
-    const parseTbl=txt=>{
-      const json=JSON.parse(txt.replace(/^[^{]*/,'').replace(/;$/,''));
-      const rows=json.table.rows;
-      return rows.map(r=>r.c.map(c=>c?c.v??c.f??'':''));
+    const parseCsv=txt=>{
+      const rows=[];let cur=[],field='',inQ=false;
+      for(let i=0;i<txt.length;i++){const ch=txt[i];
+        if(inQ){if(ch==='"'&&txt[i+1]==='"'){field+='"';i++;}else if(ch==='"')inQ=false;else field+=ch;}
+        else if(ch==='"')inQ=true;
+        else if(ch===','){cur.push(field);field='';}
+        else if(ch==='\n'){cur.push(field);rows.push(cur);cur=[];field='';}
+        else if(ch!=='\r')field+=ch;
+      }
+      if(field||cur.length){cur.push(field);rows.push(cur);}
+      return rows;
     };
-    const lancRows=parseTbl(rLanc);
-    const gerRows=parseTbl(rGer);
+    const lancRows=parseCsv(rLanc);
+    const gerRows=parseCsv(rGer);
     // Parse lançamentos → último voo por tripulante
     const lastFlight={};
     lancRows.forEach(r=>{
