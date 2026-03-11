@@ -3161,9 +3161,9 @@ async function loadPimoData(){
       const d=new Date(+m[3],+m[2]-1,+m[1]);
       if(!lastFlight[nome]||d>lastFlight[nome])lastFlight[nome]=d;
     });
-    // Parse relatório gerencial → tripulantes
-    const tripulantes=[];
-    const seen=new Set();
+    // Parse relatório gerencial → mapa nome → stats
+    const gerMap={};
+    const gerSeen=new Set();
     gerRows.forEach(r=>{
       const num=(r[1]||'').toString().trim();
       const nome=(r[2]||'').toString().trim();
@@ -3173,16 +3173,28 @@ async function loadPimoData(){
       const delta=(r[7]||'').toString().trim();
       if(!num||isNaN(+num)||!nome||!qual)return;
       if(!['IN','MC','OC','TRN'].includes(qual))return;
-      if(seen.has(nome))return; // evita duplicata
+      if(gerSeen.has(nome))return;
+      gerSeen.add(nome);
+      gerMap[nome]={qual,horas,etapas:+etapas||0,delta:+delta||0};
+    });
+    // Lista mestre vem da aba Dados — inclui todos mesmo sem dados no Gerencial
+    const tripulantes=[];
+    const seen=new Set();
+    dadosRows.forEach(r=>{
+      const nome=(r[1]||'').toString().trim();
+      const funcaoRaw=(r[2]||'').toString().trim();
+      if(!nome||!funcaoRaw)return;
+      if(!['MEC VC-1','MEC VC-2','OC','COM'].includes(funcaoRaw))return;
+      if(seen.has(nome))return;
       seen.add(nome);
+      const ger=gerMap[nome]||{};
       const lf=lastFlight[nome];
       const hoje=new Date();hoje.setHours(0,0,0,0);
       const afastamento=lf?Math.floor((hoje-lf)/(86400000)):999;
-      const funcaoRaw=funcMap[nome]||'';
-      const funcao=funcaoRaw.startsWith('MEC')?'MEC':funcaoRaw||'';
+      const funcao=funcaoRaw.startsWith('MEC')?'MEC':funcaoRaw;
       const aeronave=funcaoRaw==='MEC VC-1'?'VC-1':funcaoRaw==='MEC VC-2'?'VC-2':(vcMap[nome]||'');
-      tripulantes.push({nome,qual,horas,etapas:+etapas||0,delta:+delta||0,
-        ultimoVoo:lf?lf.toLocaleDateString('pt-BR'):null,afastamento,funcao,aeronave});
+      tripulantes.push({nome,qual:ger.qual||'',horas:ger.horas||'0:00',etapas:ger.etapas||0,delta:ger.delta||0,
+        ultimoVoo:lf?lf.toLocaleDateString('pt-BR'):null,afastamento,funcao,aeronave,semDados:!ger.qual});
     });
     // Calcula média geral horas e etapas
     const horasToMin=h=>{if(!h||!h.includes(':'))return 0;const[a,b]=h.split(':').map(Number);return a*60+b;};
@@ -3297,7 +3309,7 @@ async function renderScreenPimo(){
         <div style="flex:1;min-width:0;padding-right:8px">
           <div style="font-weight:700;font-size:.9rem;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nomeShort}</div>
           <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">
-            <span style="font-size:.65rem;background:${qualCor}22;color:${qualCor};border:1px solid ${qualCor}55;padding:1px 6px;border-radius:20px;font-weight:700">${t.qual}</span>
+            ${t.qual?`<span style="font-size:.65rem;background:${qualCor}22;color:${qualCor};border:1px solid ${qualCor}55;padding:1px 6px;border-radius:20px;font-weight:700">${t.qual}</span>`:`<span style="font-size:.65rem;background:#2a2a2a;color:var(--text2);padding:1px 6px;border-radius:20px">sem dados</span>`}
             ${unid?`<span style="font-size:.65rem;background:#1a2a40;color:var(--text2);padding:1px 6px;border-radius:20px">${unid}</span>`:''}
             ${funcLabel?`<span style="font-size:.65rem;background:#1a2040;color:#a88fff;padding:1px 6px;border-radius:20px">${funcLabel}</span>`:''}
             ${anvLabel?`<span style="font-size:.65rem;background:#0a2030;color:${anvLabel==='VC-1'?'var(--vc1)':'var(--green)'};padding:1px 6px;border-radius:20px">${anvLabel}</span>`:''}
