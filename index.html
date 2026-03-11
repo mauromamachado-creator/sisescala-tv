@@ -1536,7 +1536,8 @@ function renderScreen0(){
   {
     const _done=getDiariasDownloaded();const _conc=getDiariasConcluidas();
     const _brP=['SB','SD','SN','SI','SS','SW'];
-    const _diarias=(omData||[]).filter(om=>om.pernas.every(p=>_brP.some(pf=>p.origem.startsWith(pf))&&_brP.some(pf=>p.destino.startsWith(pf))));
+    const _missaoDiaria=m=>{if(!m)return true;const u=m.toUpperCase().trim();return['PR TRLD','PR ESCAV','PR RES','ESCAV'].includes(u)||u==='PR';};
+    const _diarias=(omData||[]).filter(om=>om.pernas.every(p=>_brP.some(pf=>p.origem.startsWith(pf))&&_brP.some(pf=>p.destino.startsWith(pf)))&&_missaoDiaria(om.missao));
     const _pend=_diarias.filter(om=>!_conc[om.om]);
     const _nBiz=d=>{const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;};
     const _hj=nowBRT();_hj.setHours(0,0,0,0);
