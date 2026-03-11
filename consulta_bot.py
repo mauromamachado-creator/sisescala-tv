@@ -612,7 +612,7 @@ async def callback_handler(update: Update, context):
                 _sp2.run(["git","push","origin","main"], cwd=str(DATA_DIR.parent), capture_output=True, timeout=30)
 
                 # ── Parser controlão → set_conf no GAS ──────────────────
-                CONF_GAS_URL = "https://script.google.com/macros/s/AKfycbz8wQqdiHoKOlh4XR2tBJ3KcWBTtR0ooafEEjGdq6hecoPDBvVFoLYi4S8s7UU4S1nk/exec"
+                CONF_GAS_URL = "https://script.google.com/macros/s/AKfycbwAkuMtXPes8ciLZw_EYT6a4EAHz6wGwdBUj5Bqm5eM--rkO2Yj7uJy8USXTjTWNkEYhg/exec"
                 POSTOS_RE = r'(?:TEN-BRIG|MAJ-BRIG|BRIG|CEL|TC|MJ|CP|1T|2T|ST|SO|CB|SD|1S|2S|3S)'
 
                 # Extrai seção ORDEM DE MISSÃO
