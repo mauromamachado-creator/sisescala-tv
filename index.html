@@ -2480,7 +2480,13 @@ async function fetchPdfGerado(){
       const payload=await r.json();
       const list=Array.isArray(payload)?[]:(payload.pdfs_gerados||[]);
       const map={};
-      (list||[]).forEach(x=>{if(x&&x.om_id)map[x.om_id]=new Date(x.data_geracao||Date.now()).getTime();});
+      (list||[]).forEach(x=>{
+        if(!x) return;
+        // suporta string simples ("OM-101") e objeto ({om_id, data_geracao})
+        const id = typeof x==='string' ? x : x.om_id;
+        const ts = typeof x==='string' ? Date.now() : new Date(x.data_geracao||Date.now()).getTime();
+        if(id) map[id]=ts;
+      });
       _pdfGeradoCache=map;
       localStorage.setItem('sisgopa_diarias_done',JSON.stringify(map));
       return map;
@@ -2511,7 +2517,14 @@ async function fetchDiariasConcluidas(){
     const payload=await r.json();
     const rows=Array.isArray(payload)?payload:(payload.concluidas||[]);
     const map={};
-    (rows||[]).forEach(row=>{if(row&&row.status==='CONCLUIDA'&&row.om_id)map[row.om_id]=new Date(row.data_conclusao||Date.now()).getTime();});
+    (rows||[]).forEach(row=>{
+      if(!row) return;
+      // suporta string simples ("OM-101") e objeto ({om_id, status, data_conclusao})
+      const id = typeof row==='string' ? row : row.om_id;
+      const ok = typeof row==='string' ? true : (row.status==='CONCLUIDA'||row.status===undefined);
+      const ts = typeof row==='string' ? Date.now() : new Date(row.data_conclusao||Date.now()).getTime();
+      if(id && ok) map[id]=ts;
+    });
     _diariasCache=map;
     localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(map));
     return map;
