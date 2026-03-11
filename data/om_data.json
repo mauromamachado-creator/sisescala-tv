@@ -430,6 +430,76 @@
     "missao": "ALT SOLO"
   },
   {
+    "aeronave": "VC-1",
+    "om_numero": "104/GTE-1/2026",
+    "om": "104/GTE-1/2026",
+    "fab": "FAB 2101",
+    "data": "12/03/26",
+    "tripulacao": [
+      "CP THIAGO VASCONCELOS (TVS / 563.133)",
+      "CP LINCCON (LIN / 574.187)",
+      "2S LAMELLAS (553.792)",
+      "1S CAMPOS (527.127)",
+      "2S ANDRESSA (559.987)",
+      "2S MIGUEL (524.082)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "12/03/26 - 18:00 Z",
+        "ete": "01:00",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "12/03/26 - 19:00 Z",
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 9000
+      }
+    ],
+    "file_id": "137B-ohGfyevXNxcrmIdLVeCdvsZTxnUZ",
+    "file_ids": [
+      "137B-ohGfyevXNxcrmIdLVeCdvsZTxnUZ"
+    ],
+    "tipo": "VER",
+    "missao": "PR VER"
+  },
+  {
+    "aeronave": "VC-2",
+    "om_numero": "105/GTE-1/2026",
+    "om": "105/GTE-1/2026",
+    "fab": "FAB 2590",
+    "data": "12/03/26",
+    "tripulacao": [
+      "MJ DA SILVA (DSA / 553.262)",
+      "CP SAMPAIO (SAM / 563.661)",
+      "SO JÚLIO CEZAR (493.661)",
+      "2S TADEU CAVALCANTE (564.971)",
+      "1S MACÊDO (522.897)",
+      "2S CELESTE (569.985)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "12/03/26 - 19:00 Z",
+        "ete": "01:00",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "12/03/26 - 20:00 Z",
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 7500
+      }
+    ],
+    "file_id": "1e7PtPreF-FMjQ0k_bun907oB9nFRjOqu",
+    "file_ids": [
+      "1e7PtPreF-FMjQ0k_bun907oB9nFRjOqu"
+    ],
+    "tipo": "VER",
+    "missao": "PR VER"
+  },
+  {
     "aeronave": "VC-2",
     "om_numero": "102/GTE-1/2026",
     "om": "102/GTE-1/2026",
