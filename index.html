@@ -291,17 +291,17 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 .cal-grid{margin-top:12px}
 .cal-header-row{display:grid;grid-template-columns:repeat(7,1fr);gap:0}
 .cal-header{text-align:center;font-size:.68rem;color:var(--text2);padding:6px 0;font-weight:900;text-transform:uppercase}
-.cal-week{margin-bottom:2px}
+.cal-week{margin-bottom:2px;position:relative}
 .cal-week-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-.cal-day{min-height:56px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:.7rem;position:relative}
+.cal-day{min-height:64px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:4px 6px 24px;font-size:.7rem;position:relative}
 .cal-day.today{border:2px solid var(--vc1);background:rgba(0,255,255,.05)}
 .cal-day.other-month{opacity:.3}
 .cal-day .day-num{font-weight:900;font-size:.78rem;margin-bottom:2px}
 .cal-day .cal-event{padding:2px 4px;border-radius:3px;font-size:.58rem;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default}
 .cal-event.ev-mission{background:rgba(0,255,136,.15);color:var(--green);border-left:2px solid var(--green)}
 .cal-event.ev-intl{background:rgba(0,255,255,.12);color:var(--vc1);border-left:2px solid var(--vc1)}
-.cal-week-bars{position:relative;height:0}
-.cal-span-bar{position:absolute;height:18px;line-height:18px;font-size:.6rem;font-weight:700;padding:0 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:default;top:2px;z-index:2}
+.cal-week-bars{position:absolute;bottom:4px;left:0;right:0;pointer-events:none}
+.cal-span-bar{position:absolute;height:18px;line-height:18px;font-size:.6rem;font-weight:700;padding:0 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:default;z-index:2;pointer-events:auto}
 .cal-span-bar.ev-intl{background:rgba(0,255,255,.25);color:var(--vc1);border-top:2px solid var(--vc1);border-bottom:2px solid var(--vc1)}
 .cal-span-bar.ev-mission{background:rgba(0,255,136,.25);color:var(--green);border-top:2px solid var(--green);border-bottom:2px solid var(--green)}
 .cal-nav{display:flex;align-items:center;gap:16px}
@@ -1892,9 +1892,9 @@ function renderScreenCalendar(){
     });
     html+='</div>';
 
-    // Camada de barras contínuas
+    // Camada de barras contínuas — dentro dos dias, no fundo
     if(nBars>0){
-      html+=`<div class="cal-week-bars" style="height:${nBars*(BAR_H+2)+4}px">`;
+      html+=`<div class="cal-week-bars" style="height:${nBars*(BAR_H+2)}px">`;
       wBars.forEach(function(sp,lane){
         const barStart=Math.max(sp.start,wStart);
         const barEnd=Math.min(sp.end,wEnd);
