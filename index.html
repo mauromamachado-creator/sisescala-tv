@@ -3103,15 +3103,17 @@ function gerarDiariaPDF(omId,numSolicitacao){
 const PIMO_SHEET_ID='1Tnw8l_YXD22WB8kvpzXl53lpq7D_BFQTBFM-GkqZ5ts';
 const PIMO_LANC_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Lan%C3%A7amentos`;
 const PIMO_GER_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=RELAT%C3%93RIO%20GERENCIAL`;
+const PIMO_DADOS_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Dados`;
 let _pimoCache=null;
 
 async function loadPimoData(){
   if(_pimoCache)return _pimoCache;
   try{
     // Carrega lançamentos e relatório gerencial em paralelo
-    const [rLanc,rGer]=await Promise.all([
+    const [rLanc,rGer,rDados]=await Promise.all([
       fetch(PIMO_LANC_URL+'&t='+Date.now()).then(r=>r.text()),
-      fetch(PIMO_GER_URL+'&t='+Date.now()).then(r=>r.text())
+      fetch(PIMO_GER_URL+'&t='+Date.now()).then(r=>r.text()),
+      fetch(PIMO_DADOS_URL+'&t='+Date.now()).then(r=>r.text())
     ]);
     const parseCsv=txt=>{
       const rows=[];let cur=[],field='',inQ=false;
@@ -3127,6 +3129,27 @@ async function loadPimoData(){
     };
     const lancRows=parseCsv(rLanc);
     const gerRows=parseCsv(rGer);
+    const dadosRows=parseCsv(rDados);
+    // Mapa nome → função (MEC VC-1, MEC VC-2, OC, COM)
+    const funcMap={};
+    dadosRows.forEach(r=>{
+      const nome=(r[1]||'').trim();
+      const func=(r[2]||'').trim();
+      if(nome&&func)funcMap[nome]=func;
+    });
+    // Mapa nome → aeronave principal (VC-1 ou VC-2, pelo maior número de voos)
+    const vcCount={};
+    lancRows.slice(2).forEach(r=>{
+      const nome=(r[4]||'').trim();
+      const anv=(r[8]||'').trim();
+      if(!nome||!anv)return;
+      if(!vcCount[nome])vcCount[nome]={};
+      vcCount[nome][anv]=(vcCount[nome][anv]||0)+1;
+    });
+    const vcMap={};
+    Object.entries(vcCount).forEach(([nome,counts])=>{
+      vcMap[nome]=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0]||'';
+    });
     // Parse lançamentos → último voo por tripulante
     const lastFlight={};
     lancRows.forEach(r=>{
@@ -3155,8 +3178,11 @@ async function loadPimoData(){
       const lf=lastFlight[nome];
       const hoje=new Date();hoje.setHours(0,0,0,0);
       const afastamento=lf?Math.floor((hoje-lf)/(86400000)):999;
+      const funcaoRaw=funcMap[nome]||'';
+      const funcao=funcaoRaw.startsWith('MEC')?'MEC':funcaoRaw||'';
+      const aeronave=funcaoRaw==='MEC VC-1'?'VC-1':funcaoRaw==='MEC VC-2'?'VC-2':(vcMap[nome]||'');
       tripulantes.push({nome,qual,horas,etapas:+etapas||0,delta:+delta||0,
-        ultimoVoo:lf?lf.toLocaleDateString('pt-BR'):null,afastamento});
+        ultimoVoo:lf?lf.toLocaleDateString('pt-BR'):null,afastamento,funcao,aeronave});
     });
     // Calcula média geral horas e etapas
     const horasToMin=h=>{if(!h||!h.includes(':'))return 0;const[a,b]=h.split(':').map(Number);return a*60+b;};
@@ -3182,7 +3208,12 @@ async function renderScreenPimo(){
   if(!data){c.innerHTML='<div style="text-align:center;padding:60px;color:var(--red)">❌ Erro ao carregar dados PIMO.</div>';return;}
   const{tripulantes,avgHoras,avgEtapas,maxHoras,maxEtapas}=data;
   let busca=(window._pimoBusca||'').toLowerCase();
-  const filtrados=busca?tripulantes.filter(t=>t.nome.toLowerCase().includes(busca)):tripulantes;
+  const filtroFunc=window._pimoFuncao||'';
+  const filtroAnv=window._pimoAnv||'';
+  let filtrados=tripulantes;
+  if(busca)filtrados=filtrados.filter(t=>t.nome.toLowerCase().includes(busca));
+  if(filtroFunc)filtrados=filtrados.filter(t=>t.funcao===filtroFunc);
+  if(filtroAnv)filtrados=filtrados.filter(t=>t.aeronave===filtroAnv);
   const sorted=[...filtrados];
   const sortBy=window._pimoSort||'afastamento';
   if(sortBy==='horas')sorted.sort((a,b)=>b.horasMin-a.horasMin);
@@ -3211,6 +3242,21 @@ async function renderScreenPimo(){
       <button onclick="window._pimoSort='etapas';renderScreenPimo()" style="padding:6px 10px;border-radius:6px;border:1px solid ${sortBy==='etapas'?'var(--yellow)':'var(--border)'};background:${sortBy==='etapas'?'rgba(255,200,50,.1)':'var(--bg2)'};color:${sortBy==='etapas'?'var(--yellow)':'var(--text2)'};font-size:.78rem;cursor:pointer">✈️ Etapas</button>
     </div>
   </div>
+  <!-- Filtros função e aeronave -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+    <span style="font-size:.75rem;color:var(--text2);align-self:center">Função:</span>
+    ${['','MEC','OC','COM'].map(f=>{
+      const lbl=f===''?'Todos':f==='MEC'?'Mecânico':f==='OC'?'Op. Comunicações':'Comissário';
+      const on=filtroFunc===f;
+      return `<button onclick="window._pimoFuncao='${f}';renderScreenPimo()" style="padding:5px 10px;border-radius:6px;border:1px solid ${on?'var(--vc1)':'var(--border)'};background:${on?'rgba(0,212,255,.12)':'var(--bg2)'};color:${on?'var(--vc1)':'var(--text2)'};font-size:.75rem;cursor:pointer">${lbl}</button>`;
+    }).join('')}
+    <span style="font-size:.75rem;color:var(--text2);align-self:center;margin-left:8px">Aeronave:</span>
+    ${['','VC-1','VC-2'].map(v=>{
+      const on=filtroAnv===v;
+      const cor=v==='VC-1'?'var(--vc1)':v==='VC-2'?'var(--green)':'var(--text2)';
+      return `<button onclick="window._pimoAnv='${v}';renderScreenPimo()" style="padding:5px 10px;border-radius:6px;border:1px solid ${on?cor:'var(--border)'};background:${on?'rgba(255,255,255,.06)':'var(--bg2)'};color:${on?cor:'var(--text2)'};font-size:.75rem;cursor:pointer">${v||'Todos'}</button>`;
+    }).join('')}
+  </div>
 
   <!-- Rankings -->
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
@@ -3236,20 +3282,24 @@ async function renderScreenPimo(){
   sorted.forEach(t=>{
     const afCor=_pimoAfastCor(t.afastamento);
     const qualCor=_pimoQualBadge(t.qual);
-    const afTxt=t.afastamento<0?'Voou hoje':t.afastamento===0?'Voou hoje':t.afastamento===999?'Sem registro':t.afastamento+'d atrás';
+    const afTxt=t.afastamento<=0?'Voou hoje':t.afastamento===999?'Sem registro':t.afastamento+'d atrás';
     const nomeShort=t.nome.replace(/ \((GTE|PR)\)/,'');
     const unid=t.nome.includes('(GTE)')?'GTE':t.nome.includes('(PR)')?'PR':'';
-    html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;position:relative">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
-        <div>
-          <div style="font-weight:700;font-size:.9rem;color:var(--text1)">${nomeShort}</div>
-          <div style="display:flex;gap:4px;margin-top:3px">
+    const funcLabel=t.funcao==='MEC'?'MEC':t.funcao==='OC'?'OC':t.funcao==='COM'?'COM':'';
+    const anvLabel=t.aeronave||'';
+    html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
+        <div style="flex:1;min-width:0;padding-right:8px">
+          <div style="font-weight:700;font-size:.9rem;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nomeShort}</div>
+          <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">
             <span style="font-size:.65rem;background:${qualCor}22;color:${qualCor};border:1px solid ${qualCor}55;padding:1px 6px;border-radius:20px;font-weight:700">${t.qual}</span>
             ${unid?`<span style="font-size:.65rem;background:#1a2a40;color:var(--text2);padding:1px 6px;border-radius:20px">${unid}</span>`:''}
+            ${funcLabel?`<span style="font-size:.65rem;background:#1a2040;color:#a88fff;padding:1px 6px;border-radius:20px">${funcLabel}</span>`:''}
+            ${anvLabel?`<span style="font-size:.65rem;background:#0a2030;color:${anvLabel==='VC-1'?'var(--vc1)':'var(--green)'};padding:1px 6px;border-radius:20px">${anvLabel}</span>`:''}
           </div>
         </div>
-        <div style="text-align:right">
-          <div style="font-size:.85rem;font-weight:700;color:${afCor}">${afTxt}</div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:.82rem;font-weight:700;color:${afCor}">${afTxt}</div>
           <div style="font-size:.65rem;color:var(--text2)">${t.ultimoVoo?'último: '+t.ultimoVoo:'sem registro'}</div>
         </div>
       </div>
@@ -3271,7 +3321,6 @@ async function renderScreenPimo(){
           <div style="height:100%;width:${t.etapasPct||0}%;background:var(--yellow);border-radius:4px;transition:.3s"></div>
         </div>
       </div>
-      ${t.delta>15?`<div style="position:absolute;top:10px;right:10px;font-size:.6rem;background:rgba(255,68,68,.15);color:var(--red);border:1px solid rgba(255,68,68,.3);padding:2px 5px;border-radius:4px">+${t.delta}d afastado</div>`:''}
     </div>`;
   });
 
