@@ -689,7 +689,12 @@ async def callback_handler(update: Update, context):
                     # Tripulantes
                     trip_b = re.findall(r'^(?:IN|OC|CM|AD|SB|BJ|BO|PX|NA)\s+(' + _POSTOS_R + r')\s+(.+?)$', blk, re.MULTILINE)
                     # Pernas (só do bloco)
-                    pernas_b = re.findall(r'([A-Z]{4})\s+\([^)]+\)\s+([\d/]+ - [\d:]+ Z[^P\n]*?)\s+[\d:]+\s+([A-Z]{4})\s+\([^)]+\)\s+([\d/]+ - [\d:]+ Z[^\n]*)', blk)
+                    # Captura pernas normais (com hora Z) e ADET
+                    _HORA_RE = r'(?:[\d:]+ Z[^\n]*?|ADET)'
+                    pernas_b = re.findall(
+                        r'([A-Z]{4})\s+\([^)]+\)\s+([\d/]+ - ' + _HORA_RE + r')\s+[\d:]+\s+([A-Z]{4})\s+\([^)]+\)\s+([\d/]+ - ' + _HORA_RE + r'[^\n]*)',
+                        blk
+                    )
                     if trip_b:  # só inclui OMs com tripulantes
                         oms_encontradas.append({
                             "om": om_id, "anv": anv_b, "fab": fab_b,
