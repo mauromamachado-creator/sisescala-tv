@@ -4065,15 +4065,18 @@ var _confLetras={};
 function _confSetLetra(nome,val){_confLetras[nome]=val.toUpperCase();var el=document.getElementById('confprev_'+nome.replace(/\W/g,'_'));if(el&&_confDados)el.textContent=_buildMsgOficial(val.toUpperCase(),_confDados._postoOf&&_confDados._postoOf[nome]||'',nome,_confDados);}
 function _limpaPerna(p){
   // Entrada: "SBBR 06/03/26 - 11:00 Z (-3) → SBSC 06/03/26 - 12:20 Z (-3) SBGL 9000  PR TLD"
-  // Saída:   "SBBR 06/03/26 11:00 → SBSC 06/03/26 12:20"
+  // Saída:   "06/03/26 11:00 - SBBR / SBSC - PR TLD"
   var s=String(p.raw||p);
-  // Extrai origem/hora e destino/hora via regex
-  var m=s.match(/([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:]+)\s*Z[^→]*→\s*([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:]+)/);
-  if(m) return m[1]+' '+m[2]+' '+m[3]+' → '+m[4]+' '+m[5]+' '+m[6];
-  // Fallback: remove fuso e tudo após o destino
-  s=s.replace(/\s*Z\s*\([^)]+\)/g,'').replace(/\s*Z\b/g,'').replace(/-\s*/g,'').replace(/\s{2,}/g,' ');
-  s=s.replace(/([A-Z]{4}\s+[\d\/]+\s+[\d:]+\s*→\s*[A-Z]{4}\s+[\d\/]+\s+[\d:]+).*/,'$1');
-  return s.trim();
+  var m=s.match(/([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:Adet]+)\s*Z?[^→]*→\s*([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:Adet]+)\s*Z[^A-Z]*([A-Z]{4})\s+[\d]+\s+([\w\s\/]+?)$/i);
+  if(m){
+    var hora1=m[3].trim(); var hora2=m[6].trim();
+    var tipo=m[8].trim();
+    return m[2]+' '+hora1+' - '+m[1]+' / '+m[4]+' - '+tipo;
+  }
+  // Fallback sem tipo
+  var m2=s.match(/([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:Adet]+)[^→]*→\s*([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:Adet]+)/i);
+  if(m2) return m2[2]+' '+m2[3].trim()+' - '+m2[1]+' / '+m2[4];
+  return s;
 }
 
 function _buildMsgOficial(letra,posto,nome,dados){
