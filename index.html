@@ -4064,17 +4064,18 @@ var _confLetra='A';
 var _confLetras={};
 function _confSetLetra(nome,val){_confLetras[nome]=val.toUpperCase();var el=document.getElementById('confprev_'+nome.replace(/\W/g,'_'));if(el&&_confDados)el.textContent=_buildMsgOficial(val.toUpperCase(),_confDados._postoOf&&_confDados._postoOf[nome]||'',nome,_confDados);}
 function _limpaPerna(p){
-  // Entrada: "SBBR 06/03/26 - 11:00 Z (-3) → SBSC 06/03/26 - 12:20 Z (-3) SBGL 9000  PR TLD"
-  // Saída:   "06/03/26 11:00 - SBBR / SBSC - PR TLD"
+  // Entrada normal: "SBBR 06/03/26 - 11:00 Z (-3) → SBSC 06/03/26 - 12:20 Z (-3) SBGL 9000  PR TLD"
+  // Entrada ADET:   "SBSP (PAVOF) 08/03/26 - ADET 01:20 SBBR (EST AUT) 08/03/26 - ADET SBCF 9000  PR"
+  // Saída:          "DD/MM/YY HH:MM - ORIG / DEST - TIPO"
   var s=String(p.raw||p);
-  var m=s.match(/([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:Adet]+)\s*Z?[^→]*→\s*([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:Adet]+)\s*Z[^A-Z]*([A-Z]{4})\s+[\d]+\s+([\w\s\/]+?)$/i);
-  if(m){
-    var hora1=m[3].trim(); var hora2=m[6].trim();
-    var tipo=m[8].trim();
-    return m[2]+' '+hora1+' - '+m[1]+' / '+m[4]+' - '+tipo;
-  }
+  // Perna normal com →
+  var m=s.match(/([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:]+)\s*Z?[^→]*→\s*([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:]+)\s*Z[^A-Z]*([A-Z]{4})\s+[\d]+\s+([\w\s\/]+?)$/i);
+  if(m) return m[2]+' '+m[3].trim()+' - '+m[1]+' / '+m[4]+' - '+m[8].trim();
+  // Perna ADET (sem → e sem Z)
+  var ma=s.match(/([A-Z]{4})[^0-9]*([\d\/]+)\s*-\s*ADET[^A-Z]*([A-Z]{4})[^0-9]*([\d\/]+)\s*-\s*ADET\s+([A-Z]{4})\s+[\d]+\s+([\w\s\/]+?)$/i);
+  if(ma) return ma[2]+' ADET - '+ma[1]+' / '+ma[3]+' - '+ma[6].trim();
   // Fallback sem tipo
-  var m2=s.match(/([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:Adet]+)[^→]*→\s*([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:Adet]+)/i);
+  var m2=s.match(/([A-Z]{4})\s+([\d\/]+)\s*-?\s*([\d:]+)[^→]*→\s*([A-Z]{4})/i);
   if(m2) return m2[2]+' '+m2[3].trim()+' - '+m2[1]+' / '+m2[4];
   return s;
 }
