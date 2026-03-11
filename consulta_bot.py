@@ -53,6 +53,7 @@ TELEFONE_CONTATO = "Escala GTE-1: (61) 99965-5801"
 # Para adicionar: incluir chat_id e nome do escalante
 ESCALANTES_AUTORIZADOS = {
     673591486: "MJ MACHADO",   # Mauro Machado (admin)
+    1022713803: "MJ OSVALDO",  # MJ Osvaldo
     827091454: "CP BARCELOS",  # Escala GTE-1
 }
 GAS_URL = "https://script.google.com/macros/s/AKfycbyDdqWqCKLoCVwgajS3kr4o6q2MHx3UYxwe2o-28JbFCS__NhV2l2OqFlUT-cyRu-Vg/exec"
