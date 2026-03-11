@@ -4082,22 +4082,28 @@ function s3RenderConfirmacao(container){
   container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
 
   Promise.all([
-    fetch(CONF_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
     fetch(CONF_GAS+'?action=get_conf&t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
     fetch(CONSULTA_GAS+'?action=get_tripulantes&t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
   ]).then(function(results){
-    var raw=results[0];
-    var gasConf=results[1];
-    var gt=results[2];
-    _confDados=raw&&raw.dados?raw.dados:null;
-    // Cientes vêm do GAS (fonte de verdade)
+    var gasConf=results[0];
+    var gt=results[1];
+    // GAS é fonte principal
     _confCientes={};
-    if(gasConf&&gasConf.oficiais){
-      gasConf.oficiais.forEach(function(o){
+    if(gasConf&&gasConf.oficiais&&gasConf.oficiais.length>0){
+      var oficiais=gasConf.oficiais;
+      _confDados={
+        missao_ativa: gasConf.missao||'',
+        anv: gasConf.anv||'',
+        pernas: gasConf.pernas||[],
+        obs: gasConf.obs||'',
+        tripulantes: oficiais.map(function(o){return{posto:o.posto,nome:o.nome,funcao:'IN'};}),
+        gerado_em: ''
+      };
+      oficiais.forEach(function(o){
         if(o.ciente) _confCientes[o.chat_id]={nome:o.posto+' '+o.nome,timestamp:o.timestamp};
       });
-      // Preserva missão/ANV/pernas do GAS se não tiver no raw
-      if(_confDados&&!_confDados.missao_ativa) _confDados._missao=gasConf.missao||'';
+    } else {
+      _confDados=null;
     }
     _confTripulantes=gt&&gt.tripulantes?gt.tripulantes:[];
     _renderConfView(container);
