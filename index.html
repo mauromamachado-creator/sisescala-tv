@@ -3725,14 +3725,14 @@ function consultaBuildMissoesHTML(){
       h+='<div class="consulta-row" style="flex-wrap:wrap;gap:6px"><span class="consulta-label">Saída:</span>';
       h+='<input class="consulta-input cmissao-input" id="'+prefix+'dataDia" placeholder="08" value="'+(m.dataDia||'').replace(/"/g,'&quot;')+'" style="max-width:55px;text-align:center" title="Dia">';
       h+='<select class="consulta-input cmissao-input" id="'+prefix+'diaSemSaida" style="max-width:90px">';
-      diasSemana.forEach(function(d){h+='<option value="'+d+'"'+((m.diaSemSaida||'')=== d?' selected':'')+'>'+d+'</option>';});
+      ['SEG','TER','QUA','QUI','SEX','SÁB','DOM','ADET'].forEach(function(d){h+='<option value="'+d+'"'+((m.diaSemSaida||'')=== d?' selected':'')+'>'+d+'</option>';});
       h+='</select>';
       h+='<input class="consulta-input cmissao-input" id="'+prefix+'horario" placeholder="1600" value="'+(m.horario||'').replace(/"/g,'&quot;')+'" style="max-width:70px;text-align:center" title="Hora saída">';
       h+='</div>';
       h+='<div class="consulta-row" style="flex-wrap:wrap;gap:6px"><span class="consulta-label">Retorno:</span>';
       h+='<input class="consulta-input cmissao-input" id="'+prefix+'dataDiaRet" placeholder="09" value="'+(m.dataDiaRet||'').replace(/"/g,'&quot;')+'" style="max-width:55px;text-align:center" title="Dia retorno">';
       h+='<select class="consulta-input cmissao-input" id="'+prefix+'diaSemRet" style="max-width:90px">';
-      diasSemana.forEach(function(d){h+='<option value="'+d+'"'+((m.diaSemRet||'')=== d?' selected':'')+'>'+d+'</option>';});
+      ['SEG','TER','QUA','QUI','SEX','SÁB','DOM','ADET'].forEach(function(d){h+='<option value="'+d+'"'+((m.diaSemRet||'')=== d?' selected':'')+'>'+d+'</option>';});
       h+='</select>';
       h+='<input class="consulta-input cmissao-input" id="'+prefix+'horarioRet" placeholder="0800" value="'+(m.horarioRet||'').replace(/"/g,'&quot;')+'" style="max-width:70px;text-align:center" title="Hora retorno">';
       h+='</div>';
