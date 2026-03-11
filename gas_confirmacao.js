@@ -1,6 +1,6 @@
-// GAS - SisGOPA Confirmação de Missão
-// Planilha separada, independente da consulta/raio
-// Ações: set_conf, conf_ciente, get_conf
+// GAS - SisGOPA Confirmação de Missão v2
+// Suporte a múltiplas OMs por controlão
+// Ações: set_conf_all, get_conf_all, conf_ciente, set_conf (compat)
 
 var SS_ID = '15MyzYrdwfkX2jChz-aokq2g1mMfThayBsDMx3tGlvxA';
 var BOT_TOKEN = '8429586140:AAHZbra0vRJU-E4KQcNEp1ZvqkyGsQg2ShU';
@@ -16,97 +16,112 @@ function doPost(e) {
 }
 
 function _dispatch(p) {
-  var action = p.action || 'get_conf';
+  var action = p.action || 'get_conf_all';
   var ss = SpreadsheetApp.openById(SS_ID);
 
-  // ── get_conf ─────────────────────────────────────────────────────────────
-  if (action === 'get_conf') {
-    var sh = ss.getSheetByName('Confirmação');
-    if (!sh || sh.getLastRow() < 2) return _json({ ok: true, oficiais: [], missao: '', anv: '', pernas: [], obs: '' });
-    var rows = sh.getDataRange().getValues();
-    // Linha 1 = header; linha 0 do array
-    var meta = rows[1] || []; // Row 2 = meta: missao, anv, obs, pernas (JSON)
-    var missao = '';
-    var anv = '';
-    var obs = '';
-    var pernas = [];
-    // Meta está na aba "Meta" separada
-    var shMeta = ss.getSheetByName('Meta');
-    if (shMeta && shMeta.getLastRow() > 0) {
-      var metaVals = shMeta.getDataRange().getValues();
-      missao = metaVals[0] ? String(metaVals[0][1] || '') : '';
-      anv    = metaVals[1] ? String(metaVals[1][1] || '') : '';
-      obs    = metaVals[2] ? String(metaVals[2][1] || '') : '';
-      try { pernas = JSON.parse(metaVals[3] ? String(metaVals[3][1] || '[]') : '[]'); } catch(e2) { pernas = []; }
-    }
-    var oficiais = [];
-    for (var i = 1; i < rows.length; i++) {
-      var r = rows[i];
-      if (!r[0]) continue;
-      oficiais.push({
-        posto:     String(r[0] || ''),
-        nome:      String(r[1] || ''),
-        chat_id:   String(r[2] || ''),
-        missao:    String(r[3] || ''),
-        ciente:    r[4] === true || String(r[4]).toLowerCase() === 'true',
-        timestamp: String(r[5] || '')
-      });
-    }
-    return _json({ ok: true, oficiais: oficiais, missao: missao, anv: anv, obs: obs, pernas: pernas });
-  }
+  // ── set_conf_all ─────────────────────────────────────────────────────────
+  // Recebe: { action, oms: [ {om, anv, fab, pernas:[str], tripulantes:[{posto,nome,chat_id}]} ] }
+  if (action === 'set_conf_all') {
+    var oms = p.oms;
+    if (typeof oms === 'string') oms = JSON.parse(oms);
+    if (!Array.isArray(oms) || oms.length === 0) return _json({ ok: false, error: 'Nenhuma OM fornecida' });
 
-  // ── set_conf ──────────────────────────────────────────────────────────────
-  // Recebe: {action, missao, anv, obs, pernas:[str], oficiais:[{posto,nome,chat_id}]}
-  if (action === 'set_conf') {
-    var oficiais2 = p.oficiais;
-    if (typeof oficiais2 === 'string') oficiais2 = JSON.parse(oficiais2);
-    var pernas2 = p.pernas;
-    if (typeof pernas2 === 'string') pernas2 = JSON.parse(pernas2);
+    // Salva todas OMs como JSON na aba "OMs"
+    var shOMs = _getOrCreate(ss, 'OMs');
+    shOMs.clearContents();
+    shOMs.getRange(1,1).setValue(JSON.stringify(oms));
 
-    // Aba Confirmação — limpa e repopula
+    // Aba Confirmação — todos tripulantes de todas OMs
     var sh2 = _getOrCreate(ss, 'Confirmação');
     sh2.clearContents();
-    sh2.getRange(1,1,1,6).setValues([['posto','nome','chat_id','missao','ciente','timestamp']]);
-    if (Array.isArray(oficiais2) && oficiais2.length > 0) {
-      var rows2 = oficiais2.map(function(o) {
-        return [o.posto||'', o.nome||'', String(o.chat_id||''), p.missao||'', false, ''];
+    sh2.getRange(1,1,1,7).setValues([['posto','nome','chat_id','om','anv','ciente','timestamp']]);
+    var rows2 = [];
+    oms.forEach(function(om) {
+      var trip = om.tripulantes || [];
+      var anv_str = (om.anv || '') + (om.fab ? ' / FAB ' + om.fab : '');
+      trip.forEach(function(t) {
+        rows2.push([t.posto||'', t.nome||'', String(t.chat_id||''), om.om||'', anv_str, false, '']);
       });
-      sh2.getRange(2,1,rows2.length,6).setValues(rows2);
+    });
+    if (rows2.length > 0) sh2.getRange(2,1,rows2.length,7).setValues(rows2);
+
+    return _json({ ok: true, oms: oms.length, tripulantes: rows2.length });
+  }
+
+  // ── get_conf_all ─────────────────────────────────────────────────────────
+  if (action === 'get_conf_all' || action === 'get_conf') {
+    // Lê todas as OMs
+    var shOMs2 = ss.getSheetByName('OMs');
+    var oms2 = [];
+    if (shOMs2 && shOMs2.getLastRow() > 0) {
+      try { oms2 = JSON.parse(shOMs2.getRange(1,1).getValue() || '[]'); } catch(e2) { oms2 = []; }
     }
 
-    // Aba Meta — salva metadados da missão
-    var shM = _getOrCreate(ss, 'Meta');
-    shM.clearContents();
-    shM.getRange(1,1,4,2).setValues([
-      ['missao', p.missao || ''],
-      ['anv',    p.anv    || ''],
-      ['obs',    p.obs    || ''],
-      ['pernas', JSON.stringify(Array.isArray(pernas2) ? pernas2 : [])]
-    ]);
+    // Lê status de ciência de cada tripulante
+    var sh3 = ss.getSheetByName('Confirmação');
+    var cienMap = {}; // chat_id+om → {ciente, timestamp}
+    if (sh3 && sh3.getLastRow() > 1) {
+      var vals3 = sh3.getDataRange().getValues();
+      for (var i = 1; i < vals3.length; i++) {
+        var r = vals3[i];
+        var key = String(r[2]) + '|' + String(r[3]);
+        cienMap[key] = { ciente: r[5] === true || String(r[5]).toLowerCase() === 'true', timestamp: String(r[6]||'') };
+      }
+    }
 
-    return _json({ ok: true, count: Array.isArray(oficiais2) ? oficiais2.length : 0 });
+    // Enriquece OMs com status de ciência
+    oms2.forEach(function(om) {
+      var anv_str = (om.anv || '') + (om.fab ? ' / FAB ' + om.fab : '');
+      om.anv_str = anv_str;
+      (om.tripulantes || []).forEach(function(t) {
+        var key = String(t.chat_id||'') + '|' + (om.om||'');
+        var st = cienMap[key] || {};
+        t.ciente = st.ciente || false;
+        t.timestamp = st.timestamp || '';
+      });
+    });
+
+    return _json({ ok: true, oms: oms2 });
   }
 
   // ── conf_ciente ───────────────────────────────────────────────────────────
-  // Recebe: {action, chat_id, nome, timestamp}
   if (action === 'conf_ciente') {
-    var sh3 = ss.getSheetByName('Confirmação');
-    if (!sh3) return _json({ ok: false, error: 'Aba Confirmação não encontrada' });
-    var vals3 = sh3.getDataRange().getValues();
+    var sh4 = ss.getSheetByName('Confirmação');
+    if (!sh4) return _json({ ok: false, error: 'Aba Confirmação não encontrada' });
+    var vals4 = sh4.getDataRange().getValues();
     var cid = String(p.chat_id || '').trim();
-    var ts  = p.timestamp || new Date().toISOString();
-    for (var j = 1; j < vals3.length; j++) {
-      if (String(vals3[j][2]).trim() === cid) {
-        sh3.getRange(j+1, 5, 1, 2).setValues([[true, ts]]);
+    var om_id = String(p.om || '').trim();
+    var ts = p.timestamp || new Date().toISOString();
+    for (var j = 1; j < vals4.length; j++) {
+      var match_cid = String(vals4[j][2]).trim() === cid;
+      var match_om = !om_id || String(vals4[j][3]).trim() === om_id;
+      if (match_cid && match_om) {
+        sh4.getRange(j+1, 6, 1, 2).setValues([[true, ts]]);
         return _json({ ok: true });
       }
     }
-    return _json({ ok: false, error: 'Oficial não encontrado: ' + cid });
+    return _json({ ok: false, error: 'Oficial não encontrado: ' + cid + ' / ' + om_id });
+  }
+
+  // ── set_conf (compat — manda OM única, converte pra set_conf_all) ─────────
+  if (action === 'set_conf') {
+    var oficiais_c = p.oficiais;
+    if (typeof oficiais_c === 'string') oficiais_c = JSON.parse(oficiais_c);
+    var pernas_c = p.pernas;
+    if (typeof pernas_c === 'string') pernas_c = JSON.parse(pernas_c);
+    var trip_c = (oficiais_c || []).map(function(o) {
+      return { posto: o.posto||'', nome: o.nome||'', chat_id: String(o.chat_id||'') };
+    });
+    var parts_anv = String(p.anv||'').split('/');
+    var anv_c = parts_anv[0].trim().replace('VC-','');
+    anv_c = parts_anv[0].trim();
+    var fab_c = parts_anv.length > 1 ? parts_anv[1].replace('FAB','').trim() : '';
+    p.oms = [{ om: p.missao||'', anv: anv_c, fab: fab_c, pernas: Array.isArray(pernas_c)?pernas_c:[], tripulantes: trip_c }];
+    p.action = 'set_conf_all';
+    return _dispatch(p);
   }
 
   // ── send_conf ─────────────────────────────────────────────────────────────
-  // Recebe: {action, messages:[{chat_id, texto, letra}]}
-  // Envia mensagens Telegram para cada oficial
   if (action === 'send_conf') {
     var msgs = p.messages;
     if (typeof msgs === 'string') msgs = JSON.parse(msgs);
@@ -118,24 +133,16 @@ function _dispatch(p) {
         chat_id: String(m.chat_id),
         text: m.texto,
         reply_markup: JSON.stringify({
-          inline_keyboard: [[{ text: '✅ CIENTE', callback_data: 'conf_ciente|' + (m.letra || 'A') }]]
+          inline_keyboard: [[{ text: '✅ CIENTE', callback_data: 'conf_ciente|' + (m.om || m.letra || '') }]]
         })
       };
-      var opts = {
-        method: 'post',
-        contentType: 'application/json',
-        payload: JSON.stringify(payload),
-        muteHttpExceptions: true
-      };
+      var opts = { method: 'post', contentType: 'application/json', payload: JSON.stringify(payload), muteHttpExceptions: true };
       try {
         var resp = UrlFetchApp.fetch('https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage', opts);
         var result = JSON.parse(resp.getContentText());
         if (result.ok) enviados++;
         else { Logger.log('TG error ' + m.chat_id + ': ' + resp.getContentText()); erros++; }
-      } catch(e_tg) {
-        Logger.log('Fetch error: ' + e_tg);
-        erros++;
-      }
+      } catch(e_tg) { Logger.log('Fetch error: ' + e_tg); erros++; }
     });
     return _json({ ok: true, enviados: enviados, erros: erros });
   }
