@@ -756,7 +756,7 @@ async def callback_handler(update: Update, context):
                     "om": om_id
                 })
             rj2 = r2.json()
-            logger.info("SISGOP: conf_ciente GAS user=%s missao=%s resp=%s", user_id, letra, rj2)
+            logger.info("SISGOP: conf_ciente GAS user=%s missao=%s resp=%s", user_id, om_id, rj2)
             await query.edit_message_reply_markup(reply_markup=None)
             await query.answer("✅ Ciente registrado!", show_alert=False)
         except Exception as _ec:
