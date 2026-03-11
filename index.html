@@ -382,6 +382,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <button onclick="goScreen(10)" id="btn10">CARTÕES</button>
     <button onclick="goScreen(11)" id="btn11">BOT</button>
     <button onclick="goScreen(13)" id="btn13">DIÁRIAS</button>
+    <button onclick="goScreen(15)" id="btn15">PIMO/TRP</button>
     <button onclick="goScreen(7)" id="btn7">🔍 BUSCA</button>
     <button onclick="goScreen(12)" id="btn12" style="color:var(--red)">REPORTAR</button>
     <button onclick="goScreen(9)" id="btn9" class="desktop-only">📺 TV</button>
@@ -414,6 +415,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
   <div class="screen" id="screen12"></div>
   <div class="screen" id="screen13"></div>
   <div class="screen" id="screen14"></div>
+  <div class="screen" id="screen15"></div>
   <div class="loading" id="loadingMsg">Carregando dados...</div>
 </main>
 
@@ -575,7 +577,7 @@ function _trackSession(){
 function _trackScreen(n){
   const a=_getAnalytics();
   if(!a.screenViews)a.screenViews={};
-  const names={0:'DASHBOARD',1:'DISPONIBILIDADE',2:'HORAS_VOO',3:'FERIAS',4:'DIARIO',5:'ACNT',6:'CALENDARIO',7:'BUSCA',8:'ESCALA',9:'TV',10:'CARTOES',11:'BOT',12:'REPORTAR',14:'S3'};
+  const names={0:'DASHBOARD',1:'DISPONIBILIDADE',2:'HORAS_VOO',3:'FERIAS',4:'DIARIO',5:'ACNT',6:'CALENDARIO',7:'BUSCA',8:'ESCALA',9:'TV',10:'CARTOES',11:'BOT',12:'REPORTAR',13:'DIARIAS',14:'S3',15:'PIMO_TRP'};
   const key=names[n]||('SCREEN_'+n);
   a.screenViews[key]=(a.screenViews[key]||0)+1;
   _saveAnalytics(a);
@@ -3093,6 +3095,185 @@ function gerarDiariaPDF(omId,numSolicitacao){
   setDiariaDownloaded(omId);
   document.getElementById('diariaModal').remove();
   renderScreenDiarias();
+}
+
+// ═══════════════════════════════════════════════════════
+// PIMO/TRP — Programa de Instrução e Manutenção Operacional
+// ═══════════════════════════════════════════════════════
+const PIMO_SHEET_ID='1Tnw8l_YXD22WB8kvpzXl53lpq7D_BFQTBFM-GkqZ5ts';
+const PIMO_LANC_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:json&sheet=Lan%C3%A7amentos`;
+const PIMO_GER_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:json&sheet=RELAT%C3%93RIO%20GERENCIAL`;
+let _pimoCache=null;
+
+async function loadPimoData(){
+  if(_pimoCache)return _pimoCache;
+  try{
+    // Carrega lançamentos e relatório gerencial em paralelo
+    const [rLanc,rGer]=await Promise.all([
+      fetch(PIMO_LANC_URL+'&t='+Date.now()).then(r=>r.text()),
+      fetch(PIMO_GER_URL+'&t='+Date.now()).then(r=>r.text())
+    ]);
+    const parseTbl=txt=>{
+      const json=JSON.parse(txt.replace(/^[^{]*/,'').replace(/;$/,''));
+      const rows=json.table.rows;
+      return rows.map(r=>r.c.map(c=>c?c.v??c.f??'':''));
+    };
+    const lancRows=parseTbl(rLanc);
+    const gerRows=parseTbl(rGer);
+    // Parse lançamentos → último voo por tripulante
+    const lastFlight={};
+    lancRows.forEach(r=>{
+      const nome=(r[4]||'').toString().trim();
+      const dataRaw=(r[1]||'').toString().trim();
+      if(!nome||!dataRaw)return;
+      const m=dataRaw.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if(!m)return;
+      const d=new Date(+m[3],+m[2]-1,+m[1]);
+      if(!lastFlight[nome]||d>lastFlight[nome])lastFlight[nome]=d;
+    });
+    // Parse relatório gerencial → tripulantes
+    const tripulantes=[];
+    const seen=new Set();
+    gerRows.forEach(r=>{
+      const num=(r[1]||'').toString().trim();
+      const nome=(r[2]||'').toString().trim();
+      const qual=(r[3]||'').toString().trim();
+      const horas=(r[4]||'').toString().trim();
+      const etapas=(r[6]||'').toString().trim();
+      const delta=(r[7]||'').toString().trim();
+      if(!num||isNaN(+num)||!nome||!qual)return;
+      if(!['IN','MC','OC','TRN'].includes(qual))return;
+      if(seen.has(nome))return; // evita duplicata
+      seen.add(nome);
+      const lf=lastFlight[nome];
+      const hoje=new Date();hoje.setHours(0,0,0,0);
+      const afastamento=lf?Math.floor((hoje-lf)/(86400000)):999;
+      tripulantes.push({nome,qual,horas,etapas:+etapas||0,delta:+delta||0,
+        ultimoVoo:lf?lf.toLocaleDateString('pt-BR'):null,afastamento});
+    });
+    // Calcula média geral horas e etapas
+    const horasToMin=h=>{if(!h||!h.includes(':'))return 0;const[a,b]=h.split(':').map(Number);return a*60+b;};
+    const minToHoras=m=>`${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}`;
+    const totalHoras=tripulantes.map(t=>horasToMin(t.horas));
+    const maxHoras=Math.max(...totalHoras,1);
+    const maxEtapas=Math.max(...tripulantes.map(t=>t.etapas),1);
+    tripulantes.forEach((t,i)=>{t.horasMin=totalHoras[i];t.horasPct=Math.round(totalHoras[i]/maxHoras*100);t.etapasPct=Math.round(t.etapas/maxEtapas*100);});
+    const avgHoras=Math.round(totalHoras.filter(h=>h>0).reduce((a,b)=>a+b,0)/totalHoras.filter(h=>h>0).length||0);
+    const avgEtapas=Math.round(tripulantes.filter(t=>t.etapas>0).map(t=>t.etapas).reduce((a,b)=>a+b,0)/tripulantes.filter(t=>t.etapas>0).length||0);
+    _pimoCache={tripulantes,avgHoras:minToHoras(avgHoras),avgEtapas,maxHoras,maxEtapas,horasToMin,minToHoras};
+    return _pimoCache;
+  }catch(e){console.warn('PIMO load error:',e);return null;}
+}
+
+function _pimoAfastCor(dias){if(dias<0)return'var(--green)';if(dias<=15)return'var(--green)';if(dias<=30)return'var(--yellow)';return'var(--red)';}
+function _pimoQualBadge(q){const map={IN:'#64b4ff',MC:'var(--green)',OC:'var(--yellow)',TRN:'#9b8ee8'};return map[q]||'var(--text2)';}
+
+async function renderScreenPimo(){
+  const c=document.getElementById('screen15');
+  c.innerHTML='<div style="text-align:center;padding:60px;color:var(--text2)">Carregando dados PIMO...</div>';
+  const data=await loadPimoData();
+  if(!data){c.innerHTML='<div style="text-align:center;padding:60px;color:var(--red)">❌ Erro ao carregar dados PIMO.</div>';return;}
+  const{tripulantes,avgHoras,avgEtapas,maxHoras,maxEtapas}=data;
+  let busca=(window._pimoBusca||'').toLowerCase();
+  const filtrados=busca?tripulantes.filter(t=>t.nome.toLowerCase().includes(busca)):tripulantes;
+  const sorted=[...filtrados];
+  const sortBy=window._pimoSort||'afastamento';
+  if(sortBy==='horas')sorted.sort((a,b)=>b.horasMin-a.horasMin);
+  else if(sortBy==='etapas')sorted.sort((a,b)=>b.etapas-a.etapas);
+  else sorted.sort((a,b)=>b.afastamento-a.afastamento);
+
+  // Top 3 rankings
+  const topHoras=[...tripulantes].sort((a,b)=>b.horasMin-a.horasMin).slice(0,3);
+  const topEtapas=[...tripulantes].sort((a,b)=>b.etapas-a.etapas).slice(0,3);
+  const topAfast=[...tripulantes].sort((a,b)=>b.afastamento-a.afastamento).slice(0,3);
+
+  const medalhas=['🥇','🥈','🥉'];
+  const rankHtml=(arr,campo,fmt)=>arr.map((t,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span>${medalhas[i]}</span><span style="flex:1;font-size:.8rem;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.nome.replace(/ \((GTE|PR)\)/,'')}</span><span style="font-size:.8rem;font-weight:700;color:var(--vc1)">${fmt(t)}</span></div>`).join('');
+
+  let html=`<div style="max-width:900px;margin:0 auto;padding:16px">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+    <div>
+      <h2 style="margin:0;color:var(--green);font-size:1.2rem">📋 PIMO/TRP — 2026</h2>
+      <div style="color:var(--text2);font-size:.75rem">Programa de Instrução e Manutenção Operacional • ${tripulantes.length} tripulantes</div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <input id="pimoBusca" placeholder="Buscar tripulante..." oninput="window._pimoBusca=this.value;renderScreenPimo()" value="${busca}"
+        style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text1);font-size:.82rem;width:180px">
+      <button onclick="window._pimoSort='afastamento';renderScreenPimo()" style="padding:6px 10px;border-radius:6px;border:1px solid ${sortBy==='afastamento'?'var(--green)':'var(--border)'};background:${sortBy==='afastamento'?'rgba(0,255,136,.1)':'var(--bg2)'};color:${sortBy==='afastamento'?'var(--green)':'var(--text2)'};font-size:.78rem;cursor:pointer">⏱️ Afastamento</button>
+      <button onclick="window._pimoSort='horas';renderScreenPimo()" style="padding:6px 10px;border-radius:6px;border:1px solid ${sortBy==='horas'?'var(--vc1)':'var(--border)'};background:${sortBy==='horas'?'rgba(0,212,255,.1)':'var(--bg2)'};color:${sortBy==='horas'?'var(--vc1)':'var(--text2)'};font-size:.78rem;cursor:pointer">🕐 Horas</button>
+      <button onclick="window._pimoSort='etapas';renderScreenPimo()" style="padding:6px 10px;border-radius:6px;border:1px solid ${sortBy==='etapas'?'var(--yellow)':'var(--border)'};background:${sortBy==='etapas'?'rgba(255,200,50,.1)':'var(--bg2)'};color:${sortBy==='etapas'?'var(--yellow)':'var(--text2)'};font-size:.78rem;cursor:pointer">✈️ Etapas</button>
+    </div>
+  </div>
+
+  <!-- Rankings -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="font-size:.72rem;color:var(--text2);font-weight:700;margin-bottom:8px">🕐 TOP HORAS</div>
+      ${rankHtml(topHoras,'horas',t=>t.horas)}
+      <div style="font-size:.7rem;color:var(--text2);margin-top:6px;border-top:1px solid var(--border);padding-top:4px">Média: ${avgHoras}</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="font-size:.72rem;color:var(--text2);font-weight:700;margin-bottom:8px">✈️ TOP ETAPAS</div>
+      ${rankHtml(topEtapas,'etapas',t=>t.etapas+' et.')}
+      <div style="font-size:.7rem;color:var(--text2);margin-top:6px;border-top:1px solid var(--border);padding-top:4px">Média: ${avgEtapas} etapas</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="font-size:.72rem;color:var(--text2);font-weight:700;margin-bottom:8px">⚠️ MAIS AFASTADOS</div>
+      ${rankHtml(topAfast,'afastamento',t=>t.afastamento>0?t.afastamento+'d':'Hoje')}
+    </div>
+  </div>
+
+  <!-- Cards tripulantes -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">`;
+
+  sorted.forEach(t=>{
+    const afCor=_pimoAfastCor(t.afastamento);
+    const qualCor=_pimoQualBadge(t.qual);
+    const afTxt=t.afastamento<0?'Voou hoje':t.afastamento===0?'Voou hoje':t.afastamento===999?'Sem registro':t.afastamento+'d atrás';
+    const nomeShort=t.nome.replace(/ \((GTE|PR)\)/,'');
+    const unid=t.nome.includes('(GTE)')?'GTE':t.nome.includes('(PR)')?'PR':'';
+    html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;position:relative">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <div style="font-weight:700;font-size:.9rem;color:var(--text1)">${nomeShort}</div>
+          <div style="display:flex;gap:4px;margin-top:3px">
+            <span style="font-size:.65rem;background:${qualCor}22;color:${qualCor};border:1px solid ${qualCor}55;padding:1px 6px;border-radius:20px;font-weight:700">${t.qual}</span>
+            ${unid?`<span style="font-size:.65rem;background:#1a2a40;color:var(--text2);padding:1px 6px;border-radius:20px">${unid}</span>`:''}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:.85rem;font-weight:700;color:${afCor}">${afTxt}</div>
+          <div style="font-size:.65rem;color:var(--text2)">${t.ultimoVoo?'último: '+t.ultimoVoo:'sem registro'}</div>
+        </div>
+      </div>
+      <!-- Horas -->
+      <div style="margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--text2);margin-bottom:2px">
+          <span>🕐 Horas</span><span style="color:var(--vc1);font-weight:700">${t.horas||'0:00'}</span>
+        </div>
+        <div style="background:#1a2a40;border-radius:4px;height:5px;overflow:hidden">
+          <div style="height:100%;width:${t.horasPct||0}%;background:var(--vc1);border-radius:4px;transition:.3s"></div>
+        </div>
+      </div>
+      <!-- Etapas -->
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--text2);margin-bottom:2px">
+          <span>✈️ Etapas</span><span style="color:var(--yellow);font-weight:700">${t.etapas}</span>
+        </div>
+        <div style="background:#1a2a40;border-radius:4px;height:5px;overflow:hidden">
+          <div style="height:100%;width:${t.etapasPct||0}%;background:var(--yellow);border-radius:4px;transition:.3s"></div>
+        </div>
+      </div>
+      ${t.delta>15?`<div style="position:absolute;top:10px;right:10px;font-size:.6rem;background:rgba(255,68,68,.15);color:var(--red);border:1px solid rgba(255,68,68,.3);padding:2px 5px;border-radius:4px">+${t.delta}d afastado</div>`:''}
+    </div>`;
+  });
+
+  html+=`</div>
+  <div style="margin-top:12px;text-align:center;font-size:.7rem;color:var(--text2)">Fonte: Planilha PIMO 2026 • Atualizado ao abrir a tela</div>
+  </div>`;
+  c.innerHTML=html;
+  // Foca no campo de busca se existia busca
+  if(busca){const el=document.getElementById('pimoBusca');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}}
 }
 
 function renderScreenReport(){
@@ -5938,6 +6119,7 @@ function goScreen(n){
     _showS3LoginModal();
     return;
   }
+  if(n===15)renderScreenPimo();
   _trackScreen(n);
   currentScreen=n;document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id==='screen'+n));document.querySelectorAll('.nav-btns button').forEach(b=>b.classList.toggle('active',b.id==='btn'+n));
   // Fechar menu mobile ao trocar de tela
