@@ -1436,10 +1436,10 @@ async def api_post_consulta(request):
                 continue
             try:
                 kb = {"inline_keyboard": [[{"text": "✅ CIENTE", "callback_data": f"conf_ciente|{letra}"}]]}
-                await application.bot.send_message(
+                await telegram_bot.send_message(
                     chat_id=int(chat_id),
                     text=texto,
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ CIENTE", callback_data=f"conf_ciente|{letra}")]]) 
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ CIENTE", callback_data=f"conf_ciente|{letra}")]])
                 )
                 enviados += 1
             except Exception as e_send:
