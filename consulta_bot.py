@@ -617,7 +617,10 @@ async def callback_handler(update: Update, context):
                     anv_m2 = re.search(r'Aeronave:\s*(VC-\d+)\s*/\s*FAB\s*(\d+)', ohdr)
                     om_n2 = re.search(r'Ordem de Miss[ãa]o:\s*(\d+)\s*/\s*(GTE-\d+)\s*/\s*(\d+)', ohdr)
                     trip_raw2 = re.findall(r'^(IN|OC|CM|AD|SB|BJ|BO|PX|NA)\s+(' + POSTOS_RE2 + r')\s+(.+?)$', ohdr, re.MULTILINE)
-                    perna_raw2 = re.findall(r'([A-Z]{4})\s+\([^)]+\)\s+([\d/]+ - [\d:]+ Z[^P\n]*?)\s+[\d:]+\s+([A-Z]{4})\s+\([^)]+\)\s+([\d/]+ - [\d:]+ Z[^\n]*)', texto3)
+                    # Extrai pernas APENAS do bloco OM (entre cabeçalho e linha ===)
+                    om_block_m = re.search(r'ORDEM DE MISS[ÃA]O.*?(?:Origem.*?\n)(.*?)(?:={10,}|Total de miss)', texto3, re.DOTALL)
+                    om_block_txt = om_block_m.group(1) if om_block_m else ohdr
+                    perna_raw2 = re.findall(r'([A-Z]{4})\s+\([^)]+\)\s+([\d/]+ - [\d:]+ Z[^P\n]*?)\s+[\d:]+\s+([A-Z]{4})\s+\([^)]+\)\s+([\d/]+ - [\d:]+ Z[^\n]*)', om_block_txt)
                     conf_json_data = {
                         "dados": {
                             "oms": [{
