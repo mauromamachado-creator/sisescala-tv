@@ -4371,8 +4371,8 @@ async function _enviarSobreaviso(){
   try{
     var grupos=_confCtrlSobreavisos||[];
     if(!grupos.length){alert('Nenhum sobreaviso no controlão. Mande o controlão pelo bot primeiro.');if(btn){btn.disabled=false;btn.textContent='🔔 ENVIAR SAVISO';}return;}
-    var semLetra=grupos.filter(function(g){return!g.letra;});
-    if(semLetra.length){alert('Acerte a letra de todos os grupos antes de enviar.');if(btn){btn.disabled=false;btn.textContent='🔔 ENVIAR SAVISO';}return;}
+    // Só envia grupos com letra preenchida
+    grupos=grupos.filter(function(g){return g.letra&&g.letra.trim();});
     var messages=[];
     grupos.forEach(function(g){
       var letra=g.letra.toUpperCase();
