@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Instalar SisGOPA</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#00d4ff" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0a0e1a;color:#e0e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:#111827;border:1px solid #1a2a40;border-radius:16px;padding:40px 32px;max-width:420px;width:100%;text-align:center}
+  .logo{width:80px;height:80px;border-radius:16px;margin:0 auto 20px}
+  h1{font-size:1.6rem;font-weight:900;color:#00d4ff;margin-bottom:6px}
+  .sub{color:#7a8fa6;font-size:.9rem;margin-bottom:32px}
+  .btn{display:block;width:100%;padding:16px;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;border:none;margin-bottom:12px;transition:.2s}
+  .btn-android{background:#00d4ff;color:#0a0e1a}
+  .btn-android:hover{background:#00b8e0}
+  .btn-android:disabled{background:#1a2a40;color:#4a5a70;cursor:default}
+  .btn-open{background:transparent;border:1px solid #1a2a40;color:#7a8fa6}
+  .btn-open:hover{border-color:#00d4ff;color:#00d4ff}
+  .ios-box{background:#0d1520;border:1px solid #1a2a40;border-radius:10px;padding:16px;text-align:left;margin-bottom:16px;font-size:.85rem;line-height:1.9;color:#b0c0d0}
+  .ios-box strong{color:#e0e8f0}
+  .ios-icon{font-size:1.1rem}
+  .badge{display:inline-block;background:#1a2a40;color:#00d4ff;font-size:.72rem;font-weight:700;padding:3px 8px;border-radius:20px;margin-bottom:20px}
+  .sep{border:none;border-top:1px solid #1a2a40;margin:20px 0}
+  #msg{font-size:.8rem;color:#00ff88;margin-top:8px;min-height:20px}
+</style>
+</head>
+<body>
+<div class="card">
+  <img src="icon-192.png" class="logo" alt="SisGOPA" />
+  <h1>SisGOPA</h1>
+  <div class="sub">Gestão de Operações Aéreas — GTE-1</div>
+  <span class="badge">✈️ Versão App</span>
+
+  <!-- Android -->
+  <button class="btn btn-android" id="btn-install" style="display:none" onclick="instalar()">
+    📲 Instalar no Android
+  </button>
+  <div id="msg"></div>
+
+  <!-- iOS -->
+  <div class="ios-box" id="ios-box" style="display:none">
+    <strong>Instalar no iPhone / iPad:</strong><br>
+    <span class="ios-icon">1️⃣</span> Toque em <strong>Compartilhar</strong> (⬆️ na barra do Safari)<br>
+    <span class="ios-icon">2️⃣</span> Role e toque em <strong>"Adicionar à Tela de Início"</strong><br>
+    <span class="ios-icon">3️⃣</span> Toque em <strong>Adicionar</strong> ✅
+  </div>
+
+  <hr class="sep" />
+  <a href="/sisescala-tv/" class="btn btn-open">🌐 Abrir no navegador</a>
+</div>
+
+<script>
+let deferredPrompt = null;
+
+// Detecta iOS
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isAndroid = /android/i.test(navigator.userAgent);
+
+if(isIOS){
+  document.getElementById('ios-box').style.display='block';
+}
+
+// Captura evento de instalação Android
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('btn-install').style.display = 'block';
+});
+
+// Instalado com sucesso
+window.addEventListener('appinstalled', () => {
+  document.getElementById('msg').textContent = '✅ App instalado! Procure na tela inicial.';
+  document.getElementById('btn-install').disabled = true;
+  document.getElementById('btn-install').textContent = '✅ Instalado';
+});
+
+async function instalar(){
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if(outcome === 'accepted'){
+    document.getElementById('msg').textContent = '✅ Instalando...';
+  }
+  deferredPrompt = null;
+}
+
+// Se não for mobile, mostra instrução genérica
+if(!isIOS && !isAndroid){
+  document.getElementById('btn-install').style.display = 'block';
+  document.getElementById('btn-install').textContent = '💻 Instalar no computador';
+}
+</script>
+</body>
+</html>
