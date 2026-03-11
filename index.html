@@ -4086,40 +4086,45 @@ var _confDados=null;
 var _confCientes={};
 var _confSobreaviso=[]; // [{chat_id, nome, posto, letra}]
 var _confTripulantes=[]; // lista de cadastrados no GAS
+var _confOMs=[]; // todas as OMs do controlão
+var _confOmSel=0; // índice da OM selecionada
 
 function s3RenderConfirmacao(container){
   container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">⏳ Carregando...</div>';
-
   Promise.all([
-    fetch(CONF_GAS+'?action=get_conf&t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetch(CONF_GAS+'?action=get_conf_all&t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
     fetch(CONSULTA_GAS+'?action=get_tripulantes&t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
   ]).then(function(results){
-    var gasConf=results[0];
-    var gt=results[1];
-    // GAS é fonte principal
-    _confCientes={};
-    if(gasConf&&gasConf.oficiais&&gasConf.oficiais.length>0){
-      var oficiais=gasConf.oficiais;
-      _confDados={
-        missao_ativa: gasConf.missao||'',
-        anv: gasConf.anv||'',
-        pernas: gasConf.pernas||[],
-        obs: gasConf.obs||'',
-        tripulantes: oficiais.map(function(o){return{posto:o.posto,nome:o.nome,funcao:'IN'};}),
-        gerado_em: ''
-      };
-      oficiais.forEach(function(o){
-        if(o.ciente) _confCientes[o.chat_id]={nome:o.posto+' '+o.nome,timestamp:o.timestamp};
-      });
-    } else {
-      _confDados=null;
-    }
+    var gasConf=results[0]; var gt=results[1];
     _confTripulantes=gt&&gt.tripulantes?gt.tripulantes:[];
+    _confOMs=(gasConf&&gasConf.oms&&gasConf.oms.length>0)?gasConf.oms:[];
+    // preserva seleção se ainda válida
+    if(_confOmSel>=_confOMs.length) _confOmSel=0;
+    _confCarregarOm(_confOmSel);
     _renderConfView(container);
   }).catch(function(e){
     console.error('s3RenderConfirmacao erro:',e);
-    _confDados=null; _confCientes={}; _confTripulantes=[];
+    _confOMs=[]; _confDados=null; _confCientes={}; _confTripulantes=[];
     _renderConfView(container);
+  });
+}
+
+function _confCarregarOm(idx){
+  _confOmSel=idx;
+  var om=_confOMs[idx];
+  if(!om){_confDados=null;_confCientes={};return;}
+  var anv_str=om.anv_str||(om.anv+(om.fab?' / FAB '+om.fab:''));
+  _confCientes={};
+  _confDados={
+    missao_ativa: om.om||'',
+    anv: anv_str,
+    pernas: om.pernas||[],
+    obs: om.obs||'',
+    tripulantes: (om.tripulantes||[]).map(function(o){return{posto:o.posto,nome:o.nome,funcao:'IN',chat_id:o.chat_id||''};}),
+    gerado_em:''
+  };
+  (om.tripulantes||[]).forEach(function(o){
+    if(o.ciente) _confCientes[o.chat_id]={nome:o.posto+' '+o.nome,timestamp:o.timestamp||''};
   });
 }
 
@@ -4139,10 +4144,23 @@ function _renderConfView(container){
   var html='<div style="max-width:720px">';
 
   // Cabeçalho
-  html+='<div style="display:flex;gap:12px;align-items:center;margin-bottom:18px;flex-wrap:wrap">';
+  html+='<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap">';
   html+='<h2 style="margin:0;font-size:1.1rem;color:var(--text)">✈️ Confirmação de Missão</h2>';
   html+='<button onclick="s3RenderConfirmacao(document.getElementById(\'s3-content\'))" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:.72rem">↻ Atualizar</button>';
   html+='</div>';
+
+  // Seletor de OM (se houver mais de uma)
+  if(_confOMs.length>1){
+    html+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">';
+    _confOMs.forEach(function(om,i){
+      var sel=i===_confOmSel;
+      var anv_s=om.anv_str||(om.anv+(om.fab?'/'+om.fab:''));
+      var n_cientes=(om.tripulantes||[]).filter(function(t){return t.ciente;}).length;
+      var n_total=(om.tripulantes||[]).length;
+      html+='<button onclick="_confCarregarOm('+i+');_renderConfView(document.getElementById(\'s3-content\'))" style="padding:4px 10px;border-radius:6px;font-size:.8rem;cursor:pointer;border:2px solid '+(sel?'var(--primary)':'var(--border)')+';background:'+(sel?'var(--primary)':'var(--bg2)')+';color:'+(sel?'#fff':'var(--text)')+'">'+om.om+' ('+anv_s+') '+n_cientes+'/'+n_total+'</button>';
+    });
+    html+='</div>';
+  }
 
   // Status do controlão
   if(!dados){
