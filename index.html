@@ -1801,31 +1801,30 @@ function renderScreenCalendar(){
     }
   });
 
-  // International missions
+  // International missions — barras contínuas multi-dia
+  // spanEvents: [{text, cls, start, end}] — dias do mês
+  const spanEvents=[];
   missionsData.forEach(m=>{
-    if(!m.pais)return;
-    if(m.inicio){
-      const sd=new Date(m.inicio);
-      const ed=m.fim?new Date(m.fim):sd;
-      for(let d=new Date(sd);d<=ed;d.setDate(d.getDate()+1)){
-        if(d.getMonth()===calMonth&&d.getFullYear()===calYear){
-          addEvent(d.getDate(),`🌍 ${m.pais}`,'ev-intl');
-        }
-      }
-    }
+    if(!m.pais||!m.inicio)return;
+    const sd=new Date(m.inicio);
+    const ed=m.fim?new Date(m.fim):sd;
+    // Recorta para o mês atual
+    const monthStart=new Date(calYear,calMonth,1);
+    const monthEnd=new Date(calYear,calMonth,daysInMonth);
+    const clampStart=sd<monthStart?monthStart:sd;
+    const clampEnd=ed>monthEnd?monthEnd:ed;
+    if(clampStart>clampEnd)return;
+    spanEvents.push({
+      text:`🌍 ${m.pais}`,
+      cls:'ev-intl',
+      start:clampStart.getDate(),
+      end:clampEnd.getDate(),
+      isStart:sd.getMonth()===calMonth&&sd.getFullYear()===calYear&&sd.getDate()===clampStart.getDate(),
+      isEnd:ed.getMonth()===calMonth&&ed.getFullYear()===calYear&&ed.getDate()===clampEnd.getDate()
+    });
   });
 
-  // Férias
-  feriasData.forEach(f=>{
-    const s=f.inicio,e=f.fim;
-    if(!s||!e)return;
-    const sd=new Date(s),ed=new Date(e);
-    for(let d=new Date(sd);d<=ed;d.setDate(d.getDate()+1)){
-      if(d.getMonth()===calMonth&&d.getFullYear()===calYear){
-        addEvent(d.getDate(),`🏖 ${f.trigrama||f.tri||'?'}`,'ev-ferias');
-      }
-    }
-  });
+  // Férias removidas do calendário (só missões)
 
   // Prev month padding
   for(let i=firstDay-1;i>=0;i--){
@@ -1837,12 +1836,22 @@ function renderScreenCalendar(){
   for(let d=1;d<=daysInMonth;d++){
     const isToday=(d===td.getDate()&&calMonth===td.getMonth()&&calYear===td.getFullYear());
     html+=`<div class="cal-day${isToday?' today':''}"><div class="day-num">${d}</div>`;
+    // Eventos pontuais (voos domésticos)
     if(events[d]){
-      events[d].slice(0,3).forEach(ev=>{
+      events[d].slice(0,2).forEach(ev=>{
         html+=`<div class="cal-event ${ev.cls}" title="${ev.text}">${ev.text}</div>`;
       });
-      if(events[d].length>3)html+=`<div style="font-size:.55rem;color:var(--text2)">+${events[d].length-3} mais</div>`;
+      if(events[d].length>2)html+=`<div style="font-size:.55rem;color:var(--text2)">+${events[d].length-2}</div>`;
     }
+    // Barras multi-dia (missões internacionais)
+    spanEvents.forEach(sp=>{
+      if(d>=sp.start&&d<=sp.end){
+        const rL=sp.isStart&&d===sp.start?'8px':'0';
+        const rR=sp.isEnd&&d===sp.end?'8px':'0';
+        const showLabel=(d===sp.start)||(d===1);
+        html+=`<div class="cal-event ${sp.cls}" style="border-radius:${rL} ${rR} ${rR} ${rL};margin-left:${d===sp.start?'0':'-2px'};margin-right:${d===sp.end?'0':'-2px'};overflow:hidden;white-space:nowrap;font-size:.6rem" title="${sp.text}">${showLabel?sp.text:''}</div>`;
+      }
+    });
     html+='</div>';
   }
 
