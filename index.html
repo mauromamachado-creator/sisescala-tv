@@ -4376,7 +4376,11 @@ async function _enviarSobreaviso(){
     var messages=[];
     grupos.forEach(function(g){
       var letra=g.letra.toUpperCase();
-      var diaSb=g.dia?g.dia.replace(/.*\//,'').replace('/26',''):'';
+      // g.dia = "06/03/2026" → formata como "06/03"
+      var diaSb=g.dia?(function(d){var p=d.split('/');return p.length>=2?p[0]+'/'+p[1]:d;})():'';
+      // Acrescenta dia da semana se soubermos
+      var _diasSem=['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+      if(g.dia){var _dt=g.dia.split('/');if(_dt.length===3){var _d=new Date(+_dt[2],+_dt[1]-1,+_dt[0]);diaSb=_diasSem[_d.getDay()]+' '+diaSb;}}
       (g.pilotos||[]).forEach(function(p){
         if(!p.chat_id) return;
         var dadosSv={tipo:'sobreaviso',dia:diaSb};
