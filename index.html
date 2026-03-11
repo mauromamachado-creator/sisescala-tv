@@ -5693,6 +5693,7 @@ async function loadAllData(){
     document.getElementById('lastUpdate').textContent='Atualizado '+nowTxt;
     updateStatusPanel();
     checklistData=parseChecklist(planRows);
+    await Promise.all([fetchDiariasConcluidas(),fetchPdfGerado()]);
     renderAll();
     fetchAllAlerts();
   }catch(e){
