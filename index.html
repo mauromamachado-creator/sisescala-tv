@@ -2844,7 +2844,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
     const ano=new Date().getFullYear();
     const numStr='Solicitação nº '+String(numSolicitacao).padStart(3,'0')+'/GTE1/'+ano;
     doc.setFont('times','italic');doc.setFontSize(10);
-    doc.text(numStr,cx,y,{align:'center'});
+    doc.text(numStr,lm,y);
     y+=7;
   } else { y+=3; }
 
@@ -2955,6 +2955,8 @@ function gerarDiariaPDF(omId,numSolicitacao){
   y+=12;
 
   // ═══ FECHAMENTO ═══
+  // Garante que o bloco de assinatura (~50mm) cabe na página atual
+  if(y+50>275){doc.addPage();y=20;}
   doc.setFontSize(11);doc.setFont('times','normal');
   doc.text('Atenciosamente / Respeitosamente,',lm,y);y+=15;
 
