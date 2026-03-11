@@ -4064,14 +4064,23 @@ var _confLetra='A';
 var _confLetras={};
 function _confSetLetra(nome,val){_confLetras[nome]=val.toUpperCase();var el=document.getElementById('confprev_'+nome.replace(/\W/g,'_'));if(el&&_confDados)el.textContent=_buildMsgOficial(val.toUpperCase(),_confDados._postoOf&&_confDados._postoOf[nome]||'',nome,_confDados);}
 function _buildMsgOficial(letra,posto,nome,dados){
-  var oms=(dados&&dados.oms)||[];
-  var msg='Prezado tripulante, informo que o senhor está escalado para a consulta '+letra+'\n\n';
-  var nomeUp=nome.toUpperCase();
-  var omsDoOficial=oms.length?oms.filter(function(om){return(om.tripulantes||[]).some(function(t){return(t.nome||'').toUpperCase().includes(nomeUp)||(t.posto+' '+t.nome).toUpperCase().includes(nomeUp);});}):[];
-  var omsExibir=omsDoOficial.length?omsDoOficial:oms;
-  if(omsExibir.length){omsExibir.forEach(function(om){msg+='📋 OM '+om.om_num+' — '+(om.anv||'')+' FAB '+(om.fab||'')+'\n\n';var trip=(om.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');msg+=trip+'\n\n';(om.pernas||[]).forEach(function(p){msg+='  '+(p.raw||p)+'\n';});if(om.obs)msg+='\n  OBS: '+om.obs+'\n';msg+='\n';});}
-  else{var trip=(dados.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');msg+=trip+'\n\n';(dados.pernas||[]).forEach(function(p){msg+=p+'\n';});msg+='\n';}
-  msg+='FAVOR ACUSAR CIENTE\nOPR GTE-1';return msg.toUpperCase();
+  // Monta tripulação completa
+  var trip=(dados.tripulantes||[]).map(function(t){return t.posto+' '+t.nome;}).join(' / ');
+  // Pernas
+  var pernas=(dados.pernas||[]).map(function(p){return(p.raw||p);}).join('\n');
+  // ANV
+  var anv=dados.anv||'';
+  // OBS
+  var obs=dados.obs||'';
+  var msg='SR. TRIPULANTE, ESCALADO MISSÃO '+letra+':\n\n';
+  if(trip) msg+=trip+'\n\n';
+  if(pernas) msg+=pernas+'\n\n';
+  if(obs) msg+='OBS: '+obs+'\n';
+  else msg+='OBS: \n';
+  msg+='Aguarda QMA para confirmação.\n\n';
+  if(anv) msg+='ANV PREVISTA: '+anv.replace(/VC-\d+\s*\/\s*FAB\s*/i,'').trim()+'\n\n';
+  msg+='FAVOR ACUSAR CIENTE\nOPR GTE-1';
+  return msg.toUpperCase();
 }
 var _confDados=null;
 var _confCientes={};
