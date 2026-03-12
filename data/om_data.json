@@ -462,7 +462,8 @@
       "137B-ohGfyevXNxcrmIdLVeCdvsZTxnUZ"
     ],
     "tipo": "VER",
-    "missao": "PR VER"
+    "missao": "PR VER",
+    "observacoes": "Autorizado o embarque do CP Marques como observador."
   },
   {
     "aeronave": "VC-2",
@@ -497,7 +498,8 @@
       "1e7PtPreF-FMjQ0k_bun907oB9nFRjOqu"
     ],
     "tipo": "VER",
-    "missao": "PR VER"
+    "missao": "PR VER",
+    "observacoes": "Realizar readaptação do SO Júlio Cezar."
   },
   {
     "aeronave": "VC-2",
