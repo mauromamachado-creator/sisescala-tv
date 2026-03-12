@@ -5521,7 +5521,7 @@ async function getAirportCoords(icao){
 
 // Fetch AISWEB page and scrape data
 async function getAiswebData(icao){
-  const empty={rwyLen:null,rwyWid:null,hasIfr:false,hasSid:false,hasStar:false,fireCat:null,pcn:null,oprType:null,hasNight:false,elevFt:null,adHr:null,hasTwr:false,runways:[],rwyDesig:[]};
+  const empty={rwyLen:null,rwyWid:null,hasIfr:false,hasSid:false,hasStar:false,fireCat:null,pcn:null,oprType:null,hasNight:false,elevFt:null,adHr:null,hasTwr:false,runways:[],rwyDesig:[],infoAdicional:null,suplAlertas:[]};
   try{
     const raw=await proxyFetchRaw(`https://aisweb.decea.mil.br/?i=aerodromos&codigo=${icao}`);
     if(!raw)return empty;
@@ -5600,7 +5600,21 @@ async function getAiswebData(icao){
         infoAdicional=block.replace(/^INFORMA[\s\S]{0,40}ADICIONAL\s*/i,'').trim();
       }
     }
-    return{rwyLen:maxLen||null,rwyWid:maxWid||null,hasIfr,hasSid,hasStar,fireCat,pcn:pcnList[0]||null,oprType,hasNight,elevFt,adHr,hasTwr,runways,rwyDesig,infoAdicional};
+    // Suplementos AIP — fechamentos de pista por obras (id="sup")
+    let suplAlertas=[];
+    const mSec=raw.match(/id="sup"[\s\S]*?(<h4[\s\S]*?)((?=<h[234]\s)|$)/);
+    if(mSec){
+      const items=[...mSec[0].matchAll(/class="notam"[^>]*>([\s\S]*?)(?=class="notam"|<\/section|<h[234]|$)/g)];
+      items.forEach(m=>{
+        const clean=m[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+        const u=clean.toUpperCase();
+        if(('PISTA' in u||u.includes('PISTA'))&&(u.includes('FECHAD')||u.includes('CLSD'))||
+           u.includes('RWY')&&(u.includes('CLSD')||u.includes('FECHAD')||u.includes('PRB')||u.includes('PROIB'))){
+          suplAlertas.push('⚠️ SUPL AIP: '+clean.substring(0,250));
+        }
+      });
+    }
+    return{rwyLen:maxLen||null,rwyWid:maxWid||null,hasIfr,hasSid,hasStar,fireCat,pcn:pcnList[0]||null,oprType,hasNight,elevFt,adHr,hasTwr,runways,rwyDesig,infoAdicional,suplAlertas};
   }catch(e){return empty;}
 }
 
@@ -6269,6 +6283,9 @@ async function botExecMsgPadrao(){
       const frases=destAis.infoAdicional.split(/(?<=[\.!?])\s+/);
       const restricoes=frases.filter(f=>{const fu=f.toUpperCase();return fu.includes('RWY')&&(/\bPRB\b/.test(fu)||fu.includes('PROIB')||fu.includes('PROHIB')||fu.includes('RESTRIT')||fu.includes('NO OPS'));});
       if(restricoes.length)lines.push(`- RESTR AD: ${restricoes.join(' | ')}`);
+    }
+    if(destAis.suplAlertas&&destAis.suplAlertas.length){
+      destAis.suplAlertas.forEach(s=>lines.push(`- ${s}`));
     }
     lines.push(`- ${notamAlert}`);
     lines.push(rec.needed?`- Necessita missão de REC (${rec.reasons.join('; ')})`:'- Não necessita missão de REC');
