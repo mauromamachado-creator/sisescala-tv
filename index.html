@@ -1944,14 +1944,12 @@ function renderScreenCalendar(){
       const anv_cls=anv.includes('VC-1')?'ev-vc1':'ev-vc2';
     if(days[i]<=runEnd+1) runEnd=days[i];
       else{
-        if(runEnd>runStart) spanEvents.push({text:anv,cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});
-        else{if(!events[runStart])events[runStart]=[];events[runStart].push({text:anv,cls:anv_cls});}
+        spanEvents.push({text:anv,cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});
         runStart=days[i];runEnd=days[i];
       }
     }
     const anv_cls2=anv.includes('VC-1')?'ev-vc1':'ev-vc2';
-    if(runEnd>runStart) spanEvents.push({text:anv,cls:anv_cls2,start:runStart,end:runEnd,isStart:true,isEnd:true});
-    else{if(!events[runStart])events[runStart]=[];events[runStart].push({text:anv,cls:anv_cls2});}
+    spanEvents.push({text:anv,cls:anv_cls2,start:runStart,end:runEnd,isStart:true,isEnd:true});
   });
   missionsData.forEach(m=>{
     if(!m.pais||!m.inicio)return;
