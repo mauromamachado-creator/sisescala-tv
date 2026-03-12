@@ -1935,43 +1935,37 @@ function renderScreenCalendar(){
   // Texto da barra: "VC-1 2101" ou "VC-2 2590"
   const anvLabel=a=>{const fab=vcToFAB[a];return fab?`${a} ${fab}`:a;};
 
-  // 1) OMs: pega todos os dias de voo de cada OM no mês atual
+  // 1) OMs: cada OM gera um span individual (início = menor dia do mês, fim = maior dia)
   (omData||[]).forEach(om=>{
     if(!om.aeronave||!om.pernas)return;
-    const anv=om.aeronave; // 'VC-1' ou 'VC-2'
+    const anv=om.aeronave;
+    const anv_cls=anv.includes('VC-1')?'ev-vc1':'ev-vc2';
+    const omDays=[];
     om.pernas.forEach(p=>{
-      const m=(p.etd||'').match(/(\d{2})\/(\d{2})\/(\d{2})/);
-      if(!m)return;
-      const fDay=+m[1],fMon=+m[2]-1,fYear=2000+ +m[3];
-      if(fMon!==calMonth||fYear!==calYear)return;
-      if(!flightsByDay[anv])flightsByDay[anv]=new Set();
-      flightsByDay[anv].add(fDay);
-      omDaysSet.add(`${anv}|${fDay}`);
+      [p.etd,p.eta].forEach(dt=>{
+        const m=(dt||'').match(/(\d{2})\/(\d{2})\/(\d{2})/);
+        if(!m)return;
+        const fDay=+m[1],fMon=+m[2]-1,fYear=2000+ +m[3];
+        if(fMon!==calMonth||fYear!==calYear)return;
+        omDays.push(fDay);
+        omDaysSet.add(`${anv}|${fDay}`);
+      });
     });
+    if(!omDays.length)return;
+    const start=Math.min(...omDays),end=Math.max(...omDays);
+    spanEvents.push({text:anvLabel(anv),cls:anv_cls,start,end,isStart:true,isEnd:true});
   });
 
-  // 2) Diário: só adiciona dias que NÃO estão cobertos por OM
+  // 2) Diário: dias sem OM → barra de dia único
   (diarioData||[]).forEach(d=>{
     if(!d.date||!d.legs||!d.legs.length)return;
     if(d.date.getMonth()!==calMonth||d.date.getFullYear()!==calYear)return;
     const fDay=d.date.getDate();
     const anv=normalizeAnv(d.aeronave&&d.aeronave!=='AERONAVE'?d.aeronave:'VC-1');
     if(!omDaysSet.has(`${anv}|${fDay}`)){
-      if(!flightsByDay[anv])flightsByDay[anv]=new Set();
-      flightsByDay[anv].add(fDay);
+      const anv_cls=anv.includes('VC-1')?'ev-vc1':'ev-vc2';
+      spanEvents.push({text:anvLabel(anv),cls:anv_cls,start:fDay,end:fDay,isStart:true,isEnd:true});
     }
-  });
-
-  // 3) Montar spanEvents agrupando dias consecutivos por ANV
-  Object.keys(flightsByDay).forEach(anv=>{
-    const days=[...flightsByDay[anv]].sort((a,b)=>a-b);
-    const anv_cls=anv.includes('VC-1')?'ev-vc1':'ev-vc2';
-    let runStart=days[0],runEnd=days[0];
-    for(let i=1;i<days.length;i++){
-      if(days[i]<=runEnd+1)runEnd=days[i];
-      else{spanEvents.push({text:anvLabel(anv),cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});runStart=days[i];runEnd=days[i];}
-    }
-    spanEvents.push({text:anvLabel(anv),cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});
   });
   missionsData.forEach(m=>{
     if(!m.pais||!m.inicio)return;
