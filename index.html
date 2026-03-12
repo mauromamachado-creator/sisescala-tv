@@ -6337,7 +6337,7 @@ let lastLoadTime=null;
 function updateStatusPanel(){
   const dot=document.getElementById('statusDot');
   const panel=document.getElementById('statusPanel');
-  const visibleSources=STATUS_SOURCES.filter(s=>!(s.id==='aisweb'&&(sourceStatus[s.id]||'pending')==='pending'));
+  const visibleSources=STATUS_SOURCES;
   const total=visibleSources.length;
   const okCount=visibleSources.filter(s=>sourceStatus[s.id]==='ok').length;
   const failCount=visibleSources.filter(s=>sourceStatus[s.id]==='fail').length;
@@ -6358,7 +6358,7 @@ function updateStatusPanel(){
   html+=`<span style="float:right;color:var(--text2)">${nowTxt}</span></div>`;
   STATUS_SOURCES.forEach(s=>{
     const st=sourceStatus[s.id]||'pending';
-    if(s.id==='aisweb'&&st==='pending')return;
+    // AISWEB e PIMO começam pending (ampulheta) até primeiro uso
     const icon=st==='ok'?'sp-ok':st==='fail'?'sp-fail':'sp-na';
     const label=st==='ok'?'✅':st==='fail'?'❌':'⏳';
     const crit=s.critical?'<span style="color:var(--red);font-size:.6rem;margin-left:4px">●</span>':'';
