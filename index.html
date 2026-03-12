@@ -1567,15 +1567,51 @@ function renderScreen0(){
 // ===== DISPONIBILIDADE =====
 function renderScreen1(){
   const td=nowBRT();
-  const activeTab=window._disp1Tab||'pilotos';
+  const activeTab=window._disp1Tab||'total';
   // Tabs
   const tabStyle=(id)=>{const on=activeTab===id;return `padding:8px 20px;border-radius:8px 8px 0 0;border:1px solid ${on?'var(--vc1)':'var(--border)'};border-bottom:${on?'1px solid var(--bg2)':'1px solid var(--border)'};background:${on?'var(--bg2)':'var(--bg3)'};color:${on?'var(--vc1)':'var(--text2)'};font-size:.82rem;font-weight:${on?'900':'400'};cursor:pointer;margin-right:4px;`;};
   let html=`<h2>Disponibilidade Hoje - ${fmtDate(td)}</h2>`;
   html+=`<div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">`;
+  html+=`<button onclick="window._disp1Tab='total';renderScreen1()" style="${tabStyle('total')}">📊 TOTAL</button>`;
   html+=`<button onclick="window._disp1Tab='pilotos';renderScreen1()" style="${tabStyle('pilotos')}">✈️ PILOTOS</button>`;
   html+=`<button onclick="window._disp1Tab='tripulantes';renderScreen1()" style="${tabStyle('tripulantes')}">👥 TRIPULANTES</button>`;
   html+=`</div>`;
-  if(activeTab==='pilotos'){
+  if(activeTab==='total'){
+    // --- Pilotos ---
+    const allPilotos=[...(pilotData.vc1||[]),...(pilotData.vc2||[])];
+    const pilotosAtivos=allPilotos.filter(p=>{const st=getPilotStatus(p,td);return st.status!=='FORA';});
+    const pilotosDisp=pilotosAtivos.filter(p=>{const st=getPilotStatus(p,td);return st.status==='DISPONÍVEL';});
+    // --- Tripulantes ---
+    const tripFuncoes=['Comissário','Mecânico','Operador de Comunicações'];
+    const allTrip=(cartoesData||[]).filter(ct=>tripFuncoes.includes(ct.funcao));
+    const pimoTrips=(_pimoCache&&_pimoCache.tripulantes)||[];
+    const cartoesCheckTotal=['inspSaude','crm','cviRvsm','simulador','tdie','passaporte'];
+    const getTripDisp=(ct)=>{
+      const pimoEntry=pimoTrips.find(t=>t.trigrama===ct.trigrama||(t.nome&&ct.nome&&t.nome.toUpperCase()===ct.nome.toUpperCase()));
+      const afDias=pimoEntry?pimoEntry.afastamento:null;
+      if(afDias!==null&&afDias>=45)return false;
+      for(const k of cartoesCheckTotal){const c=cartaoColor(ct[k],td);if(c.cls==='vermelho')return false;}
+      return true;
+    };
+    const tripDisp=allTrip.filter(getTripDisp);
+    // --- Render ---
+    const bigNum=(val,total,label,cor)=>`<div style="background:var(--bg3);border-radius:12px;padding:20px 24px;text-align:center;flex:1;min-width:140px;border:1px solid var(--border)">
+      <div style="font-size:2.8rem;font-weight:900;color:${cor};line-height:1">${val}</div>
+      <div style="font-size:.7rem;color:var(--text2);margin-top:2px">de ${total}</div>
+      <div style="font-size:.85rem;color:var(--text1);margin-top:6px;font-weight:600">${label}</div>
+    </div>`;
+    const corP=pilotosDisp.length/Math.max(pilotosAtivos.length,1)>=0.8?'var(--green)':pilotosDisp.length/Math.max(pilotosAtivos.length,1)>=0.6?'var(--yellow)':'var(--red)';
+    const corT=tripDisp.length/Math.max(allTrip.length,1)>=0.8?'var(--green)':tripDisp.length/Math.max(allTrip.length,1)>=0.6?'var(--yellow)':'var(--red)';
+    const totalDisp=pilotosDisp.length+tripDisp.length;
+    const totalGeral=pilotosAtivos.length+allTrip.length;
+    const corG=totalDisp/Math.max(totalGeral,1)>=0.8?'var(--green)':totalDisp/Math.max(totalGeral,1)>=0.6?'var(--yellow)':'var(--red)';
+    html+=`<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px">`;
+    html+=bigNum(totalDisp,totalGeral,'EFETIVO TOTAL',corG);
+    html+=bigNum(pilotosDisp.length,pilotosAtivos.length,'PILOTOS',corP);
+    html+=bigNum(tripDisp.length,allTrip.length,'TRIPULANTES',corT);
+    html+=`</div>`;
+    if(!_pimoCache)html+=`<div style="font-size:.75rem;color:var(--text2);margin-top:4px">⚠️ PIMO não carregado — desadaptação de tripulantes não considerada. Acesse PIMO/TRP primeiro.</div>`;
+  } else if(activeTab==='pilotos'){
     const renderSection=(title,pilots,cardClass,h2Class)=>{
       let s=`<h2 class="${h2Class}">${title}</h2><div class="pilot-grid">`;
       for(const p of pilots){
