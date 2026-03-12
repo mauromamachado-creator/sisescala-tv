@@ -1929,9 +1929,11 @@ function renderScreenCalendar(){
   const omDaysSet=new Set(); // dias cobertos por alguma OM (para não duplicar com diário)
 
   // Normaliza FAB XXXX → VC-1/VC-2 usando mapeamento das próprias OMs
-  const fabToVC={};
-  (omData||[]).forEach(o=>{if(o.fab&&o.aeronave)fabToVC[o.fab]=o.aeronave;});
+  const fabToVC={};const vcToFAB={};
+  (omData||[]).forEach(o=>{if(o.fab&&o.aeronave){fabToVC[o.fab]=o.aeronave;if(!vcToFAB[o.aeronave])vcToFAB[o.aeronave]=o.fab.replace('FAB ','');}});
   const normalizeAnv=a=>(a&&fabToVC[a]?fabToVC[a]:a);
+  // Texto da barra: "VC-1 2101" ou "VC-2 2590"
+  const anvLabel=a=>{const fab=vcToFAB[a];return fab?`${a} ${fab}`:a;};
 
   // 1) OMs: pega todos os dias de voo de cada OM no mês atual
   (omData||[]).forEach(om=>{
@@ -1967,9 +1969,9 @@ function renderScreenCalendar(){
     let runStart=days[0],runEnd=days[0];
     for(let i=1;i<days.length;i++){
       if(days[i]<=runEnd+1)runEnd=days[i];
-      else{spanEvents.push({text:anv,cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});runStart=days[i];runEnd=days[i];}
+      else{spanEvents.push({text:anvLabel(anv),cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});runStart=days[i];runEnd=days[i];}
     }
-    spanEvents.push({text:anv,cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});
+    spanEvents.push({text:anvLabel(anv),cls:anv_cls,start:runStart,end:runEnd,isStart:true,isEnd:true});
   });
   missionsData.forEach(m=>{
     if(!m.pais||!m.inicio)return;
