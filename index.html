@@ -3234,8 +3234,11 @@ async function loadPimoData(){
     const avgHorasTrimMin=Math.round(comDados.map(t=>t.horasTrimMin).reduce((a,b)=>a+b,0)/(comDados.length||1));
     const avgEtapasTrim=Math.round(comDados.map(t=>t.etapasTrim).reduce((a,b)=>a+b,0)/(comDados.length||1));
     const trimNome=['1º Tri','2º Tri','3º Tri','4º Tri'][trimestreAtual];
+    // Dias até fim do trimestre
+    const fimTrim=new Date(anoAtual,(trimestreAtual+1)*3,0); // último dia do trim
+    const diasFimTrim=Math.ceil((fimTrim-hoje)/(86400000));
     _pimoCache={tripulantes,avgHorasTrim:minToHStr(avgHorasTrimMin),avgEtapasTrim,trimNome,
-      META_HORAS_MIN,META_ETAPAS,minToHStr,tvoToMin};
+      META_HORAS_MIN,META_ETAPAS,minToHStr,tvoToMin,diasFimTrim};
     return _pimoCache;
   }catch(e){console.warn('PIMO load error:',e);return null;}
 }
@@ -3248,7 +3251,8 @@ async function renderScreenPimo(){
   c.innerHTML='<div style="text-align:center;padding:60px;color:var(--text2)">Carregando dados PIMO...</div>';
   const data=await loadPimoData();
   if(!data){c.innerHTML='<div style="text-align:center;padding:60px;color:var(--red)">❌ Erro ao carregar dados PIMO.</div>';return;}
-  const{tripulantes,avgHorasTrim,avgEtapasTrim,trimNome,META_HORAS_MIN,META_ETAPAS,minToHStr}=data;
+  const{tripulantes,avgHorasTrim,avgEtapasTrim,trimNome,META_HORAS_MIN,META_ETAPAS,minToHStr,diasFimTrim}=data;
+  const alertaTrim=diasFimTrim<=15;
   let busca=(window._pimoBusca||'').toLowerCase();
   const filtroFunc=window._pimoFuncao||'';
   const filtroAnv=window._pimoAnv||'';
@@ -3359,13 +3363,12 @@ async function renderScreenPimo(){
         <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--text2);margin-bottom:2px">
           <span>🕐 Horas ${trimNome}</span>
           <span>
-            <span style="color:${t.horasTrimPct>=100?'var(--green)':'var(--vc1)'};font-weight:700">${t.horasTrim}</span>
-            <span style="color:var(--text2);font-size:.65rem"> / 18h</span>
+            <span style="color:${t.horasTrimPct>=100?'var(--green)':alertaTrim&&t.horasTrimPct<100?'var(--red)':'var(--vc1)'};font-weight:700">${t.horasTrim}</span>
             ${t.horasAno!==t.horasTrim?`<span style="color:var(--text2);font-size:.65rem"> • ano: ${t.horasAno}</span>`:''}
           </span>
         </div>
         <div style="background:#1a2a40;border-radius:4px;height:5px;overflow:hidden">
-          <div style="height:100%;width:${t.horasTrimPct}%;background:${t.horasTrimPct>=100?'var(--green)':'var(--vc1)'};border-radius:4px;transition:.3s"></div>
+          <div style="height:100%;width:${t.horasTrimPct}%;background:${t.horasTrimPct>=100?'var(--green)':alertaTrim&&t.horasTrimPct<100?'var(--red)':'var(--vc1)'};border-radius:4px;transition:.3s"></div>
         </div>
       </div>
       <!-- Etapas trimestre -->
@@ -3373,13 +3376,12 @@ async function renderScreenPimo(){
         <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--text2);margin-bottom:2px">
           <span>✈️ Etapas ${trimNome}</span>
           <span>
-            <span style="color:${t.etapasTrimPct>=100?'var(--green)':'var(--yellow)'};font-weight:700">${t.etapasTrim}</span>
-            <span style="color:var(--text2);font-size:.65rem"> / 15 et.</span>
+            <span style="color:${t.etapasTrimPct>=100?'var(--green)':alertaTrim&&t.etapasTrimPct<100?'var(--red)':'var(--yellow)'};font-weight:700">${t.etapasTrim}</span>
             ${t.etapasAno!==t.etapasTrim?`<span style="color:var(--text2);font-size:.65rem"> • ano: ${t.etapasAno}</span>`:''}
           </span>
         </div>
         <div style="background:#1a2a40;border-radius:4px;height:5px;overflow:hidden">
-          <div style="height:100%;width:${t.etapasTrimPct}%;background:${t.etapasTrimPct>=100?'var(--green)':'var(--yellow)'};border-radius:4px;transition:.3s"></div>
+          <div style="height:100%;width:${t.etapasTrimPct}%;background:${t.etapasTrimPct>=100?'var(--green)':alertaTrim&&t.etapasTrimPct<100?'var(--red)':'var(--yellow)'};border-radius:4px;transition:.3s"></div>
         </div>
       </div>
     </div>`;
