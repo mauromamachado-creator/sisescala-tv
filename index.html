@@ -2566,7 +2566,7 @@ function showOMDetail(omId){
           <span>🕐 ETD: ${p.etd||'-'}</span>
           <span>🕐 ETA: ${p.eta||'-'}</span>
           <span>⏱ Tempo: ${p.ete||'-'}</span>
-          <span>🔄 ALTN: ${p.altn||'-'}</span>
+          <span>🔄 ALTN: ${p.alternativa||p.altn||'-'}</span>
         </div>`;
       if(p.comb_min||p.comb_rec){
         html+=`<div style="display:flex;gap:12px;margin-top:6px;font-size:.8rem">
