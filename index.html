@@ -3150,34 +3150,53 @@ async function loadPimoData(){
     Object.entries(vcCount).forEach(([nome,counts])=>{
       vcMap[nome]=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0]||'';
     });
-    // Parse lançamentos → último voo por tripulante
+    // Determina trimestre atual
+    const hoje=new Date();hoje.setHours(0,0,0,0);
+    const anoAtual=hoje.getFullYear();
+    const mesAtual=hoje.getMonth(); // 0-indexed
+    const trimestreAtual=Math.floor(mesAtual/3); // 0=Q1,1=Q2,2=Q3,3=Q4
+    const tvoToMin=s=>{if(!s||!s.includes(':'))return 0;const[a,b]=s.split(':').map(Number);return a*60+b;};
+    const minToHStr=m=>`${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}`;
+    // Parse lançamentos → stats por tripulante
     const lastFlight={};
-    lancRows.forEach(r=>{
+    const statsMap={}; // nome → {horasAnoMin, horasTrimMin, etapasTrim, etapasAno}
+    lancRows.slice(2).forEach(r=>{
       const nome=(r[4]||'').toString().trim();
       const dataRaw=(r[1]||'').toString().trim();
+      const tvoRaw=(r[5]||'').toString().trim();
+      const etapasRaw=(r[6]||'').toString().trim();
       if(!nome||!dataRaw)return;
       const m=dataRaw.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
       if(!m)return;
       const d=new Date(+m[3],+m[2]-1,+m[1]);
       if(!lastFlight[nome]||d>lastFlight[nome])lastFlight[nome]=d;
+      if(!statsMap[nome])statsMap[nome]={horasAnoMin:0,horasTrimMin:0,etapasTrim:0,etapasAno:0};
+      const tvoMin=tvoToMin(tvoRaw);
+      const etapas=+etapasRaw||0;
+      const ano=d.getFullYear();
+      const trim=Math.floor(d.getMonth()/3);
+      if(ano===anoAtual){
+        statsMap[nome].horasAnoMin+=tvoMin;
+        statsMap[nome].etapasAno+=etapas;
+        if(trim===trimestreAtual){
+          statsMap[nome].horasTrimMin+=tvoMin;
+          statsMap[nome].etapasTrim+=etapas;
+        }
+      }
     });
-    // Parse relatório gerencial → mapa nome → stats
-    const gerMap={};
-    const gerSeen=new Set();
+    // Parse relatório gerencial → só qualificação (IN/MC/OC)
+    const qualMap={};
     gerRows.forEach(r=>{
       const num=(r[1]||'').toString().trim();
       const nome=(r[2]||'').toString().trim();
       const qual=(r[3]||'').toString().trim();
-      const horas=(r[4]||'').toString().trim();
-      const etapas=(r[6]||'').toString().trim();
-      const delta=(r[7]||'').toString().trim();
-      if(!num||isNaN(+num)||!nome||!qual)return;
-      if(!['IN','MC','OC','TRN'].includes(qual))return;
-      if(gerSeen.has(nome))return;
-      gerSeen.add(nome);
-      gerMap[nome]={qual,horas,etapas:+etapas||0,delta:+delta||0};
+      if(!num||isNaN(+num)||!nome)return;
+      if(['IN','MC','OC','TRN'].includes(qual)&&!qualMap[nome])qualMap[nome]=qual;
     });
-    // Lista mestre vem da aba Dados — inclui todos mesmo sem dados no Gerencial
+    // Metas trimestrais
+    const META_HORAS_MIN=18*60; // 18h em minutos
+    const META_ETAPAS=15;
+    // Lista mestre vem da aba Dados
     const tripulantes=[];
     const seen=new Set();
     dadosRows.forEach(r=>{
@@ -3187,25 +3206,27 @@ async function loadPimoData(){
       if(!['MEC VC-1','MEC VC-2','OC','COM'].includes(funcaoRaw))return;
       if(seen.has(nome))return;
       seen.add(nome);
-      const ger=gerMap[nome]||{};
+      const st=statsMap[nome]||{horasAnoMin:0,horasTrimMin:0,etapasTrim:0,etapasAno:0};
       const lf=lastFlight[nome];
-      const hoje=new Date();hoje.setHours(0,0,0,0);
       const afastamento=lf?Math.floor((hoje-lf)/(86400000)):999;
       const funcao=funcaoRaw.startsWith('MEC')?'MEC':funcaoRaw;
       const aeronave=funcaoRaw==='MEC VC-1'?'VC-1':funcaoRaw==='MEC VC-2'?'VC-2':(vcMap[nome]||'');
-      tripulantes.push({nome,qual:ger.qual||'',horas:ger.horas||'0:00',etapas:ger.etapas||0,delta:ger.delta||0,
-        ultimoVoo:lf?lf.toLocaleDateString('pt-BR'):null,afastamento,funcao,aeronave,semDados:!ger.qual});
+      const qual=qualMap[nome]||'';
+      tripulantes.push({nome,qual,
+        horasAno:minToHStr(st.horasAnoMin),horasAnoMin:st.horasAnoMin,
+        horasTrim:minToHStr(st.horasTrimMin),horasTrimMin:st.horasTrimMin,
+        horasTrimPct:Math.min(100,Math.round(st.horasTrimMin/META_HORAS_MIN*100)),
+        etapasTrim:st.etapasTrim,etapasAno:st.etapasAno,
+        etapasTrimPct:Math.min(100,Math.round(st.etapasTrim/META_ETAPAS*100)),
+        ultimoVoo:lf?lf.toLocaleDateString('pt-BR'):null,afastamento,funcao,aeronave,semDados:!st.horasAnoMin&&!lf});
     });
-    // Calcula média geral horas e etapas
-    const horasToMin=h=>{if(!h||!h.includes(':'))return 0;const[a,b]=h.split(':').map(Number);return a*60+b;};
-    const minToHoras=m=>`${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}`;
-    const totalHoras=tripulantes.map(t=>horasToMin(t.horas));
-    const maxHoras=Math.max(...totalHoras,1);
-    const maxEtapas=Math.max(...tripulantes.map(t=>t.etapas),1);
-    tripulantes.forEach((t,i)=>{t.horasMin=totalHoras[i];t.horasPct=Math.round(totalHoras[i]/maxHoras*100);t.etapasPct=Math.round(t.etapas/maxEtapas*100);});
-    const avgHoras=Math.round(totalHoras.filter(h=>h>0).reduce((a,b)=>a+b,0)/totalHoras.filter(h=>h>0).length||0);
-    const avgEtapas=Math.round(tripulantes.filter(t=>t.etapas>0).map(t=>t.etapas).reduce((a,b)=>a+b,0)/tripulantes.filter(t=>t.etapas>0).length||0);
-    _pimoCache={tripulantes,avgHoras:minToHoras(avgHoras),avgEtapas,maxHoras,maxEtapas,horasToMin,minToHoras};
+    // Calcula médias
+    const comDados=tripulantes.filter(t=>t.horasAnoMin>0||t.etapasAno>0);
+    const avgHorasTrimMin=Math.round(comDados.map(t=>t.horasTrimMin).reduce((a,b)=>a+b,0)/(comDados.length||1));
+    const avgEtapasTrim=Math.round(comDados.map(t=>t.etapasTrim).reduce((a,b)=>a+b,0)/(comDados.length||1));
+    const trimNome=['1º Tri','2º Tri','3º Tri','4º Tri'][trimestreAtual];
+    _pimoCache={tripulantes,avgHorasTrim:minToHStr(avgHorasTrimMin),avgEtapasTrim,trimNome,
+      META_HORAS_MIN,META_ETAPAS,minToHStr,tvoToMin};
     return _pimoCache;
   }catch(e){console.warn('PIMO load error:',e);return null;}
 }
@@ -3218,7 +3239,7 @@ async function renderScreenPimo(){
   c.innerHTML='<div style="text-align:center;padding:60px;color:var(--text2)">Carregando dados PIMO...</div>';
   const data=await loadPimoData();
   if(!data){c.innerHTML='<div style="text-align:center;padding:60px;color:var(--red)">❌ Erro ao carregar dados PIMO.</div>';return;}
-  const{tripulantes,avgHoras,avgEtapas,maxHoras,maxEtapas}=data;
+  const{tripulantes,avgHorasTrim,avgEtapasTrim,trimNome,META_HORAS_MIN,META_ETAPAS,minToHStr}=data;
   let busca=(window._pimoBusca||'').toLowerCase();
   const filtroFunc=window._pimoFuncao||'';
   const filtroAnv=window._pimoAnv||'';
@@ -3228,13 +3249,13 @@ async function renderScreenPimo(){
   if(filtroAnv)filtrados=filtrados.filter(t=>t.aeronave===filtroAnv);
   const sorted=[...filtrados];
   const sortBy=window._pimoSort||'afastamento';
-  if(sortBy==='horas')sorted.sort((a,b)=>b.horasMin-a.horasMin);
-  else if(sortBy==='etapas')sorted.sort((a,b)=>b.etapas-a.etapas);
+  if(sortBy==='horas')sorted.sort((a,b)=>b.horasTrimMin-a.horasTrimMin);
+  else if(sortBy==='etapas')sorted.sort((a,b)=>b.etapasTrim-a.etapasTrim);
   else sorted.sort((a,b)=>b.afastamento-a.afastamento);
 
   // Top 3 rankings
-  const topHoras=[...tripulantes].sort((a,b)=>b.horasMin-a.horasMin).slice(0,3);
-  const topEtapas=[...tripulantes].sort((a,b)=>b.etapas-a.etapas).slice(0,3);
+  const topHoras=[...tripulantes].sort((a,b)=>b.horasTrimMin-a.horasTrimMin).slice(0,3);
+  const topEtapas=[...tripulantes].sort((a,b)=>b.etapasTrim-a.etapasTrim).slice(0,3);
   const topAfast=[...tripulantes].sort((a,b)=>b.afastamento-a.afastamento).slice(0,3);
 
   const medalhas=['🥇','🥈','🥉'];
@@ -3277,14 +3298,14 @@ async function renderScreenPimo(){
   <div style="overflow-x:auto;margin-bottom:16px;-webkit-overflow-scrolling:touch;scrollbar-width:none">
   <div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px;min-width:560px">
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
-      <div style="font-size:.72rem;color:var(--text2);font-weight:700;margin-bottom:8px">🕐 TOP HORAS</div>
-      ${rankHtml(topHoras,'horas',t=>t.horas)}
-      <div style="font-size:.7rem;color:var(--text2);margin-top:6px;border-top:1px solid var(--border);padding-top:4px">Média: ${avgHoras}</div>
+      <div style="font-size:.72rem;color:var(--text2);font-weight:700;margin-bottom:8px">🕐 TOP HORAS — ${trimNome}</div>
+      ${rankHtml(topHoras,'horas',t=>t.horasTrim)}
+      <div style="font-size:.7rem;color:var(--text2);margin-top:6px;border-top:1px solid var(--border);padding-top:4px">Meta: 18h • Média: ${avgHorasTrim}</div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
-      <div style="font-size:.72rem;color:var(--text2);font-weight:700;margin-bottom:8px">✈️ TOP ETAPAS</div>
-      ${rankHtml(topEtapas,'etapas',t=>t.etapas+' et.')}
-      <div style="font-size:.7rem;color:var(--text2);margin-top:6px;border-top:1px solid var(--border);padding-top:4px">Média: ${avgEtapas} etapas</div>
+      <div style="font-size:.72rem;color:var(--text2);font-weight:700;margin-bottom:8px">✈️ TOP ETAPAS — ${trimNome}</div>
+      ${rankHtml(topEtapas,'etapas',t=>t.etapasTrim+' et.')}
+      <div style="font-size:.7rem;color:var(--text2);margin-top:6px;border-top:1px solid var(--border);padding-top:4px">Meta: 15 et. • Média: ${avgEtapasTrim}</div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
       <div style="font-size:.72rem;color:var(--text2);font-weight:700;margin-bottom:8px">⚠️ MAIS AFASTADOS</div>
@@ -3320,22 +3341,32 @@ async function renderScreenPimo(){
           <div style="font-size:.65rem;color:var(--text2)">${t.ultimoVoo?'último: '+t.ultimoVoo:'sem registro'}</div>
         </div>
       </div>
-      <!-- Horas -->
+      <!-- Horas trimestre -->
       <div style="margin-bottom:6px">
         <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--text2);margin-bottom:2px">
-          <span>🕐 Horas</span><span style="color:var(--vc1);font-weight:700">${t.horas||'0:00'}</span>
+          <span>🕐 Horas ${trimNome}</span>
+          <span>
+            <span style="color:${t.horasTrimPct>=100?'var(--green)':'var(--vc1)'};font-weight:700">${t.horasTrim}</span>
+            <span style="color:var(--text2);font-size:.65rem"> / 18h</span>
+            ${t.horasAno!==t.horasTrim?`<span style="color:var(--text2);font-size:.65rem"> • ano: ${t.horasAno}</span>`:''}
+          </span>
         </div>
         <div style="background:#1a2a40;border-radius:4px;height:5px;overflow:hidden">
-          <div style="height:100%;width:${t.horasPct||0}%;background:var(--vc1);border-radius:4px;transition:.3s"></div>
+          <div style="height:100%;width:${t.horasTrimPct}%;background:${t.horasTrimPct>=100?'var(--green)':'var(--vc1)'};border-radius:4px;transition:.3s"></div>
         </div>
       </div>
-      <!-- Etapas -->
+      <!-- Etapas trimestre -->
       <div>
         <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--text2);margin-bottom:2px">
-          <span>✈️ Etapas</span><span style="color:var(--yellow);font-weight:700">${t.etapas}</span>
+          <span>✈️ Etapas ${trimNome}</span>
+          <span>
+            <span style="color:${t.etapasTrimPct>=100?'var(--green)':'var(--yellow)'};font-weight:700">${t.etapasTrim}</span>
+            <span style="color:var(--text2);font-size:.65rem"> / 15 et.</span>
+            ${t.etapasAno!==t.etapasTrim?`<span style="color:var(--text2);font-size:.65rem"> • ano: ${t.etapasAno}</span>`:''}
+          </span>
         </div>
         <div style="background:#1a2a40;border-radius:4px;height:5px;overflow:hidden">
-          <div style="height:100%;width:${t.etapasPct||0}%;background:var(--yellow);border-radius:4px;transition:.3s"></div>
+          <div style="height:100%;width:${t.etapasTrimPct}%;background:${t.etapasTrimPct>=100?'var(--green)':'var(--yellow)'};border-radius:4px;transition:.3s"></div>
         </div>
       </div>
     </div>`;
