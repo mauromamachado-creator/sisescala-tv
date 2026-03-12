@@ -449,7 +449,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 </style>
 
 <footer>
-  <span>SisGOPA v5.5 - Desenvolvido para o GTE por Major Machado</span>
+  <span>SisGOPA v5.6 - Desenvolvido para o GTE por Major Machado</span>
   <a onclick="loadAllData()">Atualizar dados</a>
   <a onclick="showNovidades()" style="cursor:pointer;text-decoration:underline;margin-left:8px">Novidades</a>
 </footer>
@@ -460,16 +460,27 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <span style="position:absolute;top:12px;right:16px;font-size:22px;color:var(--text2);cursor:pointer" onclick="document.getElementById('novidadesModal').style.display='none'">✕</span>
     <div style="font-size:1.1rem;font-weight:700;color:var(--green);margin-bottom:16px">📋 Novidades - SisGOPA</div>
 
-    <!-- v5.5 — aberta por padrão -->
+    <!-- v5.6 — aberta por padrão -->
     <div style="margin-bottom:8px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v5.5 - 11/03/2026</div>
+      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v5.6 - 11/03/2026</div>
       <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
+        <li>👥 Disponibilidade: nova aba 📊 TOTAL com efetivo geral (pilotos + tripulantes)</li>
+        <li>✈️ Disponibilidade: aba PILOTOS e aba TRIPULANTES com status individual</li>
+        <li>🔴 Tripulantes: status combina desadaptação PIMO + cartão vencido (real)</li>
+        <li>🃏 Cartão vencido mostra qual cartão no card</li>
+        <li>🚫 CVI/RVSM removido do check de tripulantes (cartão exclusivo de pilotos)</li>
+        <li>📋 PIMO/TRP: contagem corrigida — só quem tem registro de voo no ano</li>
+        <li>🔢 Filtro Comissários primeiro na tela PIMO/TRP</li>
+      </ul>
+    </div>
+    <!-- v5.5 — colapsável -->
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v5.5 - 11/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+    <ul style="margin:4px 0 8px;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
         <li>📱 PWA — instale o SisGOPA como app no celular (Android e iPhone)</li>
         <li>🔗 Página de instalação dedicada: <em>/instalar.html</em></li>
         <li>📴 Funciona offline com os últimos dados carregados</li>
         <li>🗓️ Calendário: barras multi-dia VC-1/VC-2 funcionando no desktop e celular</li>
-      </ul>
-    </div>
+      </ul></details>
     <!-- v5.4 — colapsável -->
     <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v5.4 - 11/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
     <ul style="margin:4px 0 8px;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
