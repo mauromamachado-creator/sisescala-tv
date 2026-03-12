@@ -1587,7 +1587,7 @@ function renderScreen1(){
     html+=renderSection('VC-1',pilotData.vc1,'card-vc1','')+renderSection('VC-2',pilotData.vc2,'card-vc2','vc2');
   } else if(activeTab==='tripulantes'){
     const grupos=[{key:'Comissário',label:'Comissários',cor:'var(--yellow)'},{key:'Mecânico',label:'Mecânicos',cor:'var(--vc1)'},{key:'Operador de Comunicações',label:'OPR. COM.',cor:'var(--green)'}];
-    const cartoesCheck=['inspSaude','crm','cviRvsm','simulador','tdie','passaporte','cOperacional'];
+    const cartoesCheck=['inspSaude','crm','cviRvsm','simulador','tdie','passaporte'];
     const pimoTrips=(_pimoCache&&_pimoCache.tripulantes)||[];
     const getTripStatus=(ct)=>{
       if(!ct)return{status:'SEM DADOS',cls:'st-out',detail:''};
