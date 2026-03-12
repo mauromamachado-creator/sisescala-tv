@@ -5586,7 +5586,14 @@ async function getAiswebData(icao){
     const hasTwr=/TWR\s/.test(raw.substring(0,30000));
     // Runway designations
     const rwyDesig=[...new Set((raw.match(/RWY\s+(\d{2}[LRC]?)/g)||[]).map(m=>m.replace('RWY ','').trim()))].sort();
-    return{rwyLen:maxLen||null,rwyWid:maxWid||null,hasIfr,hasSid,hasStar,fireCat,pcn:pcnList[0]||null,oprType,hasNight,elevFt,adHr,hasTwr,runways,rwyDesig};
+    // Informação Adicional (restrições operacionais de pista cadastradas no aeródromo)
+    let infoAdicional=null;
+    const mInfo=raw.match(/informa[çc][aã]o\s+adicional([\s\S]*?)(?:<tr|<\/table)/i);
+    if(mInfo){
+      const block=mInfo[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+      if(block)infoAdicional=block;
+    }
+    return{rwyLen:maxLen||null,rwyWid:maxWid||null,hasIfr,hasSid,hasStar,fireCat,pcn:pcnList[0]||null,oprType,hasNight,elevFt,adHr,hasTwr,runways,rwyDesig,infoAdicional};
   }catch(e){return empty;}
 }
 
@@ -5910,9 +5917,13 @@ function botCodigo(){
   html+=`</div><div id="codResult" style="margin-top:12px"></div>`;
   botOut(html,false);
 }
-function filterNotamRunway(text){
+function filterNotamRunway(text,useEmojis=true){
   if(!text)return[];
   const alerts=[];
+  const pClose=useEmojis?'🚫 ':'';
+  const pWarn=useEmojis?'⚠️ ':'';
+  const pBan=useEmojis?'⛔ ':'';
+
   text.trim().split(/\n{2,}/).forEach(notam=>{
     const u=notam.toUpperCase();
     // Extract period
@@ -5921,18 +5932,43 @@ function filterNotamRunway(text){
     if(pm)timeInfo+=` (${pm[1]})`;
     const dly=notam.match(/DLY\s+(\d{4})-(\d{4})/);
     if(dly)timeInfo+=` (${dly[1]}-${dly[2]} UTC DLY)`;
+
     // RWY closed
     if(u.includes('QMRLC')||(u.includes('RWY')&&(u.includes('CLSD')||u.includes('CLOSED')))){
       const rm=u.match(/RWY\s+(\S+)\s+CLS[ED]/);
-      alerts.push(rm?`🚫 RWY ${rm[1]} FECHADA${timeInfo}`:`🚫 Pista fechada${timeInfo}`);
+      alerts.push(rm?`${pClose}RWY ${rm[1]} FECHADA${timeInfo}`:`${pClose}Pista fechada${timeInfo}`);
+      return;
     }
+
     // RWY reduced/shortened
-    else if(u.includes('RWY')&&(u.includes('REDUCED')||u.includes('SHORTENED')||u.includes('REDUZIDA'))){
-      alerts.push(`⚠️ Pista com dimensão reduzida${timeInfo}`);
+    if(u.includes('RWY')&&(u.includes('REDUCED')||u.includes('SHORTENED')||u.includes('REDUZIDA'))){
+      alerts.push(`${pWarn}Pista com dimensão reduzida${timeInfo}`);
+      return;
     }
+
     // Threshold displaced
-    else if(u.includes('THR')&&(u.includes('DISPLACED')||u.includes('DESLOCAD'))){
-      alerts.push(`⚠️ Cabeceira deslocada${timeInfo}`);
+    if(u.includes('THR')&&(u.includes('DISPLACED')||u.includes('DESLOCAD'))){
+      alerts.push(`${pWarn}Cabeceira deslocada${timeInfo}`);
+      return;
+    }
+
+    // Restrictions / prohibitions (ex: PRB OPS LDG de ACFT CIVIL com motor a reação (TURBOJATO))
+    if(u.includes('RWY') && (
+      u.includes('PRB') || u.includes('PROIB') || u.includes('PROHIB') || u.includes('PROH ') || u.includes('FORBID') || u.includes('NO OPS') || u.includes('NOT AUTH')
+    )){
+      const rwy=(u.match(/RWY\s+(\d{2}[LRC]?)/)||[])[1];
+      // try to capture a short human-friendly snippet
+      let snippet='RESTRIÇÃO OPERACIONAL';
+      const m=notam.replace(/\s+/g,' ').match(/RWY\s+\d{2}[LRC]?\s+([^\.]{10,140})/i);
+      if(m) snippet=m[1].trim();
+      snippet=snippet
+        .replace(/\bOPS\b/i,'OPS')
+        .replace(/\bLDG\b/i,'LDG')
+        .replace(/\bTKOF\b/i,'TKOF')
+        .replace(/\bACFT\b/ig,'ACFT');
+      if(rwy) alerts.push(`${pBan}RWY ${rwy}: ${snippet}${timeInfo}`);
+      else alerts.push(`${pBan}${snippet}${timeInfo}`);
+      return;
     }
   });
   return alerts;
@@ -6221,6 +6257,12 @@ async function botExecMsgPadrao(){
     else lines.push('- Operação: somente VFR');
     lines.push(destAis.hasNight?'- Opera diurno e noturno':'- Opera somente diurno (sem iluminação de pista)');
     lines.push(`- ${fuel.text}`);
+    // Restrições operacionais do aeródromo (Informação Adicional AISWEB)
+    if(destAis.infoAdicional){
+      const frases=destAis.infoAdicional.split(/(?<=[\.!?])\s+/);
+      const restricoes=frases.filter(f=>{const fu=f.toUpperCase();return fu.includes('RWY')&&(/\bPRB\b/.test(fu)||fu.includes('PROIB')||fu.includes('PROHIB')||fu.includes('RESTRIT')||fu.includes('NO OPS'));});
+      if(restricoes.length)lines.push(`- RESTR AD: ${restricoes.join(' | ')}`);
+    }
     lines.push(`- ${notamAlert}`);
     lines.push(rec.needed?`- Necessita missão de REC (${rec.reasons.join('; ')})`:'- Não necessita missão de REC');
     // VC-1 - checar TODOS os PCNs de todas as pistas (igual bot)
