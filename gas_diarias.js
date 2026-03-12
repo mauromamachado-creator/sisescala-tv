@@ -7,6 +7,7 @@
 //   (sem action)                   → retorna pdfs_gerados + diarias_concluidas (comportamento original)
 //
 // Ações POST (body JSON):
+//   {action:"salvar_numero", om_id, numero}  → salva número da OM na aba Numeros
 //   {action:"pdf_gerado", om_id}
 //   {action:"concluir",   om_id}
 //   {action:"desfazer",   om_id}
@@ -67,6 +68,29 @@ function _dispatch(p) {
     sh.appendRow([proximo, omId, new Date().toISOString(), ano]);
 
     return _json({ ok: true, numero: proximo, existente: false });
+  }
+
+  // ── salvar_numero ──────────────────────────────────────────────────────────
+  // Salva número da OM na aba Numeros (usado quando número vem do ID da OM)
+  if (action === 'salvar_numero') {
+    var omId = p.om_id || '';
+    var numero = Number(p.numero) || 0;
+    var sh = _getOrCreate(ss, 'Numeros');
+    if (sh.getLastRow() === 0) {
+      sh.getRange(1,1,1,4).setValues([['Numero','OM','Timestamp','Ano']]);
+    }
+    var ano = new Date().getFullYear();
+    // Verifica se já existe registro para esta OM no ano
+    if (sh.getLastRow() > 1) {
+      var dados = sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues();
+      for (var i = 0; i < dados.length; i++) {
+        if (String(dados[i][1]) === String(omId) && Number(dados[i][3]) === ano) {
+          return _json({ ok: true, existente: true });
+        }
+      }
+    }
+    sh.appendRow([numero, omId, new Date().toISOString(), ano]);
+    return _json({ ok: true, existente: false });
   }
 
   // ── pdf_gerado ────────────────────────────────────────────────────────────

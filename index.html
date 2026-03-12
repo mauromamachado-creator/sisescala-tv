@@ -3076,6 +3076,11 @@ async function gerarDiariaPDFBtn(btn,omId){
   // Número da solicitação = número da OM (ex: "86/GTE-1/2026" → 86)
   const omNum=parseInt((omId||'').split('/')[0],10);
   const numSolicitacao=omNum&&!isNaN(omNum)?omNum:null;
+  // Salva o número na planilha (aba Numeros) como antes
+  if(numSolicitacao){
+    fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'salvar_numero',om_id:omId,numero:numSolicitacao})})
+      .catch(e=>console.warn('Erro ao salvar número na planilha:',e));
+  }
   btn.textContent='📥 BAIXAR PDF';btn.disabled=false;
   gerarDiariaPDF(omId,numSolicitacao);
 }
