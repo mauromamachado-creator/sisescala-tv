@@ -6368,8 +6368,8 @@ function updateStatusPanel(){
   html+=`<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-weight:700;color:var(--vc1)">Status dos Dados</div>`;
   const checks=[];
   const _totalTrip=(pilotData.vc1||[]).length+(pilotData.vc2||[]).length;
-  if(_totalTrip>0)checks.push({ok:true,txt:`${_totalTrip} tripulantes`});
-  else checks.push({ok:false,txt:'0 tripulantes carregados'});
+  if(_totalTrip>0)checks.push({ok:true,txt:`${_totalTrip} pilotos`});
+  else checks.push({ok:false,txt:'0 pilotos carregados'});
   if(flights&&flights.length)checks.push({ok:true,txt:`${flights.length} voos registrados`});
   else checks.push({ok:false,txt:'0 voos registrados'});
   if(Object.keys(BR_AIRPORTS).length>0)checks.push({ok:true,txt:`${Object.keys(BR_AIRPORTS).length} aeroportos`});
