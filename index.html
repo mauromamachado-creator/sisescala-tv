@@ -1598,7 +1598,7 @@ function renderScreen1(){
     const pimoTripsTotal=(_pimoCache&&_pimoCache.tripulantes)||[];
     const _cartoesCheckDisp=['inspSaude','crm','simulador','tdie','passaporte'];
     const tripDisp=allTrip.filter(ct=>{
-      const pimoEntry=pimoTripsTotal.find(t=>t.trigrama===ct.trigrama||(t.nome&&ct.nome&&t.nome.toUpperCase()===ct.nome.toUpperCase()));
+      const pimoEntry=pimoTripsTotal.find(t=>t.trigrama===ct.trigrama||_normNome(t.nome)===_normNome(ct.nome));
       const afDias=pimoEntry?pimoEntry.afastamento:null;
       if(afDias!==null&&afDias>=45)return false;
       for(const k of _cartoesCheckDisp){const cv=cartaoColor(ct[k],td);if(cv.days!=null&&cv.days<0)return false;}
@@ -1638,7 +1638,7 @@ function renderScreen1(){
     const getTripStatus=(ct)=>{
       if(!ct)return{status:'SEM DADOS',cls:'st-out',detail:''};
       // Checar desadaptação via PIMO
-      const pimoEntry=pimoTrips.find(t=>t.trigrama===ct.trigrama||(t.nome&&ct.nome&&t.nome.toUpperCase()===ct.nome.toUpperCase()));
+      const pimoEntry=pimoTrips.find(t=>t.trigrama===ct.trigrama||_normNome(t.nome)===_normNome(ct.nome));
       const afDias=pimoEntry?pimoEntry.afastamento:null;
       const desadaptado=afDias!==null&&afDias>=45;
       // Checar cartões (só conta se realmente vencido — data passada)
@@ -2261,7 +2261,7 @@ function renderScreenTV(){
   const _tvPimoTrips=(_pimoCache&&_pimoCache.tripulantes)||[];
   const _tvCartoesCheck=['inspSaude','crm','simulador','tdie','passaporte'];
   const _tvTripDisp=_tvAllTrip.filter(ct=>{
-    const pe=_tvPimoTrips.find(t=>t.trigrama===ct.trigrama||(t.nome&&ct.nome&&t.nome.toUpperCase()===ct.nome.toUpperCase()));
+    const pe=_tvPimoTrips.find(t=>t.trigrama===ct.trigrama||_normNome(t.nome)===_normNome(ct.nome));
     const af=pe?pe.afastamento:null;
     if(af!==null&&af>=45)return false;
     for(const k of _tvCartoesCheck){const cv=cartaoColor(ct[k],td);if(cv.days!=null&&cv.days<0)return false;}
@@ -3357,6 +3357,7 @@ async function loadPimoData(){
   }catch(e){console.warn('PIMO load error:',e);return null;}
 }
 
+function _normNome(n){if(!n)return'';return n.toUpperCase().replace(/\b(2S|1S|SO|CP|TC|MJ|T1|ST|CB|SD|GEN|CEL|TC|MAJ|CAP|TEN)\b/g,'').replace(/\((GTE|PR)\)/g,'').replace(/\s+/g,' ').trim();}
 function _pimoAfastCor(dias){if(dias<0)return'var(--green)';if(dias<=15)return'var(--green)';if(dias<=45)return'var(--yellow)';return'var(--red)';}
 function _pimoQualBadge(q){const map={IN:'#64b4ff',MC:'var(--green)',OC:'var(--yellow)',TRN:'#9b8ee8'};return map[q]||'var(--text2)';}
 
