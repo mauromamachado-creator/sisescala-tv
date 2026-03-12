@@ -2164,7 +2164,7 @@ function renderScreenTV(){
 
   // Row 1: KPIs
   html+=`<div style="grid-column:1/-1;display:flex;justify-content:center;gap:24px;padding:8px 0">`;
-  html+=`<div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:var(--vc1)">${totalTrip}</div><div style="font-size:.7rem;color:var(--text2)">TRIPULANTES</div></div>`;
+  html+=`<div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:var(--vc1)">${totalTrip}</div><div style="font-size:.7rem;color:var(--text2)">PILOTOS</div></div>`;
   html+=`<div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:var(--green)">${totalDisp}</div><div style="font-size:.7rem;color:var(--text2)">DISPONÍVEIS</div></div>`;
   html+=`<div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:var(--red)">${totalIndisp}</div><div style="font-size:.7rem;color:var(--text2)">INDISPONÍVEIS</div></div>`;
   const currentYear=td.getFullYear();const flightsYear=flights.filter(f=>f.dataObj&&f.dataObj.getFullYear()===currentYear);
