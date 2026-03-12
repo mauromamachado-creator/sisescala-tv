@@ -1549,7 +1549,7 @@ function renderScreen0(){
   {
     const _done=getDiariasDownloaded();const _conc=getDiariasConcluidas();
     const _brP=['SB','SD','SN','SI','SS','SW'];
-    const _missaoDiaria=m=>{if(!m)return true;const u=m.toUpperCase().trim();return['PR TRLD','PR ESCAV','PR RES','ESCAV'].includes(u)||u==='PR';};
+    const _missaoDiaria=m=>{if(!m)return true;const u=m.toUpperCase().trim();return['PR TLD','PR ESCAV','PR RES','ESCAV'].includes(u)||u==='PR';};
     const _diarias=(omData||[]).filter(om=>om.pernas.every(p=>_brP.some(pf=>p.origem.startsWith(pf))&&_brP.some(pf=>p.destino.startsWith(pf)))&&_missaoDiaria(om.missao));
     // Atualiza do GAS em background e re-renderiza se necessário
     fetchDiariasConcluidas().then(fresh=>{const pAfter=_diarias.filter(om=>!fresh[om.om]);if(pAfter.length!==_pend.length)renderScreen0();});
@@ -2789,7 +2789,7 @@ function renderScreenDiarias(){
   function _icaoDest(p){return p.destino||(p.eta&&p.eta.match(/([A-Z]{4})$/)?p.eta.match(/([A-Z]{4})$/)[1]:'');}
   const isNacional=om=>om.pernas.every(p=>brPrefixes.some(pf=>_icaoOrig(p).startsWith(pf))&&brPrefixes.some(pf=>_icaoDest(p).startsWith(pf)));
   // Missões que fazem jus a diárias
-  const _MISSOES_DIARIA=['PR TRLD','PR ESCAV','PR','PR RES','ESCAV'];
+  const _MISSOES_DIARIA=['PR TLD','PR ESCAV','PR','PR RES','ESCAV'];
   const temMissaoDiaria=om=>{
     // Se campo missao estiver preenchido, usa ele
     if(om.missao){
