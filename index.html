@@ -3104,16 +3104,18 @@ const PIMO_SHEET_ID='1Tnw8l_YXD22WB8kvpzXl53lpq7D_BFQTBFM-GkqZ5ts';
 const PIMO_LANC_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Lan%C3%A7amentos`;
 const PIMO_GER_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=RELAT%C3%93RIO%20GERENCIAL`;
 const PIMO_DADOS_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Dados`;
+const PIMO_COM_PR_URL=`https://docs.google.com/spreadsheets/d/${PIMO_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=COMISS%C3%81RIOS%20DA%20PR`;
 let _pimoCache=null;
 
 async function loadPimoData(){
   if(_pimoCache)return _pimoCache;
   try{
     // Carrega lançamentos e relatório gerencial em paralelo
-    const [rLanc,rGer,rDados]=await Promise.all([
+    const [rLanc,rGer,rDados,rComPr]=await Promise.all([
       fetch(PIMO_LANC_URL+'&t='+Date.now()).then(r=>r.text()),
       fetch(PIMO_GER_URL+'&t='+Date.now()).then(r=>r.text()),
-      fetch(PIMO_DADOS_URL+'&t='+Date.now()).then(r=>r.text())
+      fetch(PIMO_DADOS_URL+'&t='+Date.now()).then(r=>r.text()),
+      fetch(PIMO_COM_PR_URL+'&t='+Date.now()).then(r=>r.text())
     ]);
     const parseCsv=txt=>{
       const rows=[];let cur=[],field='',inQ=false;
@@ -3130,6 +3132,13 @@ async function loadPimoData(){
     const lancRows=parseCsv(rLanc);
     const gerRows=parseCsv(rGer);
     const dadosRows=parseCsv(rDados);
+    const comPrRows=parseCsv(rComPr);
+    // Comissários que voam os dois projetos (VC-1 e VC-2) — exceto Flávia
+    const ambosSet=new Set();
+    comPrRows.slice(1).forEach(r=>{
+      const nome=(r[1]||'').trim();
+      if(nome&&nome!=='1S FLÁVIA (PR)')ambosSet.add(nome);
+    });
     // Mapa nome → função (MEC VC-1, MEC VC-2, OC, COM)
     const funcMap={};
     dadosRows.forEach(r=>{
@@ -3210,7 +3219,7 @@ async function loadPimoData(){
       const lf=lastFlight[nome];
       const afastamento=lf?Math.floor((hoje-lf)/(86400000)):999;
       const funcao=funcaoRaw.startsWith('MEC')?'MEC':funcaoRaw;
-      const aeronave=funcaoRaw==='MEC VC-1'?'VC-1':funcaoRaw==='MEC VC-2'?'VC-2':(vcMap[nome]||'');
+      const aeronave=funcaoRaw==='MEC VC-1'?'VC-1':funcaoRaw==='MEC VC-2'?'VC-2':ambosSet.has(nome)?'AMBOS':(vcMap[nome]||'');
       const qual=qualMap[nome]||'';
       tripulantes.push({nome,qual,
         horasAno:minToHStr(st.horasAnoMin),horasAnoMin:st.horasAnoMin,
@@ -3246,7 +3255,7 @@ async function renderScreenPimo(){
   let filtrados=tripulantes;
   if(busca)filtrados=filtrados.filter(t=>t.nome.toLowerCase().includes(busca));
   if(filtroFunc)filtrados=filtrados.filter(t=>t.funcao===filtroFunc);
-  if(filtroAnv)filtrados=filtrados.filter(t=>t.aeronave===filtroAnv);
+  if(filtroAnv)filtrados=filtrados.filter(t=>t.aeronave===filtroAnv||t.aeronave==='AMBOS');
   const sorted=[...filtrados];
   const sortBy=window._pimoSort||'afastamento';
   if(sortBy==='horas')sorted.sort((a,b)=>b.horasTrimMin-a.horasTrimMin);
@@ -3333,7 +3342,7 @@ async function renderScreenPimo(){
             ${t.qual?`<span style="font-size:.65rem;background:${qualCor}22;color:${qualCor};border:1px solid ${qualCor}55;padding:1px 6px;border-radius:20px;font-weight:700">${t.qual}</span>`:`<span style="font-size:.65rem;background:#2a2a2a;color:var(--text2);padding:1px 6px;border-radius:20px">sem dados</span>`}
             ${unid?`<span style="font-size:.65rem;background:#1a2a40;color:var(--text2);padding:1px 6px;border-radius:20px">${unid}</span>`:''}
             ${funcLabel?`<span style="font-size:.65rem;background:#1a2040;color:#a88fff;padding:1px 6px;border-radius:20px">${funcLabel}</span>`:''}
-            ${anvLabel?`<span style="font-size:.65rem;background:#0a2030;color:${anvLabel==='VC-1'?'var(--vc1)':'var(--green)'};padding:1px 6px;border-radius:20px">${anvLabel}</span>`:''}
+            ${anvLabel?`<span style="font-size:.65rem;background:#0a2030;color:${anvLabel==='VC-1'?'var(--vc1)':anvLabel==='VC-2'?'var(--green)':'var(--yellow)'};padding:1px 6px;border-radius:20px">${anvLabel==='AMBOS'?'VC-1+2':anvLabel}</span>`:''}
           </div>
         </div>
         <div style="text-align:right;flex-shrink:0">
