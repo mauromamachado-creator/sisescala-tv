@@ -1592,13 +1592,16 @@ function renderScreen1(){
     const allPilotos=[...(pilotData.vc1||[]),...(pilotData.vc2||[])];
     const pilotosAtivos=allPilotos.filter(p=>{const st=getPilotStatus(p,td);return st.status!=='FORA';});
     const pilotosDisp=pilotosAtivos.filter(p=>{const st=getPilotStatus(p,td);return st.status==='DISPONÍVEL';});
-    // --- Tripulantes (usa PIMO como fonte primária, igual à tela PIMO/TRP) ---
-    const allTrip=_pimoCache?_pimoCache.tripulantes.filter(t=>t.ultimoVoo!==null):(()=>{const tripFuncoes=['Comissário','Mecânico','Operador de Comunicações'];return(cartoesData||[]).filter(ct=>tripFuncoes.includes(ct.funcao));})();
+    // --- Tripulantes (mesma base e lógica do submenu TRIPULANTES) ---
+    const tripFuncoes=['Comissário','Mecânico','Operador de Comunicações'];
+    const allTrip=(cartoesData||[]).filter(ct=>tripFuncoes.includes(ct.funcao));
+    const pimoTripsTotal=(_pimoCache&&_pimoCache.tripulantes)||[];
     const _cartoesCheckDisp=['inspSaude','crm','simulador','tdie','passaporte'];
-    const tripDisp=allTrip.filter(t=>{
-      if(t.afastamento>=45)return false;
-      const ct=(cartoesData||[]).find(c=>c.trigrama===t.trigrama||(c.nome&&t.nome&&c.nome.toUpperCase()===t.nome.toUpperCase()));
-      if(ct){for(const k of _cartoesCheckDisp){const cv=cartaoColor(ct[k],td);if(cv.days!=null&&cv.days<0)return false;}}
+    const tripDisp=allTrip.filter(ct=>{
+      const pimoEntry=pimoTripsTotal.find(t=>t.trigrama===ct.trigrama||(t.nome&&ct.nome&&t.nome.toUpperCase()===ct.nome.toUpperCase()));
+      const afDias=pimoEntry?pimoEntry.afastamento:null;
+      if(afDias!==null&&afDias>=45)return false;
+      for(const k of _cartoesCheckDisp){const cv=cartaoColor(ct[k],td);if(cv.days!=null&&cv.days<0)return false;}
       return true;
     });
     // --- Render ---
@@ -2254,17 +2257,22 @@ function renderScreenTV(){
   html+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto 1fr 1fr;gap:10px;height:calc(100vh - 60px);overflow:hidden;font-size:.82rem;padding:0 8px">`;
 // Note: row 3 panels use overflow-y:auto individually
 
-  // % tripulantes disponíveis (pilotos + não-pilotos PIMO)
-  let pctDisp='—';let pctCor='var(--text2)';
-  if(_pimoCache){
-    const pimoTrip=_pimoCache.tripulantes.filter(t=>t.ultimoVoo!==null);
-    const pimoDisp=pimoTrip.filter(t=>t.afastamento<45).length;
-    const totalGeral=totalTrip+pimoTrip.length;
-    const totalDispGeral=totalDisp+pimoDisp;
-    const pct=totalGeral>0?Math.round(totalDispGeral/totalGeral*100):0;
-    pctDisp=pct+'%';
-    pctCor=pct>=80?'var(--green)':pct>=60?'var(--yellow)':'var(--red)';
-  }
+  // % efetivo disponível (pilotos + tripulantes — mesma lógica do submenu TOTAL/TRIPULANTES)
+  const _tvTripFuncoes=['Comissário','Mecânico','Operador de Comunicações'];
+  const _tvAllTrip=(cartoesData||[]).filter(ct=>_tvTripFuncoes.includes(ct.funcao));
+  const _tvPimoTrips=(_pimoCache&&_pimoCache.tripulantes)||[];
+  const _tvCartoesCheck=['inspSaude','crm','simulador','tdie','passaporte'];
+  const _tvTripDisp=_tvAllTrip.filter(ct=>{
+    const pe=_tvPimoTrips.find(t=>t.trigrama===ct.trigrama||(t.nome&&ct.nome&&t.nome.toUpperCase()===ct.nome.toUpperCase()));
+    const af=pe?pe.afastamento:null;
+    if(af!==null&&af>=45)return false;
+    for(const k of _tvCartoesCheck){const cv=cartaoColor(ct[k],td);if(cv.days!=null&&cv.days<0)return false;}
+    return true;
+  });
+  const totalGeral=totalTrip+_tvAllTrip.length;
+  const totalDispGeral=totalDisp+_tvTripDisp.length;
+  const pct=totalGeral>0?Math.round(totalDispGeral/totalGeral*100):0;
+  let pctDisp=pct+'%';let pctCor=pct>=80?'var(--green)':pct>=60?'var(--yellow)':'var(--red)';
 
   // Row 1: KPIs
   html+=`<div style="grid-column:1/-1;display:flex;justify-content:center;gap:24px;padding:8px 0">`;
@@ -5127,7 +5135,7 @@ function parseDateCartao(s){
   return null;
 }
 function parseCartoes(rows){
-  const EXCLUIDOS=['BEH','SOZ'];
+  const EXCLUIDOS=['BEH','SOZ','FLA'];
   const result=[];
   for(let i=1;i<rows.length;i++){
     const r=rows[i];
