@@ -6355,6 +6355,7 @@ function goScreen(n){
     return;
   }
   if(n===15)renderScreenPimo();
+  if(n===1&&!_pimoCache)loadPimoData().then(()=>{if(currentScreen===1)renderScreen1();});
   _trackScreen(n);
   currentScreen=n;document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id==='screen'+n));document.querySelectorAll('.nav-btns button').forEach(b=>b.classList.toggle('active',b.id==='btn'+n));
   // Fechar menu mobile ao trocar de tela
