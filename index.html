@@ -5602,18 +5602,24 @@ async function getAiswebData(icao){
     }
     // Suplementos AIP — fechamentos de pista por obras (id="sup")
     let suplAlertas=[];
-    const mSec=raw.match(/id="sup"[\s\S]*?(<h4[\s\S]*?)((?=<h[234]\s)|$)/);
-    if(mSec){
-      const items=[...mSec[0].matchAll(/class="notam"[^>]*>([\s\S]*?)(?=class="notam"|<\/section|<h[234]|$)/g)];
-      items.forEach(m=>{
-        const clean=m[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
-        const u=clean.toUpperCase();
-        if(('PISTA' in u||u.includes('PISTA'))&&(u.includes('FECHAD')||u.includes('CLSD'))||
-           u.includes('RWY')&&(u.includes('CLSD')||u.includes('FECHAD')||u.includes('PRB')||u.includes('PROIB'))){
-          suplAlertas.push('⚠️ SUPL AIP: '+clean.substring(0,250));
-        }
-      });
-    }
+    try{
+      const supIdx=raw.indexOf('id="sup"');
+      if(supIdx>=0){
+        // Pega o bloco do section de suplementos (até próximo h4 ou fim)
+        const supEnd=raw.indexOf('<h4',supIdx+100);
+        const supBlock=supEnd>0?raw.substring(supIdx,supEnd):raw.substring(supIdx,supIdx+8000);
+        // Divide pelos divs de cada suplemento
+        const divParts=supBlock.split('<div class="notam"');
+        divParts.slice(1).forEach(part=>{
+          const clean=part.replace(/<[^>]+>/g,' ').replace(/&[a-zA-Z]+;/g,' ').replace(/\s+/g,' ').trim();
+          const u=clean.toUpperCase();
+          if((u.includes('PISTA')&&(u.includes('FECHAD')||u.includes('CLSD')))||
+             (u.includes('RWY')&&(u.includes('CLSD')||u.includes('FECHAD')||u.includes('PRB')||u.includes('PROIB')))){
+            suplAlertas.push('⚠️ SUPL AIP: '+clean.substring(0,250));
+          }
+        });
+      }
+    }catch(se){console.warn('suplAlertas parse error',se);}
     return{rwyLen:maxLen||null,rwyWid:maxWid||null,hasIfr,hasSid,hasStar,fireCat,pcn:pcnList[0]||null,oprType,hasNight,elevFt,adHr,hasTwr,runways,rwyDesig,infoAdicional,suplAlertas};
   }catch(e){return empty;}
 }
