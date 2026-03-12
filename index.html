@@ -5587,19 +5587,18 @@ async function getAiswebData(icao){
     // Runway designations
     const rwyDesig=[...new Set((raw.match(/RWY\s+(\d{2}[LRC]?)/g)||[]).map(m=>m.replace('RWY ','').trim()))].sort();
     // Informação Adicional (restrições operacionais do aeródromo no AISWEB)
-    // OBS: alguns proxies podem alterar acentos/encoding, então o match é tolerante.
     let infoAdicional=null;
-    const mInfo=raw.match(/INFORMA[\s\S]{0,40}ADICIONAL[\s\S]*?<ol[\s\S]*?<\/ol>/i);
-    if(mInfo){
-      const block=mInfo[0]
-        .replace(/<[^>]+>/g,' ')
-        .replace(/\s+/g,' ')
-        .trim();
-      if(block){
-        // Remove o título para ficar só o conteúdo
-        infoAdicional=block.replace(/^INFORMA[\s\S]{0,40}ADICIONAL\s*/i,'').trim();
+    try{
+      const iaSearch=/INFORMA.{0,40}ADICIONAL/i.exec(raw);
+      if(iaSearch){
+        const iaSection=raw.substring(iaSearch.index,iaSearch.index+3000);
+        const olS=iaSection.indexOf('<ol');const olE=iaSection.indexOf('</ol>');
+        if(olS>=0&&olE>olS){
+          const block=iaSection.substring(olS,olE+5).replace(/<[^>]+>/g,' ').replace(/&[a-zA-Z]+;/g,' ').replace(/\s+/g,' ').trim();
+          if(block)infoAdicional=block;
+        }
       }
-    }
+    }catch(ie){console.warn('infoAdicional err',ie);}
     // Suplementos AIP — fechamentos de pista por obras (id="sup")
     let suplAlertas=[];
     try{
