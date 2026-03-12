@@ -1581,19 +1581,9 @@ function renderScreen1(){
     const allPilotos=[...(pilotData.vc1||[]),...(pilotData.vc2||[])];
     const pilotosAtivos=allPilotos.filter(p=>{const st=getPilotStatus(p,td);return st.status!=='FORA';});
     const pilotosDisp=pilotosAtivos.filter(p=>{const st=getPilotStatus(p,td);return st.status==='DISPONÍVEL';});
-    // --- Tripulantes ---
-    const tripFuncoes=['Comissário','Mecânico','Operador de Comunicações'];
-    const allTrip=(cartoesData||[]).filter(ct=>tripFuncoes.includes(ct.funcao));
-    const pimoTrips=(_pimoCache&&_pimoCache.tripulantes)||[];
-    const cartoesCheckTotal=['inspSaude','crm','cviRvsm','simulador','tdie','passaporte'];
-    const getTripDisp=(ct)=>{
-      const pimoEntry=pimoTrips.find(t=>t.trigrama===ct.trigrama||(t.nome&&ct.nome&&t.nome.toUpperCase()===ct.nome.toUpperCase()));
-      const afDias=pimoEntry?pimoEntry.afastamento:null;
-      if(afDias!==null&&afDias>=45)return false;
-      for(const k of cartoesCheckTotal){const c=cartaoColor(ct[k],td);if(c.cls==='vermelho')return false;}
-      return true;
-    };
-    const tripDisp=allTrip.filter(getTripDisp);
+    // --- Tripulantes (usa PIMO como fonte primária, igual à tela PIMO/TRP) ---
+    const allTrip=_pimoCache?_pimoCache.tripulantes.filter(t=>t.ultimoVoo!==null):(()=>{const tripFuncoes=['Comissário','Mecânico','Operador de Comunicações'];return(cartoesData||[]).filter(ct=>tripFuncoes.includes(ct.funcao));})();
+    const tripDisp=_pimoCache?allTrip.filter(t=>t.afastamento<45):allTrip.filter(ct=>{const cartoesCheckTotal=['inspSaude','crm','cviRvsm','simulador','tdie','passaporte'];for(const k of cartoesCheckTotal){const c=cartaoColor(ct[k],td);if(c.cls==='vermelho')return false;}return true;});
     // --- Render ---
     const bigNum=(val,total,label,cor)=>`<div style="background:var(--bg3);border-radius:12px;padding:20px 24px;text-align:center;flex:1;min-width:140px;border:1px solid var(--border)">
       <div style="font-size:2.8rem;font-weight:900;color:${cor};line-height:1">${val}</div>
@@ -1606,11 +1596,11 @@ function renderScreen1(){
     const totalGeral=pilotosAtivos.length+allTrip.length;
     const corG=totalDisp/Math.max(totalGeral,1)>=0.8?'var(--green)':totalDisp/Math.max(totalGeral,1)>=0.6?'var(--yellow)':'var(--red)';
     html+=`<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px">`;
-    html+=bigNum(totalDisp,totalGeral,'EFETIVO TOTAL',corG);
-    html+=bigNum(pilotosDisp.length,pilotosAtivos.length,'PILOTOS',corP);
     html+=bigNum(tripDisp.length,allTrip.length,'TRIPULANTES',corT);
+    html+=bigNum(pilotosDisp.length,pilotosAtivos.length,'PILOTOS',corP);
+    html+=bigNum(totalDisp,totalGeral,'EFETIVO TOTAL',corG);
     html+=`</div>`;
-    if(!_pimoCache)html+=`<div style="font-size:.75rem;color:var(--text2);margin-top:4px">⚠️ PIMO não carregado — desadaptação de tripulantes não considerada. Acesse PIMO/TRP primeiro.</div>`;
+    if(!_pimoCache)html+=`<div style="font-size:.75rem;color:var(--text2);margin-top:4px">⚠️ PIMO não carregado — contagem de tripulantes usando cartões. Acesse PIMO/TRP para números completos.</div>`;
   } else if(activeTab==='pilotos'){
     const renderSection=(title,pilots,cardClass,h2Class)=>{
       let s=`<h2 class="${h2Class}">${title}</h2><div class="pilot-grid">`;
