@@ -5614,7 +5614,7 @@ async function getAiswebData(icao){
           const u=clean.toUpperCase();
           if((u.includes('PISTA')&&(u.includes('FECHAD')||u.includes('CLSD')))||
              (u.includes('RWY')&&(u.includes('CLSD')||u.includes('FECHAD')||u.includes('PRB')||u.includes('PROIB')))){
-            suplAlertas.push('⚠️ SUPL AIP: '+clean.substring(0,250));
+            suplAlertas.push('SUPL AIP: '+clean.substring(0,250));
           }
         });
       }
