@@ -6374,9 +6374,9 @@ function updateStatusPanel(){
   html+=`<span style="float:right;color:var(--text2)">${nowTxt}</span></div>`;
   STATUS_SOURCES.forEach(s=>{
     const st=sourceStatus[s.id]||'pending';
-    // AISWEB e PIMO começam pending (ampulheta) até primeiro uso
+    // AISWEB e PIMO começam pending (luz apagada) até primeiro uso
     const icon=st==='ok'?'sp-ok':st==='fail'?'sp-fail':'sp-na';
-    const label=st==='ok'?'✅':st==='fail'?'❌':'⏳';
+    const label=st==='ok'?'✅':st==='fail'?'❌':'';
     const crit=s.critical?'<span style="color:var(--red);font-size:.6rem;margin-left:4px">●</span>':'';
     html+=`<div class="sp-row"><span><span class="sp-icon ${icon}"></span>${s.label}${crit}</span><span>${label}</span></div>`;
   });
