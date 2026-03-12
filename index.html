@@ -5586,12 +5586,19 @@ async function getAiswebData(icao){
     const hasTwr=/TWR\s/.test(raw.substring(0,30000));
     // Runway designations
     const rwyDesig=[...new Set((raw.match(/RWY\s+(\d{2}[LRC]?)/g)||[]).map(m=>m.replace('RWY ','').trim()))].sort();
-    // Informação Adicional (restrições operacionais de pista cadastradas no aeródromo)
+    // Informação Adicional (restrições operacionais do aeródromo no AISWEB)
+    // OBS: alguns proxies podem alterar acentos/encoding, então o match é tolerante.
     let infoAdicional=null;
-    const mInfo=raw.match(/informa[çc][aã]o\s+adicional([\s\S]*?)(?:<tr|<\/table)/i);
+    const mInfo=raw.match(/INFORMA[\s\S]{0,40}ADICIONAL[\s\S]*?<ol[\s\S]*?<\/ol>/i);
     if(mInfo){
-      const block=mInfo[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
-      if(block)infoAdicional=block;
+      const block=mInfo[0]
+        .replace(/<[^>]+>/g,' ')
+        .replace(/\s+/g,' ')
+        .trim();
+      if(block){
+        // Remove o título para ficar só o conteúdo
+        infoAdicional=block.replace(/^INFORMA[\s\S]{0,40}ADICIONAL\s*/i,'').trim();
+      }
     }
     return{rwyLen:maxLen||null,rwyWid:maxWid||null,hasIfr,hasSid,hasStar,fireCat,pcn:pcnList[0]||null,oprType,hasNight,elevFt,adHr,hasTwr,runways,rwyDesig,infoAdicional};
   }catch(e){return empty;}
