@@ -3072,13 +3072,10 @@ function addDiariaTrip(){
 
 async function gerarDiariaPDFBtn(btn,omId){
   const orig=btn.textContent;
-  btn.disabled=true;btn.textContent='⏳ Obtendo número...';
-  let numSolicitacao=null;
-  try{
-    const r=await fetch(DIARIAS_API+'?action=get_numero&om_id='+encodeURIComponent(omId)+'&t='+Date.now(),{cache:'no-store'});
-    const j=await r.json();
-    if(j.ok && j.numero) numSolicitacao=j.numero;
-  }catch(e){console.warn('Erro ao obter número:',e);}
+  btn.disabled=true;btn.textContent='⏳ Gerando...';
+  // Número da solicitação = número da OM (ex: "86/GTE-1/2026" → 86)
+  const omNum=parseInt((omId||'').split('/')[0],10);
+  const numSolicitacao=omNum&&!isNaN(omNum)?omNum:null;
   btn.textContent='📥 BAIXAR PDF';btn.disabled=false;
   gerarDiariaPDF(omId,numSolicitacao);
 }
