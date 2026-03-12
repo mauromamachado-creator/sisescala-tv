@@ -3380,8 +3380,9 @@ async function loadPimoData(){
     const diasFimTrim=Math.ceil((fimTrim-hoje)/(86400000));
     _pimoCache={tripulantes,avgHorasTrim:minToHStr(avgHorasTrimMin),avgEtapasTrim,trimNome,
       META_HORAS_MIN,META_ETAPAS,minToHStr,tvoToMin,diasFimTrim};
+    if(typeof sourceStatus!=='undefined'){sourceStatus.pimo='ok';updateStatusPanel();}
     return _pimoCache;
-  }catch(e){console.warn('PIMO load error:',e);return null;}
+  }catch(e){console.warn('PIMO load error:',e);if(typeof sourceStatus!=='undefined'){sourceStatus.pimo='fail';updateStatusPanel();}return null;}
 }
 
 function _normNome(n){if(!n)return'';return n.toUpperCase().replace(/\b(2S|1S|SO|CP|TC|MJ|T1|ST|CB|SD|GEN|CEL|TC|MAJ|CAP|TEN)\b/g,'').replace(/\((GTE|PR)\)/g,'').replace(/\s+/g,' ').trim();}
@@ -6314,19 +6315,21 @@ async function botExecMsgPadrao(){
 
 // Robust status tracking
 const STATUS_SOURCES=[
-  {id:'disp',label:'Disponibilidade',critical:true},
-  {id:'lanc',label:'Lançamentos',critical:true},
+  {id:'disp',label:'Diário',critical:true},
+  {id:'lanc',label:'Lançamento',critical:true},
   {id:'ferias',label:'Férias',critical:false},
-  {id:'previsao',label:'Previsão Missões',critical:false},
-  {id:'plan',label:'Planejamento',critical:false},
-  {id:'acnt',label:'ACNT/ALTR',critical:false},
-  {id:'dados',label:'Demais Tripulantes',critical:false},
+  {id:'previsao',label:'Previsão Internacional',critical:false},
+  {id:'plan',label:'Previsão Nacional',critical:false},
+  {id:'acnt',label:'Checklist ACNT/ALTR',critical:false},
+  {id:'dados',label:'Dados Tripulação',critical:false},
   {id:'metar',label:'METAR',critical:false},
-  {id:'anual',label:'Horas Anual',critical:true},
+  {id:'anual',label:'Horas Anuais',critical:true},
   {id:'om',label:'Ordens de Missão',critical:false},
   {id:'cartoes',label:'Cartões',critical:false},
   {id:'pauSebo',label:'Horas/Afastamento',critical:false},
-  {id:'brAirports',label:'Aeroportos BR',critical:false},
+  {id:'brAirports',label:'Base de Aeroportos BR',critical:false},
+  {id:'proxy',label:'BOT SISGOPA',critical:false},
+  {id:'pimo',label:'Relatório Graduados',critical:false},
   {id:'aisweb',label:'AISWEB',critical:false},
 ];
 let sourceStatus={};
@@ -6362,7 +6365,7 @@ function updateStatusPanel(){
     html+=`<div class="sp-row"><span><span class="sp-icon ${icon}"></span>${s.label}${crit}</span><span>${label}</span></div>`;
   });
   // Data quality checks
-  html+=`<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-weight:700;color:var(--vc1)">Integridade</div>`;
+  html+=`<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-weight:700;color:var(--vc1)">Status dos Dados</div>`;
   const checks=[];
   const _totalTrip=(pilotData.vc1||[]).length+(pilotData.vc2||[]).length;
   if(_totalTrip>0)checks.push({ok:true,txt:`${_totalTrip} tripulantes`});
@@ -6430,6 +6433,10 @@ async function loadAllData(){
     diarioData=parseDiario(planRows);
     acntData=parseACNT(acntRows);
     sourceStatus.brAirports=Object.keys(BR_AIRPORTS).length>0?'ok':'fail';
+    // Proxy CORS: ok se METAR conseguiu (usa proxyFetch)
+    sourceStatus.proxy=(sourceStatus.metar==='ok')?'ok':'fail';
+    // PIMO: carrega sob demanda, marcar pending até primeiro acesso
+    if(!_pimoCache){sourceStatus.pimo='pending';}else{sourceStatus.pimo='ok';}
     lastLoadTime=Date.now();
     const nowTxt=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
     document.getElementById('lastUpdate').textContent='Atualizado '+nowTxt;
