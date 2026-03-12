@@ -3356,9 +3356,10 @@ async function renderScreenPimo(){
   else sorted.sort((a,b)=>b.afastamento-a.afastamento);
 
   // Top 3 rankings
-  const topHoras=[...tripulantes].sort((a,b)=>b.horasTrimMin-a.horasTrimMin).slice(0,3);
-  const topEtapas=[...tripulantes].sort((a,b)=>b.etapasTrim-a.etapasTrim).slice(0,3);
-  const topAfast=[...tripulantes].sort((a,b)=>b.afastamento-a.afastamento).slice(0,3);
+  const _tripAtivos=tripulantes.filter(t=>t.ultimoVoo!==null);
+  const topHoras=[..._tripAtivos].sort((a,b)=>b.horasTrimMin-a.horasTrimMin).slice(0,3);
+  const topEtapas=[..._tripAtivos].sort((a,b)=>b.etapasTrim-a.etapasTrim).slice(0,3);
+  const topAfast=[..._tripAtivos].sort((a,b)=>b.afastamento-a.afastamento).slice(0,3);
 
   const medalhas=['🥇','🥈','🥉'];
   const rankHtml=(arr,campo,fmt)=>arr.map((t,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span>${medalhas[i]}</span><span style="flex:1;font-size:.8rem;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.nome.replace(/ \((GTE|PR)\)/,'')}</span><span style="font-size:.8rem;font-weight:700;color:var(--vc1)">${fmt(t)}</span></div>`).join('');
@@ -3367,7 +3368,7 @@ async function renderScreenPimo(){
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px">
     <div>
       <h2 style="margin:0;color:var(--green);font-size:1.2rem">📋 PIMO/TRP — 2026</h2>
-      <div style="color:var(--text2);font-size:.75rem">Programa de Instrução e Manutenção Operacional • ${tripulantes.length} tripulantes</div>
+      <div style="color:var(--text2);font-size:.75rem">Programa de Instrução e Manutenção Operacional • ${tripulantes.filter(t=>t.ultimoVoo!==null).length} tripulantes</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px">
       <div style="display:flex;gap:6px;align-items:center">
