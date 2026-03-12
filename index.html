@@ -1602,7 +1602,6 @@ function renderScreen1(){
       if(desadaptado&&worstCartao==='vencido')return{status:'DESADAPTADO',cls:'st-afastado',detail:`${afDias}d · cartão vencido`};
       if(desadaptado)return{status:'DESADAPTADO',cls:'st-afastado',detail:`${afDias}d sem voar`};
       if(worstCartao==='vencido')return{status:'CARTÃO VENCIDO',cls:'st-afastado',detail:''};
-      if(worstCartao==='atencao')return{status:'ATENÇÃO',cls:'st-alerta',detail:''};
       return{status:'DISPONÍVEL',cls:'st-apto',detail:afDias!==null?`${afDias}d`:''};
     };
     for(const g of grupos){
