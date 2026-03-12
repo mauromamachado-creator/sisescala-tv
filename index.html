@@ -1953,7 +1953,7 @@ function renderScreenCalendar(){
     });
     if(!omDays.length)return;
     const start=Math.min(...omDays),end=Math.max(...omDays);
-    spanEvents.push({text:anvLabel(anv),cls:anv_cls,start,end,isStart:true,isEnd:true});
+    spanEvents.push({text:anvLabel(anv),cls:anv_cls,start,end,isStart:true,isEnd:true,omId:om.om});
   });
 
   // 2) Diário: dias sem OM → barra de dia único
@@ -2043,7 +2043,8 @@ function renderScreenCalendar(){
         const rL=sp.isStart&&barStart===sp.start?'8px':'0';
         const rR=sp.isEnd&&barEnd===sp.end?'8px':'0';
         const showLabel=sp.isStart&&barStart===sp.start||barStart===wStart;
-        html+=`<div class="cal-span-bar ${sp.cls}" style="left:${leftPct}%;width:${widthPct}%;top:${lane*(BAR_H+2)}px;border-radius:${rL} ${rR} ${rR} ${rL};pointer-events:auto" title="${sp.text}">${showLabel?sp.text:''}</div>`;
+        const omClick=sp.omId?`onclick="showOMDetail('${sp.omId.replace(/'/g,"\\'")}')" style="left:${leftPct}%;width:${widthPct}%;top:${lane*(BAR_H+2)}px;border-radius:${rL} ${rR} ${rR} ${rL};pointer-events:auto;cursor:pointer"`:`style="left:${leftPct}%;width:${widthPct}%;top:${lane*(BAR_H+2)}px;border-radius:${rL} ${rR} ${rR} ${rL};pointer-events:auto"`;
+        html+=`<div class="cal-span-bar ${sp.cls}" ${omClick} title="${sp.text}">${showLabel?sp.text:''}</div>`;
       });
       html+='</div>';
     }
