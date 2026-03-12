@@ -3252,7 +3252,7 @@ async function renderScreenPimo(){
   let busca=(window._pimoBusca||'').toLowerCase();
   const filtroFunc=window._pimoFuncao||'';
   const filtroAnv=window._pimoAnv||'';
-  let filtrados=tripulantes;
+  let filtrados=tripulantes.filter(t=>t.ultimoVoo!==null);
   if(busca)filtrados=filtrados.filter(t=>t.nome.toLowerCase().includes(busca));
   if(filtroFunc)filtrados=filtrados.filter(t=>t.funcao===filtroFunc);
   if(filtroAnv)filtrados=filtrados.filter(t=>t.aeronave===filtroAnv||t.aeronave==='AMBOS');
