@@ -3313,8 +3313,8 @@ async function renderScreenPimo(){
   <!-- Filtros função e aeronave -->
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
     <span style="font-size:.75rem;color:var(--text2);align-self:center">Função:</span>
-    ${['','MEC','OC','COM'].map(f=>{
-      const lbl=f===''?'Todos':f==='MEC'?'MEC':f==='OC'?'OPR. COM.':'Comissário';
+    ${['','COM','MEC','OC'].map(f=>{
+      const lbl=f===''?'Todos':f==='COM'?'Comis.':f==='MEC'?'MEC':'OPR. COM.';
       const on=filtroFunc===f;
       return `<button onclick="window._pimoFuncao='${f}';renderScreenPimo()" style="padding:5px 10px;border-radius:6px;border:1px solid ${on?'var(--vc1)':'var(--border)'};background:${on?'rgba(0,212,255,.12)':'var(--bg2)'};color:${on?'var(--vc1)':'var(--text2)'};font-size:.75rem;cursor:pointer">${lbl}</button>`;
     }).join('')}
