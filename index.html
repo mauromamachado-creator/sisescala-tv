@@ -3218,8 +3218,10 @@ async function loadPimoData(){
       const st=statsMap[nome]||{horasAnoMin:0,horasTrimMin:0,etapasTrim:0,etapasAno:0};
       const lf=lastFlight[nome];
       const afastamento=lf?Math.floor((hoje-lf)/(86400000)):999;
+      // Overrides manuais de aeronave (quando histórico de voos não reflete a designação real)
+      const _anv_override={'2S LUCAS SOUZA (GTE)':'VC-2'};
       const funcao=funcaoRaw.startsWith('MEC')?'MEC':funcaoRaw;
-      const aeronave=funcaoRaw==='MEC VC-1'?'VC-1':funcaoRaw==='MEC VC-2'?'VC-2':ambosSet.has(nome)?'AMBOS':(vcMap[nome]||'');
+      const aeronave=funcaoRaw==='MEC VC-1'?'VC-1':funcaoRaw==='MEC VC-2'?'VC-2':ambosSet.has(nome)?'AMBOS':(_anv_override[nome]||vcMap[nome]||'');
       const qual=qualMap[nome]||'';
       tripulantes.push({nome,qual,
         horasAno:minToHStr(st.horasAnoMin),horasAnoMin:st.horasAnoMin,
