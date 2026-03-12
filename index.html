@@ -1588,29 +1588,42 @@ function renderScreen1(){
   } else if(activeTab==='tripulantes'){
     const grupos=[{key:'Comissário',label:'Comissários',cor:'var(--yellow)'},{key:'Mecânico',label:'Mecânicos',cor:'var(--vc1)'},{key:'Operador de Comunicações',label:'OPR. COM.',cor:'var(--green)'}];
     const cartoesCheck=['inspSaude','crm','cviRvsm','simulador','tdie','passaporte','cOperacional'];
+    const pimoTrips=(_pimoCache&&_pimoCache.tripulantes)||[];
     const getTripStatus=(ct)=>{
-      if(!ct)return{status:'SEM DADOS',cls:'st-out'};
-      let worst='ok';
-      cartoesCheck.forEach(k=>{const c=cartaoColor(ct[k],td);if(c.cls==='vermelho')worst='vencido';else if(c.cls==='amarelo'&&worst!=='vencido')worst='atencao';});
-      if(worst==='vencido')return{status:'CARTÃO VENCIDO',cls:'st-afastado'};
-      if(worst==='atencao')return{status:'ATENÇÃO',cls:'st-alerta'};
-      return{status:'DISPONÍVEL',cls:'st-apto'};
+      if(!ct)return{status:'SEM DADOS',cls:'st-out',detail:''};
+      // Checar desadaptação via PIMO
+      const pimoEntry=pimoTrips.find(t=>t.trigrama===ct.trigrama||(t.nome&&ct.nome&&t.nome.toUpperCase()===ct.nome.toUpperCase()));
+      const afDias=pimoEntry?pimoEntry.afastamento:null;
+      const desadaptado=afDias!==null&&afDias>=45;
+      // Checar cartões
+      let worstCartao='ok';
+      cartoesCheck.forEach(k=>{const c=cartaoColor(ct[k],td);if(c.cls==='vermelho')worstCartao='vencido';else if(c.cls==='amarelo'&&worstCartao!=='vencido')worstCartao='atencao';});
+      // Status final: pior entre desadaptação e cartão
+      if(desadaptado&&worstCartao==='vencido')return{status:'DESADAPTADO',cls:'st-afastado',detail:`${afDias}d · cartão vencido`};
+      if(desadaptado)return{status:'DESADAPTADO',cls:'st-afastado',detail:`${afDias}d sem voar`};
+      if(worstCartao==='vencido')return{status:'CARTÃO VENCIDO',cls:'st-afastado',detail:''};
+      if(worstCartao==='atencao')return{status:'ATENÇÃO',cls:'st-alerta',detail:''};
+      return{status:'DISPONÍVEL',cls:'st-apto',detail:afDias!==null?`${afDias}d`:''};
     };
     for(const g of grupos){
       const membros=(cartoesData||[]).filter(ct=>ct.funcao===g.key);
       if(!membros.length)continue;
+      // Ordenar: piores primeiro
+      membros.sort((a,b)=>{const pa=(s)=>s==='st-afastado'?0:s==='st-alerta'?1:2;return pa(getTripStatus(a).cls)-pa(getTripStatus(b).cls);});
       html+=`<h2 style="color:${g.cor}">${g.label}</h2><div class="pilot-grid">`;
       for(const ct of membros){
         const st=getTripStatus(ct);
         const nomeAbrev=ct.nome&&ct.nome.length>18?ct.nome.split(' ').map((w,i)=>i===0?w:w[0]+'.').join(' '):ct.nome||'-';
         html+=`<div class="pilot-card" style="border-left:4px solid ${g.cor}">`;
-        html+=`<div class="trigrama" style="font-size:1rem">${nomeAbrev}</div>`;
+        html+=`<div class="trigrama" style="font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nomeAbrev}</div>`;
         html+=`<div class="opr">${ct.aeronave||''}</div>`;
+        if(st.detail)html+=`<div class="meta">${st.detail}</div>`;
         html+=`<div class="status ${st.cls}">${st.status}</div>`;
         html+=`</div>`;
       }
       html+=`</div>`;
     }
+    if(!_pimoCache)html+=`<div style="font-size:.75rem;color:var(--text2);margin-top:8px">⚠️ Dados PIMO não carregados — desadaptação indisponível. Acesse a aba PIMO/TRP primeiro.</div>`;
   }
   document.getElementById('screen1').innerHTML=html;
 }
