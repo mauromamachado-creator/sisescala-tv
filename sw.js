@@ -1,5 +1,5 @@
 // SisGOPA Service Worker
-const CACHE_NAME = 'sisgopa-v1';
+const CACHE_NAME = 'sisgopa-v6';
 const STATIC_ASSETS = [
   '/sisescala-tv/',
   '/sisescala-tv/index.html',
