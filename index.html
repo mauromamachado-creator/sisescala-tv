@@ -1567,16 +1567,25 @@ function renderScreen0(){
 // ===== DISPONIBILIDADE =====
 function renderScreen1(){
   const td=nowBRT();
-  const renderSection=(title,pilots,cardClass,h2Class)=>{
-    let html=`<h2 class="${h2Class}">${title}</h2><div class="pilot-grid">`;
-    for(const p of pilots){
-      const st=getPilotStatus(p,td);const metaTxt=(p.meta!=null)?`Meta: ${Math.round(p.meta)}h`:'Meta: -';
-      html+=`<div class="pilot-card ${cardClass}"><div class="trigrama">${p.trigrama}</div><div class="name">${p.name||''}</div><div class="opr">${p.opr||''}${p.grupo?` | ${p.grupo}`:''}</div><div class="meta">${metaTxt}</div><div class="status ${st.cls}">${st.status}</div></div>`;
-    }
-    return html+'</div>';
-  };
-  document.getElementById('screen1').innerHTML=
-    `<h2>Disponibilidade Hoje - ${fmtDate(td)}</h2>`+renderSection('VC-1',pilotData.vc1,'card-vc1','')+renderSection('VC-2',pilotData.vc2,'card-vc2','vc2');
+  const activeTab=window._disp1Tab||'pilotos';
+  // Tabs
+  const tabStyle=(id)=>{const on=activeTab===id;return `padding:8px 20px;border-radius:8px 8px 0 0;border:1px solid ${on?'var(--vc1)':'var(--border)'};border-bottom:${on?'1px solid var(--bg2)':'1px solid var(--border)'};background:${on?'var(--bg2)':'var(--bg3)'};color:${on?'var(--vc1)':'var(--text2)'};font-size:.82rem;font-weight:${on?'900':'400'};cursor:pointer;margin-right:4px;`;};
+  let html=`<h2>Disponibilidade Hoje - ${fmtDate(td)}</h2>`;
+  html+=`<div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">`;
+  html+=`<button onclick="window._disp1Tab='pilotos';renderScreen1()" style="${tabStyle('pilotos')}">✈️ PILOTOS</button>`;
+  html+=`</div>`;
+  if(activeTab==='pilotos'){
+    const renderSection=(title,pilots,cardClass,h2Class)=>{
+      let s=`<h2 class="${h2Class}">${title}</h2><div class="pilot-grid">`;
+      for(const p of pilots){
+        const st=getPilotStatus(p,td);const metaTxt=(p.meta!=null)?`Meta: ${Math.round(p.meta)}h`:'Meta: -';
+        s+=`<div class="pilot-card ${cardClass}"><div class="trigrama">${p.trigrama}</div><div class="name">${p.name||''}</div><div class="opr">${p.opr||''}${p.grupo?` | ${p.grupo}`:''}</div><div class="meta">${metaTxt}</div><div class="status ${st.cls}">${st.status}</div></div>`;
+      }
+      return s+'</div>';
+    };
+    html+=renderSection('VC-1',pilotData.vc1,'card-vc1','')+renderSection('VC-2',pilotData.vc2,'card-vc2','vc2');
+  }
+  document.getElementById('screen1').innerHTML=html;
 }
 
 // ===== HORAS DE VOO =====
