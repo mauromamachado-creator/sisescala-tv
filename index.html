@@ -1928,6 +1928,11 @@ function renderScreenCalendar(){
   const flightsByDay={}; // anv → Set de dias
   const omDaysSet=new Set(); // dias cobertos por alguma OM (para não duplicar com diário)
 
+  // Normaliza FAB XXXX → VC-1/VC-2 usando mapeamento das próprias OMs
+  const fabToVC={};
+  (omData||[]).forEach(o=>{if(o.fab&&o.aeronave)fabToVC[o.fab]=o.aeronave;});
+  const normalizeAnv=a=>(a&&fabToVC[a]?fabToVC[a]:a);
+
   // 1) OMs: pega todos os dias de voo de cada OM no mês atual
   (omData||[]).forEach(om=>{
     if(!om.aeronave||!om.pernas)return;
@@ -1948,7 +1953,7 @@ function renderScreenCalendar(){
     if(!d.date||!d.legs||!d.legs.length)return;
     if(d.date.getMonth()!==calMonth||d.date.getFullYear()!==calYear)return;
     const fDay=d.date.getDate();
-    const anv=d.aeronave&&d.aeronave!=='AERONAVE'?d.aeronave:'VC-1';
+    const anv=normalizeAnv(d.aeronave&&d.aeronave!=='AERONAVE'?d.aeronave:'VC-1');
     if(!omDaysSet.has(`${anv}|${fDay}`)){
       if(!flightsByDay[anv])flightsByDay[anv]=new Set();
       flightsByDay[anv].add(fDay);
