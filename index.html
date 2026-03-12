@@ -3326,6 +3326,7 @@ async function loadPimoData(){
       const funcaoRaw=(r[2]||'').toString().trim();
       if(!nome||!funcaoRaw)return;
       if(!['MEC VC-1','MEC VC-2','OC','COM'].includes(funcaoRaw))return;
+      if(nome==='1S FLÁVIA (PR)')return;
       if(seen.has(nome))return;
       seen.add(nome);
       const st=statsMap[nome]||{horasAnoMin:0,horasTrimMin:0,etapasTrim:0,etapasAno:0};
