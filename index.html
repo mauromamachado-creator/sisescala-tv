@@ -1587,7 +1587,7 @@ function renderScreen1(){
     const tripDisp=allTrip.filter(t=>{
       if(t.afastamento>=45)return false;
       const ct=(cartoesData||[]).find(c=>c.trigrama===t.trigrama||(c.nome&&t.nome&&c.nome.toUpperCase()===t.nome.toUpperCase()));
-      if(ct){for(const k of _cartoesCheckDisp){const cv=cartaoColor(ct[k],td);if(cv.cls==='vermelho')return false;}}
+      if(ct){for(const k of _cartoesCheckDisp){const cv=cartaoColor(ct[k],td);if(cv.days!=null&&cv.days<0)return false;}}
       return true;
     });
     // --- Render ---
@@ -1627,13 +1627,14 @@ function renderScreen1(){
       const pimoEntry=pimoTrips.find(t=>t.trigrama===ct.trigrama||(t.nome&&ct.nome&&t.nome.toUpperCase()===ct.nome.toUpperCase()));
       const afDias=pimoEntry?pimoEntry.afastamento:null;
       const desadaptado=afDias!==null&&afDias>=45;
-      // Checar cartões
-      let worstCartao='ok';
-      cartoesCheck.forEach(k=>{const c=cartaoColor(ct[k],td);if(c.cls==='vermelho')worstCartao='vencido';else if(c.cls==='amarelo'&&worstCartao!=='vencido')worstCartao='atencao';});
+      // Checar cartões (só conta se realmente vencido — data passada)
+      const nomesCartoes={inspSaude:'Insp. Saúde',crm:'CRM',simulador:'Simulador',tdie:'TDIE',passaporte:'Passaporte'};
+      const vencidos=cartoesCheck.filter(k=>{const c=cartaoColor(ct[k],td);return c.days!=null&&c.days<0;}).map(k=>nomesCartoes[k]||k);
+      const temVencido=vencidos.length>0;
       // Status final: pior entre desadaptação e cartão
-      if(desadaptado&&worstCartao==='vencido')return{status:'DESADAPTADO',cls:'st-afastado',detail:`${afDias}d · cartão vencido`};
+      if(desadaptado&&temVencido)return{status:'DESADAPTADO',cls:'st-afastado',detail:`${afDias}d · ${vencidos[0]} vencido`};
       if(desadaptado)return{status:'DESADAPTADO',cls:'st-afastado',detail:`${afDias}d sem voar`};
-      if(worstCartao==='vencido')return{status:'CARTÃO VENCIDO',cls:'st-afastado',detail:''};
+      if(temVencido)return{status:'CARTÃO VENCIDO',cls:'st-afastado',detail:vencidos.join(', ')};
       return{status:'DISPONÍVEL',cls:'st-apto',detail:afDias!==null?`${afDias}d`:''};
     };
     for(const g of grupos){
