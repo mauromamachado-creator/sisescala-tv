@@ -1583,7 +1583,13 @@ function renderScreen1(){
     const pilotosDisp=pilotosAtivos.filter(p=>{const st=getPilotStatus(p,td);return st.status==='DISPONÍVEL';});
     // --- Tripulantes (usa PIMO como fonte primária, igual à tela PIMO/TRP) ---
     const allTrip=_pimoCache?_pimoCache.tripulantes.filter(t=>t.ultimoVoo!==null):(()=>{const tripFuncoes=['Comissário','Mecânico','Operador de Comunicações'];return(cartoesData||[]).filter(ct=>tripFuncoes.includes(ct.funcao));})();
-    const tripDisp=_pimoCache?allTrip.filter(t=>t.afastamento<45):allTrip.filter(ct=>{const cartoesCheckTotal=['inspSaude','crm','simulador','tdie','passaporte'];for(const k of cartoesCheckTotal){const c=cartaoColor(ct[k],td);if(c.cls==='vermelho')return false;}return true;});
+    const _cartoesCheckDisp=['inspSaude','crm','simulador','tdie','passaporte'];
+    const tripDisp=allTrip.filter(t=>{
+      if(t.afastamento>=45)return false;
+      const ct=(cartoesData||[]).find(c=>c.trigrama===t.trigrama||(c.nome&&t.nome&&c.nome.toUpperCase()===t.nome.toUpperCase()));
+      if(ct){for(const k of _cartoesCheckDisp){const cv=cartaoColor(ct[k],td);if(cv.cls==='vermelho')return false;}}
+      return true;
+    });
     // --- Render ---
     const bigNum=(val,total,label,cor)=>`<div style="background:var(--bg3);border-radius:12px;padding:20px 24px;text-align:center;flex:1;min-width:140px;border:1px solid var(--border)">
       <div style="font-size:2.8rem;font-weight:900;color:${cor};line-height:1">${val}</div>
