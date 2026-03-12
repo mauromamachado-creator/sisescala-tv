@@ -5524,6 +5524,7 @@ async function getAiswebData(icao){
   const empty={rwyLen:null,rwyWid:null,hasIfr:false,hasSid:false,hasStar:false,fireCat:null,pcn:null,oprType:null,hasNight:false,elevFt:null,adHr:null,hasTwr:false,runways:[],rwyDesig:[],infoAdicional:null,suplAlertas:[]};
   try{
     const raw=await proxyFetchRaw(`https://aisweb.decea.mil.br/?i=aerodromos&codigo=${icao}`);
+    sourceStatus.aisweb=raw?'ok':'fail';
     if(!raw)return empty;
     const clean=raw.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');
     // Runways with full dimensional data (same regex as bot)
@@ -5620,7 +5621,7 @@ async function getAiswebData(icao){
       }
     }catch(se){console.warn('suplAlertas parse error',se);}
     return{rwyLen:maxLen||null,rwyWid:maxWid||null,hasIfr,hasSid,hasStar,fireCat,pcn:pcnList[0]||null,oprType,hasNight,elevFt,adHr,hasTwr,runways,rwyDesig,infoAdicional,suplAlertas};
-  }catch(e){return empty;}
+  }catch(e){sourceStatus.aisweb='fail';return empty;}
 }
 
 // Check REC needed (same criteria as bot)
@@ -6319,24 +6320,25 @@ const STATUS_SOURCES=[
   {id:'previsao',label:'Previsão Missões',critical:false},
   {id:'plan',label:'Planejamento',critical:false},
   {id:'acnt',label:'ACNT/ALTR',critical:false},
+  {id:'dados',label:'Demais Tripulantes',critical:false},
   {id:'metar',label:'METAR',critical:false},
-  {id:'metarMulti',label:'METAR Multi',critical:false},
   {id:'anual',label:'Horas Anual',critical:true},
   {id:'om',label:'Ordens de Missão',critical:false},
   {id:'cartoes',label:'Cartões',critical:false},
-  {id:'pauSebo',label:'Pau de Sebo',critical:false},
+  {id:'pauSebo',label:'Horas/Afastamento',critical:false},
   {id:'brAirports',label:'Aeroportos BR',critical:false},
-  {id:'proxy',label:'Proxy CORS',critical:false},
+  {id:'aisweb',label:'AISWEB',critical:false},
 ];
 let sourceStatus={};
 let lastLoadTime=null;
 function updateStatusPanel(){
   const dot=document.getElementById('statusDot');
   const panel=document.getElementById('statusPanel');
-  const total=STATUS_SOURCES.length;
-  const okCount=STATUS_SOURCES.filter(s=>sourceStatus[s.id]==='ok').length;
-  const failCount=STATUS_SOURCES.filter(s=>sourceStatus[s.id]==='fail').length;
-  const criticalFail=STATUS_SOURCES.filter(s=>s.critical&&sourceStatus[s.id]==='fail');
+  const visibleSources=STATUS_SOURCES.filter(s=>!(s.id==='aisweb'&&(sourceStatus[s.id]||'pending')==='pending'));
+  const total=visibleSources.length;
+  const okCount=visibleSources.filter(s=>sourceStatus[s.id]==='ok').length;
+  const failCount=visibleSources.filter(s=>sourceStatus[s.id]==='fail').length;
+  const criticalFail=visibleSources.filter(s=>s.critical&&sourceStatus[s.id]==='fail');
   const nowTxt=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',second:'2-digit'});
   // Determine dot color
   if(criticalFail.length){
@@ -6353,6 +6355,7 @@ function updateStatusPanel(){
   html+=`<span style="float:right;color:var(--text2)">${nowTxt}</span></div>`;
   STATUS_SOURCES.forEach(s=>{
     const st=sourceStatus[s.id]||'pending';
+    if(s.id==='aisweb'&&st==='pending')return;
     const icon=st==='ok'?'sp-ok':st==='fail'?'sp-fail':'sp-na';
     const label=st==='ok'?'✅':st==='fail'?'❌':'⏳';
     const crit=s.critical?'<span style="color:var(--red);font-size:.6rem;margin-left:4px">●</span>':'';
@@ -6399,7 +6402,7 @@ async function loadAllData(){
   sourceStatus={};STATUS_SOURCES.forEach(s=>sourceStatus[s.id]='pending');
   try{
     const metarFetch=fetchMetar().then(()=>{sourceStatus.metar='ok';}).catch(()=>{sourceStatus.metar='fail';_trackLoadFailure('metar');});
-    const metarMultiFetch=fetchMetarMulti().then(()=>{sourceStatus.metarMulti='ok';}).catch(()=>{sourceStatus.metarMulti='fail';_trackLoadFailure('metar');});
+    const metarMultiFetch=fetchMetarMulti().then(()=>{if(sourceStatus.metar!=='fail')sourceStatus.metar='ok';}).catch(()=>{sourceStatus.metar='fail';_trackLoadFailure('metar');});
     const planFetch=fetchWithTimeout(planCsvUrl()).then(r=>r.ok?r.text():'').then(t=>{sourceStatus.plan='ok';return t?parseCSV(t):[];}).catch(()=>{sourceStatus.plan='fail';return[];});
     const acntFetch=fetchWithTimeout(`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv&gid=${GIDS.acnt}`).then(r=>r.ok?r.text():'').then(t=>{sourceStatus.acnt='ok';return t?parseCSV(t):[];}).catch(()=>{sourceStatus.acnt='fail';return[];});
     const[dispRows,lancRows,ferRows,prevRows,planRows,acntRows]=await Promise.all([
@@ -6413,7 +6416,7 @@ async function loadAllData(){
     // Check individual METAR localities
     const expectedIcaos=['SBBR','SBCF','SBRJ','SBSP'];
     const missingIcaos=expectedIcaos.filter(i=>!metarMulti[i]);
-    if(missingIcaos.length&&sourceStatus.metarMulti==='ok')sourceStatus.metarMulti='fail';
+    if(missingIcaos.length&&sourceStatus.metar==='ok')sourceStatus.metar='fail';
     await fetchAnual().then(()=>{sourceStatus.anual='ok';}).catch(()=>{sourceStatus.anual='fail';});
     await fetchWithTimeout('data/om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;sourceStatus.om='ok';}).catch(()=>{omData=[];sourceStatus.om='fail';});
     await fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);cartoesFailed=false;sourceStatus.cartoes='ok';}).catch(()=>{cartoesData=[];cartoesFailed=true;sourceStatus.cartoes='fail';});
@@ -6422,8 +6425,6 @@ async function loadAllData(){
     flights=parseLancamentos(lancRows);
     await fetchPauDeSebo().then(()=>{sourceStatus.pauSebo='ok';}).catch(()=>{sourceStatus.pauSebo='fail';});
     fetchGlobalAirports(); // async, non-blocking
-    // Proxy health check - non-blocking, runs after render
-    proxyFetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw').then(r=>{sourceStatus.proxy=r?'ok':'fail';if(!r)_trackLoadFailure('proxy');}).catch(()=>{sourceStatus.proxy='fail';_trackLoadFailure('proxy');}).finally(updateStatusPanel);
     calcAfastamentos();
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
     diarioData=parseDiario(planRows);
