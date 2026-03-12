@@ -316,6 +316,10 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 .cal-span-bar.ev-intl{background:rgba(255,200,50,.2);color:#ffc832;border-top:2px solid #ffc832;border-bottom:2px solid #ffc832}
 .cal-span-bar.ev-vc1{background:rgba(0,212,255,.2);color:var(--vc1);border-top:2px solid var(--vc1);border-bottom:2px solid var(--vc1)}
 .cal-span-bar.ev-vc2{background:rgba(0,255,136,.2);color:var(--vc2);border-top:2px solid var(--vc2);border-bottom:2px solid var(--vc2)}
+.cal-span-bar.ev-diario{background:rgba(160,120,255,.2);color:#a078ff;border-top:2px solid #a078ff;border-bottom:2px solid #a078ff}
+.cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding:10px 14px;background:#0d1220;border-radius:8px;border:1px solid #1a2a40}
+.cal-legend-item{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--text2)}
+.cal-legend-swatch{width:28px;height:12px;border-radius:3px}
 .cal-span-bar.ev-mission{background:rgba(0,255,136,.2);color:var(--vc2);border-top:2px solid var(--vc2);border-bottom:2px solid var(--vc2)}
 .cal-nav{display:flex;align-items:center;gap:16px}
 .cal-nav button{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:900}
@@ -1963,8 +1967,7 @@ function renderScreenCalendar(){
     const fDay=d.date.getDate();
     const anv=normalizeAnv(d.aeronave&&d.aeronave!=='AERONAVE'?d.aeronave:'VC-1');
     if(!omDaysSet.has(`${anv}|${fDay}`)){
-      const anv_cls=anv.includes('VC-1')?'ev-vc1':'ev-vc2';
-      spanEvents.push({text:anvLabel(anv),cls:anv_cls,start:fDay,end:fDay,isStart:true,isEnd:true});
+      spanEvents.push({text:anvLabel(anv),cls:'ev-diario',start:fDay,end:fDay,isStart:true,isEnd:true});
     }
   });
   missionsData.forEach(m=>{
@@ -2052,6 +2055,13 @@ function renderScreenCalendar(){
   });
 
   html+='</div>';
+  // Legenda
+  html+=`<div class="cal-legend">
+    <div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(0,212,255,.25);border:1px solid var(--vc1)"></div>VC-1 2101 — missão com OM</div>
+    <div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(0,255,136,.25);border:1px solid var(--vc2)"></div>VC-2 2590 — missão com OM</div>
+    <div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(160,120,255,.25);border:1px solid #a078ff"></div>Diário sem OM</div>
+    <div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(255,200,50,.25);border:1px solid #ffc832"></div>🌍 Missão internacional</div>
+  </div>`;
   document.getElementById('screen6').innerHTML=html;
 }
 
