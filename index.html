@@ -1573,6 +1573,7 @@ function renderScreen1(){
   let html=`<h2>Disponibilidade Hoje - ${fmtDate(td)}</h2>`;
   html+=`<div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">`;
   html+=`<button onclick="window._disp1Tab='pilotos';renderScreen1()" style="${tabStyle('pilotos')}">✈️ PILOTOS</button>`;
+  html+=`<button onclick="window._disp1Tab='tripulantes';renderScreen1()" style="${tabStyle('tripulantes')}">👥 TRIPULANTES</button>`;
   html+=`</div>`;
   if(activeTab==='pilotos'){
     const renderSection=(title,pilots,cardClass,h2Class)=>{
@@ -1584,6 +1585,32 @@ function renderScreen1(){
       return s+'</div>';
     };
     html+=renderSection('VC-1',pilotData.vc1,'card-vc1','')+renderSection('VC-2',pilotData.vc2,'card-vc2','vc2');
+  } else if(activeTab==='tripulantes'){
+    const grupos=[{key:'Comissário',label:'Comissários',cor:'var(--yellow)'},{key:'Mecânico',label:'Mecânicos',cor:'var(--vc1)'},{key:'Operador de Comunicações',label:'OPR. COM.',cor:'var(--green)'}];
+    const cartoesCheck=['inspSaude','crm','cviRvsm','simulador','tdie','passaporte','cOperacional'];
+    const getTripStatus=(ct)=>{
+      if(!ct)return{status:'SEM DADOS',cls:'st-out'};
+      let worst='ok';
+      cartoesCheck.forEach(k=>{const c=cartaoColor(ct[k],td);if(c.cls==='vermelho')worst='vencido';else if(c.cls==='amarelo'&&worst!=='vencido')worst='atencao';});
+      if(worst==='vencido')return{status:'CARTÃO VENCIDO',cls:'st-afastado'};
+      if(worst==='atencao')return{status:'ATENÇÃO',cls:'st-alerta'};
+      return{status:'DISPONÍVEL',cls:'st-apto'};
+    };
+    for(const g of grupos){
+      const membros=(cartoesData||[]).filter(ct=>ct.funcao===g.key);
+      if(!membros.length)continue;
+      html+=`<h2 style="color:${g.cor}">${g.label}</h2><div class="pilot-grid">`;
+      for(const ct of membros){
+        const st=getTripStatus(ct);
+        const nomeAbrev=ct.nome&&ct.nome.length>18?ct.nome.split(' ').map((w,i)=>i===0?w:w[0]+'.').join(' '):ct.nome||'-';
+        html+=`<div class="pilot-card" style="border-left:4px solid ${g.cor}">`;
+        html+=`<div class="trigrama" style="font-size:1rem">${nomeAbrev}</div>`;
+        html+=`<div class="opr">${ct.aeronave||''}</div>`;
+        html+=`<div class="status ${st.cls}">${st.status}</div>`;
+        html+=`</div>`;
+      }
+      html+=`</div>`;
+    }
   }
   document.getElementById('screen1').innerHTML=html;
 }
