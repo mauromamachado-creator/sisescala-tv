@@ -5817,7 +5817,7 @@ async function botTempo(){botLastFn=botTempo;
     }
     const cruiseH=dist/speed;
     const[origData,destData]=await Promise.all([getAiswebData(orig),getAiswebData(dest)]);
-    const depAdd=origData.hasSid?10/60:5/60;
+    const depAdd=origData.hasSid?10/60:0;
     const arrAdd=destData.hasStar?10/60:5/60;
     const totalH=cruiseH+depAdd+arrAdd;
     let html=`<div style="font-weight:900;color:var(--vc1);margin-bottom:12px">✈️ Tempo de Voo</div>`;
@@ -6107,7 +6107,7 @@ async function botExecPlan(){
       const dist=haversine(c1.lat,c1.lon,c2.lat,c2.lon);
       const cruiseH=dist/speed;
       const[oData,dData]=await Promise.all([getAiswebData(icaos[i]),getAiswebData(icaos[i+1])]);
-      const depAdd=oData.hasSid?10/60:5/60;
+      const depAdd=oData.hasSid?10/60:0;
       const arrAdd=dData.hasStar?10/60:5/60;
       const flightH=cruiseH+depAdd+arrAdd;
       const gndH=i<icaos.length-2?groundTimes[i+1]:0;
@@ -6215,8 +6215,8 @@ async function botExecMsgPadrao(){
     const cruiseH=dist/speed;
     // AISWEB data
     const[origAis,destAis]=await Promise.all([getAiswebData(orig),getAiswebData(dest)]);
-    const idaH=cruiseH+(origAis.hasSid?10/60:5/60)+(destAis.hasStar?10/60:5/60);
-    const voltaH=cruiseH+(destAis.hasSid?10/60:5/60)+(origAis.hasStar?10/60:5/60);
+    const idaH=cruiseH+(origAis.hasSid?10/60:0)+(destAis.hasStar?10/60:5/60);
+    const voltaH=cruiseH+(destAis.hasSid?10/60:0)+(origAis.hasStar?10/60:5/60);
     // Fuel
     const fuel=await fetchFabFuel(dest);
     // REC
