@@ -3766,6 +3766,107 @@ function _presencaLogout(){
   renderScreenS4();
 }
 
+// ---- Biometria (WebAuthn) ----
+function _bioSupported(){
+  return window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable
+    ? PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable() : Promise.resolve(false);
+}
+function _bioGetStored(){
+  try{return JSON.parse(localStorage.getItem('sisgopa_bio')||'null');}catch(e){return null;}
+}
+function _bioSave(data){localStorage.setItem('sisgopa_bio',JSON.stringify(data));}
+function _bioRemove(){localStorage.removeItem('sisgopa_bio');}
+
+function _bufToB64(buf){return btoa(String.fromCharCode(...new Uint8Array(buf)));}
+function _b64ToBuf(b64){const bin=atob(b64);const buf=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);return buf;}
+
+async function _bioRegister(saram,posto,nomeCompleto,nomeGuerra,senha){
+  try{
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const userId=new TextEncoder().encode(saram);
+    const credential=await navigator.credentials.create({publicKey:{
+      challenge,
+      rp:{name:'SisGOPA MNT',id:location.hostname},
+      user:{id:userId,name:saram,displayName:nomeGuerra||saram},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},
+      timeout:60000
+    }});
+    if(!credential)return false;
+    _bioSave({
+      credentialId:_bufToB64(credential.rawId),
+      saram,posto,nomeCompleto,nomeGuerra,
+      senha:btoa(senha) // para re-autenticar com GAS
+    });
+    return true;
+  }catch(e){console.warn('Bio register error:',e);return false;}
+}
+
+async function _bioAuthenticate(){
+  const stored=_bioGetStored();
+  if(!stored)return null;
+  try{
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const assertion=await navigator.credentials.get({publicKey:{
+      challenge,
+      allowCredentials:[{type:'public-key',id:_b64ToBuf(stored.credentialId),transports:['internal']}],
+      userVerification:'required',
+      timeout:60000
+    }});
+    if(!assertion)return null;
+    return stored;
+  }catch(e){console.warn('Bio auth error:',e);return null;}
+}
+
+async function _bioPromptAfterLogin(saram,posto,nomeCompleto,nomeGuerra,senha){
+  const supported=await _bioSupported();
+  if(!supported)return;
+  const existing=_bioGetStored();
+  if(existing&&existing.saram===saram)return; // já configurado
+  // Mostra prompt
+  const msgEl=document.getElementById('s4-msg')||document.getElementById('s4-login-msg');
+  if(!msgEl)return;
+  msgEl.innerHTML=`<div style="margin-top:12px;padding:12px;background:var(--bg2);border:1px solid var(--vc1);border-radius:8px;text-align:center">
+    <div style="font-size:.85rem;color:var(--vc1);font-weight:700;margin-bottom:8px">🔒 Ativar login por biometria?</div>
+    <div style="font-size:.75rem;color:var(--text2);margin-bottom:10px">Use impressão digital ou reconhecimento facial nas próximas vezes.</div>
+    <button id="_bioYes" style="padding:8px 16px;border-radius:8px;border:none;background:var(--vc1);color:var(--bg);font-weight:700;font-size:.82rem;cursor:pointer;margin-right:8px">Ativar</button>
+    <button id="_bioNo" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">Agora não</button>
+  </div>`;
+  document.getElementById('_bioYes').onclick=async()=>{
+    msgEl.innerHTML='<div style="color:var(--yellow)">🔒 Configure sua biometria...</div>';
+    const ok=await _bioRegister(saram,posto,nomeCompleto,nomeGuerra,senha);
+    if(ok){
+      msgEl.innerHTML='<div style="color:var(--green)">✅ Biometria ativada! Próxima vez, use o botão 🔒</div>';
+    }else{
+      msgEl.innerHTML='<div style="color:var(--red)">❌ Não foi possível ativar a biometria.</div>';
+    }
+    setTimeout(()=>_renderS4Painel(),2000);
+  };
+  document.getElementById('_bioNo').onclick=()=>{_renderS4Painel();};
+}
+
+async function _s4BiometricLogin(){
+  const msgEl=document.getElementById('s4-login-msg');
+  if(msgEl)msgEl.innerHTML='<span style="color:var(--yellow)">🔒 Autenticando...</span>';
+  const stored=await _bioAuthenticate();
+  if(!stored){
+    if(msgEl)msgEl.innerHTML='<span style="color:var(--red)">❌ Biometria não reconhecida ou cancelada.</span>';
+    return;
+  }
+  // Verificar com GAS pra garantir que a conta ainda existe
+  if(msgEl)msgEl.innerHTML='<span style="color:var(--yellow)">⏳ Verificando...</span>';
+  const res=await _presencaApi({action:'login',saram:stored.saram,senha:atob(stored.senha)});
+  if(res.ok){
+    _presencaSave({saram:stored.saram,posto:res.militar.posto,nomeCompleto:res.militar.nomeCompleto,nomeGuerra:res.militar.nomeGuerra});
+    const ov=document.getElementById('s4-modal-overlay');
+    if(ov)ov.remove();
+    _renderS4Painel();
+  }else{
+    _bioRemove(); // credencial inválida, limpar
+    if(msgEl)msgEl.innerHTML='<span style="color:var(--red)">❌ Sessão expirada. Faça login com senha.</span>';
+  }
+}
+
 async function _presencaApi(params){
   if(!PRESENCA_API)return{ok:false,error:'API de presença não configurada. Aguardando deploy do GAS.'};
   const url=PRESENCA_API+'?'+Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
@@ -3821,7 +3922,14 @@ async function _renderS4Painel(){
   html+=`<div style="font-size:1.1rem;font-weight:700;color:var(--vc1)">${ses.posto} ${ses.nomeGuerra}</div>`;
   html+=`<div style="font-size:.8rem;color:var(--text2);margin:4px 0">${ses.nomeCompleto}</div>`;
   html+=`<div style="font-size:.75rem;color:var(--text2)">SARAM: ${ses.saram}</div>`;
-  html+=`<button onclick="_presencaLogout()" style="margin-top:8px;padding:4px 12px;border-radius:6px;border:1px solid var(--red);background:rgba(255,68,68,.1);color:var(--red);font-size:.75rem;cursor:pointer">Sair</button>`;
+  const bioStored=_bioGetStored();
+  const bioActive=bioStored&&bioStored.saram===ses.saram;
+  html+=`<div style="display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap">`;
+  if(bioActive){
+    html+=`<button onclick="_bioRemove();_renderS4Painel()" style="padding:4px 12px;border-radius:6px;border:1px solid var(--yellow);background:rgba(255,200,50,.1);color:var(--yellow);font-size:.75rem;cursor:pointer">🔒 Desativar biometria</button>`;
+  }
+  html+=`<button onclick="_presencaLogout()" style="padding:4px 12px;border-radius:6px;border:1px solid var(--red);background:rgba(255,68,68,.1);color:var(--red);font-size:.75rem;cursor:pointer">Sair</button>`;
+  html+=`</div>`;
   html+=`</div>`;
 
   // Botões de registro
@@ -3860,7 +3968,11 @@ async function _s4DoLogin(){
   const res=await _presencaApi({action:'login',saram,senha});
   if(res.ok){
     _presencaSave({saram,posto:res.militar.posto,nomeCompleto:res.militar.nomeCompleto,nomeGuerra:res.militar.nomeGuerra});
+    const ov=document.getElementById('s4-modal-overlay');
+    if(ov)ov.remove();
     _renderS4Painel();
+    // Oferecer biometria após login com senha
+    setTimeout(()=>_bioPromptAfterLogin(saram,res.militar.posto,res.militar.nomeCompleto,res.militar.nomeGuerra,senha),500);
   }else{
     msg.innerHTML=`<span style="color:var(--red)">❌ ${res.error}</span>`;
   }
@@ -3925,6 +4037,8 @@ function _s4ShowLoginModal(){
   inner+=`<div style="margin-bottom:12px"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">SARAM</label><input id="s4-saram" placeholder="Ex: 342.006-0" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:.9rem;box-sizing:border-box"></div>`;
   inner+=`<div style="margin-bottom:12px"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">Senha</label><input id="s4-senha" type="password" placeholder="Sua senha" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:.9rem;box-sizing:border-box" onkeydown="if(event.key==='Enter')_s4DoLogin()"></div>`;
   inner+=`<button onclick="_s4DoLogin()" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--vc1);color:var(--bg);font-weight:700;font-size:.9rem;cursor:pointer">Entrar</button>`;
+  // Botão biometria (só aparece se já configurado)
+  inner+=`<div id="s4-bio-btn-wrap" style="display:none;margin-top:10px"><button onclick="_s4BiometricLogin()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--green);background:rgba(0,255,136,.08);color:var(--green);font-weight:700;font-size:.9rem;cursor:pointer">🔒 Entrar com Biometria</button></div>`;
   inner+=`<div id="s4-login-msg" style="margin-top:8px;text-align:center;font-size:.82rem;min-height:20px"></div>`;
   inner+=`</div>`;
 
@@ -3941,6 +4055,13 @@ function _s4ShowLoginModal(){
   box.innerHTML=inner;
   ov.appendChild(box);
   document.body.appendChild(ov);
+
+  // Mostrar botão de biometria se já configurado
+  const bio=_bioGetStored();
+  if(bio){
+    const wrap=document.getElementById('s4-bio-btn-wrap');
+    if(wrap)wrap.style.display='block';
+  }
 }
 
 function _s4Tab(tab){
