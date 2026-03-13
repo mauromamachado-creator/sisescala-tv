@@ -3818,6 +3818,133 @@ async function _bioAuthenticate(){
   }catch(e){console.warn('Bio auth error:',e);return null;}
 }
 
+// ===== GERENCIAL =====
+let _gerencialPeriodo='mes';
+
+async function _s4Gerencial(periodo){
+  periodo=periodo||_gerencialPeriodo;
+  _gerencialPeriodo=periodo;
+  const c=document.getElementById('screen16');
+  c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--yellow);margin:30px 0">⚙️ Carregando gerencial...</div>';
+
+  const res=await _presencaApi({action:'gerencial',periodo});
+  if(!res.ok){
+    c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--red);margin:30px 0">❌ '+(res.error||'Erro')+'</div><div style="text-align:center"><button onclick="renderScreenS4()" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.78rem;cursor:pointer">← Voltar</button></div>';
+    return;
+  }
+
+  const periodoLabel={semana:'Semana',mes:'Mês',ano:'Ano'}[periodo]||periodo;
+  let h='<h2>📋 MNT — Presença</h2>';
+  h+=`<div style="max-width:550px;margin:0 auto;padding:0 12px">`;
+
+  // Seletor de período
+  h+=`<div style="display:flex;justify-content:center;gap:6px;margin-bottom:16px">`;
+  ['semana','mes','ano'].forEach(p=>{
+    const sel=p===periodo;
+    const lbl={semana:'Semana',mes:'Mês',ano:'Ano'}[p];
+    h+=`<button onclick="_s4Gerencial('${p}')" style="padding:6px 16px;border-radius:8px;border:1px solid ${sel?'var(--green)':'var(--border)'};background:${sel?'rgba(0,255,136,.15)':'var(--bg2)'};color:${sel?'var(--green)':'var(--text2)'};font-weight:${sel?700:400};font-size:.82rem;cursor:pointer">${lbl}</button>`;
+  });
+  h+=`</div>`;
+
+  // Período exibido
+  h+=`<div style="text-align:center;font-size:.75rem;color:var(--text2);margin-bottom:16px">${res.dataInicio} → ${res.dataFim}</div>`;
+
+  // Ranking de horas
+  h+=`<div style="background:var(--bg2);border-radius:10px;padding:16px;border:1px solid var(--border);margin-bottom:16px">`;
+  h+=`<div style="font-weight:700;font-size:.9rem;color:var(--green);margin-bottom:12px">⏱️ Horas Trabalhadas — ${periodoLabel}</div>`;
+
+  if(res.militares&&res.militares.length){
+    // Barra máxima
+    const maxMin=Math.max(...res.militares.map(m=>m.totalMinutos),1);
+
+    res.militares.forEach((m,i)=>{
+      const pct=Math.round((m.totalMinutos/maxMin)*100);
+      const cor=m.totalMinutos>0?'var(--green)':'var(--text2)';
+      h+=`<div style="margin-bottom:10px">`;
+      h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">`;
+      h+=`<span style="font-size:.82rem;color:var(--text1);font-weight:600">${m.posto} ${m.nomeGuerra}</span>`;
+      h+=`<span style="font-size:.78rem;color:${cor};font-weight:700">${m.totalHoras} <span style="font-size:.68rem;font-weight:400;color:var(--text2)">(${m.diasTrabalhados} dias)</span></span>`;
+      h+=`</div>`;
+      // Barra de progresso
+      h+=`<div style="height:8px;background:var(--bg);border-radius:4px;overflow:hidden">`;
+      h+=`<div style="height:100%;width:${pct}%;background:${cor};border-radius:4px;transition:width .3s"></div>`;
+      h+=`</div>`;
+      h+=`</div>`;
+    });
+  }else{
+    h+=`<div style="text-align:center;color:var(--text2);font-size:.82rem;padding:10px 0">Nenhum registro no período.</div>`;
+  }
+  h+=`</div>`;
+
+  // Situação atual — onde está cada um
+  h+=`<div style="background:var(--bg2);border-radius:10px;padding:16px;border:1px solid var(--border);margin-bottom:16px">`;
+  h+=`<div style="font-weight:700;font-size:.9rem;color:var(--vc1);margin-bottom:12px">📍 Situação Atual</div>`;
+
+  if(res.militares&&res.militares.length){
+    res.militares.forEach(m=>{
+      let status='',statusColor='var(--green)';
+      if(m.indisponibilidades&&m.indisponibilidades.length){
+        const ind=m.indisponibilidades[0];
+        const ate=ind.dataFim?' até '+ind.dataFim:'';
+        status=ind.tipo+ate;
+        statusColor='var(--yellow)';
+      }else{
+        // Verificar último registro
+        const lastReg=m.registros&&m.registros.length?m.registros[m.registros.length-1]:null;
+        if(lastReg&&lastReg.data===res.dataFim&&!lastReg.saida){
+          status='Em serviço (desde '+lastReg.entrada+')';
+          statusColor='var(--green)';
+        }else if(lastReg&&lastReg.data===res.dataFim&&lastReg.saida){
+          status='Saiu às '+lastReg.saida;
+          statusColor='var(--text2)';
+        }else{
+          status='Sem registro hoje';
+          statusColor='var(--red)';
+        }
+      }
+
+      h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;margin-bottom:4px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">`;
+      h+=`<span style="font-size:.82rem;color:var(--text1);font-weight:600">${m.posto} ${m.nomeGuerra}</span>`;
+      h+=`<span style="font-size:.75rem;color:${statusColor};font-weight:600">${status}</span>`;
+      h+=`</div>`;
+    });
+  }
+  h+=`</div>`;
+
+  // Indisponibilidades futuras
+  const futuras=[];
+  if(res.militares){
+    res.militares.forEach(m=>{
+      if(m.indisponibilidades){
+        m.indisponibilidades.forEach(ind=>{
+          futuras.push({posto:m.posto,nomeGuerra:m.nomeGuerra,...ind});
+        });
+      }
+    });
+  }
+  if(futuras.length){
+    h+=`<div style="background:var(--bg2);border-radius:10px;padding:16px;border:1px solid var(--border);margin-bottom:16px">`;
+    h+=`<div style="font-weight:700;font-size:.9rem;color:var(--yellow);margin-bottom:12px">📅 Indisponibilidades Ativas/Futuras</div>`;
+    futuras.forEach(f=>{
+      const periodo2=f.dataFim?`${f.dataInicio} → ${f.dataFim}`:f.dataInicio+' (sem data fim)';
+      h+=`<div style="padding:8px;margin-bottom:4px;background:var(--bg);border-radius:6px;border:1px solid rgba(255,200,50,.2)">`;
+      h+=`<div style="display:flex;justify-content:space-between;align-items:center">`;
+      h+=`<span style="font-size:.82rem;color:var(--text1);font-weight:600">${f.posto} ${f.nomeGuerra}</span>`;
+      h+=`<span style="font-size:.75rem;color:var(--yellow);font-weight:600">${f.tipo}</span>`;
+      h+=`</div>`;
+      h+=`<div style="font-size:.72rem;color:var(--text2);margin-top:2px">${periodo2}${f.obs?' — '+f.obs:''}</div>`;
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+  }
+
+  // Voltar
+  h+=`<div style="text-align:center;margin-bottom:20px"><button onclick="renderScreenS4()" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">← Voltar</button></div>`;
+  h+=`</div>`;
+
+  c.innerHTML=h;
+}
+
 // ===== INDISPONIBILIDADE =====
 const TIPOS_INDISP=['Serviço','Missão de Manutenção','Férias','Dispensa Chefia','Dispensa Médica','Outros'];
 
@@ -4177,6 +4304,7 @@ function renderScreenS4(){
   html+=`<div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin:30px 0">`;
   html+=`<button onclick="_s4ShowLoginModal()" style="width:170px;height:170px;border-radius:16px;border:2px solid var(--vc1);background:rgba(0,212,255,.06);color:var(--vc1);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:.2s"><span style="font-size:2.5rem">📋</span>REGISTRAR<br>PRESENÇA</button>`;
   html+=`<button onclick="_s4Chamada()" style="width:170px;height:170px;border-radius:16px;border:2px solid var(--yellow);background:rgba(255,200,50,.06);color:var(--yellow);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:.2s"><span style="font-size:2.5rem">📊</span>CHAMADA</button>`;
+  html+=`<button onclick="_s4Gerencial()" style="width:170px;height:170px;border-radius:16px;border:2px solid var(--green);background:rgba(0,255,136,.06);color:var(--green);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:.2s"><span style="font-size:2.5rem">⚙️</span>GERENCIAL</button>`;
   html+=`</div>`;
   html+=`<div style="text-align:center;font-size:.78rem;color:var(--text2);max-width:400px;margin:0 auto">Sistema de controle de presença do GTE.<br>Use seu SARAM como login e escolha uma senha pessoal.</div>`;
   c.innerHTML=html;

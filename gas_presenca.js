@@ -31,6 +31,7 @@ function handleRequest(e) {
       case 'status':    result = doStatus(p); break;
       case 'history':   result = doHistory(p); break;
       case 'chamada':       result = doChamada(p); break;
+      case 'gerencial':     result = doGerencial(p); break;
       case 'lancar_indisp': result = doLancarIndisp(p); break;
       case 'minhas_indisp': result = doMinhasIndisp(p); break;
       case 'cancelar_indisp': result = doCancelarIndisp(p); break;
@@ -534,4 +535,136 @@ function doCancelarIndisp(p) {
   
   indSheet.getRange(linha, 9).setValue(getBRTNow()); // Coluna "Cancelado"
   return { ok: true };
+}
+
+/* ---- Gerencial ---- */
+function doGerencial(p) {
+  const periodo = String(p.periodo || 'mes'); // semana, mes, ano
+  const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
+  const hoje = getBRTDate(); // yyyy-MM-dd
+  
+  // Calcular intervalo
+  const hojeParts = hoje.split('-').map(Number);
+  let dataInicio, dataFim;
+  
+  if (periodo === 'semana') {
+    // Última segunda-feira até hoje
+    const d = new Date(hojeParts[0], hojeParts[1]-1, hojeParts[2]);
+    const dow = d.getDay(); // 0=dom
+    const diff = dow === 0 ? 6 : dow - 1;
+    d.setDate(d.getDate() - diff);
+    dataInicio = _fmtDate(d);
+    dataFim = hoje;
+  } else if (periodo === 'ano') {
+    dataInicio = hojeParts[0] + '-01-01';
+    dataFim = hoje;
+  } else { // mes
+    dataInicio = hoje.substring(0,8) + '01';
+    dataFim = hoje;
+  }
+  
+  // Buscar todos os usuários
+  const usSheet = ss.getSheetByName('Usuarios');
+  if (!usSheet) return { ok: true, militares: [], periodo: periodo, dataInicio: dataInicio, dataFim: dataFim };
+  const usData = usSheet.getDataRange().getValues();
+  const usuarios = [];
+  for (let i = 1; i < usData.length; i++) {
+    const saram = String(usData[i][0] || '').trim();
+    if (!saram) continue;
+    usuarios.push({
+      saram: saram,
+      saramNorm: normalizeSaram(saram),
+      posto: String(usData[i][2] || ''),
+      nomeGuerra: String(usData[i][4] || '')
+    });
+  }
+  
+  // Buscar registros no período
+  const regSheet = ss.getSheetByName('Registro');
+  // saramNorm → { dias: Set, totalMinutos: 0, registros: [...] }
+  const horasMap = {};
+  
+  if (regSheet) {
+    const regData = regSheet.getDataRange().getValues();
+    for (let i = 1; i < regData.length; i++) {
+      const data = cellToDate(regData[i][0]);
+      if (data < dataInicio || data > dataFim) continue;
+      
+      const sn = normalizeSaram(regData[i][6]);
+      if (!horasMap[sn]) horasMap[sn] = { dias: {}, totalMinutos: 0, registros: [] };
+      
+      const entrada = String(regData[i][4] || '');
+      const saida = String(regData[i][5] || '');
+      const horas = String(regData[i][7] || '');
+      
+      horasMap[sn].dias[data] = true;
+      
+      if (horas) {
+        // Converter horas (formato "HH:MM") pra minutos
+        const hp = horas.split(':');
+        if (hp.length === 2) horasMap[sn].totalMinutos += parseInt(hp[0])*60 + parseInt(hp[1]);
+      }
+      
+      horasMap[sn].registros.push({ data: data, entrada: entrada, saida: saida, horas: horas });
+    }
+  }
+  
+  // Buscar indisponibilidades ativas e futuras
+  const indSheet = ss.getSheetByName('Indisponibilidade');
+  const indispMap = {}; // saramNorm → [{tipo, inicio, fim, obs}]
+  if (indSheet) {
+    const indData = indSheet.getDataRange().getValues();
+    for (let i = 1; i < indData.length; i++) {
+      const cancelado = String(indData[i][8] || '');
+      if (cancelado) continue;
+      const fim = String(indData[i][5] || '');
+      // Mostrar se não expirou (sem fim ou fim >= hoje)
+      if (fim && fim < hoje) continue;
+      
+      const sn = normalizeSaram(indData[i][0]);
+      if (!indispMap[sn]) indispMap[sn] = [];
+      indispMap[sn].push({
+        tipo: String(indData[i][3] || ''),
+        dataInicio: String(indData[i][4] || ''),
+        dataFim: fim,
+        obs: String(indData[i][6] || '')
+      });
+    }
+  }
+  
+  // Montar resultado
+  const militares = [];
+  for (const u of usuarios) {
+    const h = horasMap[u.saramNorm] || { dias: {}, totalMinutos: 0, registros: [] };
+    const totalH = Math.floor(h.totalMinutos / 60);
+    const totalM = h.totalMinutos % 60;
+    
+    militares.push({
+      posto: u.posto,
+      nomeGuerra: u.nomeGuerra,
+      diasTrabalhados: Object.keys(h.dias).length,
+      totalHoras: totalH + ':' + String(totalM).padStart(2, '0'),
+      totalMinutos: h.totalMinutos,
+      indisponibilidades: indispMap[u.saramNorm] || [],
+      registros: h.registros
+    });
+  }
+  
+  // Ordenar por total de horas (maior primeiro)
+  militares.sort((a, b) => b.totalMinutos - a.totalMinutos);
+  
+  return {
+    ok: true,
+    periodo: periodo,
+    dataInicio: dataInicio,
+    dataFim: dataFim,
+    militares: militares
+  };
+}
+
+function _fmtDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return y + '-' + m + '-' + dd;
 }
