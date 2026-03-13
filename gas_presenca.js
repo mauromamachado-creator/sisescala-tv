@@ -394,29 +394,6 @@ function doChamada(p) {
     }
   }
   
-  const presentes = [];
-  const ausentes = [];
-  
-  for (const u of usuarios) {
-    const reg = hojeMap[u.saramNorm];
-    if (reg) {
-      presentes.push({
-        posto: u.posto,
-        nomeGuerra: u.nomeGuerra,
-        nomeCompleto: u.nomeCompleto,
-        entrada: reg.entrada,
-        saida: reg.saida,
-        horas: reg.horas
-      });
-    } else {
-      ausentes.push({
-        posto: u.posto,
-        nomeGuerra: u.nomeGuerra,
-        nomeCompleto: u.nomeCompleto
-      });
-    }
-  }
-  
   // Buscar indisponibilidades ativas hoje
   const indSheet = ss.getSheetByName('Indisponibilidade');
   const indispMap = {}; // saramNorm → {tipo, dataInicio, dataFim, obs}
@@ -428,7 +405,6 @@ function doChamada(p) {
       const fim = String(indData[i][5] || '');
       const cancelado = String(indData[i][8] || '');
       if (cancelado) continue;
-      // Verificar se hoje está no período
       if (inicio <= hoje && (!fim || fim >= hoje)) {
         indispMap[sn] = {
           tipo: String(indData[i][3] || ''),
@@ -439,6 +415,9 @@ function doChamada(p) {
       }
     }
   }
+
+  const presentes = [];
+  const ausentes = [];
 
   for (const u of usuarios) {
     const reg = hojeMap[u.saramNorm];
