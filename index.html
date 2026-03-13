@@ -3822,12 +3822,20 @@ async function _bioAuthenticate(){
 let _gerencialPeriodo='mes';
 let _s4PostLoginTarget=null; // 'gerencial' = redirecionar após login
 
+const GERENCIAL_ALLOWED=['4004221','6085199']; // MACHADO + THIAGO VASCONCELOS
+
 async function _s4Gerencial(periodo){
   // Exigir login
   const ses=_presencaSession();
   if(!ses){
     _s4PostLoginTarget='gerencial';
     _s4ShowLoginModal();
+    return;
+  }
+  // Verificar acesso restrito
+  if(!GERENCIAL_ALLOWED.includes(normalizeSaram(ses.saram))){
+    const c=document.getElementById('screen16');
+    c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--red);margin:40px 0"><div style="font-size:2rem;margin-bottom:10px">🔒</div><div style="font-size:.9rem;font-weight:700">Acesso restrito</div><div style="font-size:.78rem;color:var(--text2);margin-top:6px">Apenas gestores autorizados podem acessar o painel gerencial.</div></div><div style="text-align:center"><button onclick="renderScreenS4()" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">← Voltar</button></div>';
     return;
   }
   periodo=periodo||_gerencialPeriodo;
@@ -3885,35 +3893,33 @@ async function _s4Gerencial(periodo){
   h+=`</div>`;
 
   // Situação atual — onde está cada um
+  const indColors={'Serviço':'#4a9eff','Missão de Manutenção':'#ff9f43','Férias':'#a55eea','Dispensa Chefia':'#26de81','Dispensa Médica':'#fc5c65','Outros':'#778ca3'};
+
   h+=`<div style="background:var(--bg2);border-radius:10px;padding:16px;border:1px solid var(--border);margin-bottom:16px">`;
   h+=`<div style="font-weight:700;font-size:.9rem;color:var(--vc1);margin-bottom:12px">📍 Situação Atual</div>`;
 
   if(res.militares&&res.militares.length){
     res.militares.forEach(m=>{
-      let status='',statusColor='var(--green)';
+      let tag='';
       if(m.indisponibilidades&&m.indisponibilidades.length){
         const ind=m.indisponibilidades[0];
+        const cor=indColors[ind.tipo]||'#778ca3';
         const ate=ind.dataFim?' até '+ind.dataFim:'';
-        status=ind.tipo+ate;
-        statusColor='var(--yellow)';
+        tag=`<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:${cor}22;color:${cor};font-size:.7rem;font-weight:700;border:1px solid ${cor}44">${ind.tipo}${ate}</span>`;
       }else{
-        // Verificar último registro
         const lastReg=m.registros&&m.registros.length?m.registros[m.registros.length-1]:null;
         if(lastReg&&lastReg.data===res.dataFim&&!lastReg.saida){
-          status='Em serviço (desde '+lastReg.entrada+')';
-          statusColor='var(--green)';
+          tag=`<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:rgba(0,255,136,.15);color:var(--green);font-size:.7rem;font-weight:700;border:1px solid rgba(0,255,136,.3)">Em serviço desde ${lastReg.entrada}</span>`;
         }else if(lastReg&&lastReg.data===res.dataFim&&lastReg.saida){
-          status='Saiu às '+lastReg.saida;
-          statusColor='var(--text2)';
+          tag=`<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:rgba(119,140,163,.12);color:#778ca3;font-size:.7rem;font-weight:600;border:1px solid rgba(119,140,163,.25)">Saiu ${lastReg.saida}</span>`;
         }else{
-          status='Sem registro hoje';
-          statusColor='var(--red)';
+          tag=`<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:rgba(255,68,68,.12);color:var(--red);font-size:.7rem;font-weight:600;border:1px solid rgba(255,68,68,.25)">Sem registro hoje</span>`;
         }
       }
 
-      h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;margin-bottom:4px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">`;
+      h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;margin-bottom:4px;background:var(--bg);border-radius:8px;border-left:3px solid ${m.indisponibilidades?.length?indColors[m.indisponibilidades[0].tipo]||'#778ca3':'var(--border)'}">`;
       h+=`<span style="font-size:.82rem;color:var(--text1);font-weight:600">${m.posto} ${m.nomeGuerra}</span>`;
-      h+=`<span style="font-size:.75rem;color:${statusColor};font-weight:600">${status}</span>`;
+      h+=tag;
       h+=`</div>`;
     });
   }
@@ -3946,11 +3952,53 @@ async function _s4Gerencial(periodo){
     h+=`</div>`;
   }
 
-  // Voltar
-  h+=`<div style="text-align:center;margin-bottom:20px"><button onclick="renderScreenS4()" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">← Voltar</button></div>`;
-  h+=`</div>`;
+  // Exportar
+  h+=`<div style="text-align:center;margin-bottom:12px">`;
+  h+=`<button onclick="_gerencialExportar()" style="padding:8px 18px;border-radius:8px;border:1px solid var(--vc1);background:rgba(0,212,255,.06);color:var(--vc1);font-size:.82rem;font-weight:600;cursor:pointer;margin-right:8px">📤 Copiar Relatório</button>`;
+  h+=`<button onclick="renderScreenS4()" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">← Voltar</button>`;
+  h+=`</div></div>`;
 
   c.innerHTML=h;
+  c._gerencialData=res; // guardar pra exportar
+}
+
+function _gerencialExportar(){
+  const c=document.getElementById('screen16');
+  const res=c._gerencialData;
+  if(!res)return;
+  let txt=`📊 RELATÓRIO GERENCIAL MNT — ${res.dataInicio} a ${res.dataFim}\n`;
+  txt+=`━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  txt+=`⏱️ HORAS TRABALHADAS\n`;
+  if(res.militares)res.militares.forEach(m=>{
+    txt+=`  ${m.posto} ${m.nomeGuerra}: ${m.totalHoras} (${m.diasTrabalhados} dias)\n`;
+  });
+  txt+=`\n📍 SITUAÇÃO ATUAL\n`;
+  if(res.militares)res.militares.forEach(m=>{
+    let sit='Sem registro hoje';
+    if(m.indisponibilidades&&m.indisponibilidades.length){
+      const i=m.indisponibilidades[0];
+      sit=i.tipo+(i.dataFim?' até '+i.dataFim:'');
+    }else{
+      const lr=m.registros?.length?m.registros[m.registros.length-1]:null;
+      if(lr&&lr.data===res.dataFim&&!lr.saida)sit='Em serviço desde '+lr.entrada;
+      else if(lr&&lr.data===res.dataFim)sit='Saiu às '+lr.saida;
+    }
+    txt+=`  ${m.posto} ${m.nomeGuerra}: ${sit}\n`;
+  });
+  txt+=`\n📅 INDISPONIBILIDADES\n`;
+  let temIndisp=false;
+  if(res.militares)res.militares.forEach(m=>{
+    if(m.indisponibilidades)m.indisponibilidades.forEach(i=>{
+      temIndisp=true;
+      const per=i.dataFim?`${i.dataInicio} → ${i.dataFim}`:i.dataInicio;
+      txt+=`  ${m.posto} ${m.nomeGuerra}: ${i.tipo} (${per})${i.obs?' — '+i.obs:''}\n`;
+    });
+  });
+  if(!temIndisp)txt+=`  Nenhuma\n`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn=document.querySelector('[onclick="_gerencialExportar()"]');
+    if(btn){btn.textContent='✅ Copiado!';setTimeout(()=>btn.textContent='📤 Copiar Relatório',2000);}
+  });
 }
 
 // ===== INDISPONIBILIDADE =====
@@ -4228,33 +4276,54 @@ async function _s4Chamada(){
   h+=`<div style="font-size:.75rem;color:var(--text2)">${res.data||''}</div>`;
   h+=`</div>`;
 
-  // Contadores
-  h+=`<div style="display:flex;gap:12px;margin-bottom:14px;justify-content:center">`;
-  h+=`<div style="padding:6px 14px;border-radius:8px;background:rgba(0,255,136,.1);border:1px solid var(--green);text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--green)">${res.totalPresentes}</div><div style="font-size:.7rem;color:var(--green)">Presentes</div></div>`;
-  h+=`<div style="padding:6px 14px;border-radius:8px;background:rgba(255,68,68,.1);border:1px solid var(--red);text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--red)">${res.totalAusentes}</div><div style="font-size:.7rem;color:var(--red)">Ausentes</div></div>`;
-  h+=`<div style="padding:6px 14px;border-radius:8px;background:rgba(0,212,255,.1);border:1px solid var(--vc1);text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--vc1)">${res.total}</div><div style="font-size:.7rem;color:var(--vc1)">Total</div></div>`;
-  h+=`</div>`;
+  // Contadores visuais (circular)
+  const pPct=res.total?Math.round((res.totalPresentes/res.total)*100):0;
+  const aPct=100-pPct;
+  h+=`<div style="display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:16px">`;
+  // Donut SVG
+  const r=40,cx=50,cy=50,circ=2*Math.PI*r;
+  const pLen=(pPct/100)*circ,aLen=circ-pLen;
+  h+=`<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,68,68,.3)" stroke-width="12"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--green)" stroke-width="12" stroke-dasharray="${pLen} ${aLen}" stroke-dashoffset="${circ/4}" stroke-linecap="round"/><text x="${cx}" y="${cy-4}" text-anchor="middle" fill="var(--text1)" font-size="18" font-weight="700">${pPct}%</text><text x="${cx}" y="${cy+12}" text-anchor="middle" fill="var(--text2)" font-size="9">presença</text></svg>`;
+  // Números
+  h+=`<div style="display:flex;flex-direction:column;gap:8px">`;
+  h+=`<div style="display:flex;align-items:center;gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:var(--green)"></div><span style="font-size:.82rem;color:var(--text1)"><b>${res.totalPresentes}</b> Presentes</span></div>`;
+  h+=`<div style="display:flex;align-items:center;gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:var(--red)"></div><span style="font-size:.82rem;color:var(--text1)"><b>${res.totalAusentes}</b> Ausentes</span></div>`;
+  h+=`<div style="display:flex;align-items:center;gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:var(--vc1)"></div><span style="font-size:.82rem;color:var(--text1)"><b>${res.total}</b> Total</span></div>`;
+  h+=`</div></div>`;
+
+  // Tags de cores por tipo
+  const indispColors={'Serviço':'#4a9eff','Missão de Manutenção':'#ff9f43','Férias':'#a55eea','Dispensa Chefia':'#26de81','Dispensa Médica':'#fc5c65','Outros':'#778ca3'};
 
   // Presentes
   if(res.presentes&&res.presentes.length){
-    h+=`<div style="font-weight:700;font-size:.82rem;color:var(--green);margin-bottom:6px">✅ Presentes</div>`;
+    h+=`<div style="font-weight:700;font-size:.85rem;color:var(--green);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(0,255,136,.2)">✅ Presentes</div>`;
     res.presentes.forEach(p=>{
-      const saida=p.saida?`→ ${p.saida}`:'<span style="color:var(--yellow)">em serviço</span>';
-      const hrs=p.horas?` (${p.horas}h)`:'';
-      h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;margin-bottom:3px;background:rgba(0,255,136,.04);border-radius:6px;border:1px solid rgba(0,255,136,.15)">`;
-      h+=`<span style="font-size:.82rem;color:var(--text1);font-weight:600">${p.posto} ${p.nomeGuerra}</span>`;
-      h+=`<span style="font-size:.75rem;color:var(--text2)">${p.entrada} ${saida}${hrs}</span>`;
+      const emServ=!p.saida;
+      const statusTxt=emServ?'em serviço':'saiu '+p.saida;
+      const statusColor=emServ?'var(--green)':'var(--text2)';
+      const hrs=p.horas?` • ${p.horas}h`:'';
+      h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;margin-bottom:4px;background:rgba(0,255,136,.04);border-radius:8px;border-left:3px solid var(--green)">`;
+      h+=`<div><span style="font-size:.85rem;color:var(--text1);font-weight:700">${p.posto} ${p.nomeGuerra}</span></div>`;
+      h+=`<div style="text-align:right"><div style="font-size:.78rem;color:var(--text2)">↗ ${p.entrada}</div><div style="font-size:.72rem;color:${statusColor};font-weight:600">${statusTxt}${hrs}</div></div>`;
       h+=`</div>`;
     });
   }
 
   // Ausentes
   if(res.ausentes&&res.ausentes.length){
-    h+=`<div style="font-weight:700;font-size:.82rem;color:var(--red);margin:12px 0 6px">❌ Ausentes</div>`;
+    h+=`<div style="font-weight:700;font-size:.85rem;color:var(--red);margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid rgba(255,68,68,.2)">❌ Ausentes</div>`;
     res.ausentes.forEach(p=>{
-      const motivo=p.indisp?` <span style="color:var(--yellow);font-size:.72rem">(${p.indisp.tipo}${p.indisp.dataFim?' até '+p.indisp.dataFim:''})</span>`:'';
-      h+=`<div style="display:flex;align-items:center;padding:5px 8px;margin-bottom:3px;background:rgba(255,68,68,.04);border-radius:6px;border:1px solid rgba(255,68,68,.15)">`;
-      h+=`<span style="font-size:.82rem;color:var(--text2)">${p.posto} ${p.nomeGuerra}${motivo}</span>`;
+      let tag='';
+      if(p.indisp){
+        const cor=indispColors[p.indisp.tipo]||'#778ca3';
+        const ate=p.indisp.dataFim?' até '+p.indisp.dataFim:'';
+        tag=`<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:${cor}22;color:${cor};font-size:.7rem;font-weight:700;border:1px solid ${cor}44">${p.indisp.tipo}${ate}</span>`;
+      }else{
+        tag=`<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:rgba(119,140,163,.15);color:#778ca3;font-size:.7rem;font-weight:600;border:1px solid rgba(119,140,163,.3)">Não informado</span>`;
+      }
+      h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;margin-bottom:4px;background:rgba(255,68,68,.03);border-radius:8px;border-left:3px solid var(--red)">`;
+      h+=`<span style="font-size:.85rem;color:var(--text2);font-weight:600">${p.posto} ${p.nomeGuerra}</span>`;
+      h+=tag;
       h+=`</div>`;
     });
   }
