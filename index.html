@@ -3147,7 +3147,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   // ═══ VOCATIVO + INTRO ═══
   doc.setFont('times','normal');doc.setFontSize(11);
   const indent=lm+10;
-  doc.text('Senhor Oficial de Transporte Aéreo,',indent,y);y+=7;
+  doc.text('Senhor Oficial de Transporte Aéreo,',indent,y);y+=5;
   doc.text('Solicito as providências necessárias para o pagamento de diárias, nos termos das informações abaixo:',indent,y,{maxWidth:tw-10});y+=10;
 
   // ═══ CAMPOS 1-4 ═══
@@ -3158,7 +3158,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   doc.text(`2 - TIPO DE DIÁRIA: ( ${nac} ) DIÁRIA NACIONAL    ( ${intl} ) DIÁRIA INTERNACIONAL    ( ${amb} ) AMBAS`,lm,y);y+=6;
 
   doc.text(`3 - NÚMERO DO EVENTO PRESIDENCIAL: ${getVal('numEvento')}`,lm,y);y+=6;
-  doc.text(`4 - MODELO E MATRÍCULA DA AERONAVE: ${getVal('aeronave')}.`,lm,y);y+=8;
+  doc.text(`4 - MODELO E MATRÍCULA DA AERONAVE: ${getVal('aeronave')}.`,lm,y);y+=6;
 
   // ═══ CAMPO 5 - TRECHOS ═══
   doc.text('5 - DESCRIÇÃO DOS TRECHOS DA MISSÃO:',lm,y);y+=6;
