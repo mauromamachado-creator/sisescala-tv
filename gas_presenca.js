@@ -80,8 +80,6 @@ function normalizeSaram(s) {
 function calcHoras(dataEntrada, horaEntrada, dataSaida, horaSaida) {
   // Monta datetimes completos e calcula diferença em horas
   try {
-    const fmt = 'yyyy-MM-dd HH:mm';
-    const tz = 'America/Sao_Paulo';
     // Parsear entrada
     const dtEntStr = cellToDate(dataEntrada) + ' ' + String(horaEntrada || '').trim();
     const dtSaiStr = (dataSaida ? cellToDate(dataSaida) : cellToDate(dataEntrada)) + ' ' + String(horaSaida || '').trim();
@@ -207,26 +205,37 @@ function doLogin(p) {
   return { ok: false, error: 'SARAM ou senha incorretos.' };
 }
 
-function doClockIn(p) {
+function _authUser(p) {
   const saramInput = String(p.saram || '').trim();
   const saramNorm = normalizeSaram(saramInput);
+  const senha = String(p.senha || '');
   if (!saramNorm) return { ok: false, error: 'SARAM obrigatório' };
 
   const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
-
   const usSheet = ss.getSheetByName('Usuarios');
   if (!usSheet) return { ok: false, error: 'Usuário não encontrado' };
   const usData = usSheet.getDataRange().getValues();
+  const hash = senha ? hashPassword(senha) : null;
   let mil = null;
   let saramStored = saramInput;
   for (let i = 1; i < usData.length; i++) {
     if (normalizeSaram(usData[i][0]) === saramNorm) {
+      if (hash && String(usData[i][1]).trim() !== hash) {
+        return { ok: false, error: 'Senha incorreta.' };
+      }
       mil = { posto: usData[i][2], nomeCompleto: usData[i][3], nomeGuerra: usData[i][4] };
       saramStored = String(usData[i][0]).trim();
       break;
     }
   }
   if (!mil) return { ok: false, error: 'Usuário não cadastrado' };
+  return { ok: true, ss: ss, mil: mil, saramNorm: saramNorm, saramStored: saramStored };
+}
+
+function doClockIn(p) {
+  const auth = _authUser(p);
+  if (!auth.ok) return auth;
+  const { ss, mil, saramNorm, saramStored } = auth;
 
   // Verificar se já tem entrada aberta (qualquer dia, não só hoje)
   const regSheet = getOrCreateSheet(ss, 'Registro', REG_HEADERS);
@@ -246,11 +255,9 @@ function doClockIn(p) {
 }
 
 function doClockOut(p) {
-  const saramInput = String(p.saram || '').trim();
-  const saramNorm = normalizeSaram(saramInput);
-  if (!saramNorm) return { ok: false, error: 'SARAM obrigatório' };
-
-  const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
+  const auth = _authUser(p);
+  if (!auth.ok) return auth;
+  const { ss, saramNorm } = auth;
   const regSheet = ss.getSheetByName('Registro');
   if (!regSheet) return { ok: false, error: 'Nenhum registro encontrado' };
 

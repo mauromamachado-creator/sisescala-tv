@@ -800,16 +800,7 @@ async function _sendReport(type,desc,diagnostics){
   for(const mk of proxies){
     try{const r=await fetch(mk(tgGet));if(r.ok){sent=true;break;}}catch(e){}
   }
-  // Também cria GitHub Issue para processamento automático
-  try{
-    const _gp=['ghp','_v1K2jZepLseN3','Awz796FiyVF8Ju','TLA27RRVT'];const ghToken=_gp.join('');
-    const issueBody=`## ${type==='bug'?'🐛 Bug Report':'💡 Sugestão'}\n\n**Descrição:** ${desc}\n\n**Diagnóstico:**\n- Horário: ${diag.timestamp}\n- Tela: ${diag.tela} | Screen: ${diag.telaAtual}\n- Fontes: ${diag.fontes}\n- Último load: ${diag.ultimoLoad}\n${diag.errosCapturados.length?'\n**Erros:**\n'+diag.errosCapturados.map((e,i)=>(i+1)+'. '+e.msg+(e.line?' (L'+e.line+')':'')).join('\n'):''}`;
-    await fetch('https://api.github.com/repos/mauromamachado-creator/sisescala-tv/issues',{
-      method:'POST',
-      headers:{'Authorization':'token '+ghToken,'Content-Type':'application/json'},
-      body:JSON.stringify({title:(type==='bug'?'🐛 ':'💡 ')+desc.substring(0,80),body:issueBody,labels:[type]})
-    });
-  }catch(e){}
+  // Reporte salvo via Telegram (token de GitHub removido por segurança)
   if(sent){
     if(status)status.innerHTML='<span style="color:#4ecdc4">✅ Reporte enviado! o Setor de Operações vai analisar e corrigir.</span>';
     const ta=document.getElementById('emDesc')||document.getElementById('reportDesc');
@@ -880,7 +871,7 @@ async function fetchAnual(){
     };
     anualVC1=parseSheet(vc1Rows);if(!anualVC1.esforco)anualVC1.esforco=650;
     anualVC2=parseSheet(vc2Rows);if(!anualVC2.esforco)anualVC2.esforco=1220;
-  }catch(e){console.warn('fetchAnual error',e);}
+  }catch(e){/* warn silenciado */}
 }
 async function fetchCSVByName(sheetName){const url=`https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;const r=await fetchWithTimeout(url);if(!r.ok)throw new Error('fetch failed');return parseCSV(await r.text());}
 
@@ -895,8 +886,7 @@ async function fetchPauDeSebo(){
       const afst=String(row[5]||'').trim();
       pauDeSeboData[tri]={horas,afst};
     }
-    console.log('Pau de sebo:',Object.keys(pauDeSeboData).length,'pilotos');
-  }catch(e){console.warn('fetchPauDeSebo falhou, usando fallback',e);}
+  }catch(e){/* warn silenciado */}
 }
 function calcAfastamentos(){
   // Fonte primária: pau de sebo. Fallback: flights[]
@@ -924,7 +914,6 @@ function calcAfastamentos(){
       if(!p.afastamento||p.afastamento==='#N/A')p.afastamento='999';
     }
   }
-  console.log('Afastamentos calculados para',allP.length,'pilotos (pau de sebo:',Object.keys(pauDeSeboData).length,')');
 }
 
 function parseDisponibilidade(rows){
@@ -1176,7 +1165,7 @@ function decodeMetar(raw){
   return d;
 }
 
-const METAR_WORKER=''; // URL do Cloudflare Worker quando deployado, ex: 'https://metar-proxy.seu-user.workers.dev'
+const METAR_WORKER=''; // placeholder para proxy METAR futuro
 const CORS_PROXIES=[
   ...(METAR_WORKER?[u=>{try{const p=new URL(u);return METAR_WORKER+'?ids='+(p.searchParams.get('ids')||'SBBR')+'&format='+(p.searchParams.get('format')||'raw');}catch(e){return METAR_WORKER+'?url='+encodeURIComponent(u);}}]:[]),
   u=>'https://corsproxy.io/?'+encodeURIComponent(u),
@@ -1202,7 +1191,7 @@ async function fetchMetar(){
     const text=await proxyFetch('https://aviationweather.gov/api/data/metar?ids=SBBR&format=raw');
     if(!text)throw new Error('Sem dados');
     metarRaw=text;metarDecoded=decodeMetar(metarRaw);
-  }catch(e){console.warn('METAR fetch error',e);}
+  }catch(e){/* warn silenciado */}
 }
 async function fetchMetarMulti(){
   try{
@@ -1214,7 +1203,7 @@ async function fetchMetarMulti(){
       const m=line.match(/^(?:(?:METAR|SPECI)\s+)?([A-Z]{4})\s/);
       if(m)metarMulti[m[1]]=line;
     }
-  }catch(e){console.warn('fetchMetarMulti error',e);}
+  }catch(e){/* warn silenciado */}
 }
 
 function isOnVacation(trigrama,date){const t=String(trigrama||'').toUpperCase();return feriasData.some(f=>f.trigrama===t&&f.inicio<=date&&date<=f.fim);}
@@ -2720,7 +2709,7 @@ let _pdfGeradoSha=null; // SHA do arquivo no GitHub (necessário para PUT)
 // Lê do cache local (fallback)
 function getDiariasDownloaded(){
   if(_pdfGeradoCache) return _pdfGeradoCache;
-  return JSON.parse(localStorage.getItem('sisgopa_diarias_done')||'{}');
+  return JSON.parse(localStorage.getItem('sisgopa_diarias_concluidas')||'{}');
 }
 
 // Busca status de PDF do GitHub (ao vivo, compartilhado)
@@ -2732,8 +2721,7 @@ async function _consultaLimparVcGitHub(vc, arquivada){
     // Parâmetro único evita HTTP 400 no redirect do GAS
     var archAction=vc==='vc1'?'archive_vc1':'archive_vc2';
     await fetch(CONSULTA_GAS+'?action='+archAction+'&t='+Date.now(),{cache:'no-store'});
-    console.log('GAS: consulta '+vc+' limpa ('+vcSheet+')');
-  }catch(e){console.warn('Erro ao limpar GAS após archive:',e);}
+  }catch(e){/* warn silenciado */}
 }
 
 async function fetchPdfGerado(){
@@ -2752,10 +2740,10 @@ async function fetchPdfGerado(){
         if(id) map[id]=ts;
       });
       _pdfGeradoCache=map;
-      localStorage.setItem('sisgopa_diarias_done',JSON.stringify(map));
+      localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(map));
       return map;
     }
-  }catch(e){console.warn('fetchPdfGerado erro:',e);}
+  }catch(e){/* warn silenciado */}
   return getDiariasDownloaded();
 }
 
@@ -2765,11 +2753,11 @@ async function setDiariaDownloaded(omId){
   const d=getDiariasDownloaded();
   d[omId]=Date.now();
   _pdfGeradoCache=d;
-  localStorage.setItem('sisgopa_diarias_done',JSON.stringify(d));
+  localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));
 
   // Sincroniza com Sheets em background
   fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'pdf_gerado',om_id:omId})})
-    .catch(e=>console.warn('Erro ao salvar PDF gerado na API:',e));
+    .catch(()=>{});
 }
 // Diárias (concluídas + PDF gerado) — fonte de verdade na planilha (Google Sheets via Apps Script)
 const DIARIAS_API='https://script.google.com/macros/s/AKfycbyUm_PXR8M9yU1jLhUQC60SYNF_WEUmsxsb3hMigElzBOwI2LYEGKVkXyC_A1g1bOf4/exec';
@@ -2792,7 +2780,7 @@ async function fetchDiariasConcluidas(){
     _diariasCache=map;
     localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(map));
     return map;
-  }catch(e){console.warn('fetchDiariasConcluidas erro:',e);}
+  }catch(e){/* warn silenciado */}
   return getDiariasConcluidas();
 }
 function setDiariaConcluida(omId){
@@ -2811,9 +2799,9 @@ function setDiariaConcluida(omId){
   const close=()=>{ov.style.opacity='0';setTimeout(()=>ov.remove(),300);};
   ov.addEventListener('click',e=>{if(e.target===ov)close();});
   ov.querySelector('#_dcCancel').onclick=close;
-  ov.querySelector('#_dcConfirm').onclick=()=>{close();const d=getDiariasConcluidas();d[omId]=Date.now();_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'concluir',om_id:omId})}).catch(e=>console.warn('Erro ao salvar:',e));};
+  ov.querySelector('#_dcConfirm').onclick=()=>{close();const d=getDiariasConcluidas();d[omId]=Date.now();_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'concluir',om_id:omId})}).catch(()=>{});};
 }
-function undoDiariaConcluida(omId){const d=getDiariasConcluidas();delete d[omId];_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'desfazer',om_id:omId})}).catch(e=>console.warn('Erro ao desfazer diária na API:',e));}
+function undoDiariaConcluida(omId){const d=getDiariasConcluidas();delete d[omId];_diariasCache=d;localStorage.setItem('sisgopa_diarias_concluidas',JSON.stringify(d));renderScreenDiarias();fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'desfazer',om_id:omId})}).catch(()=>{});}
 function exportDiariasCSV(){
   const done=getDiariasDownloaded();const conc=getDiariasConcluidas();
   const brP=['SB','SD','SN','SI','SS','SW'];
@@ -3114,7 +3102,7 @@ async function gerarDiariaPDFBtn(btn,omId){
   // Salva o número na planilha (aba Numeros) como antes
   if(numSolicitacao){
     fetch(DIARIAS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'salvar_numero',om_id:omId,numero:numSolicitacao})})
-      .catch(e=>console.warn('Erro ao salvar número na planilha:',e));
+      .catch(()=>{});
   }
   btn.textContent='📥 BAIXAR PDF';btn.disabled=false;
   gerarDiariaPDF(omId,numSolicitacao);
@@ -3437,7 +3425,7 @@ async function loadPimoData(){
       META_HORAS_MIN,META_ETAPAS,minToHStr,tvoToMin,diasFimTrim};
     if(typeof sourceStatus!=='undefined'){sourceStatus.pimo='ok';updateStatusPanel();}
     return _pimoCache;
-  }catch(e){console.warn('PIMO load error:',e);if(typeof sourceStatus!=='undefined'){sourceStatus.pimo='fail';updateStatusPanel();}return null;}
+  }catch(e){/* warn silenciado */}return null;}
 }
 
 function _normNome(n){if(!n)return'';return n.toUpperCase().replace(/\b(2S|1S|SO|CP|TC|MJ|T1|ST|CB|SD|GEN|CEL|TC|MAJ|CAP|TEN)\b/g,'').replace(/\((GTE|PR)\)/g,'').replace(/\s+/g,' ').trim();}
@@ -3815,7 +3803,7 @@ async function _bioRegister(saram,posto,nomeCompleto,nomeGuerra,senha){
       senha:btoa(senha) // para re-autenticar com GAS
     });
     return true;
-  }catch(e){console.warn('Bio register error:',e);return false;}
+  }catch(e){/* warn silenciado */return false;}
 }
 
 async function _bioAuthenticate(){
@@ -3831,7 +3819,7 @@ async function _bioAuthenticate(){
     }});
     if(!assertion)return null;
     return stored;
-  }catch(e){console.warn('Bio auth error:',e);return null;}
+  }catch(e){/* warn silenciado */return null;}
 }
 
 // ===== GERENCIAL =====
@@ -4200,7 +4188,7 @@ function _checkGeoAndDo(action){
       const ses=_presencaSession();
       if(!ses)return;
       if(msgEl)msgEl.innerHTML='<div style="color:var(--yellow)">⏳ Registrando...</div>';
-      const res=await _presencaApi({action,saram:ses.saram});
+      const res=await _presencaApi({action,saram:ses.saram,senha:ses.senha?atob(ses.senha):''});
       if(res.ok){
         if(msgEl)msgEl.innerHTML=`<div style="color:var(--green)">✅ ${res.message}</div>`;
         setTimeout(()=>_renderS4Painel(),1500);
@@ -4516,7 +4504,7 @@ async function _s3LoginSubmit(){
   var enc=new TextEncoder().encode(pw);
   var buf=await crypto.subtle.digest('SHA-256',enc);
   var h=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-  if(h==='ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'){
+  if(h==='a6fe06a4c8910d124fb4cc5b581876ac2849cfead295d434c86b5181aeccf5b1'){
     s3Unlocked=true;
     document.getElementById('s3LoginModal').remove();
     goScreen(14);
@@ -4560,11 +4548,6 @@ function s3RenderActiveTab(){
   else if(s3ActiveTab==='confirmacao'){s3RenderConfirmacao(container);}
   else if(s3ActiveTab==='acnt'){s3RenderAcnt(container);}
 }
-function s3RenderEscala(container){
-  
-  var src=document.getElementById('screen8');
-  if(src) container.innerHTML=src.innerHTML;
-}
 function s3RenderDiario(container){
   renderScreenDiario();
   var src=document.getElementById('screen4');
@@ -4593,7 +4576,6 @@ var CONSULTA_RECIPIENTS_VC2 = [];
         if(vc==='1') CONSULTA_RECIPIENTS_VC1.push(rec);
         else if(vc==='2') CONSULTA_RECIPIENTS_VC2.push(rec);
       });
-      console.log('Destinatários carregados: VC-1='+CONSULTA_RECIPIENTS_VC1.length+' VC-2='+CONSULTA_RECIPIENTS_VC2.length);
     }).catch(function(){});
 })();
 
@@ -4621,7 +4603,7 @@ async function fetchConsultasJson(){
   try{
     var gasR=await fetch(CONSULTA_GAS+'?action=get',{redirect:'follow',signal:AbortSignal.timeout(6000)});
     if(gasR.ok){var gd=await gasR.json();gasLocks.locked_vc1=!!gd.locked_vc1;gasLocks.locked_vc2=!!gd.locked_vc2;}
-  }catch(e){console.warn('GAS lock check falhou:',e);}
+  }catch(e){/* warn silenciado */}
   // Buscar estado real do bot
   try{
     var r=await fetch(CONSULTA_API+'/api/consulta',{
@@ -4641,7 +4623,7 @@ async function fetchConsultasJson(){
         return consultasJsonCache;
       }
     }
-  }catch(e){console.warn('Bot offline, usando localStorage:',e);}
+  }catch(e){/* warn silenciado */}
   // Fallback: localStorage + GAS locks
   var local=_consultaLocalLoad();
   if(gasLocks.locked_vc1 && local.vc1){local.vc1.locked=true;}
@@ -4655,7 +4637,7 @@ async function fetchRespostasPublic(){
   try{
     var r=await fetch(RESPOSTAS_URL+'?t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(8000)});
     if(r.ok) return await r.json();
-  }catch(e){console.warn('Erro fetch respostas',e);}
+  }catch(e){/* warn silenciado */}
   return null;
 }
 
@@ -5303,7 +5285,7 @@ function s3RenderConsultaV2(container){
             else if(vc==='2')CONSULTA_RECIPIENTS_VC2.push(rec);
           });
         }
-      }catch(e){console.warn('reload tripulantes falhou:',e);}
+      }catch(e){/* warn silenciado */}
       var recipients=vcType==='vc1'?CONSULTA_RECIPIENTS_VC1:CONSULTA_RECIPIENTS_VC2;
       var recipientsList=recipients.map(function(r){return{chat_id:r.chatId,name:r.name,rank:r.rank};});
 
@@ -5320,14 +5302,14 @@ function s3RenderConsultaV2(container){
             created_at:new Date().toISOString()
           });
           await fetch(CONSULTA_GAS+'?'+gasSetParams.toString(),{redirect:'follow'});
-        }catch(e){console.warn('GAS set_consulta falhou:',e);}
+        }catch(e){/* warn silenciado */}
         // Garante desbloqueio no GAS (direto, sem tunnel — igual ao ENCERRAR)
         try{
           var unlockVcParam = vcType === 'vc1' ? 'unlock_vc1' : 'unlock_vc2';
           await fetch(CONSULTA_GAS+'?action='+unlockVcParam,{redirect:'follow'});
-        }catch(e){console.warn('GAS unlock falhou:',e);}
+        }catch(e){/* warn silenciado */}
         // Reseta lock no bot local (best-effort)
-        try{await consultaApiPost({action:'unlock',vc:vcType});}catch(e){console.warn('Bot unlock falhou:',e);}
+        try{await consultaApiPost({action:'unlock',vc:vcType});}catch(e){/* warn silenciado */}
 
         // 1. Salvar consulta no bot local (best-effort — pode falhar se tunnel cair)
         var result=await consultaApiPost({
@@ -5369,8 +5351,8 @@ function s3RenderConsultaV2(container){
               })
             });
             var tgData=await tgResp.json();
-            if(tgData.ok){enviados++;}else{falhas++;console.warn('Telegram erro para '+r.name+':',tgData);}
-          }catch(tgErr){falhas++;console.error('Erro Telegram '+r.name+':',tgErr);}
+            if(tgData.ok){enviados++;}else{falhas++;/* warn silenciado */}
+          }catch(tgErr){falhas++;/* error silenciado */}
         }
 
         statusEl.innerHTML='<span style="color:var(--green)">✅ Consulta criada! Enviada para '+enviados+' tripulante(s).'+(falhas?' <span style="color:var(--yellow)">⚠️ '+falhas+' falha(s).</span>':'')+'</span>';
@@ -5386,7 +5368,7 @@ function s3RenderConsultaV2(container){
     });
   }).catch(function(e){
     container.innerHTML='<div style="padding:24px;color:var(--red)">❌ Erro ao carregar consulta: '+e.message+'</div>';
-    console.error('s3RenderConsultaV2 erro:',e);
+    /* error silenciado */
   });
 }
 
@@ -5488,7 +5470,7 @@ function s3RenderConfirmacao(container){
     _confCarregarOm(_confOmSel);
     _renderConfView(container);
   }).catch(function(e){
-    console.error('s3RenderConfirmacao erro:',e);
+    /* error silenciado */
     _confOMs=[]; _confCtrlSobreavisos=[]; _confDados=null; _confCientes={}; _confTripulantes=[];
     _renderConfView(container);
   });
@@ -5811,7 +5793,7 @@ async function consultaArchiveConfirm(vcKey, enviarMsg){
           body:JSON.stringify({chat_id:_cid,text:mensagem})
         }).catch(function(){});
       });
-    }catch(_e){console.warn('Erro ao enviar mensagem encerramento:',_e);}
+    }catch(_e){/* warn silenciado */}
   }
   // Arquiva no bot (best-effort)
   try{
@@ -5836,7 +5818,7 @@ async function consultaAction(action,vcKey){
       var gasRes=await fetch(gasUrl,{redirect:'follow'}).then(function(r){return r.json();});
       if(gasRes.ok){
         // Atualiza bot local também (best-effort, não bloqueia se tunnel cair)
-        try{await consultaApiPost({action:'lock',vc:vcKey});}catch(e){console.warn('Bot lock falhou (ok, GAS é autoritativo):',e);}
+        try{await consultaApiPost({action:'lock',vc:vcKey});}catch(e){/* warn silenciado */}
         // Atualiza localStorage local também
         var _ld=_consultaLocalLoad();
         if(_ld[vcKey]){_ld[vcKey].locked=true;}
@@ -6168,7 +6150,7 @@ function renderCartoesNaBusca(trigrama,funcao){
 const DISCLAIMER='⚠️ Os dados aqui apresentados são apenas referências. Embase seus planejamentos em fontes oficiais.';
 const CELOG_CSV='https://docs.google.com/spreadsheets/d/1qF75o4R4FuM0_uBo5lxcsLK1aJAmMhCPNRiIru3wobQ/export?format=csv';
 let BR_AIRPORTS={};
-fetch('br_airports.json?v=1').then(r=>r.ok?r.json():{}).then(d=>{BR_AIRPORTS=d;console.log(`BR_AIRPORTS: ${Object.keys(d).length} aeródromos`);}).catch(()=>{});
+fetch('br_airports.json?v=1').then(r=>r.ok?r.json():{}).then(d=>{BR_AIRPORTS=d;}).catch(()=>{});
 
 function renderScreenBot(){
   const container=document.getElementById('screen11');
@@ -6797,7 +6779,7 @@ async function fetchGlobalAirports(){
   try{
     const r=await fetchWithTimeout('global_airports.json?v='+Date.now(),15000);
     GLOBAL_AIRPORTS=await r.json();
-  }catch(e){console.warn('Global airports load failed',e);}
+  }catch(e){/* warn silenciado */}
 }
 async function botExecCodigo(){
   const rawQuery=(document.getElementById('codQuery')?.value||'').trim();
@@ -7234,7 +7216,7 @@ async function loadAllData(){
     renderAll();
     fetchAllAlerts();
   }catch(e){
-    console.error(e);
+    /* error silenciado */
     dot.className='status-dot err';
     updateStatusPanel();
     document.getElementById('errorOverlay').style.display='flex';
@@ -7274,7 +7256,7 @@ async function checkCodeUpdate(){
     const len=r.headers.get('content-length')||'';const mod=r.headers.get('last-modified')||'';
     const sig=len+'|'+mod;
     if(!_codeHash){_codeHash=sig;return;}
-    if(sig!==_codeHash){console.log('SisGOPA: nova versão detectada, recarregando...');location.reload();}
+    if(sig!==_codeHash){location.reload();}
   }catch(e){}
 }
 checkCodeUpdate();_codeInterval=setInterval(checkCodeUpdate,300000);
@@ -7378,8 +7360,8 @@ goScreen(0);
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
     navigator.serviceWorker.register('/sisescala-tv/sw.js')
-      .then(r=>console.log('[SW] registrado:',r.scope))
-      .catch(e=>console.warn('[SW] erro:',e));
+      .then(()=>{})
+      .catch(()=>{});
   });
 }
 </script>
