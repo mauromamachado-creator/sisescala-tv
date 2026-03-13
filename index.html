@@ -3818,6 +3818,106 @@ async function _bioAuthenticate(){
   }catch(e){console.warn('Bio auth error:',e);return null;}
 }
 
+// ===== INDISPONIBILIDADE =====
+const TIPOS_INDISP=['Serviço','Sorocaba','Férias','Licença','Dispensa Médica','Outros'];
+
+async function _s4ShowIndisp(){
+  const ses=_presencaSession();
+  if(!ses)return;
+  const c=document.getElementById('screen16');
+
+  // Carregar minhas indisponibilidades
+  let minhas=[];
+  const res=await _presencaApi({action:'minhas_indisp',saram:ses.saram});
+  if(res.ok)minhas=res.registros||[];
+
+  let h='<h2>📋 MNT — Presença</h2>';
+  h+=`<div style="max-width:500px;margin:0 auto;padding:0 12px">`;
+
+  // Formulário de novo lançamento
+  h+=`<div style="background:var(--bg2);border-radius:10px;padding:16px;border:1px solid var(--border);margin-bottom:16px">`;
+  h+=`<div style="font-weight:700;font-size:.9rem;color:var(--yellow);margin-bottom:12px">📝 Nova indisponibilidade</div>`;
+
+  // Tipo
+  h+=`<div style="margin-bottom:10px"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">Tipo</label>`;
+  h+=`<select id="indisp-tipo" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:.9rem;box-sizing:border-box">`;
+  TIPOS_INDISP.forEach(t=>h+=`<option value="${t}">${t}</option>`);
+  h+=`</select></div>`;
+
+  // Data início
+  h+=`<div style="display:flex;gap:10px;margin-bottom:10px">`;
+  h+=`<div style="flex:1"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">Início</label><input id="indisp-inicio" type="date" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:.9rem;box-sizing:border-box"></div>`;
+  h+=`<div style="flex:1"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">Fim</label><input id="indisp-fim" type="date" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:.9rem;box-sizing:border-box"></div>`;
+  h+=`</div>`;
+
+  // Observação
+  h+=`<div style="margin-bottom:12px"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">Observação (opcional)</label><input id="indisp-obs" placeholder="Ex: CRM vencido, TFR etc." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:.9rem;box-sizing:border-box"></div>`;
+
+  // Botão
+  h+=`<button onclick="_s4EnviarIndisp()" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--yellow);color:var(--bg);font-weight:700;font-size:.9rem;cursor:pointer">Lançar</button>`;
+  h+=`<div id="indisp-msg" style="margin-top:8px;text-align:center;font-size:.82rem;min-height:20px"></div>`;
+  h+=`</div>`;
+
+  // Minhas indisponibilidades ativas
+  if(minhas.length){
+    h+=`<div style="background:var(--bg2);border-radius:10px;padding:16px;border:1px solid var(--border);margin-bottom:16px">`;
+    h+=`<div style="font-weight:700;font-size:.85rem;color:var(--text1);margin-bottom:10px">📋 Minhas indisponibilidades ativas</div>`;
+    minhas.forEach(r=>{
+      const periodo=r.dataFim?`${r.dataInicio} → ${r.dataFim}`:r.dataInicio+' (sem data fim)';
+      h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;margin-bottom:4px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">`;
+      h+=`<div><span style="font-weight:600;font-size:.82rem;color:var(--yellow)">${r.tipo}</span><br><span style="font-size:.75rem;color:var(--text2)">${periodo}</span>`;
+      if(r.obs)h+=`<br><span style="font-size:.72rem;color:var(--text2);font-style:italic">${r.obs}</span>`;
+      h+=`</div>`;
+      h+=`<button onclick="_s4CancelarIndisp(${r.linha})" style="padding:4px 8px;border-radius:6px;border:1px solid var(--red);background:rgba(255,68,68,.1);color:var(--red);font-size:.7rem;cursor:pointer;white-space:nowrap">Cancelar</button>`;
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+  }
+
+  // Voltar
+  h+=`<div style="text-align:center"><button onclick="_renderS4Painel()" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">← Voltar</button></div>`;
+  h+=`</div>`;
+
+  c.innerHTML=h;
+
+  // Preencher data de hoje como padrão
+  const now=new Date();const pad=n=>String(n).padStart(2,'0');
+  document.getElementById('indisp-inicio').value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+}
+
+async function _s4EnviarIndisp(){
+  const ses=_presencaSession();
+  if(!ses)return;
+  const tipo=document.getElementById('indisp-tipo').value;
+  const inicio=document.getElementById('indisp-inicio').value;
+  const fim=document.getElementById('indisp-fim').value;
+  const obs=document.getElementById('indisp-obs').value;
+  const msg=document.getElementById('indisp-msg');
+
+  if(!tipo||!inicio){msg.innerHTML='<span style="color:var(--red)">Preencha tipo e data de início.</span>';return;}
+  msg.innerHTML='<span style="color:var(--yellow)">⏳ Lançando...</span>';
+
+  const res=await _presencaApi({action:'lancar_indisp',saram:ses.saram,tipo,dataInicio:inicio,dataFim:fim||'',obs:obs||''});
+  if(res.ok){
+    msg.innerHTML='<span style="color:var(--green)">✅ Indisponibilidade lançada!</span>';
+    setTimeout(()=>_s4ShowIndisp(),1200);
+  }else{
+    msg.innerHTML=`<span style="color:var(--red)">❌ ${res.error}</span>`;
+  }
+}
+
+async function _s4CancelarIndisp(linha){
+  if(!confirm('Cancelar esta indisponibilidade?'))return;
+  const ses=_presencaSession();
+  if(!ses)return;
+  const res=await _presencaApi({action:'cancelar_indisp',saram:ses.saram,linha:String(linha)});
+  if(res.ok){
+    _s4ShowIndisp();
+  }else{
+    alert(res.error||'Erro ao cancelar.');
+  }
+}
+
 async function _s4ActivateBio(){
   const ses=_presencaSession();
   if(!ses)return;
@@ -3932,7 +4032,10 @@ async function _renderS4Painel(){
   html+=`<button onclick="_checkGeoAndDo('clockOut')" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--red);background:rgba(255,68,68,.08);color:var(--red);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">🔴</span>SAÍDA</button>`;
   html+=`</div>`;
 
-  html+=`<div id="s4-msg" style="text-align:center;margin:10px 0;min-height:30px"></div>`;
+  // Botão indisponibilidade
+  html+=`<div style="text-align:center;margin:8px 0">`;
+  html+=`<button onclick="_s4ShowIndisp()" style="padding:10px 20px;border-radius:10px;border:1px solid var(--yellow);background:rgba(255,200,50,.06);color:var(--yellow);font-size:.9rem;font-weight:700;cursor:pointer">📝 LANÇAR INDISPONIBILIDADE</button>`;
+  html+=`</div>`;
 
   // Toggle biometria (fixo, sempre visível)
   const bioStored=_bioGetStored();
@@ -4009,8 +4112,9 @@ async function _s4Chamada(){
   if(res.ausentes&&res.ausentes.length){
     h+=`<div style="font-weight:700;font-size:.82rem;color:var(--red);margin:12px 0 6px">❌ Ausentes</div>`;
     res.ausentes.forEach(p=>{
+      const motivo=p.indisp?` <span style="color:var(--yellow);font-size:.72rem">(${p.indisp.tipo}${p.indisp.dataFim?' até '+p.indisp.dataFim:''})</span>`:'';
       h+=`<div style="display:flex;align-items:center;padding:5px 8px;margin-bottom:3px;background:rgba(255,68,68,.04);border-radius:6px;border:1px solid rgba(255,68,68,.15)">`;
-      h+=`<span style="font-size:.82rem;color:var(--text2)">${p.posto} ${p.nomeGuerra}</span>`;
+      h+=`<span style="font-size:.82rem;color:var(--text2)">${p.posto} ${p.nomeGuerra}${motivo}</span>`;
       h+=`</div>`;
     });
   }

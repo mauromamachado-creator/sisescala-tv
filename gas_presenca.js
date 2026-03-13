@@ -6,8 +6,9 @@
  * Abas na planilha de presença:
  *   "Registro" — ponto diário (Data, Posto, Nome Completo, Nome de Guerra, Entrada, Saída, SARAM, Horas)
  *   "Usuarios" — credenciais  (SARAM, SenhaHash, Posto, NomeCompleto, NomeGuerra, CriadoEm)
+ *   "Indisponibilidade" — lançamentos (SARAM, Posto, NomeGuerra, Tipo, DataInicio, DataFim, Obs, CriadoEm)
  *
- * Actions: register, login, clockIn, clockOut, status, history
+ * Actions: register, login, clockIn, clockOut, status, history, chamada, lancar_indisp, minhas_indisp, cancelar_indisp
  */
 
 const PRESENCA_SHEET = '1E49Q1bPbhT2MlYjYXfpC5mbzuxTBAPzidY3DtZW2VAs';
@@ -29,8 +30,11 @@ function handleRequest(e) {
       case 'clockOut':  result = doClockOut(p); break;
       case 'status':    result = doStatus(p); break;
       case 'history':   result = doHistory(p); break;
-      case 'chamada':   result = doChamada(p); break;
-      default:          result = { ok: false, error: 'Ação inválida' };
+      case 'chamada':       result = doChamada(p); break;
+      case 'lancar_indisp': result = doLancarIndisp(p); break;
+      case 'minhas_indisp': result = doMinhasIndisp(p); break;
+      case 'cancelar_indisp': result = doCancelarIndisp(p); break;
+      default:              result = { ok: false, error: 'Ação inválida' };
     }
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
@@ -413,6 +417,51 @@ function doChamada(p) {
     }
   }
   
+  // Buscar indisponibilidades ativas hoje
+  const indSheet = ss.getSheetByName('Indisponibilidade');
+  const indispMap = {}; // saramNorm → {tipo, dataInicio, dataFim, obs}
+  if (indSheet) {
+    const indData = indSheet.getDataRange().getValues();
+    for (let i = 1; i < indData.length; i++) {
+      const sn = normalizeSaram(indData[i][0]);
+      const inicio = String(indData[i][4] || '');
+      const fim = String(indData[i][5] || '');
+      const cancelado = String(indData[i][8] || '');
+      if (cancelado) continue;
+      // Verificar se hoje está no período
+      if (inicio <= hoje && (!fim || fim >= hoje)) {
+        indispMap[sn] = {
+          tipo: String(indData[i][3] || ''),
+          dataInicio: inicio,
+          dataFim: fim,
+          obs: String(indData[i][6] || '')
+        };
+      }
+    }
+  }
+
+  for (const u of usuarios) {
+    const reg = hojeMap[u.saramNorm];
+    const indisp = indispMap[u.saramNorm] || null;
+    if (reg) {
+      presentes.push({
+        posto: u.posto,
+        nomeGuerra: u.nomeGuerra,
+        nomeCompleto: u.nomeCompleto,
+        entrada: reg.entrada,
+        saida: reg.saida,
+        horas: reg.horas
+      });
+    } else {
+      ausentes.push({
+        posto: u.posto,
+        nomeGuerra: u.nomeGuerra,
+        nomeCompleto: u.nomeCompleto,
+        indisp: indisp
+      });
+    }
+  }
+  
   return { 
     ok: true, 
     data: hoje,
@@ -422,4 +471,88 @@ function doChamada(p) {
     totalAusentes: ausentes.length,
     total: usuarios.length
   };
+}
+
+/* ---- Indisponibilidade ---- */
+const INDISP_HEADERS = ['SARAM', 'Posto', 'NomeGuerra', 'Tipo', 'DataInicio', 'DataFim', 'Obs', 'CriadoEm', 'Cancelado'];
+const TIPOS_INDISP = ['Serviço', 'Sorocaba', 'Férias', 'Licença', 'Dispensa Médica', 'Outros'];
+
+function doLancarIndisp(p) {
+  const saram = String(p.saram || '').trim();
+  const tipo = String(p.tipo || '').trim();
+  const dataInicio = String(p.dataInicio || '').trim();
+  const dataFim = String(p.dataFim || '').trim();
+  const obs = String(p.obs || '').trim();
+  
+  if (!saram || !tipo || !dataInicio) return { ok: false, error: 'Preencha tipo e data de início.' };
+  if (!TIPOS_INDISP.includes(tipo)) return { ok: false, error: 'Tipo inválido.' };
+  
+  const saramNorm = normalizeSaram(saram);
+  const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
+  
+  // Verificar se é usuário cadastrado
+  const usSheet = ss.getSheetByName('Usuarios');
+  let mil = null;
+  const usData = usSheet.getDataRange().getValues();
+  for (let i = 1; i < usData.length; i++) {
+    if (normalizeSaram(usData[i][0]) === saramNorm) {
+      mil = { posto: String(usData[i][2] || ''), nomeGuerra: String(usData[i][4] || '') };
+      break;
+    }
+  }
+  if (!mil) return { ok: false, error: 'Usuário não encontrado.' };
+  
+  const indSheet = getOrCreateSheet(ss, 'Indisponibilidade', INDISP_HEADERS);
+  indSheet.appendRow([saram, mil.posto, mil.nomeGuerra, tipo, dataInicio, dataFim, obs, getBRTNow(), '']);
+  
+  return { ok: true, tipo: tipo, dataInicio: dataInicio, dataFim: dataFim };
+}
+
+function doMinhasIndisp(p) {
+  const saram = String(p.saram || '').trim();
+  if (!saram) return { ok: false, error: 'SARAM obrigatório.' };
+  
+  const saramNorm = normalizeSaram(saram);
+  const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
+  const indSheet = ss.getSheetByName('Indisponibilidade');
+  if (!indSheet) return { ok: true, registros: [] };
+  
+  const data = indSheet.getDataRange().getValues();
+  const hoje = getBRTDate();
+  const registros = [];
+  
+  for (let i = 1; i < data.length; i++) {
+    if (normalizeSaram(data[i][0]) !== saramNorm) continue;
+    if (String(data[i][8] || '')) continue; // cancelado
+    const fim = String(data[i][5] || '');
+    // Mostrar ativas (sem fim ou fim >= hoje) + recentes (últimos 30 dias)
+    if (fim && fim < hoje) continue;
+    registros.push({
+      linha: i + 1,
+      tipo: String(data[i][3] || ''),
+      dataInicio: String(data[i][4] || ''),
+      dataFim: String(data[i][5] || ''),
+      obs: String(data[i][6] || ''),
+      criadoEm: String(data[i][7] || '')
+    });
+  }
+  
+  return { ok: true, registros: registros };
+}
+
+function doCancelarIndisp(p) {
+  const saram = String(p.saram || '').trim();
+  const linha = parseInt(p.linha || '0');
+  if (!saram || !linha) return { ok: false, error: 'Parâmetros inválidos.' };
+  
+  const saramNorm = normalizeSaram(saram);
+  const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
+  const indSheet = ss.getSheetByName('Indisponibilidade');
+  if (!indSheet) return { ok: false, error: 'Aba não encontrada.' };
+  
+  const row = indSheet.getRange(linha, 1, 1, 9).getValues()[0];
+  if (normalizeSaram(row[0]) !== saramNorm) return { ok: false, error: 'Registro não pertence a este usuário.' };
+  
+  indSheet.getRange(linha, 9).setValue(getBRTNow()); // Coluna "Cancelado"
+  return { ok: true };
 }
