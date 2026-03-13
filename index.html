@@ -381,7 +381,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <button onclick="goScreen(2)" id="btn2">HORAS DE VOO</button>
     <button onclick="goScreen(3)" id="btn3">FERIAS/ALERTAS</button>
     <button onclick="goScreen(14)" id="btn14">S3</button>
-    <button onclick="goScreen(16)" id="btn16">S4</button>
+    <button onclick="goScreen(16)" id="btn16">MNT</button>
 
     <button onclick="goScreen(6)" id="btn6">CALENDÁRIO</button>
     <button onclick="goScreen(10)" id="btn10">CARTÕES</button>
@@ -610,7 +610,7 @@ function _trackSession(){
 function _trackScreen(n){
   const a=_getAnalytics();
   if(!a.screenViews)a.screenViews={};
-  const names={0:'DASHBOARD',1:'DISPONIBILIDADE',2:'HORAS_VOO',3:'FERIAS',4:'DIARIO',5:'ACNT',6:'CALENDARIO',7:'BUSCA',8:'ESCALA',9:'TV',10:'CARTOES',11:'BOT',12:'REPORTAR',13:'DIARIAS',14:'S3',15:'PIMO_TRP',16:'S4'};
+  const names={0:'DASHBOARD',1:'DISPONIBILIDADE',2:'HORAS_VOO',3:'FERIAS',4:'DIARIO',5:'ACNT',6:'CALENDARIO',7:'BUSCA',8:'ESCALA',9:'TV',10:'CARTOES',11:'BOT',12:'REPORTAR',13:'DIARIAS',14:'S3',15:'PIMO_TRP',16:'MNT'};
   const key=names[n]||('SCREEN_'+n);
   a.screenViews[key]=(a.screenViews[key]||0)+1;
   _saveAnalytics(a);
@@ -3816,7 +3816,7 @@ async function _renderS4Painel(){
 
   const status=await _presencaApi({action:'status',saram:ses.saram});
 
-  let html='<h2>📋 S4 — Presença</h2>';
+  let html='<h2>📋 MNT — Presença</h2>';
   html+=`<div style="text-align:center;margin:20px 0">`;
   html+=`<div style="font-size:1.1rem;font-weight:700;color:var(--vc1)">${ses.posto} ${ses.nomeGuerra}</div>`;
   html+=`<div style="font-size:.8rem;color:var(--text2);margin:4px 0">${ses.nomeCompleto}</div>`;
@@ -3891,7 +3891,7 @@ function renderScreenS4(){
   const ses=_presencaSession();
   if(ses){_renderS4Painel();return;}
 
-  let html='<h2>📋 S4 — Presença</h2>';
+  let html='<h2>📋 MNT — Presença</h2>';
   html+=`<div style="display:flex;justify-content:center;margin:30px 0">`;
   html+=`<button onclick="_s4ShowLoginModal()" style="width:180px;height:180px;border-radius:16px;border:2px solid var(--vc1);background:rgba(0,212,255,.06);color:var(--vc1);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:.2s"><span style="font-size:3rem">📋</span>REGISTRAR<br>PRESENÇA</button>`;
   html+=`</div>`;
