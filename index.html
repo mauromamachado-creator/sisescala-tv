@@ -3139,7 +3139,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   if(numSolicitacao){
     const ano=new Date().getFullYear();
     const numStr='Solicitação nº '+String(numSolicitacao).padStart(3,'0')+'/GTE-1/'+ano;
-    doc.setFont('times','italic');doc.setFontSize(10);
+    doc.setFont('times','normal');doc.setFontSize(10);
     doc.text(numStr,lm,y);
     y+=7;
   } else { y+=3; }
