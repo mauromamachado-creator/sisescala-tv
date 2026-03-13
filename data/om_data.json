@@ -565,5 +565,107 @@
     ],
     "tipo": "ESCAV",
     "missao": "PR TLD/PR VER, PR RES/PR ESCAV, PR ESCAV"
+  },
+  {
+    "aeronave": "VC-1",
+    "om_numero": "106/GTE-1/2026",
+    "om": "106/GTE-1/2026",
+    "fab": "FAB 2101",
+    "data": "13/03/26",
+    "tipo": "TRP",
+    "missao": "PR",
+    "tripulacao": [
+      "MJ MACHADO (MAC / 502.537)",
+      "MJ OSVALDO (OSV / 552.893)",
+      "CP PEDRO CIRIACO (PCI / 574.168)",
+      "SO CIROMAR (520.531)",
+      "2S ANDRÉ PEDRO (545.601)",
+      "1S CAMPOS (527.127)",
+      "1S GLÁUCIA (PR) (498.158)",
+      "1S PEREIRA (PR) (527.615)",
+      "1S AIMORÉ (524.355)",
+      "2S CIRILO (PR) (548.498)",
+      "2S AGOSTINI (567.034)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "13/03/26 - 11:00 Z",
+        "ete": "01:30",
+        "destino": "SBRJ",
+        "destino_nome": "SBRJ (P DECEA)",
+        "eta": "13/03/26 - 12:30 Z",
+        "alternativa": "SBGL",
+        "comb_min": 6000,
+        "comb_rec": 9000
+      },
+      {
+        "origem": "SBRJ",
+        "origem_nome": "SBRJ (P DECEA)",
+        "etd": "13/03/26 - 18:00 Z",
+        "ete": "01:30",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "13/03/26 - 19:30 Z",
+        "alternativa": "SBCF",
+        "comb_min": 6000,
+        "comb_rec": 9000
+      }
+    ],
+    "file_id": "1-b27TxvDjcEIZ3bTjP7KCrJGMj3e8EFY",
+    "file_ids": [
+      "1-b27TxvDjcEIZ3bTjP7KCrJGMj3e8EFY"
+    ]
+  },
+  {
+    "aeronave": "VC-2",
+    "om_numero": "107/GTE-1/2026",
+    "om": "107/GTE-1/2026",
+    "fab": "FAB 2590",
+    "data": "13/03/26",
+    "tipo": "ESCAV",
+    "missao": "PR RES/PR TLD, PR RES/PR ESCAV",
+    "tripulacao": [
+      "MJ LOTTI (LTT / 553.264)",
+      "MJ DA SILVA (DSA / 553.262)",
+      "MJ SOUZA (SZA / 557.692)",
+      "1S M. CARVALHO (500.044)",
+      "2S TADEU CAVALCANTE (564.971)",
+      "1S MACÊDO (522.897)",
+      "1S SANTIAGO (PR) (525.328)",
+      "2S LOPES (PR) (530.806)",
+      "2S D. AUGUSTO (548.852)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "13/03/26 - 13:30 Z",
+        "ete": "01:30",
+        "destino": "SBRJ",
+        "destino_nome": "SBRJ (P DECEA)",
+        "eta": "13/03/26 - 15:00 Z",
+        "alternativa": "SBGL",
+        "comb_min": 5500,
+        "comb_rec": 10500
+      },
+      {
+        "origem": "SBRJ",
+        "origem_nome": "SBRJ (P DECEA)",
+        "etd": "13/03/26 - 19:30 Z",
+        "ete": "01:30",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "13/03/26 - 21:00 Z",
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 7500
+      }
+    ],
+    "file_id": "1cN-he_buf2jFkJipI4LOsInpm2Wp6iJQ",
+    "file_ids": [
+      "1cN-he_buf2jFkJipI4LOsInpm2Wp6iJQ"
+    ]
   }
 ]
