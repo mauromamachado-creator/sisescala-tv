@@ -4,7 +4,7 @@
  * MP Dados: 1gwkeV2iA_JPTZ3rp0wf1PvXUI0TiOzNg3Xd4DhWwpao
  *
  * Abas na planilha de presença:
- *   "Registro" — ponto diário (Data, Posto, Nome Completo, Nome de Guerra, Entrada, Saída, SARAM)
+ *   "Registro" — ponto diário (Data, Posto, Nome Completo, Nome de Guerra, Entrada, Saída, SARAM, Horas)
  *   "Usuarios" — credenciais  (SARAM, SenhaHash, Posto, NomeCompleto, NomeGuerra, CriadoEm)
  *
  * Actions: register, login, clockIn, clockOut, status, history
@@ -12,6 +12,7 @@
 
 const PRESENCA_SHEET = '1E49Q1bPbhT2MlYjYXfpC5mbzuxTBAPzidY3DtZW2VAs';
 const MP_SHEET       = '1gwkeV2iA_JPTZ3rp0wf1PvXUI0TiOzNg3Xd4DhWwpao';
+const REG_HEADERS    = ['Data', 'Posto', 'Nome Completo', 'Nome de Guerra', 'Entrada', 'Saída', 'SARAM', 'Horas'];
 
 function doGet(e)  { return handleRequest(e); }
 function doPost(e) { return handleRequest(e); }
@@ -50,8 +51,15 @@ function getBRTDate() {
   return Utilities.formatDate(new Date(), 'America/Sao_Paulo', "yyyy-MM-dd");
 }
 
+function getBRTTime() {
+  return Utilities.formatDate(new Date(), 'America/Sao_Paulo', "HH:mm");
+}
+
+function getBRTDatetime() {
+  return Utilities.formatDate(new Date(), 'America/Sao_Paulo', "yyyy-MM-dd HH:mm");
+}
+
 function cellToDate(cell) {
-  // Converte célula (Date ou string) para formato yyyy-MM-dd
   if (!cell) return '';
   if (cell instanceof Date) {
     return Utilities.formatDate(cell, 'America/Sao_Paulo', "yyyy-MM-dd");
@@ -59,21 +67,61 @@ function cellToDate(cell) {
   return String(cell).trim();
 }
 
-function getBRTTime() {
-  return Utilities.formatDate(new Date(), 'America/Sao_Paulo', "HH:mm");
+function normalizeSaram(s) {
+  return String(s || '').trim().replace(/[\.\-\s]/g, '');
+}
+
+function calcHoras(dataEntrada, horaEntrada, dataSaida, horaSaida) {
+  // Monta datetimes completos e calcula diferença em horas
+  try {
+    const fmt = 'yyyy-MM-dd HH:mm';
+    const tz = 'America/Sao_Paulo';
+    // Parsear entrada
+    const dtEntStr = cellToDate(dataEntrada) + ' ' + String(horaEntrada || '').trim();
+    const dtSaiStr = (dataSaida ? cellToDate(dataSaida) : cellToDate(dataEntrada)) + ' ' + String(horaSaida || '').trim();
+    
+    const partes1 = dtEntStr.split(/[\s\-\:]/);
+    const partes2 = dtSaiStr.split(/[\s\-\:]/);
+    
+    const d1 = new Date(partes1[0], partes1[1]-1, partes1[2], partes1[3], partes1[4]);
+    const d2 = new Date(partes2[0], partes2[1]-1, partes2[2], partes2[3], partes2[4]);
+    
+    // Se saída < entrada, significa que cruzou meia-noite
+    let diffMs = d2.getTime() - d1.getTime();
+    if (diffMs < 0) {
+      // Adiciona 24h (cruzou meia-noite)
+      diffMs += 24 * 60 * 60 * 1000;
+    }
+    
+    const totalMin = Math.round(diffMs / 60000);
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    return h + ':' + ('0' + m).slice(-2);
+  } catch(e) {
+    return '';
+  }
 }
 
 function getOrCreateSheet(ss, name, headers) {
   let sheet = ss.getSheetByName(name);
   if (!sheet) {
     sheet = ss.insertSheet(name);
-    if (headers) sheet.appendRow(headers);
+    if (headers) {
+      sheet.appendRow(headers);
+      // Filtro automático no cabeçalho
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+      sheet.setFrozenRows(1);
+    }
   }
+  // Garantir filtro automático
+  try {
+    if (!sheet.getFilter()) {
+      const lastCol = sheet.getLastColumn() || headers.length;
+      const lastRow = Math.max(sheet.getLastRow(), 1);
+      sheet.getRange(1, 1, lastRow, lastCol).createFilter();
+    }
+  } catch(e) { /* filtro já existe */ }
   return sheet;
-}
-
-function normalizeSaram(s) {
-  return String(s || '').trim().replace(/[\.\-\s]/g, '');
 }
 
 function findInMP(saram) {
@@ -82,7 +130,6 @@ function findInMP(saram) {
   if (!sheet) return null;
   const data = sheet.getDataRange().getValues();
   const saramNorm = normalizeSaram(saram);
-  // Colunas: U(20)=Posto, V(21)=NomeCompleto, W(22)=Nome, AG(32)=Saram
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     const saramCell = normalizeSaram(row[32]);
@@ -91,7 +138,7 @@ function findInMP(saram) {
         posto: String(row[20] || '').trim(),
         nomeCompleto: String(row[21] || '').trim(),
         nomeGuerra: String(row[22] || '').trim(),
-        saramOriginal: String(row[32] || '').trim() // formato da planilha
+        saramOriginal: String(row[32] || '').trim()
       };
     }
   }
@@ -107,14 +154,11 @@ function doRegister(p) {
   if (!saramNorm || !senha) return { ok: false, error: 'SARAM e senha obrigatórios' };
   if (senha.length < 4) return { ok: false, error: 'Senha deve ter no mínimo 4 caracteres' };
 
-  // Validar SARAM na MP
   const militar = findInMP(saramInput);
   if (!militar) return { ok: false, error: 'SARAM não encontrado na base de dados. Somente militares do GTE podem se cadastrar.' };
 
-  // Usar SARAM no formato original da planilha
   const saram = militar.saramOriginal || saramInput;
 
-  // Verificar se já cadastrado
   const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
   const usSheet = getOrCreateSheet(ss, 'Usuarios', ['SARAM', 'SenhaHash', 'Posto', 'NomeCompleto', 'NomeGuerra', 'CriadoEm']);
   const usData = usSheet.getDataRange().getValues();
@@ -124,7 +168,6 @@ function doRegister(p) {
     }
   }
 
-  // Cadastrar
   const hash = hashPassword(senha);
   usSheet.appendRow([saram, hash, militar.posto, militar.nomeCompleto, militar.nomeGuerra, getBRTNow()]);
 
@@ -165,7 +208,6 @@ function doClockIn(p) {
 
   const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
 
-  // Buscar dados do militar no Usuarios
   const usSheet = ss.getSheetByName('Usuarios');
   if (!usSheet) return { ok: false, error: 'Usuário não encontrado' };
   const usData = usSheet.getDataRange().getValues();
@@ -180,21 +222,21 @@ function doClockIn(p) {
   }
   if (!mil) return { ok: false, error: 'Usuário não cadastrado' };
 
-  // Verificar se já tem entrada hoje sem saída
-  const regSheet = getOrCreateSheet(ss, 'Registro', ['Data', 'Posto', 'Nome Completo', 'Nome de Guerra', 'Entrada', 'Saída', 'SARAM']);
+  // Verificar se já tem entrada aberta (qualquer dia, não só hoje)
+  const regSheet = getOrCreateSheet(ss, 'Registro', REG_HEADERS);
   const regData = regSheet.getDataRange().getValues();
-  const hoje = getBRTDate();
   for (let i = 1; i < regData.length; i++) {
-    if (normalizeSaram(regData[i][6]) === saramNorm && cellToDate(regData[i][0]) === hoje && !regData[i][5]) {
-      return { ok: false, error: 'Entrada já registrada hoje. Registre a saída primeiro.' };
+    if (normalizeSaram(regData[i][6]) === saramNorm && !regData[i][5]) {
+      const dataEnt = cellToDate(regData[i][0]);
+      return { ok: false, error: 'Entrada aberta em ' + dataEnt + ' às ' + regData[i][4] + '. Registre a saída primeiro.' };
     }
   }
 
-  // Registrar entrada
   const hora = getBRTTime();
-  regSheet.appendRow([hoje, mil.posto, mil.nomeCompleto, mil.nomeGuerra, hora, '', saramStored]);
+  const hoje = getBRTDate();
+  regSheet.appendRow([hoje, mil.posto, mil.nomeCompleto, mil.nomeGuerra, hora, '', saramStored, '']);
 
-  return { ok: true, message: `Entrada registrada: ${hora}`, hora: hora };
+  return { ok: true, message: 'Entrada registrada: ' + hora, hora: hora };
 }
 
 function doClockOut(p) {
@@ -207,18 +249,33 @@ function doClockOut(p) {
   if (!regSheet) return { ok: false, error: 'Nenhum registro encontrado' };
 
   const regData = regSheet.getDataRange().getValues();
-  const hoje = getBRTDate();
 
-  // Encontrar a última entrada de hoje sem saída
+  // Encontrar a última entrada aberta (qualquer dia, não só hoje)
   for (let i = regData.length - 1; i >= 1; i--) {
-    if (normalizeSaram(regData[i][6]) === saramNorm && cellToDate(regData[i][0]) === hoje && !regData[i][5]) {
+    if (normalizeSaram(regData[i][6]) === saramNorm && !regData[i][5]) {
       const hora = getBRTTime();
-      regSheet.getRange(i + 1, 6).setValue(hora); // Coluna F = Saída
-      return { ok: true, message: `Saída registrada: ${hora}`, hora: hora };
+      const hoje = getBRTDate();
+      const dataEntrada = cellToDate(regData[i][0]);
+      const horaEntrada = String(regData[i][4] || '');
+      
+      // Calcular horas trabalhadas
+      const horas = calcHoras(dataEntrada, horaEntrada, hoje, hora);
+      
+      // Gravar saída + data saída (se diferente) + horas
+      regSheet.getRange(i + 1, 6).setValue(hora);           // Coluna F = Saída
+      regSheet.getRange(i + 1, 8).setValue(horas);           // Coluna H = Horas
+      
+      // Se a saída for em dia diferente da entrada, mostrar no retorno
+      const cruzouDia = (dataEntrada !== hoje);
+      const msg = cruzouDia 
+        ? 'Saída registrada: ' + hora + ' (entrada foi em ' + dataEntrada + ')'
+        : 'Saída registrada: ' + hora;
+      
+      return { ok: true, message: msg, hora: hora, horas: horas };
     }
   }
 
-  return { ok: false, error: 'Nenhuma entrada aberta hoje. Registre a entrada primeiro.' };
+  return { ok: false, error: 'Nenhuma entrada aberta. Registre a entrada primeiro.' };
 }
 
 function doStatus(p) {
@@ -238,9 +295,27 @@ function doStatus(p) {
     if (normalizeSaram(regData[i][6]) === saramNorm && cellToDate(regData[i][0]) === hoje) {
       registros.push({
         entrada: String(regData[i][4] || ''),
-        saida: String(regData[i][5] || '')
+        saida: String(regData[i][5] || ''),
+        horas: String(regData[i][7] || '')
       });
       if (!regData[i][5]) aberto = true;
+    }
+  }
+
+  // Verificar também se tem entrada aberta de outro dia
+  if (!aberto) {
+    for (let i = 1; i < regData.length; i++) {
+      if (normalizeSaram(regData[i][6]) === saramNorm && !regData[i][5]) {
+        aberto = true;
+        registros.unshift({
+          data: cellToDate(regData[i][0]),
+          entrada: String(regData[i][4] || ''),
+          saida: '',
+          horas: '',
+          diaAnterior: true
+        });
+        break;
+      }
     }
   }
 
@@ -264,9 +339,10 @@ function doHistory(p) {
       registros.push({
         data: cellToDate(regData[i][0]),
         entrada: String(regData[i][4] || ''),
-        saida: String(regData[i][5] || '')
+        saida: String(regData[i][5] || ''),
+        horas: String(regData[i][7] || '')
       });
-      if (registros.length >= dias * 3) break; // max entries
+      if (registros.length >= dias * 3) break;
     }
   }
 

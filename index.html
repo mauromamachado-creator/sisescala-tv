@@ -3946,7 +3946,9 @@ async function _renderS4Painel(){
     html+=`<div style="font-weight:700;font-size:.85rem;color:var(--text1);margin-bottom:8px">📅 Hoje</div>`;
     status.registros.forEach((r,i)=>{
       const saida=r.saida?`<span style="color:var(--red)">${r.saida}</span>`:'<span style="color:var(--yellow)">—</span>';
-      html+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.82rem;border-bottom:1px solid var(--border)"><span>Entrada: <b style="color:var(--green)">${r.entrada}</b></span><span>Saída: <b>${saida}</b></span></div>`;
+      const horas=r.horas?`<span style="color:var(--vc1);font-weight:700">${r.horas}h</span>`:'';
+      const diaAnt=r.diaAnterior?`<span style="font-size:.72rem;color:var(--yellow)"> (${r.data})</span>`:'';
+      html+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.82rem;border-bottom:1px solid var(--border)"><span>Entrada: <b style="color:var(--green)">${r.entrada}</b>${diaAnt}</span><span>Saída: <b>${saida}</b> ${horas}</span></div>`;
     });
     if(status.aberto){
       html+=`<div style="color:var(--yellow);font-size:.78rem;margin-top:6px">⚠️ Entrada aberta — registre a saída ao final do expediente.</div>`;
