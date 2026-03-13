@@ -2935,7 +2935,12 @@ function openDiariaForm(omId){
     if(!funcao){
       let ct=null;
       if(t.trigrama)ct=(cartoesData||[]).find(c=>c.trigrama===(t.trigrama).toUpperCase());
-      if(!ct&&t.nome)ct=(cartoesData||[]).find(c=>c.nome&&c.nome.toUpperCase().includes((t.nome).toUpperCase()));
+      if(!ct&&t.nome){
+        const _nUp=t.nome.toUpperCase();
+        // Busca exata por nome+posto pra evitar ambiguidade (ex: dois "CAMPOS" diferentes)
+        ct=(cartoesData||[]).find(c=>c.nome&&c.nome.toUpperCase().includes(_nUp)&&c.posto&&c.posto.toUpperCase()===t.posto.toUpperCase());
+        if(!ct)ct=(cartoesData||[]).find(c=>c.nome&&c.nome.toUpperCase().includes(_nUp));
+      }
       if(ct&&ct.funcao)funcao=ct.funcao;
       else if(['MJ','CP','TC','1T','2T'].includes(t.posto))funcao='Piloto';
     }
@@ -3125,7 +3130,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   // ═══ NÚMERO DA SOLICITAÇÃO ═══
   if(numSolicitacao){
     const ano=new Date().getFullYear();
-    const numStr='Solicitação nº '+String(numSolicitacao).padStart(3,'0')+'/GTE1/'+ano;
+    const numStr='Solicitação nº '+String(numSolicitacao).padStart(3,'0')+'/GTE-1/'+ano;
     doc.setFont('times','italic');doc.setFontSize(10);
     doc.text(numStr,lm,y);
     y+=7;
@@ -3235,13 +3240,13 @@ function gerarDiariaPDF(omId,numSolicitacao){
     });
     y+=rowH;
   }
-  y+=12;
+  y+=6;
 
   // ═══ FECHAMENTO ═══
   // Garante que o bloco de assinatura (~50mm) cabe na página atual
   if(y+50>275){doc.addPage();y=20;}
   doc.setFontSize(11);doc.setFont('times','normal');
-  doc.text('Atenciosamente / Respeitosamente,',lm,y);y+=15;
+  doc.text('Atenciosamente / Respeitosamente,',lm,y);y+=10;
 
   // Local e data (à direita)
   const localData=getVal('localData');
@@ -3249,7 +3254,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   doc.setFont('times','italic');
   doc.text(_ldLocal,pw-rm,y,{align:'right'});
   doc.setFont('times','normal');
-  y+=18;
+  y+=12;
 
   // Assinante (centralizado)
   doc.setFont('times','normal');
