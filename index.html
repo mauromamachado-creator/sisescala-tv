@@ -3867,13 +3867,18 @@ async function _s4BiometricLogin(){
   }
 }
 
-async function _presencaApi(params){
+async function _presencaApi(params,retries=1){
   if(!PRESENCA_API)return{ok:false,error:'API de presença não configurada. Aguardando deploy do GAS.'};
   const url=PRESENCA_API+'?'+Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
-  try{
-    const r=await fetchWithTimeout(url,20000);
-    return await r.json();
-  }catch(e){return{ok:false,error:'Erro de conexão: '+e.message};}
+  for(let attempt=0;attempt<=retries;attempt++){
+    try{
+      const r=await fetchWithTimeout(url,30000);
+      return await r.json();
+    }catch(e){
+      if(attempt<retries){await new Promise(r=>setTimeout(r,1000));continue;}
+      return{ok:false,error:'Erro de conexão. Tente novamente.'};
+    }
+  }
 }
 
 function _checkGeoAndDo(action){
