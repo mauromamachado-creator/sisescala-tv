@@ -455,7 +455,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 </style>
 
 <footer>
-  <span>SisGOPA v5.7 - Desenvolvido para o GTE por Major Machado</span>
+  <span>SisGOPA v6.0 - Desenvolvido para o GTE por Major Machado</span>
   <a onclick="loadAllData()">Atualizar dados</a>
   <a onclick="showNovidades()" style="cursor:pointer;text-decoration:underline;margin-left:8px">Novidades</a>
 </footer>
@@ -466,10 +466,26 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <span style="position:absolute;top:12px;right:16px;font-size:22px;color:var(--text2);cursor:pointer" onclick="document.getElementById('novidadesModal').style.display='none'">✕</span>
     <div style="font-size:1.1rem;font-weight:700;color:var(--green);margin-bottom:16px">📋 Novidades - SisGOPA</div>
 
-    <!-- v5.7 — aberta por padrão -->
+    <!-- v6.0 — aberta por padrão -->
     <div style="margin-bottom:8px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v5.7 - 12/03/2026</div>
+      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v6.0 - 13/03/2026</div>
       <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
+        <li>📋 <b>MNT — Sistema de Presença</b>: controle de presença com SARAM + senha</li>
+        <li>🟢🔴 <b>Bate-ponto</b>: ENTRADA e SAÍDA com geolocalização (raio 1km)</li>
+        <li>🔒 <b>Biometria</b>: login por impressão digital / reconhecimento facial (WebAuthn)</li>
+        <li>📊 <b>CHAMADA</b>: gráfico donut de presença + tags coloridas de indisponibilidade</li>
+        <li>📝 <b>Lançar Indisponibilidade</b>: Serviço, Missão de Manutenção, Férias, Dispensa Chefia, Dispensa Médica</li>
+        <li>⚙️ <b>GERENCIAL</b>: horas trabalhadas (semana/mês/ano), situação atual, exportar relatório</li>
+        <li>🔐 <b>Acesso restrito</b>: GERENCIAL só para gestores autorizados</li>
+        <li>⏱️ <b>Horas calculadas</b>: automático na saída, suporta cruzar meia-noite</li>
+        <li>📍 <b>Privacidade</b>: GPS acionado apenas no registro, não monitora</li>
+        <li>🌐 <b>AISWEB API</b>: integração oficial DECEA (substituiu scraping)</li>
+      </ul>
+    </div>
+
+    <!-- v5.7 — colapsável -->
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v5.7 - 12/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
+      <ul style="margin:4px 0 8px;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
         <li>🔧 Painel de status: todas as 14 luzes renomeadas com nomes operacionais</li>
         <li>📋 Nova luz: <b>Relatório Graduados</b> (PIMO/TRP)</li>
         <li>🤖 Nova luz: <b>BOT SISGOPA</b> (acesso a fontes externas)</li>
@@ -482,7 +498,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
         <li>📅 Calendário: barras com OM são clicáveis → abre detalhe</li>
         <li>🔗 Bot ↔ SisGOPA: paridade de lógica confirmada e SUPL AIP corrigido</li>
       </ul>
-    </div>
+    </details>
     <!-- v5.6 — colapsável -->
     <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v5.6 - 11/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
       <ul style="margin:4px 0 8px;padding-left:16px;font-size:.78rem;line-height:1.8;color:var(--text2)">
