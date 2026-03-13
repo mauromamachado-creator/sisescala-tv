@@ -381,6 +381,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <button onclick="goScreen(2)" id="btn2">HORAS DE VOO</button>
     <button onclick="goScreen(3)" id="btn3">FERIAS/ALERTAS</button>
     <button onclick="goScreen(14)" id="btn14">S3</button>
+    <button onclick="goScreen(16)" id="btn16">S4</button>
 
     <button onclick="goScreen(6)" id="btn6">CALENDÁRIO</button>
     <button onclick="goScreen(10)" id="btn10">CARTÕES</button>
@@ -420,6 +421,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
   <div class="screen" id="screen13"></div>
   <div class="screen" id="screen14"></div>
   <div class="screen" id="screen15"></div>
+  <div class="screen" id="screen16"></div>
   <div class="loading" id="loadingMsg">Carregando dados...</div>
 </main>
 
@@ -608,7 +610,7 @@ function _trackSession(){
 function _trackScreen(n){
   const a=_getAnalytics();
   if(!a.screenViews)a.screenViews={};
-  const names={0:'DASHBOARD',1:'DISPONIBILIDADE',2:'HORAS_VOO',3:'FERIAS',4:'DIARIO',5:'ACNT',6:'CALENDARIO',7:'BUSCA',8:'ESCALA',9:'TV',10:'CARTOES',11:'BOT',12:'REPORTAR',13:'DIARIAS',14:'S3',15:'PIMO_TRP'};
+  const names={0:'DASHBOARD',1:'DISPONIBILIDADE',2:'HORAS_VOO',3:'FERIAS',4:'DIARIO',5:'ACNT',6:'CALENDARIO',7:'BUSCA',8:'ESCALA',9:'TV',10:'CARTOES',11:'BOT',12:'REPORTAR',13:'DIARIAS',14:'S3',15:'PIMO_TRP',16:'S4'};
   const key=names[n]||('SCREEN_'+n);
   a.screenViews[key]=(a.screenViews[key]||0)+1;
   _saveAnalytics(a);
@@ -3741,6 +3743,215 @@ function toggleOMCancelada(omId, cancelled){
   s3RenderOM(document.getElementById('s3-content'));
 }
 
+// ===== S4 — PRESENÇA =====
+const PRESENCA_API=''; // GAS Web App URL — a ser preenchida após deploy do GAS
+const PRESENCA_BASE={lat:-15.8676989,lng:-47.9060863};
+const PRESENCA_RAIO_KM=5;
+
+function _haversineKm(lat1,lon1,lat2,lon2){
+  const R=6371;const toRad=x=>x*Math.PI/180;
+  const dLat=toRad(lat2-lat1),dLon=toRad(lon2-lon1);
+  const a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function _presencaSession(){
+  try{return JSON.parse(sessionStorage.getItem('sisgopa_presenca')||'null');}catch(e){return null;}
+}
+function _presencaSave(data){
+  sessionStorage.setItem('sisgopa_presenca',JSON.stringify(data));
+}
+function _presencaLogout(){
+  sessionStorage.removeItem('sisgopa_presenca');
+  renderScreenS4();
+}
+
+async function _presencaApi(params){
+  if(!PRESENCA_API)return{ok:false,error:'API de presença não configurada. Aguardando deploy do GAS.'};
+  const url=PRESENCA_API+'?'+Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  try{
+    const r=await fetchWithTimeout(url,20000);
+    return await r.json();
+  }catch(e){return{ok:false,error:'Erro de conexão: '+e.message};}
+}
+
+function _checkGeoAndDo(action){
+  const msgEl=document.getElementById('s4-msg');
+  if(msgEl)msgEl.innerHTML='<div style="color:var(--yellow)">📍 Verificando localização...</div>';
+  if(!navigator.geolocation){
+    if(msgEl)msgEl.innerHTML='<div style="color:var(--red)">❌ Geolocalização não disponível neste navegador.</div>';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    async(pos)=>{
+      const dist=_haversineKm(pos.coords.latitude,pos.coords.longitude,PRESENCA_BASE.lat,PRESENCA_BASE.lng);
+      if(dist>PRESENCA_RAIO_KM){
+        if(msgEl)msgEl.innerHTML=`<div style="color:var(--red)">❌ Você está a ${dist.toFixed(1)}km do local autorizado. Máximo permitido: ${PRESENCA_RAIO_KM}km.<br><span style="font-size:.75rem;color:var(--text2)">Sua posição: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}</span></div>`;
+        return;
+      }
+      // Localização OK — executar ação
+      const ses=_presencaSession();
+      if(!ses)return;
+      if(msgEl)msgEl.innerHTML='<div style="color:var(--yellow)">⏳ Registrando...</div>';
+      const res=await _presencaApi({action,saram:ses.saram});
+      if(res.ok){
+        if(msgEl)msgEl.innerHTML=`<div style="color:var(--green)">✅ ${res.message}</div>`;
+        setTimeout(()=>_renderS4Painel(),1500);
+      }else{
+        if(msgEl)msgEl.innerHTML=`<div style="color:var(--red)">❌ ${res.error}</div>`;
+      }
+    },
+    (err)=>{
+      const msgs={1:'Permissão negada. Ative a localização.',2:'Posição indisponível.',3:'Tempo esgotado.'};
+      if(msgEl)msgEl.innerHTML=`<div style="color:var(--red)">❌ ${msgs[err.code]||err.message}</div>`;
+    },
+    {enableHighAccuracy:true,timeout:15000,maximumAge:0}
+  );
+}
+
+async function _renderS4Painel(){
+  const c=document.getElementById('screen16');
+  const ses=_presencaSession();
+  if(!ses){renderScreenS4();return;}
+
+  const status=await _presencaApi({action:'status',saram:ses.saram});
+
+  let html='<h2>📋 S4 — Presença</h2>';
+  html+=`<div style="text-align:center;margin:20px 0">`;
+  html+=`<div style="font-size:1.1rem;font-weight:700;color:var(--vc1)">${ses.posto} ${ses.nomeGuerra}</div>`;
+  html+=`<div style="font-size:.8rem;color:var(--text2);margin:4px 0">${ses.nomeCompleto}</div>`;
+  html+=`<div style="font-size:.75rem;color:var(--text2)">SARAM: ${ses.saram}</div>`;
+  html+=`<button onclick="_presencaLogout()" style="margin-top:8px;padding:4px 12px;border-radius:6px;border:1px solid var(--red);background:rgba(255,68,68,.1);color:var(--red);font-size:.75rem;cursor:pointer">Sair</button>`;
+  html+=`</div>`;
+
+  // Botões de registro
+  html+=`<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:20px 0">`;
+  html+=`<button onclick="_checkGeoAndDo('clockIn')" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--green);background:rgba(0,255,136,.08);color:var(--green);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">🟢</span>ENTRADA</button>`;
+  html+=`<button onclick="_checkGeoAndDo('clockOut')" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--red);background:rgba(255,68,68,.08);color:var(--red);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">🔴</span>SAÍDA</button>`;
+  html+=`</div>`;
+
+  html+=`<div id="s4-msg" style="text-align:center;margin:10px 0;min-height:30px"></div>`;
+
+  // Status de hoje
+  if(status.ok&&status.registros&&status.registros.length){
+    html+=`<div style="margin:20px auto;max-width:400px;background:var(--bg2);border-radius:8px;padding:12px;border:1px solid var(--border)">`;
+    html+=`<div style="font-weight:700;font-size:.85rem;color:var(--text1);margin-bottom:8px">📅 Hoje</div>`;
+    status.registros.forEach((r,i)=>{
+      const saida=r.saida?`<span style="color:var(--red)">${r.saida}</span>`:'<span style="color:var(--yellow)">—</span>';
+      html+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.82rem;border-bottom:1px solid var(--border)"><span>Entrada: <b style="color:var(--green)">${r.entrada}</b></span><span>Saída: <b>${saida}</b></span></div>`;
+    });
+    if(status.aberto){
+      html+=`<div style="color:var(--yellow);font-size:.78rem;margin-top:6px">⚠️ Entrada aberta — registre a saída ao final do expediente.</div>`;
+    }
+    html+=`</div>`;
+  }
+
+  html+=`<div style="text-align:center;margin-top:20px;font-size:.72rem;color:var(--text2)">📍 Localização verificada automaticamente (raio de ${PRESENCA_RAIO_KM}km)</div>`;
+
+  c.innerHTML=html;
+}
+
+async function _s4DoLogin(){
+  const saram=document.getElementById('s4-saram').value.trim();
+  const senha=document.getElementById('s4-senha').value;
+  const msg=document.getElementById('s4-login-msg');
+  if(!saram||!senha){msg.innerHTML='<span style="color:var(--red)">Preencha SARAM e senha.</span>';return;}
+  msg.innerHTML='<span style="color:var(--yellow)">⏳ Verificando...</span>';
+  const res=await _presencaApi({action:'login',saram,senha});
+  if(res.ok){
+    _presencaSave({saram,posto:res.militar.posto,nomeCompleto:res.militar.nomeCompleto,nomeGuerra:res.militar.nomeGuerra});
+    _renderS4Painel();
+  }else{
+    msg.innerHTML=`<span style="color:var(--red)">❌ ${res.error}</span>`;
+  }
+}
+
+async function _s4DoRegister(){
+  const saram=document.getElementById('s4-reg-saram').value.trim();
+  const senha=document.getElementById('s4-reg-senha').value;
+  const confirma=document.getElementById('s4-reg-confirma').value;
+  const msg=document.getElementById('s4-reg-msg');
+  if(!saram||!senha){msg.innerHTML='<span style="color:var(--red)">Preencha todos os campos.</span>';return;}
+  if(senha!==confirma){msg.innerHTML='<span style="color:var(--red)">As senhas não conferem.</span>';return;}
+  if(senha.length<4){msg.innerHTML='<span style="color:var(--red)">Senha deve ter no mínimo 4 caracteres.</span>';return;}
+  msg.innerHTML='<span style="color:var(--yellow)">⏳ Cadastrando...</span>';
+  const res=await _presencaApi({action:'register',saram,senha});
+  if(res.ok){
+    msg.innerHTML=`<span style="color:var(--green)">✅ ${res.message}</span>`;
+    // Auto login
+    _presencaSave({saram,posto:res.militar.posto,nomeCompleto:res.militar.nomeCompleto,nomeGuerra:res.militar.nomeGuerra});
+    setTimeout(()=>_renderS4Painel(),1200);
+  }else{
+    msg.innerHTML=`<span style="color:var(--red)">❌ ${res.error}</span>`;
+  }
+}
+
+function renderScreenS4(){
+  const c=document.getElementById('screen16');
+  const ses=_presencaSession();
+  if(ses){_renderS4Painel();return;}
+
+  let html='<h2>📋 S4 — Presença</h2>';
+  html+=`<div style="display:flex;justify-content:center;margin:30px 0">`;
+  html+=`<button onclick="_s4ShowLoginModal()" style="width:180px;height:180px;border-radius:16px;border:2px solid var(--vc1);background:rgba(0,212,255,.06);color:var(--vc1);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:.2s"><span style="font-size:3rem">📋</span>REGISTRAR<br>PRESENÇA</button>`;
+  html+=`</div>`;
+  html+=`<div style="text-align:center;font-size:.78rem;color:var(--text2);max-width:400px;margin:0 auto">Sistema de controle de presença do GTE.<br>Use seu SARAM como login e escolha uma senha pessoal.</div>`;
+  c.innerHTML=html;
+}
+
+function _s4ShowLoginModal(){
+  // Modal overlay
+  let ov=document.getElementById('s4-modal-overlay');
+  if(ov)ov.remove();
+  ov=document.createElement('div');
+  ov.id='s4-modal-overlay';
+  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+  ov.onclick=(e)=>{if(e.target===ov)ov.remove();};
+
+  const box=document.createElement('div');
+  box.style.cssText='background:var(--bg2);border-radius:12px;padding:24px;max-width:380px;width:90%;border:1px solid var(--border);position:relative';
+
+  let inner='';
+  inner+=`<button onclick="document.getElementById('s4-modal-overlay').remove()" style="position:absolute;top:8px;right:12px;background:none;border:none;color:var(--text2);font-size:1.2rem;cursor:pointer">✕</button>`;
+
+  // Tabs
+  inner+=`<div id="s4-tab-btns" style="display:flex;gap:8px;margin-bottom:16px">`;
+  inner+=`<button onclick="_s4Tab('login')" id="s4-tab-login-btn" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--vc1);background:rgba(0,212,255,.1);color:var(--vc1);font-weight:700;cursor:pointer">ENTRAR</button>`;
+  inner+=`<button onclick="_s4Tab('register')" id="s4-tab-reg-btn" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-weight:700;cursor:pointer">CADASTRAR</button>`;
+  inner+=`</div>`;
+
+  // Login form
+  inner+=`<div id="s4-tab-login">`;
+  inner+=`<div style="margin-bottom:12px"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">SARAM</label><input id="s4-saram" placeholder="Ex: 342.006-0" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:.9rem;box-sizing:border-box"></div>`;
+  inner+=`<div style="margin-bottom:12px"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">Senha</label><input id="s4-senha" type="password" placeholder="Sua senha" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:.9rem;box-sizing:border-box" onkeydown="if(event.key==='Enter')_s4DoLogin()"></div>`;
+  inner+=`<button onclick="_s4DoLogin()" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--vc1);color:var(--bg);font-weight:700;font-size:.9rem;cursor:pointer">Entrar</button>`;
+  inner+=`<div id="s4-login-msg" style="margin-top:8px;text-align:center;font-size:.82rem;min-height:20px"></div>`;
+  inner+=`</div>`;
+
+  // Register form
+  inner+=`<div id="s4-tab-register" style="display:none">`;
+  inner+=`<div style="margin-bottom:12px"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">SARAM</label><input id="s4-reg-saram" placeholder="Ex: 342.006-0" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:.9rem;box-sizing:border-box"></div>`;
+  inner+=`<div style="margin-bottom:12px"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">Criar senha</label><input id="s4-reg-senha" type="password" placeholder="Mínimo 4 caracteres" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:.9rem;box-sizing:border-box"></div>`;
+  inner+=`<div style="margin-bottom:12px"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">Confirmar senha</label><input id="s4-reg-confirma" type="password" placeholder="Repita a senha" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:.9rem;box-sizing:border-box" onkeydown="if(event.key==='Enter')_s4DoRegister()"></div>`;
+  inner+=`<button onclick="_s4DoRegister()" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--green);color:var(--bg);font-weight:700;font-size:.9rem;cursor:pointer">Cadastrar</button>`;
+  inner+=`<div id="s4-reg-msg" style="margin-top:8px;text-align:center;font-size:.82rem;min-height:20px"></div>`;
+  inner+=`<div style="margin-top:10px;font-size:.72rem;color:var(--text2);text-align:center">Somente militares cadastrados na aba Dados podem se registrar.</div>`;
+  inner+=`</div>`;
+
+  box.innerHTML=inner;
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+}
+
+function _s4Tab(tab){
+  document.getElementById('s4-tab-login').style.display=tab==='login'?'':'none';
+  document.getElementById('s4-tab-register').style.display=tab==='register'?'':'none';
+  const lb=document.getElementById('s4-tab-login-btn');
+  const rb=document.getElementById('s4-tab-reg-btn');
+  if(tab==='login'){lb.style.borderColor='var(--vc1)';lb.style.background='rgba(0,212,255,.1)';lb.style.color='var(--vc1)';rb.style.borderColor='var(--border)';rb.style.background='var(--bg3)';rb.style.color='var(--text2)';}
+  else{rb.style.borderColor='var(--green)';rb.style.background='rgba(0,255,136,.1)';rb.style.color='var(--green)';lb.style.borderColor='var(--border)';lb.style.background='var(--bg3)';lb.style.color='var(--text2)';}
+}
+
 // ===== S3 LOGIN MODAL =====
 function _showS3LoginModal(){
   var old=document.getElementById('s3LoginModal');if(old)old.remove();
@@ -6503,6 +6714,7 @@ function goScreen(n){
     return;
   }
   if(n===15)renderScreenPimo();
+  if(n===16)renderScreenS4();
   if(n===1&&!_pimoCache)loadPimoData().then(()=>{if(currentScreen===1)renderScreen1();});
   _trackScreen(n);
   currentScreen=n;document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id==='screen'+n));document.querySelectorAll('.nav-btns button').forEach(b=>b.classList.toggle('active',b.id==='btn'+n));
