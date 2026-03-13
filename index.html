@@ -3144,7 +3144,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   // Tabela trechos - bordas completas
   const c5w=[35,45,50,40]; // larguras das 4 colunas = 170mm
   const rh=10; // row height for header
-  const drh=8; // data row height
+  const drh=6; // data row height
   doc.setFontSize(9);doc.setLineWidth(0.3);
 
   // Header row (2 lines each)
@@ -3168,7 +3168,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
     if(!etd&&!orig)continue;
     const valsP=[etd,orig,dest,eta];
     let rowHP=drh;
-    valsP.forEach((v,j)=>{const lines=doc.splitTextToSize(v,c5w[j]-2);rowHP=Math.max(rowHP,lines.length*4+4);});
+    valsP.forEach((v,j)=>{const lines=doc.splitTextToSize(v,c5w[j]-2);rowHP=Math.max(rowHP,lines.length*3.5+3);});
     if(y+rowHP>270){doc.addPage();y=20;}
     x5=lm;
     valsP.forEach((v,j)=>{
@@ -3215,14 +3215,14 @@ function gerarDiariaPDF(omId,numSolicitacao){
     // calc row height based on longest text
     const vals=[posto+' (FAB)',nome,cpf,funcao,'-'];
     let rowH=drh;
-    vals.forEach((v,j)=>{const lines=doc.splitTextToSize(v,c6w[j]-2);rowH=Math.max(rowH,lines.length*4+4);});
+    vals.forEach((v,j)=>{const lines=doc.splitTextToSize(v,c6w[j]-2);rowH=Math.max(rowH,lines.length*3.5+3);});
     if(y+rowH>270){doc.addPage();y=20;}
     x6=lm;
     vals.forEach((v,j)=>{
       doc.rect(x6,y,c6w[j],rowH);
       const lines=doc.splitTextToSize(v,c6w[j]-2);
-      const startY=y+(rowH-lines.length*4)/2+3;
-      lines.forEach((ln,li)=>{doc.text(ln,x6+c6w[j]/2,startY+li*4,{align:'center'});});
+      const startY=y+(rowH-lines.length*3.5)/2+2.5;
+      lines.forEach((ln,li)=>{doc.text(ln,x6+c6w[j]/2,startY+li*3.5,{align:'center'});});
       x6+=c6w[j];
     });
     y+=rowH;
