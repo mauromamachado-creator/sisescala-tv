@@ -3851,7 +3851,7 @@ async function _s4Gerencial(periodo){
   // Verificar acesso restrito
   if(!GERENCIAL_ALLOWED.includes(normalizeSaram(ses.saram))){
     const c=document.getElementById('screen16');
-    c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--red);margin:40px 0"><div style="font-size:2rem;margin-bottom:10px">🔒</div><div style="font-size:.9rem;font-weight:700">Acesso restrito</div><div style="font-size:.78rem;color:var(--text2);margin-top:6px">Apenas gestores autorizados podem acessar o painel gerencial.</div></div><div style="text-align:center"><button onclick="renderScreenS4()" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">← Voltar</button></div>';
+    c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--red);margin:40px 0"><div style="font-size:2rem;margin-bottom:10px">🔒</div><div style="font-size:.9rem;font-weight:700">Acesso restrito</div><div style="font-size:.78rem;color:var(--text2);margin-top:6px">Apenas gestores autorizados podem acessar o painel gerencial.</div></div><div style="text-align:center"><button onclick="renderScreenS4(true)" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">← Voltar</button></div>';
     return;
   }
   periodo=periodo||_gerencialPeriodo;
@@ -3861,7 +3861,7 @@ async function _s4Gerencial(periodo){
 
   const res=await _presencaApi({action:'gerencial',periodo});
   if(!res.ok){
-    c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--red);margin:30px 0">❌ '+(res.error||'Erro')+'</div><div style="text-align:center"><button onclick="renderScreenS4()" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.78rem;cursor:pointer">← Voltar</button></div>';
+    c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--red);margin:30px 0">❌ '+(res.error||'Erro')+'</div><div style="text-align:center"><button onclick="renderScreenS4(true)" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.78rem;cursor:pointer">← Voltar</button></div>';
     return;
   }
 
@@ -3971,7 +3971,7 @@ async function _s4Gerencial(periodo){
   // Exportar
   h+=`<div style="text-align:center;margin-bottom:12px">`;
   h+=`<button onclick="_gerencialExportar()" style="padding:8px 18px;border-radius:8px;border:1px solid var(--vc1);background:rgba(0,212,255,.06);color:var(--vc1);font-size:.82rem;font-weight:600;cursor:pointer;margin-right:8px">📤 Copiar Relatório</button>`;
-  h+=`<button onclick="renderScreenS4()" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">← Voltar</button>`;
+  h+=`<button onclick="renderScreenS4(true)" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">← Voltar</button>`;
   h+=`</div></div>`;
 
   c.innerHTML=h;
@@ -4282,7 +4282,7 @@ async function _s4Chamada(){
   c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--yellow);margin:30px 0">📋 Carregando chamada...</div>';
   const res=await _presencaApi({action:'chamada'});
   if(!res.ok){
-    c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--red);margin:30px 0">❌ '+(res.error||'Erro ao carregar chamada')+'</div><div style="text-align:center"><button onclick="renderScreenS4()" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.78rem;cursor:pointer">← Voltar</button></div>';
+    c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--red);margin:30px 0">❌ '+(res.error||'Erro ao carregar chamada')+'</div><div style="text-align:center"><button onclick="renderScreenS4(true)" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.78rem;cursor:pointer">← Voltar</button></div>';
     return;
   }
   let h='<h2>📋 MNT — Presença</h2>';
@@ -4348,7 +4348,7 @@ async function _s4Chamada(){
     h+=`<div style="text-align:center;color:var(--text2);font-size:.82rem;padding:20px 0">Nenhum militar cadastrado ainda.</div>`;
   }
 
-  h+=`<div style="text-align:center;margin-top:12px"><button onclick="renderScreenS4()" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.78rem;cursor:pointer">← Voltar</button></div>`;
+  h+=`<div style="text-align:center;margin-top:12px"><button onclick="renderScreenS4(true)" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.78rem;cursor:pointer">← Voltar</button></div>`;
   h+=`</div>`;
 
   c.innerHTML=h;
@@ -4397,10 +4397,9 @@ async function _s4DoRegister(){
   }
 }
 
-function renderScreenS4(){
+function renderScreenS4(forceMenu){
   const c=document.getElementById('screen16');
-  const ses=_presencaSession();
-  if(ses){_renderS4Painel();return;}
+  if(!forceMenu){const ses=_presencaSession();if(ses){_renderS4Painel();return;}}
 
   let html='<h2>📋 MNT — Presença</h2>';
   html+=`<div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin:30px 0">`;
