@@ -3852,10 +3852,11 @@ async function _s4BiometricLogin(){
   if(msgEl)msgEl.innerHTML='<span style="color:var(--yellow)">⏳ Verificando...</span>';
   const res=await _presencaApi({action:'login',saram:stored.saram,senha:atob(stored.senha)});
   if(res.ok){
-    _presencaSave({saram:stored.saram,posto:res.militar.posto,nomeCompleto:res.militar.nomeCompleto,nomeGuerra:res.militar.nomeGuerra});
+    _presencaSave({saram:stored.saram,senha:stored.senha,posto:res.militar.posto,nomeCompleto:res.militar.nomeCompleto,nomeGuerra:res.militar.nomeGuerra});
+    if(msgEl)msgEl.innerHTML='<span style="color:var(--green)">✅ Entrando...</span>';
+    await _renderS4Painel();
     const ov=document.getElementById('s4-modal-overlay');
     if(ov)ov.remove();
-    _renderS4Painel();
   }else{
     _bioRemove(); // credencial inválida, limpar
     if(msgEl)msgEl.innerHTML='<span style="color:var(--red)">❌ Sessão expirada. Faça login com senha.</span>';
@@ -4033,9 +4034,11 @@ async function _s4DoLogin(){
   const res=await _presencaApi({action:'login',saram,senha});
   if(res.ok){
     _presencaSave({saram,senha:btoa(senha),posto:res.militar.posto,nomeCompleto:res.militar.nomeCompleto,nomeGuerra:res.militar.nomeGuerra});
+    msg.innerHTML='<span style="color:var(--green)">✅ Entrando...</span>';
+    // Renderizar painel PRIMEIRO, depois fechar modal
+    await _renderS4Painel();
     const ov=document.getElementById('s4-modal-overlay');
     if(ov)ov.remove();
-    await _renderS4Painel();
   }else{
     msg.innerHTML=`<span style="color:var(--red)">❌ ${res.error}</span>`;
   }
