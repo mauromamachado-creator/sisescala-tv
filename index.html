@@ -3272,7 +3272,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   doc.text(parts[2]||'Comandante do GTE',cx,y,{align:'center'});
 
   // Save
-  doc.save(`Diaria_OM_${omId.replace(/\//g,'-')}.pdf`);
+  doc.save(`Solicitação nº ${omId.replace(/\//g,'_')}-RASC.pdf`);
   setDiariaDownloaded(omId);
   document.getElementById('diariaModal').remove();
   renderScreenDiarias();
