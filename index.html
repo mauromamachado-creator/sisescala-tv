@@ -2941,7 +2941,8 @@ function openDiariaForm(omId){
     }
     const cpfAuto=findCPF(t.nome)||findCPF(t.trigrama||'')||'';
     const nomeCompleto=findNomeCompleto(t.nome);
-    tripRows+=`<tr>
+    tripRows+=`<tr draggable="true" ondragstart="_diariaRowDrag(event)" ondragover="_diariaRowOver(event)" ondrop="_diariaRowDrop(event)" style="cursor:grab">
+      <td style="border:none;padding:2px;width:20px;text-align:center;color:var(--text2);cursor:grab;user-select:none" title="Arrastar para reordenar">☰</td>
       <td><input type="text" value="${t.posto}" data-field="trip_${i}_posto" style="width:50px" class="diaria-input"></td>
       <td><input type="text" value="${nomeCompleto}" data-field="trip_${i}_nome" style="width:100%" class="diaria-input"></td>
       <td><input type="text" value="${cpfAuto}" data-field="trip_${i}_cpf" placeholder="000.000.000-00" style="width:120px" class="diaria-input"></td>
@@ -3027,7 +3028,7 @@ function openDiariaForm(omId){
         <div class="diaria-label">6 - MILITARES ESCALADOS PARA A MISSÃO</div>
         <div style="overflow-x:auto">
         <table class="diaria-table">
-          <thead><tr><th>PST/GRAD</th><th>NOME</th><th>CPF</th><th>FUNÇÃO</th><th style="border:none;width:24px"></th></tr></thead>
+          <thead><tr><th style="border:none;width:20px"></th><th>PST/GRAD</th><th>NOME</th><th>CPF</th><th>FUNÇÃO</th><th style="border:none;width:24px"></th></tr></thead>
           <tbody id="diariaTripTbody">${tripRows}</tbody>
         </table>
         </div>
@@ -3060,10 +3061,17 @@ function addDiariaPerna(){
   </tr>`);
 }
 
+// Drag & drop para reordenar tripulantes na tabela de diárias
+let _diariaRowDragged=null;
+function _diariaRowDrag(e){_diariaRowDragged=e.target.closest('tr');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','');}
+function _diariaRowOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';const tr=e.target.closest('tr');if(tr&&_diariaRowDragged&&tr!==_diariaRowDragged){const tbody=tr.parentNode;const rows=[...tbody.rows];const dragIdx=rows.indexOf(_diariaRowDragged);const overIdx=rows.indexOf(tr);if(dragIdx<overIdx)tr.after(_diariaRowDragged);else tr.before(_diariaRowDragged);}}
+function _diariaRowDrop(e){e.preventDefault();_diariaRowDragged=null;}
+
 function addDiariaTrip(){
   const tbody=document.getElementById('diariaTripTbody');
   const i=tbody.rows.length;
-  tbody.insertAdjacentHTML('beforeend',`<tr>
+  tbody.insertAdjacentHTML('beforeend',`<tr draggable="true" ondragstart="_diariaRowDrag(event)" ondragover="_diariaRowOver(event)" ondrop="_diariaRowDrop(event)" style="cursor:grab">
+    <td style="border:none;padding:2px;width:20px;text-align:center;color:var(--text2);cursor:grab;user-select:none" title="Arrastar para reordenar">☰</td>
     <td><input type="text" value="" data-field="trip_${i}_posto" style="width:50px" class="diaria-input"></td>
     <td><input type="text" value="" data-field="trip_${i}_nome" style="width:100%" class="diaria-input"></td>
     <td><input type="text" value="" data-field="trip_${i}_cpf" placeholder="000.000.000-00" style="width:120px" class="diaria-input"></td>
