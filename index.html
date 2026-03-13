@@ -3746,7 +3746,7 @@ function toggleOMCancelada(omId, cancelled){
 // ===== S4 — PRESENÇA =====
 const PRESENCA_API='https://script.google.com/macros/s/AKfycbz4zJ1MuAy_33m-twcgsCBB9j-QGHdYTi7x99KY-DPVKvVJh3xJ4IbSpKVKa0Uzz5M2fA/exec';
 const PRESENCA_BASE={lat:-15.8676989,lng:-47.9060863};
-const PRESENCA_RAIO_KM=1.5;
+const PRESENCA_RAIO_KM=1;
 
 function _haversineKm(lat1,lon1,lat2,lon2){
   const R=6371;const toRad=x=>x*Math.PI/180;
@@ -4010,6 +4010,7 @@ function renderScreenS4(){
   html+=`<button onclick="_s4ShowLoginModal()" style="width:180px;height:180px;border-radius:16px;border:2px solid var(--vc1);background:rgba(0,212,255,.06);color:var(--vc1);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:.2s"><span style="font-size:3rem">📋</span>REGISTRAR<br>PRESENÇA</button>`;
   html+=`</div>`;
   html+=`<div style="text-align:center;font-size:.78rem;color:var(--text2);max-width:400px;margin:0 auto">Sistema de controle de presença do GTE.<br>Use seu SARAM como login e escolha uma senha pessoal.</div>`;
+  html+=`<div style="text-align:center;font-size:.72rem;color:var(--green);max-width:380px;margin:12px auto 0;line-height:1.4">🔒 Sua localização <b>não é monitorada</b>. O GPS é acionado apenas no momento de registrar entrada ou saída, e desliga em seguida. Não consome bateria.</div>`;
   c.innerHTML=html;
 }
 
@@ -4052,6 +4053,7 @@ function _s4ShowLoginModal(){
   inner+=`<button onclick="_s4DoRegister()" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--green);color:var(--bg);font-weight:700;font-size:.9rem;cursor:pointer">Cadastrar</button>`;
   inner+=`<div id="s4-reg-msg" style="margin-top:8px;text-align:center;font-size:.82rem;min-height:20px"></div>`;
   inner+=`<div style="margin-top:10px;font-size:.72rem;color:var(--text2);text-align:center">Somente militares cadastrados na aba Dados podem se registrar.</div>`;
+  inner+=`<div style="margin-top:8px;font-size:.7rem;color:var(--green);text-align:center;line-height:1.4">🔒 Sua localização <b>não é monitorada</b>. O GPS é acionado <b>apenas</b> no momento de registrar entrada ou saída, e desliga em seguida. Não consome bateria nem rastreia seus movimentos.</div>`;
   inner+=`</div>`;
 
   box.innerHTML=inner;
