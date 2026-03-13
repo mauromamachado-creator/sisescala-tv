@@ -3941,7 +3941,6 @@ async function _renderS4Painel(){
   html+=`<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:20px 0">`;
   html+=`<button onclick="_checkGeoAndDo('clockIn')" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--green);background:rgba(0,255,136,.08);color:var(--green);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">🟢</span>ENTRADA</button>`;
   html+=`<button onclick="_checkGeoAndDo('clockOut')" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--red);background:rgba(255,68,68,.08);color:var(--red);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">🔴</span>SAÍDA</button>`;
-  html+=`<button onclick="_s4Chamada()" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--yellow);background:rgba(255,200,50,.08);color:var(--yellow);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">📋</span>CHAMADA</button>`;
   html+=`</div>`;
 
   html+=`<div id="s4-msg" style="text-align:center;margin:10px 0;min-height:30px"></div>`;
@@ -3963,20 +3962,20 @@ async function _renderS4Painel(){
   }
 
   html+=`<div style="text-align:center;margin-top:20px;font-size:.72rem;color:var(--text2)">📍 Localização verificada automaticamente (raio de ${PRESENCA_RAIO_KM}km)</div>`;
+  html+=`<div style="text-align:center;font-size:.7rem;color:var(--green);max-width:380px;margin:10px auto 0;line-height:1.4">🔒 Sua localização <b>não é monitorada</b>. O GPS é acionado apenas no momento de registrar entrada ou saída, e desliga em seguida. Não consome bateria.</div>`;
 
   c.innerHTML=html;
 }
 
 async function _s4Chamada(){
-  const msgEl=document.getElementById('s4-msg');
-  if(msgEl)msgEl.innerHTML='<div style="color:var(--yellow)">📋 Carregando chamada...</div>';
+  const c=document.getElementById('screen16');
+  c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--yellow);margin:30px 0">📋 Carregando chamada...</div>';
   const res=await _presencaApi({action:'chamada'});
   if(!res.ok){
-    if(msgEl)msgEl.innerHTML=`<div style="color:var(--red)">❌ ${res.error||'Erro ao carregar chamada'}</div>`;
+    c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--red);margin:30px 0">❌ '+(res.error||'Erro ao carregar chamada')+'</div><div style="text-align:center"><button onclick="renderScreenS4()" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.78rem;cursor:pointer">← Voltar</button></div>';
     return;
   }
-  // Renderizar lista no s4-msg
-  let h='';
+  let h='<h2>📋 MNT — Presença</h2>';
   h+=`<div style="max-width:500px;margin:0 auto;background:var(--bg2);border-radius:10px;padding:16px;border:1px solid var(--border)">`;
   h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">`;
   h+=`<div style="font-weight:700;font-size:.95rem;color:var(--text1)">📋 Chamada — Hoje</div>`;
@@ -4017,10 +4016,10 @@ async function _s4Chamada(){
     h+=`<div style="text-align:center;color:var(--text2);font-size:.82rem;padding:20px 0">Nenhum militar cadastrado ainda.</div>`;
   }
 
-  h+=`<div style="text-align:center;margin-top:12px"><button onclick="_renderS4Painel()" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.78rem;cursor:pointer">← Voltar</button></div>`;
+  h+=`<div style="text-align:center;margin-top:12px"><button onclick="renderScreenS4()" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.78rem;cursor:pointer">← Voltar</button></div>`;
   h+=`</div>`;
 
-  if(msgEl)msgEl.innerHTML=h;
+  c.innerHTML=h;
 }
 
 async function _s4DoLogin(){
@@ -4068,11 +4067,11 @@ function renderScreenS4(){
   if(ses){_renderS4Painel();return;}
 
   let html='<h2>📋 MNT — Presença</h2>';
-  html+=`<div style="display:flex;justify-content:center;margin:30px 0">`;
-  html+=`<button onclick="_s4ShowLoginModal()" style="width:180px;height:180px;border-radius:16px;border:2px solid var(--vc1);background:rgba(0,212,255,.06);color:var(--vc1);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:.2s"><span style="font-size:3rem">📋</span>REGISTRAR<br>PRESENÇA</button>`;
+  html+=`<div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin:30px 0">`;
+  html+=`<button onclick="_s4ShowLoginModal()" style="width:170px;height:170px;border-radius:16px;border:2px solid var(--vc1);background:rgba(0,212,255,.06);color:var(--vc1);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:.2s"><span style="font-size:2.5rem">📋</span>REGISTRAR<br>PRESENÇA</button>`;
+  html+=`<button onclick="_s4Chamada()" style="width:170px;height:170px;border-radius:16px;border:2px solid var(--yellow);background:rgba(255,200,50,.06);color:var(--yellow);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:.2s"><span style="font-size:2.5rem">📊</span>CHAMADA</button>`;
   html+=`</div>`;
   html+=`<div style="text-align:center;font-size:.78rem;color:var(--text2);max-width:400px;margin:0 auto">Sistema de controle de presença do GTE.<br>Use seu SARAM como login e escolha uma senha pessoal.</div>`;
-  html+=`<div style="text-align:center;font-size:.72rem;color:var(--green);max-width:380px;margin:12px auto 0;line-height:1.4">🔒 Sua localização <b>não é monitorada</b>. O GPS é acionado apenas no momento de registrar entrada ou saída, e desliga em seguida. Não consome bateria.</div>`;
   c.innerHTML=html;
 }
 
@@ -6837,7 +6836,7 @@ document.addEventListener('click',e=>{
 });
 async function loadAllData(){
   // Não atualizar enquanto estiver na tela S3 (tela operacional)
-  if(currentScreen===14) return;
+  if(currentScreen===14||currentScreen===16) return;
   document.getElementById('errorOverlay').style.display='none';
   document.getElementById('loadingMsg').style.display='block';
   const dot=document.getElementById('statusDot');
