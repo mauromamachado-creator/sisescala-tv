@@ -6518,7 +6518,12 @@ function getDiariasAlerts(){
     if(!omData||!omData.length)return items;
     const conc=getDiariasConcluidas();
     const brP=['SB','SD','SN','SI','SS','SW'];
-    const list=omData.filter(om=>!conc[om.om]&&om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf))));
+    const _alertMissoes=['PR TLD','PR ESCAV','PR','PR RES','ESCAV'];
+    const _alertTemMissao=om=>{
+      if(om.missao){const m=(om.missao||'').toUpperCase().trim();if(m==='PR VER')return false;return _alertMissoes.some(t=>m===t||m.startsWith(t));}
+      return true;
+    };
+    const list=omData.filter(om=>!conc[om.om]&&om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf)))&&_alertTemMissao(om));
     const nBiz=d=>{const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;};
     const hj=nowBRT();hj.setHours(0,0,0,0);
     list.forEach(om=>{
