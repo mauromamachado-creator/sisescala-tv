@@ -667,5 +667,89 @@
     "file_ids": [
       "1cN-he_buf2jFkJipI4LOsInpm2Wp6iJQ"
     ]
+  },
+  {
+    "aeronave": "VC-2",
+    "om_numero": "108/GTE-1/2026",
+    "om": "108/GTE-1/2026",
+    "fab": "FAB 2590",
+    "data": "15/03/26",
+    "tipo": "INST",
+    "missao": "INST",
+    "tripulacao": [
+      "CP SAMPAIO (SAM / 563.661)",
+      "CP GABRIEL TODESCO (TOD / 515.359)",
+      "2S DA COSTA (571.114)",
+      "2S ÁVILA (572.301)",
+      "2S JARDEL (543.770)",
+      "CP COSTA (550.037)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "15/03/26 - 19:30 Z",
+        "ete": "01:20",
+        "destino": "SBRJ",
+        "destino_nome": "SBRJ (R19/18)",
+        "eta": "15/03/26 - 20:50 Z",
+        "alternativa": "SBGL",
+        "comb_min": 5500,
+        "comb_rec": 11000
+      },
+      {
+        "origem": "SBRJ",
+        "origem_nome": "SBRJ (R19/18)",
+        "etd": "15/03/26 - 21:10 Z",
+        "ete": "00:20",
+        "destino": "SBRJ",
+        "destino_nome": "SBRJ (R19/18)",
+        "eta": "15/03/26 - 21:30 Z",
+        "alternativa": "SBGL",
+        "comb_min": 5000,
+        "comb_rec": 8500
+      },
+      {
+        "origem": "SBRJ",
+        "origem_nome": "SBRJ (R19/18)",
+        "etd": "15/03/26 - 21:50 Z",
+        "ete": "00:20",
+        "destino": "SBRJ",
+        "destino_nome": "SBRJ (R19/18)",
+        "eta": "15/03/26 - 22:10 Z",
+        "alternativa": "SBGL",
+        "comb_min": 5000,
+        "comb_rec": 7500
+      },
+      {
+        "origem": "SBRJ",
+        "origem_nome": "SBRJ (R19/18)",
+        "etd": "15/03/26 - 22:30 Z",
+        "ete": "00:20",
+        "destino": "SBRJ",
+        "destino_nome": "SBRJ (R19/18)",
+        "eta": "15/03/26 - 22:50 Z",
+        "alternativa": "SBGL",
+        "comb_min": 5000,
+        "comb_rec": 6500
+      },
+      {
+        "origem": "SBRJ",
+        "origem_nome": "SBRJ (R19/18)",
+        "etd": "15/03/26 - 23:50 Z",
+        "ete": "01:20",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "16/03/26 - 01:10 Z",
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 7500
+      }
+    ],
+    "file_id": "1kzlla-UG3bG3C7rX978uCh7aeNPrGTuj",
+    "file_ids": [
+      "1kzlla-UG3bG3C7rX978uCh7aeNPrGTuj"
+    ],
+    "observacoes": "Realizar IRJ-03 do CP Gabriel Todesco. Transporte de militares do IMAE no trecho SBRJ-SBBR."
   }
 ]
