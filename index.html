@@ -3146,8 +3146,9 @@ function gerarDiariaPDF(omId,numSolicitacao){
 
   // ═══ VOCATIVO + INTRO ═══
   doc.setFont('times','normal');doc.setFontSize(11);
-  doc.text('Senhor Oficial de Transporte Aéreo,',lm,y);y+=7;
-  doc.text('Solicito as providências necessárias para o pagamento de diárias, nos termos das informações abaixo:',lm,y,{maxWidth:tw});y+=10;
+  const indent=lm+10;
+  doc.text('Senhor Oficial de Transporte Aéreo,',indent,y);y+=7;
+  doc.text('Solicito as providências necessárias para o pagamento de diárias, nos termos das informações abaixo:',indent,y,{maxWidth:tw-10});y+=10;
 
   // ═══ CAMPOS 1-4 ═══
   doc.text(`1 - ORGANIZAÇÃO MILITAR: ${getVal('orgMil')}`,lm,y);y+=6;
