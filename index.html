@@ -5557,108 +5557,100 @@ async function getAirportCoords(icao){
   return null;
 }
 
-// Fetch AISWEB page and scrape data
+// AISWEB API (DECEA) — fonte oficial
+const _AISWEB_KEY='1745062840',_AISWEB_PASS='822f92be-1958-11f1-a4e0-0050569ac2e1';
+const _AISWEB_URL='https://aisweb.decea.mil.br/api/';
+function _aiswebApiUrl(area,icao){return `${_AISWEB_URL}?apiKey=${_AISWEB_KEY}&apiPass=${_AISWEB_PASS}&area=${area}&icaoCode=${icao}`;}
+function _xmlTag(xml,tag){const m=xml.match(new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/${tag}>`));return m?m[1].trim():'';}
+function _xmlTags(xml,tag){const r=[];const re=new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`,'g');let m;while((m=re.exec(xml))!==null)r.push(m[1]);return r;}
+function _xmlAttr(xml,attr){const m=xml.match(new RegExp(`${attr}="([^"]*)"`));return m?m[1]:'';}
+
 async function getAiswebData(icao){
-  const empty={rwyLen:null,rwyWid:null,hasIfr:false,hasSid:false,hasStar:false,fireCat:null,pcn:null,oprType:null,hasNight:false,elevFt:null,adHr:null,hasTwr:false,runways:[],rwyDesig:[],infoAdicional:null,suplAlertas:[]};
+  const empty={rwyLen:null,rwyWid:null,hasIfr:false,hasSid:false,hasStar:false,fireCat:null,pcn:null,oprType:null,hasNight:false,elevFt:null,adHr:null,hasTwr:false,runways:[],rwyDesig:[],infoAdicional:null,suplAlertas:[],name:null,city:null,uf:null,lat:null,lng:null,freqs:[]};
   try{
-    const raw=await proxyFetchRaw(`https://aisweb.decea.mil.br/?i=aerodromos&codigo=${icao}`);
-    sourceStatus.aisweb=raw?'ok':'fail';
-    if(!raw)return empty;
-    const clean=raw.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');
-    // Runways with full dimensional data (same regex as bot)
+    const r=await fetchWithTimeout(_aiswebApiUrl('rotaer',icao),15000);
+    if(!r.ok){sourceStatus.aisweb='fail';return empty;}
+    const xml=await r.text();
+    if(!xml||xml.includes('Serviço')){sourceStatus.aisweb='fail';return empty;}
+    sourceStatus.aisweb='ok';
+
+    // Basic info
+    const name=_xmlTag(xml,'name')||null;
+    const city=_xmlTag(xml,'city')||null;
+    const uf=_xmlTag(xml,'uf')||null;
+    const lat=parseFloat(_xmlTag(xml,'lat'))||null;
+    const lng=parseFloat(_xmlTag(xml,'lng'))||null;
+    const altFt=parseInt(_xmlTag(xml,'altFt'))||null;
+
+    // Operating type
+    const typeOpr=_xmlTag(xml,'typeOpr')||'';
+    const oprType=typeOpr.replace(/\s+/g,'/').replace('VFR/IFR','VFR/IFR')||null;
+    const hasIfr=typeOpr.includes('IFR');
+
+    // Runways
     const runways=[];const pcnList=[];let maxLen=0,maxWid=0;
-    // Pattern: designation "11L - " ... "( 3200x45 ASPH 76/F/B/X/T"
-    const desigRe=/\b((?:0[1-9]|[12]\d|3[0-6])[LRC]?)\s+-\s+/g;
-    let dm;
-    while((dm=desigRe.exec(clean))!==null){
-      const after=clean.substring(dm.index+dm[0].length,dm.index+dm[0].length+300);
-      const dimM=after.match(/\(?\s*(\d{3,5})\s*[xX×]\s*(\d{2,3})\s+(ASPH|CONC|GRVL|DIRT|GRAS)\s+(\d+\/\w\/\w\/\w\/\w)/);
-      if(dimM){
-        const l=parseInt(dimM[1]),w=parseInt(dimM[2]),pcnVal=dimM[4];
-        const num=parseInt(dm[1].slice(0,2)),sfx=dm[1].length>2?dm[1][2]:'';
-        const rn=(num<=18?num+18:num-18);const rs={L:'R',R:'L',C:'C'}[sfx]||'';
-        const rwyName=`${dm[1]}/${String(rn).padStart(2,'0')}${rs}`;
-        runways.push({name:rwyName,length:l,width:w,surface:dimM[3],pcn:pcnVal});
-        pcnList.push(pcnVal);
-        if(l>maxLen){maxLen=l;maxWid=w;}
-      }
-    }
-    // Fallback: dimension + surface + PCN without designation
-    if(!runways.length){
-      const fallback=[...raw.matchAll(/(\d{3,5})\s*[xX×]\s*(\d{2,3})\s+(ASPH|CONC|GRVL|DIRT|GRAS)\s+(\d+\/\w\/\w\/\w\/\w)/g)];
-      fallback.forEach(m=>{
-        const l=parseInt(m[1]),w=parseInt(m[2]);
-        runways.push({name:null,length:l,width:w,surface:m[3],pcn:m[4]});
-        pcnList.push(m[4]);
-        if(l>maxLen){maxLen=l;maxWid=w;}
-      });
-    }
-    // Fallback: simple dimensions
-    if(!runways.length){
-      const simple=[...clean.matchAll(/(\d{3,5})\s*[xX×]\s*(\d{2,3})/g)];
-      simple.forEach(m=>{const l=parseInt(m[1]),w=parseInt(m[2]);if(l>maxLen){maxLen=l;maxWid=w;}});
-    }
-    // IFR procedures (same keywords as bot)
-    const hasIfr=['IAC','ILS','VOR/DME','NDB','RNAV','RNP'].some(k=>raw.includes(k));
-    const hasSid=raw.includes('SID');
-    const hasStar=raw.includes('STAR');
-    // Fire category - RFFS...CAT N (same as bot)
-    let fireCat=null;
-    const fireM1=raw.match(/RFFS[\s\S]*?CAT\s*(?:CIVIL\s*-\s*)?(\d+)/);
-    if(fireM1)fireCat=fireM1[1];
-    else{const fireM2=raw.match(/Categoria Contra Inc[eê]ndio[\s\S]*?CAT\s*(\d+)/);if(fireM2)fireCat=fireM2[1];}
-    // Operating type - UTC±N VFR IFR (same as bot)
-    let oprType=null;
-    const oprM=raw.match(/UTC[+-]?\d\s+((?:VFR|IFR)(?:\s+(?:VFR|IFR))*)/);
-    if(oprM)oprType=oprM[1].trim().replace('VFR IFR','VFR/IFR').replace('IFR VFR','VFR/IFR');
-    // Night operations - runway edge lights L9, L21, L23, L26 (same as bot)
-    const hasNight=/L(?:9|21|23|26)\b/.test(raw);
-    // Elevation - ft in parentheses (same as bot)
-    let elevFt=null;
-    const elevM=raw.match(/\d{2,4}(?:\.\d+)?\s*\((\d{2,5})\)/);
-    if(elevM)elevFt=elevM[1];
-    // AD operating hours
-    let adHr=null;
-    const adM=raw.match(/AD\s+HR\s+SER\s+(.*?)\./);
-    if(adM)adHr=adM[0].replace(/<[^>]+>/g,'').trim();
+    const rwyBlocks=_xmlTags(xml,'runway');
+    rwyBlocks.forEach(rb=>{
+      const ident=_xmlTag(rb,'ident');
+      const length=parseInt(_xmlTag(rb,'length'))||0;
+      const width=parseInt(_xmlTag(rb,'width'))||0;
+      const surface=_xmlTag(rb,'surface')||'';
+      const surfaceC=_xmlTag(rb,'surface_c')||'';
+      runways.push({name:ident||null,length,width,surface,pcn:surfaceC||null});
+      if(surfaceC)pcnList.push(surfaceC);
+      if(length>maxLen){maxLen=length;maxWid=width;}
+    });
+    const rwyDesig=runways.map(r=>r.name).filter(Boolean);
+
+    // NAV services — check for ILS, SID, STAR
+    const navBlocks=_xmlTags(xml,'service').filter(s=>s.includes('type="NAV"')||s.includes('<type>ILS'));
+    const hasIls=xml.includes('ILS');
+    const hasSid=xml.includes('SID')||xml.includes('>SID<');
+    const hasStar=xml.includes('STAR')||xml.includes('>STAR<');
+
     // Tower
-    const hasTwr=/TWR\s/.test(raw.substring(0,30000));
-    // Runway designations
-    const rwyDesig=[...new Set((raw.match(/RWY\s+(\d{2}[LRC]?)/g)||[]).map(m=>m.replace('RWY ','').trim()))].sort();
-    // Informação Adicional (restrições operacionais do aeródromo no AISWEB)
+    const hasTwr=xml.includes('>Torre<');
+
+    // Frequencies
+    const freqs=[];
+    const comBlocks=xml.split('<service').filter(s=>s.includes('type="COM"'));
+    comBlocks.forEach(cb=>{
+      const cType=_xmlTag(cb,'type');
+      const callsign=_xmlTag(cb,'callsign');
+      const fqs=_xmlTags(cb,'freq');
+      fqs.forEach(f=>{
+        const fClean=f.replace(/<!\[CDATA\[|\]\]>/g,'').trim();
+        if(fClean)freqs.push({type:cType,callsign,freq:fClean});
+      });
+    });
+
+    // Night operations — check for runway lights
+    const lightsXml=_xmlTags(xml,'light').join(' ');
+    const hasNight=lightsXml.length>0;
+
+    // Fire category from remarks
+    let fireCat=null;
+    const rmks=_xmlTags(xml,'rmkText').join(' ')+' '+_xmlTags(xml,'compl').join(' ');
+
+    // AD operating hours from timesheets
+    let adHr=null;
+    const tsBlocks=_xmlTags(xml,'timesheet');
+    if(tsBlocks.length){
+      const begin=_xmlTag(tsBlocks[0],'begin');
+      const end=_xmlTag(tsBlocks[0],'end');
+      const days=_xmlTag(tsBlocks[0],'day');
+      if(begin&&end)adHr=`${days||'DLY'} ${begin}-${end}`;
+    }
+
+    // Informação Adicional from remarks
     let infoAdicional=null;
-    try{
-      const iaSearch=/INFORMA.{0,40}ADICIONAL/i.exec(raw);
-      if(iaSearch){
-        const iaSection=raw.substring(iaSearch.index,iaSearch.index+3000);
-        const olS=iaSection.indexOf('<ol');const olE=iaSection.indexOf('</ol>');
-        if(olS>=0&&olE>olS){
-          const block=iaSection.substring(olS,olE+5).replace(/<[^>]+>/g,' ').replace(/&[a-zA-Z]+;/g,' ').replace(/\s+/g,' ').trim();
-          if(block)infoAdicional=block;
-        }
-      }
-    }catch(ie){console.warn('infoAdicional err',ie);}
-    // Suplementos AIP — fechamentos de pista por obras (id="sup")
-    let suplAlertas=[];
-    try{
-      const supIdx=raw.indexOf('id="sup"');
-      if(supIdx>=0){
-        // Pega o bloco do section de suplementos (até próximo h4 ou fim)
-        const supEnd=raw.indexOf('<h4',supIdx+100);
-        const supBlock=supEnd>0?raw.substring(supIdx,supEnd):raw.substring(supIdx,supIdx+8000);
-        // Divide pelos divs de cada suplemento
-        const divParts=supBlock.split('<div class="notam"');
-        divParts.slice(1).forEach(part=>{
-          const clean=part.replace(/<[^>]+>/g,' ').replace(/&[a-zA-Z]+;/g,' ').replace(/\s+/g,' ').trim();
-          const u=clean.toUpperCase();
-          if((u.includes('PISTA')&&(u.includes('FECHAD')||u.includes('CLSD')))||
-             (u.includes('RWY')&&(u.includes('CLSD')||u.includes('FECHAD')||u.includes('PRB')||u.includes('PROIB')))){
-            suplAlertas.push('SUPL AIP: '+clean.substring(0,250));
-          }
-        });
-      }
-    }catch(se){console.warn('suplAlertas parse error',se);}
-    return{rwyLen:maxLen||null,rwyWid:maxWid||null,hasIfr,hasSid,hasStar,fireCat,pcn:pcnList[0]||null,oprType,hasNight,elevFt,adHr,hasTwr,runways,rwyDesig,infoAdicional,suplAlertas};
+    const rmkTexts=_xmlTags(xml,'rmkText');
+    if(rmkTexts.length){
+      const relevant=rmkTexts.filter(r=>{const u=r.toUpperCase();return u.includes('PRB')||u.includes('PROIB')||u.includes('RESTR')||u.includes('OBRIGATÓRIO')||u.includes('COMPULSÓRIO');});
+      if(relevant.length)infoAdicional=relevant.map(r=>r.replace(/<!\[CDATA\[|\]\]>/g,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim()).join(' | ');
+    }
+
+    return{rwyLen:maxLen||null,rwyWid:maxWid||null,hasIfr,hasSid,hasStar,fireCat,pcn:pcnList[0]||null,oprType,hasNight,elevFt:altFt?String(altFt):null,adHr,hasTwr,runways,rwyDesig,infoAdicional,suplAlertas:[],name,city,uf,lat,lng,freqs};
   }catch(e){sourceStatus.aisweb='fail';return empty;}
 }
 
@@ -5783,23 +5775,38 @@ function botDecodeMetarTaf(type){
   botOut(html);
 }
 
-// ---- NOTAMs (AISWEB scrape, same as bot) ----
+// ---- NOTAMs (AISWEB API oficial) ----
 async function botNotam(){botLastFn=botNotam;
   const icao=getBotIcao();if(!icao)return;
   botLoading('NOTAMs '+icao);
   try{
     let notams=[];let fonte='';
-    const NOTAM_PROXY='https://script.google.com/macros/s/AKfycbx3zntUTktuQLkS6Rns05ztYyLctlJh1ciGEpVTjGypQxgFrVc0a8WPekbJzBkk8m43mQ/exec';
-    // 1. AISWEB via Google Apps Script proxy (fonte oficial DECEA — grátis, ilimitada)
+    // 1. AISWEB API oficial (DECEA)
     try{
-      const resp=await fetch(`${NOTAM_PROXY}?icao=${icao}`);
-      const data=await resp.json();
-      if(data.notams&&data.notams.length){
-        notams=data.notams;
-        fonte='AISWEB/DECEA';
+      const resp=await fetchWithTimeout(_aiswebApiUrl('notam',icao),15000);
+      if(resp.ok){
+        const xml=await resp.text();
+        const items=_xmlTags(xml,'item');
+        items.forEach(item=>{
+          const n=_xmlTag(item,'n');
+          const e=_xmlTag(item,'e');
+          const b=_xmlTag(item,'b');
+          const c=_xmlTag(item,'c');
+          const d=_xmlTag(item,'d');
+          let line=n?`${n}\n`:'';
+          if(d)line+=`${d}\n`;
+          if(e)line+=e;
+          if(line.trim())notams.push(line.trim());
+        });
+        if(notams.length)fonte='AISWEB/DECEA (API)';
       }
     }catch(e){}
-    // 2. Fallback: ICAO API (limitada — só quando AISWEB falhar)
+    // 2. Fallback: GAS proxy (quando API falhar)
+    if(!notams.length){
+      const NOTAM_PROXY='https://script.google.com/macros/s/AKfycbx3zntUTktuQLkS6Rns05ztYyLctlJh1ciGEpVTjGypQxgFrVc0a8WPekbJzBkk8m43mQ/exec';
+      try{const resp=await fetch(`${NOTAM_PROXY}?icao=${icao}`);const data=await resp.json();if(data.notams&&data.notams.length){notams=data.notams;fonte='AISWEB/DECEA';}}catch(e){}
+    }
+    // 3. Fallback: ICAO API (limitada)
     if(!notams.length){
       try{
         const icaoKey='0957b31c-6510-4974-8342-1a85ffd29a6e';
@@ -6281,14 +6288,12 @@ async function botExecMsgPadrao(){
     const rec=checkRecNeeded(destAis.rwyLen,destAis.rwyWid,destAis.hasIfr,destAis.oprType);
     // PCN tire pressure
     const tireCat=getPcnTireCat(destAis.pcn);
-    // NOTAMs (runway filter) — AISWEB via proxy (primário), ICAO API (fallback)
+    // NOTAMs (runway filter) — AISWEB API (primário), GAS proxy (fallback), ICAO API (último recurso)
     let notamAlert='NOTAM OK';
     let notamRaw='';
-    const NOTAM_PROXY='https://script.google.com/macros/s/AKfycbx3zntUTktuQLkS6Rns05ztYyLctlJh1ciGEpVTjGypQxgFrVc0a8WPekbJzBkk8m43mQ/exec';
-    try{const r=await fetch(`${NOTAM_PROXY}?icao=${dest}`);const d=await r.json();if(d.notams&&d.notams.length)notamRaw=d.notams.join('\n\n');}catch(e){}
-    if(!notamRaw){
-      try{const r=await fetch(`https://dataservices.icao.int/api/realtime-notams?api_key=0957b31c-6510-4974-8342-1a85ffd29a6e&format=json&ICAOCode=${dest}`);const d=await r.json();if(Array.isArray(d)&&d.length)notamRaw=d.map(n=>n.all||n.message||'').join('\n\n');}catch(e){}
-    }
+    try{const r=await fetchWithTimeout(_aiswebApiUrl('notam',dest),15000);if(r.ok){const xml=await r.text();const items=_xmlTags(xml,'item');const txts=items.map(i=>{const n=_xmlTag(i,'n'),e=_xmlTag(i,'e'),d=_xmlTag(i,'d');let l=n?n+'\n':'';if(d)l+=d+'\n';if(e)l+=e;return l.trim();}).filter(Boolean);if(txts.length)notamRaw=txts.join('\n\n');}}catch(e){}
+    if(!notamRaw){const NOTAM_PROXY='https://script.google.com/macros/s/AKfycbx3zntUTktuQLkS6Rns05ztYyLctlJh1ciGEpVTjGypQxgFrVc0a8WPekbJzBkk8m43mQ/exec';try{const r=await fetch(`${NOTAM_PROXY}?icao=${dest}`);const d=await r.json();if(d.notams&&d.notams.length)notamRaw=d.notams.join('\n\n');}catch(e){}}
+    if(!notamRaw){try{const r=await fetch(`https://dataservices.icao.int/api/realtime-notams?api_key=0957b31c-6510-4974-8342-1a85ffd29a6e&format=json&ICAOCode=${dest}`);const d=await r.json();if(Array.isArray(d)&&d.length)notamRaw=d.map(n=>n.all||n.message||'').join('\n\n');}catch(e){}}
     if(notamRaw){
       const alerts=filterNotamRunway(notamRaw);
       if(alerts.length)notamAlert=alerts.join('; ');
