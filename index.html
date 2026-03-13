@@ -3245,9 +3245,11 @@ function gerarDiariaPDF(omId,numSolicitacao){
 
   // Local e data (à direita)
   const localData=getVal('localData');
-  doc.text(localData.split(',')[0]+',',pw-rm,y,{align:'right'});y+=5;
+  const _ldLocal=localData.split(',')[0]+', na data da assinatura eletrônica.';
   doc.setFont('times','italic');
-  doc.text('na data da assinatura eletrônica.',pw-rm,y,{align:'right'});y+=18;
+  doc.text(_ldLocal,pw-rm,y,{align:'right'});
+  doc.setFont('times','normal');
+  y+=18;
 
   // Assinante (centralizado)
   doc.setFont('times','normal');
