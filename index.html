@@ -4504,7 +4504,7 @@ async function _s3LoginSubmit(){
   var enc=new TextEncoder().encode(pw);
   var buf=await crypto.subtle.digest('SHA-256',enc);
   var h=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-  if(h==='a6fe06a4c8910d124fb4cc5b581876ac2849cfead295d434c86b5181aeccf5b1'){
+  if(h==='ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'){
     s3Unlocked=true;
     document.getElementById('s3LoginModal').remove();
     goScreen(14);
