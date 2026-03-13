@@ -3921,7 +3921,7 @@ async function _s4Gerencial(periodo){
       if(m.indisponibilidades&&m.indisponibilidades.length){
         const ind=m.indisponibilidades[0];
         const cor=indColors[ind.tipo]||'#778ca3';
-        const ate=ind.dataFim?' até '+ind.dataFim:'';
+        const ate=ind.dataFim&&ind.dataFim!==ind.dataInicio?' até '+ind.dataFim:' ('+ind.dataInicio+')';
         tag=`<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:${cor}22;color:${cor};font-size:.7rem;font-weight:700;border:1px solid ${cor}44">${ind.tipo}${ate}</span>`;
       }else{
         const lastReg=m.registros&&m.registros.length?m.registros[m.registros.length-1]:null;
@@ -3994,7 +3994,7 @@ function _gerencialExportar(){
     let sit='Sem registro hoje';
     if(m.indisponibilidades&&m.indisponibilidades.length){
       const i=m.indisponibilidades[0];
-      sit=i.tipo+(i.dataFim?' até '+i.dataFim:'');
+      sit=i.tipo+(i.dataFim&&i.dataFim!==i.dataInicio?' até '+i.dataFim:' ('+i.dataInicio+')');
     }else{
       const lr=m.registros?.length?m.registros[m.registros.length-1]:null;
       if(lr&&lr.data===res.dataFim&&!lr.saida)sit='Em serviço desde '+lr.entrada;
@@ -4333,7 +4333,7 @@ async function _s4Chamada(){
       let tag='';
       if(p.indisp){
         const cor=indispColors[p.indisp.tipo]||'#778ca3';
-        const ate=p.indisp.dataFim?' até '+p.indisp.dataFim:'';
+        const ate=p.indisp.dataFim&&p.indisp.dataFim!==p.indisp.dataInicio?' até '+p.indisp.dataFim:' ('+p.indisp.dataInicio+')';
         tag=`<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:${cor}22;color:${cor};font-size:.7rem;font-weight:700;border:1px solid ${cor}44">${p.indisp.tipo}${ate}</span>`;
       }else{
         tag=`<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:rgba(119,140,163,.15);color:#778ca3;font-size:.7rem;font-weight:600;border:1px solid rgba(119,140,163,.3)">Não informado</span>`;

@@ -406,7 +406,8 @@ function doChamada(p) {
       const fim = cellToDate(indData[i][5]);
       const cancelado = String(indData[i][8] || '').trim();
       if (cancelado) continue;
-      if (inicio && inicio <= hoje && (!fim || fim >= hoje)) {
+      const fimEfetivo = fim || inicio; // sem data fim = só o dia de início
+      if (inicio && inicio <= hoje && fimEfetivo >= hoje) {
         indispMap[sn] = {
           tipo: String(indData[i][3] || ''),
           dataInicio: inicio,
@@ -505,8 +506,9 @@ function doMinhasIndisp(p) {
     if (normalizeSaram(data[i][0]) !== saramNorm) continue;
     if (String(data[i][8] || '').trim()) continue; // cancelado
     const fim = cellToDate(data[i][5]);
-    // Mostrar ativas (sem fim ou fim >= hoje)
-    if (fim && fim < hoje) continue;
+    const inicio = cellToDate(data[i][4]);
+    const fimEfetivo = fim || inicio; // sem data fim = só o dia de início
+    if (fimEfetivo && fimEfetivo < hoje) continue;
     registros.push({
       linha: i + 1,
       tipo: String(data[i][3] || ''),
@@ -618,8 +620,9 @@ function doGerencial(p) {
       const cancelado = String(indData[i][8] || '').trim();
       if (cancelado) continue;
       const fim = cellToDate(indData[i][5]);
-      // Mostrar se não expirou (sem fim ou fim >= hoje)
-      if (fim && fim < hoje) continue;
+      const inicioInd = cellToDate(indData[i][4]);
+      const fimEfetivo = fim || inicioInd; // sem data fim = só o dia de início
+      if (fimEfetivo && fimEfetivo < hoje) continue;
       
       const sn = normalizeSaram(indData[i][0]);
       if (!indispMap[sn]) indispMap[sn] = [];
