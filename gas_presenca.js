@@ -12,7 +12,7 @@
 
 const PRESENCA_SHEET = '1E49Q1bPbhT2MlYjYXfpC5mbzuxTBAPzidY3DtZW2VAs';
 const MP_SHEET       = '1gwkeV2iA_JPTZ3rp0wf1PvXUI0TiOzNg3Xd4DhWwpao';
-const REG_HEADERS    = ['Data', 'Posto', 'Nome Completo', 'Nome de Guerra', 'Entrada', 'Saída', 'SARAM', 'Horas', 'VC'];
+const REG_HEADERS    = ['Data', 'Posto', 'Nome Completo', 'Nome de Guerra', 'Entrada', 'Saída', 'SARAM', 'Horas'];
 
 function doGet(e)  { return handleRequest(e); }
 function doPost(e) { return handleRequest(e); }
@@ -139,7 +139,6 @@ function findInMP(saram) {
         posto: String(row[20] || '').trim(),
         nomeCompleto: String(row[21] || '').trim(),
         nomeGuerra: String(row[22] || '').trim(),
-        vc: String(row[5] || '').trim().toUpperCase(),
         saramOriginal: String(row[32] || '').trim()
       };
     }
@@ -162,7 +161,7 @@ function doRegister(p) {
   const saram = militar.saramOriginal || saramInput;
 
   const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
-  const usSheet = getOrCreateSheet(ss, 'Usuarios', ['SARAM', 'SenhaHash', 'Posto', 'NomeCompleto', 'NomeGuerra', 'CriadoEm', 'VC']);
+  const usSheet = getOrCreateSheet(ss, 'Usuarios', ['SARAM', 'SenhaHash', 'Posto', 'NomeCompleto', 'NomeGuerra', 'CriadoEm']);
   const usData = usSheet.getDataRange().getValues();
   for (let i = 1; i < usData.length; i++) {
     if (normalizeSaram(usData[i][0]) === saramNorm) {
@@ -171,7 +170,7 @@ function doRegister(p) {
   }
 
   const hash = hashPassword(senha);
-  usSheet.appendRow([saram, hash, militar.posto, militar.nomeCompleto, militar.nomeGuerra, getBRTNow(), militar.vc||'']);
+  usSheet.appendRow([saram, hash, militar.posto, militar.nomeCompleto, militar.nomeGuerra, getBRTNow()]);
 
   return { ok: true, message: 'Cadastro realizado com sucesso!', militar: militar };
 }
@@ -195,8 +194,7 @@ function doLogin(p) {
         militar: {
           posto: String(usData[i][2] || ''),
           nomeCompleto: String(usData[i][3] || ''),
-          nomeGuerra: String(usData[i][4] || ''),
-          vc: String(usData[i][6] || '')
+          nomeGuerra: String(usData[i][4] || '')
         }
       };
     }
@@ -218,7 +216,7 @@ function doClockIn(p) {
   let saramStored = saramInput;
   for (let i = 1; i < usData.length; i++) {
     if (normalizeSaram(usData[i][0]) === saramNorm) {
-      mil = { posto: usData[i][2], nomeCompleto: usData[i][3], nomeGuerra: usData[i][4], vc: String(usData[i][6]||'') };
+      mil = { posto: usData[i][2], nomeCompleto: usData[i][3], nomeGuerra: usData[i][4] };
       saramStored = String(usData[i][0]).trim();
       break;
     }
@@ -237,7 +235,7 @@ function doClockIn(p) {
 
   const hora = getBRTTime();
   const hoje = getBRTDate();
-  regSheet.appendRow([hoje, mil.posto, mil.nomeCompleto, mil.nomeGuerra, hora, '', saramStored, '', mil.vc||'']);
+  regSheet.appendRow([hoje, mil.posto, mil.nomeCompleto, mil.nomeGuerra, hora, '', saramStored, '']);
 
   return { ok: true, message: 'Entrada registrada: ' + hora, hora: hora };
 }
@@ -369,8 +367,7 @@ function doChamada(p) {
       saramNorm: normalizeSaram(saram),
       posto: String(usData[i][2] || ''),
       nomeCompleto: String(usData[i][3] || ''),
-      nomeGuerra: String(usData[i][4] || ''),
-      vc: String(usData[i][6] || '').toUpperCase()
+      nomeGuerra: String(usData[i][4] || '')
     });
   }
   
@@ -393,14 +390,13 @@ function doChamada(p) {
     }
   }
   
-  const grupos = {}; // vc → {presentes:[], ausentes:[]}
+  const presentes = [];
+  const ausentes = [];
   
   for (const u of usuarios) {
-    const vc = u.vc || 'OUTROS';
-    if (!grupos[vc]) grupos[vc] = { presentes: [], ausentes: [] };
     const reg = hojeMap[u.saramNorm];
     if (reg) {
-      grupos[vc].presentes.push({
+      presentes.push({
         posto: u.posto,
         nomeGuerra: u.nomeGuerra,
         nomeCompleto: u.nomeCompleto,
@@ -409,7 +405,7 @@ function doChamada(p) {
         horas: reg.horas
       });
     } else {
-      grupos[vc].ausentes.push({
+      ausentes.push({
         posto: u.posto,
         nomeGuerra: u.nomeGuerra,
         nomeCompleto: u.nomeCompleto
@@ -417,19 +413,13 @@ function doChamada(p) {
     }
   }
   
-  // Totais
-  let totalPresentes = 0, totalAusentes = 0;
-  for (const vc in grupos) {
-    totalPresentes += grupos[vc].presentes.length;
-    totalAusentes += grupos[vc].ausentes.length;
-  }
-  
   return { 
     ok: true, 
     data: hoje,
-    grupos: grupos,
-    totalPresentes: totalPresentes,
-    totalAusentes: totalAusentes,
+    presentes: presentes, 
+    ausentes: ausentes, 
+    totalPresentes: presentes.length,
+    totalAusentes: ausentes.length,
     total: usuarios.length
   };
 }

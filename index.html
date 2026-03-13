@@ -3991,47 +3991,30 @@ async function _s4Chamada(){
   h+=`<div style="padding:6px 14px;border-radius:8px;background:rgba(0,212,255,.1);border:1px solid var(--vc1);text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--vc1)">${res.total}</div><div style="font-size:.7rem;color:var(--vc1)">Total</div></div>`;
   h+=`</div>`;
 
-  // Renderizar por grupo VC
-  const grupos=res.grupos||{};
-  const vcOrder=['VC1','VC2','OUTROS'];
-  const vcColors={VC1:'var(--vc1)',VC2:'var(--yellow)',OUTROS:'var(--text2)'};
-  let temAlguem=false;
-
-  for(const vc of vcOrder){
-    const g=grupos[vc];
-    if(!g)continue;
-    if(!g.presentes.length&&!g.ausentes.length)continue;
-    temAlguem=true;
-
-    const cor=vcColors[vc]||'var(--text2)';
-    h+=`<div style="margin-bottom:16px">`;
-    h+=`<div style="font-weight:700;font-size:.9rem;color:${cor};margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid ${cor}">${vc}</div>`;
-
-    // Presentes deste VC
-    if(g.presentes.length){
-      g.presentes.forEach(p=>{
-        const saida=p.saida?`→ ${p.saida}`:'<span style="color:var(--yellow)">em serviço</span>';
-        const hrs=p.horas?` (${p.horas}h)`:'';
-        h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;margin-bottom:3px;background:rgba(0,255,136,.04);border-radius:6px;border:1px solid rgba(0,255,136,.15)">`;
-        h+=`<span style="font-size:.82rem;color:var(--text1);font-weight:600">✅ ${p.posto} ${p.nomeGuerra}</span>`;
-        h+=`<span style="font-size:.75rem;color:var(--text2)">${p.entrada} ${saida}${hrs}</span>`;
-        h+=`</div>`;
-      });
-    }
-
-    // Ausentes deste VC
-    if(g.ausentes.length){
-      g.ausentes.forEach(p=>{
-        h+=`<div style="display:flex;align-items:center;padding:5px 8px;margin-bottom:3px;background:rgba(255,68,68,.04);border-radius:6px;border:1px solid rgba(255,68,68,.15)">`;
-        h+=`<span style="font-size:.82rem;color:var(--text2)">❌ ${p.posto} ${p.nomeGuerra}</span>`;
-        h+=`</div>`;
-      });
-    }
-
-    h+=`</div>`;
+  // Presentes
+  if(res.presentes&&res.presentes.length){
+    h+=`<div style="font-weight:700;font-size:.82rem;color:var(--green);margin-bottom:6px">✅ Presentes</div>`;
+    res.presentes.forEach(p=>{
+      const saida=p.saida?`→ ${p.saida}`:'<span style="color:var(--yellow)">em serviço</span>';
+      const hrs=p.horas?` (${p.horas}h)`:'';
+      h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;margin-bottom:3px;background:rgba(0,255,136,.04);border-radius:6px;border:1px solid rgba(0,255,136,.15)">`;
+      h+=`<span style="font-size:.82rem;color:var(--text1);font-weight:600">${p.posto} ${p.nomeGuerra}</span>`;
+      h+=`<span style="font-size:.75rem;color:var(--text2)">${p.entrada} ${saida}${hrs}</span>`;
+      h+=`</div>`;
+    });
   }
 
-  if(!temAlguem){
+  // Ausentes
+  if(res.ausentes&&res.ausentes.length){
+    h+=`<div style="font-weight:700;font-size:.82rem;color:var(--red);margin:12px 0 6px">❌ Ausentes</div>`;
+    res.ausentes.forEach(p=>{
+      h+=`<div style="display:flex;align-items:center;padding:5px 8px;margin-bottom:3px;background:rgba(255,68,68,.04);border-radius:6px;border:1px solid rgba(255,68,68,.15)">`;
+      h+=`<span style="font-size:.82rem;color:var(--text2)">${p.posto} ${p.nomeGuerra}</span>`;
+      h+=`</div>`;
+    });
+  }
+
+  if(!res.presentes?.length&&!res.ausentes?.length){
     h+=`<div style="text-align:center;color:var(--text2);font-size:.82rem;padding:20px 0">Nenhum militar cadastrado ainda.</div>`;
   }
 
