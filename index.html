@@ -4365,12 +4365,20 @@ async function _s4DoLogin(){
     _presencaSave({saram,senha:btoa(senha),posto:res.militar.posto,nomeCompleto:res.militar.nomeCompleto,nomeGuerra:res.militar.nomeGuerra});
     msg.innerHTML='<span style="color:var(--green)">✅ Entrando...</span>';
     const target=_s4PostLoginTarget;_s4PostLoginTarget=null;
+    const ov=document.getElementById('s4-modal-overlay');if(ov)ov.remove();
     if(target==='gerencial'){
-      const ov=document.getElementById('s4-modal-overlay');if(ov)ov.remove();
-      await _s4Gerencial();
+      // Verificar acesso antes de chamar gerencial
+      if(!GERENCIAL_ALLOWED.includes(normalizeSaram(saram))){
+        const c=document.getElementById('screen16');
+        c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--red);margin:40px 0"><div style="font-size:2rem;margin-bottom:10px">🔒</div><div style="font-size:.9rem;font-weight:700">Acesso restrito</div><div style="font-size:.78rem;color:var(--text2);margin-top:6px">Apenas gestores autorizados podem acessar o painel gerencial.</div></div><div style="text-align:center"><button onclick="renderScreenS4(true)" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">← Voltar</button></div>';
+      }else{
+        // Ir direto pro gerencial — renderizar loading e chamar API
+        const c=document.getElementById('screen16');
+        c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--yellow);margin:30px 0">⚙️ Carregando gerencial...</div>';
+        setTimeout(()=>_s4Gerencial(),100);
+      }
     }else{
       await _renderS4Painel();
-      const ov=document.getElementById('s4-modal-overlay');if(ov)ov.remove();
     }
   }else{
     msg.innerHTML=`<span style="color:var(--red)">❌ ${res.error}</span>`;
