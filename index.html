@@ -2944,6 +2944,8 @@ function openDiariaForm(omId){
       if(ct&&ct.funcao)funcao=ct.funcao;
       else if(['MJ','CP','TC','1T','2T'].includes(t.posto))funcao='Piloto';
     }
+    // Normaliza nomes de função pro PDF
+    if(funcao==='Operador de Comunicações')funcao='Op. de Comunicações';
     const cpfAuto=findCPF(t.nome)||findCPF(t.trigrama||'')||'';
     const nomeCompleto=findNomeCompleto(t.nome);
     tripRows+=`<tr draggable="true" ondragstart="_diariaRowDrag(event)" ondragover="_diariaRowOver(event)" ondrop="_diariaRowDrop(event)" style="cursor:grab">
