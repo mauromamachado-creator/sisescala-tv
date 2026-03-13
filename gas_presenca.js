@@ -402,11 +402,11 @@ function doChamada(p) {
     const indData = indSheet.getDataRange().getValues();
     for (let i = 1; i < indData.length; i++) {
       const sn = normalizeSaram(indData[i][0]);
-      const inicio = String(indData[i][4] || '');
-      const fim = String(indData[i][5] || '');
-      const cancelado = String(indData[i][8] || '');
+      const inicio = cellToDate(indData[i][4]);
+      const fim = cellToDate(indData[i][5]);
+      const cancelado = String(indData[i][8] || '').trim();
       if (cancelado) continue;
-      if (inicio <= hoje && (!fim || fim >= hoje)) {
+      if (inicio && inicio <= hoje && (!fim || fim >= hoje)) {
         indispMap[sn] = {
           tipo: String(indData[i][3] || ''),
           dataInicio: inicio,
@@ -503,15 +503,15 @@ function doMinhasIndisp(p) {
   
   for (let i = 1; i < data.length; i++) {
     if (normalizeSaram(data[i][0]) !== saramNorm) continue;
-    if (String(data[i][8] || '')) continue; // cancelado
-    const fim = String(data[i][5] || '');
-    // Mostrar ativas (sem fim ou fim >= hoje) + recentes (últimos 30 dias)
+    if (String(data[i][8] || '').trim()) continue; // cancelado
+    const fim = cellToDate(data[i][5]);
+    // Mostrar ativas (sem fim ou fim >= hoje)
     if (fim && fim < hoje) continue;
     registros.push({
       linha: i + 1,
       tipo: String(data[i][3] || ''),
-      dataInicio: String(data[i][4] || ''),
-      dataFim: String(data[i][5] || ''),
+      dataInicio: cellToDate(data[i][4]),
+      dataFim: cellToDate(data[i][5]),
       obs: String(data[i][6] || ''),
       criadoEm: String(data[i][7] || '')
     });
@@ -615,9 +615,9 @@ function doGerencial(p) {
   if (indSheet) {
     const indData = indSheet.getDataRange().getValues();
     for (let i = 1; i < indData.length; i++) {
-      const cancelado = String(indData[i][8] || '');
+      const cancelado = String(indData[i][8] || '').trim();
       if (cancelado) continue;
-      const fim = String(indData[i][5] || '');
+      const fim = cellToDate(indData[i][5]);
       // Mostrar se não expirou (sem fim ou fim >= hoje)
       if (fim && fim < hoje) continue;
       
@@ -625,7 +625,7 @@ function doGerencial(p) {
       if (!indispMap[sn]) indispMap[sn] = [];
       indispMap[sn].push({
         tipo: String(indData[i][3] || ''),
-        dataInicio: String(indData[i][4] || ''),
+        dataInicio: cellToDate(indData[i][4]),
         dataFim: fim,
         obs: String(indData[i][6] || '')
       });
