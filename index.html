@@ -3820,8 +3820,16 @@ async function _bioAuthenticate(){
 
 // ===== GERENCIAL =====
 let _gerencialPeriodo='mes';
+let _s4PostLoginTarget=null; // 'gerencial' = redirecionar após login
 
 async function _s4Gerencial(periodo){
+  // Exigir login
+  const ses=_presencaSession();
+  if(!ses){
+    _s4PostLoginTarget='gerencial';
+    _s4ShowLoginModal();
+    return;
+  }
   periodo=periodo||_gerencialPeriodo;
   _gerencialPeriodo=periodo;
   const c=document.getElementById('screen16');
@@ -4081,9 +4089,14 @@ async function _s4BiometricLogin(){
   if(res.ok){
     _presencaSave({saram:stored.saram,senha:stored.senha,posto:res.militar.posto,nomeCompleto:res.militar.nomeCompleto,nomeGuerra:res.militar.nomeGuerra});
     if(msgEl)msgEl.innerHTML='<span style="color:var(--green)">✅ Entrando...</span>';
-    await _renderS4Painel();
-    const ov=document.getElementById('s4-modal-overlay');
-    if(ov)ov.remove();
+    const target=_s4PostLoginTarget;_s4PostLoginTarget=null;
+    if(target==='gerencial'){
+      const ov=document.getElementById('s4-modal-overlay');if(ov)ov.remove();
+      await _s4Gerencial();
+    }else{
+      await _renderS4Painel();
+      const ov=document.getElementById('s4-modal-overlay');if(ov)ov.remove();
+    }
   }else{
     _bioRemove(); // credencial inválida, limpar
     if(msgEl)msgEl.innerHTML='<span style="color:var(--red)">❌ Sessão expirada. Faça login com senha.</span>';
@@ -4266,10 +4279,14 @@ async function _s4DoLogin(){
   if(res.ok){
     _presencaSave({saram,senha:btoa(senha),posto:res.militar.posto,nomeCompleto:res.militar.nomeCompleto,nomeGuerra:res.militar.nomeGuerra});
     msg.innerHTML='<span style="color:var(--green)">✅ Entrando...</span>';
-    // Renderizar painel PRIMEIRO, depois fechar modal
-    await _renderS4Painel();
-    const ov=document.getElementById('s4-modal-overlay');
-    if(ov)ov.remove();
+    const target=_s4PostLoginTarget;_s4PostLoginTarget=null;
+    if(target==='gerencial'){
+      const ov=document.getElementById('s4-modal-overlay');if(ov)ov.remove();
+      await _s4Gerencial();
+    }else{
+      await _renderS4Painel();
+      const ov=document.getElementById('s4-modal-overlay');if(ov)ov.remove();
+    }
   }else{
     msg.innerHTML=`<span style="color:var(--red)">❌ ${res.error}</span>`;
   }
