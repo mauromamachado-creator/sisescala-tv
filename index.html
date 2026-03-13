@@ -3426,7 +3426,6 @@ async function loadPimoData(){
     if(typeof sourceStatus!=='undefined'){sourceStatus.pimo='ok';updateStatusPanel();}
     return _pimoCache;
   }catch(e){/* warn silenciado */}return null;}
-}
 
 function _normNome(n){if(!n)return'';return n.toUpperCase().replace(/\b(2S|1S|SO|CP|TC|MJ|T1|ST|CB|SD|GEN|CEL|TC|MAJ|CAP|TEN)\b/g,'').replace(/\((GTE|PR)\)/g,'').replace(/\s+/g,' ').trim();}
 function _pimoAfastCor(dias){if(dias<0)return'var(--green)';if(dias<=15)return'var(--green)';if(dias<=45)return'var(--yellow)';return'var(--red)';}
