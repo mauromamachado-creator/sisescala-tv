@@ -63,20 +63,26 @@ function getOrCreateSheet(ss, name, headers) {
   return sheet;
 }
 
+function normalizeSaram(s) {
+  return String(s || '').trim().replace(/[\.\-\s]/g, '');
+}
+
 function findInMP(saram) {
   const ss = SpreadsheetApp.openById(MP_SHEET);
   const sheet = ss.getSheetByName('Dados');
   if (!sheet) return null;
   const data = sheet.getDataRange().getValues();
+  const saramNorm = normalizeSaram(saram);
   // Colunas: U(20)=Posto, V(21)=NomeCompleto, W(22)=Nome, AG(32)=Saram
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    const saramCell = String(row[32] || '').trim().replace(/\s/g, '');
-    if (saramCell === saram) {
+    const saramCell = normalizeSaram(row[32]);
+    if (saramCell === saramNorm) {
       return {
         posto: String(row[20] || '').trim(),
         nomeCompleto: String(row[21] || '').trim(),
-        nomeGuerra: String(row[22] || '').trim()
+        nomeGuerra: String(row[22] || '').trim(),
+        saramOriginal: String(row[32] || '').trim() // formato da planilha
       };
     }
   }
@@ -86,21 +92,25 @@ function findInMP(saram) {
 /* ---- Actions ---- */
 
 function doRegister(p) {
-  const saram = String(p.saram || '').trim().replace(/\s/g, '');
+  const saramInput = String(p.saram || '').trim();
+  const saramNorm = normalizeSaram(saramInput);
   const senha = String(p.senha || '');
-  if (!saram || !senha) return { ok: false, error: 'SARAM e senha obrigatórios' };
+  if (!saramNorm || !senha) return { ok: false, error: 'SARAM e senha obrigatórios' };
   if (senha.length < 4) return { ok: false, error: 'Senha deve ter no mínimo 4 caracteres' };
 
   // Validar SARAM na MP
-  const militar = findInMP(saram);
+  const militar = findInMP(saramInput);
   if (!militar) return { ok: false, error: 'SARAM não encontrado na base de dados. Somente militares do GTE podem se cadastrar.' };
+
+  // Usar SARAM no formato original da planilha
+  const saram = militar.saramOriginal || saramInput;
 
   // Verificar se já cadastrado
   const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
   const usSheet = getOrCreateSheet(ss, 'Usuarios', ['SARAM', 'SenhaHash', 'Posto', 'NomeCompleto', 'NomeGuerra', 'CriadoEm']);
   const usData = usSheet.getDataRange().getValues();
   for (let i = 1; i < usData.length; i++) {
-    if (String(usData[i][0]).trim() === saram) {
+    if (normalizeSaram(usData[i][0]) === saramNorm) {
       return { ok: false, error: 'SARAM já cadastrado. Use o login.' };
     }
   }
@@ -113,9 +123,10 @@ function doRegister(p) {
 }
 
 function doLogin(p) {
-  const saram = String(p.saram || '').trim().replace(/\s/g, '');
+  const saramInput = String(p.saram || '').trim();
+  const saramNorm = normalizeSaram(saramInput);
   const senha = String(p.senha || '');
-  if (!saram || !senha) return { ok: false, error: 'SARAM e senha obrigatórios' };
+  if (!saramNorm || !senha) return { ok: false, error: 'SARAM e senha obrigatórios' };
 
   const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
   const usSheet = ss.getSheetByName('Usuarios');
@@ -124,7 +135,7 @@ function doLogin(p) {
   const usData = usSheet.getDataRange().getValues();
   const hash = hashPassword(senha);
   for (let i = 1; i < usData.length; i++) {
-    if (String(usData[i][0]).trim() === saram && String(usData[i][1]).trim() === hash) {
+    if (normalizeSaram(usData[i][0]) === saramNorm && String(usData[i][1]).trim() === hash) {
       return {
         ok: true,
         militar: {
@@ -139,8 +150,9 @@ function doLogin(p) {
 }
 
 function doClockIn(p) {
-  const saram = String(p.saram || '').trim().replace(/\s/g, '');
-  if (!saram) return { ok: false, error: 'SARAM obrigatório' };
+  const saramInput = String(p.saram || '').trim();
+  const saramNorm = normalizeSaram(saramInput);
+  if (!saramNorm) return { ok: false, error: 'SARAM obrigatório' };
 
   const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
 
@@ -149,9 +161,11 @@ function doClockIn(p) {
   if (!usSheet) return { ok: false, error: 'Usuário não encontrado' };
   const usData = usSheet.getDataRange().getValues();
   let mil = null;
+  let saramStored = saramInput;
   for (let i = 1; i < usData.length; i++) {
-    if (String(usData[i][0]).trim() === saram) {
+    if (normalizeSaram(usData[i][0]) === saramNorm) {
       mil = { posto: usData[i][2], nomeCompleto: usData[i][3], nomeGuerra: usData[i][4] };
+      saramStored = String(usData[i][0]).trim();
       break;
     }
   }
@@ -162,21 +176,22 @@ function doClockIn(p) {
   const regData = regSheet.getDataRange().getValues();
   const hoje = getBRTDate();
   for (let i = 1; i < regData.length; i++) {
-    if (String(regData[i][6]).trim() === saram && String(regData[i][0]).trim() === hoje && !regData[i][5]) {
+    if (normalizeSaram(regData[i][6]) === saramNorm && String(regData[i][0]).trim() === hoje && !regData[i][5]) {
       return { ok: false, error: 'Entrada já registrada hoje. Registre a saída primeiro.' };
     }
   }
 
   // Registrar entrada
   const hora = getBRTTime();
-  regSheet.appendRow([hoje, mil.posto, mil.nomeCompleto, mil.nomeGuerra, hora, '', saram]);
+  regSheet.appendRow([hoje, mil.posto, mil.nomeCompleto, mil.nomeGuerra, hora, '', saramStored]);
 
   return { ok: true, message: `Entrada registrada: ${hora}`, hora: hora };
 }
 
 function doClockOut(p) {
-  const saram = String(p.saram || '').trim().replace(/\s/g, '');
-  if (!saram) return { ok: false, error: 'SARAM obrigatório' };
+  const saramInput = String(p.saram || '').trim();
+  const saramNorm = normalizeSaram(saramInput);
+  if (!saramNorm) return { ok: false, error: 'SARAM obrigatório' };
 
   const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
   const regSheet = ss.getSheetByName('Registro');
@@ -187,7 +202,7 @@ function doClockOut(p) {
 
   // Encontrar a última entrada de hoje sem saída
   for (let i = regData.length - 1; i >= 1; i--) {
-    if (String(regData[i][6]).trim() === saram && String(regData[i][0]).trim() === hoje && !regData[i][5]) {
+    if (normalizeSaram(regData[i][6]) === saramNorm && String(regData[i][0]).trim() === hoje && !regData[i][5]) {
       const hora = getBRTTime();
       regSheet.getRange(i + 1, 6).setValue(hora); // Coluna F = Saída
       return { ok: true, message: `Saída registrada: ${hora}`, hora: hora };
@@ -198,8 +213,8 @@ function doClockOut(p) {
 }
 
 function doStatus(p) {
-  const saram = String(p.saram || '').trim().replace(/\s/g, '');
-  if (!saram) return { ok: false, error: 'SARAM obrigatório' };
+  const saramNorm = normalizeSaram(p.saram);
+  if (!saramNorm) return { ok: false, error: 'SARAM obrigatório' };
 
   const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
   const regSheet = ss.getSheetByName('Registro');
@@ -211,7 +226,7 @@ function doStatus(p) {
   let aberto = false;
 
   for (let i = 1; i < regData.length; i++) {
-    if (String(regData[i][6]).trim() === saram && String(regData[i][0]).trim() === hoje) {
+    if (normalizeSaram(regData[i][6]) === saramNorm && String(regData[i][0]).trim() === hoje) {
       registros.push({
         entrada: String(regData[i][4] || ''),
         saida: String(regData[i][5] || '')
@@ -224,9 +239,9 @@ function doStatus(p) {
 }
 
 function doHistory(p) {
-  const saram = String(p.saram || '').trim().replace(/\s/g, '');
+  const saramNorm = normalizeSaram(p.saram);
   const dias = parseInt(p.dias) || 7;
-  if (!saram) return { ok: false, error: 'SARAM obrigatório' };
+  if (!saramNorm) return { ok: false, error: 'SARAM obrigatório' };
 
   const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
   const regSheet = ss.getSheetByName('Registro');
@@ -236,7 +251,7 @@ function doHistory(p) {
   const registros = [];
 
   for (let i = regData.length - 1; i >= 1; i--) {
-    if (String(regData[i][6]).trim() === saram) {
+    if (normalizeSaram(regData[i][6]) === saramNorm) {
       registros.push({
         data: String(regData[i][0] || ''),
         entrada: String(regData[i][4] || ''),
