@@ -3862,18 +3862,18 @@ async function _s4BiometricLogin(){
   }
 }
 
-async function _presencaApi(params,retries=1){
-  if(!PRESENCA_API)return{ok:false,error:'API de presença não configurada. Aguardando deploy do GAS.'};
+async function _presencaApi(params,retries=2){
+  if(!PRESENCA_API)return{ok:false,error:'API de presença não configurada.'};
   const url=PRESENCA_API+'?'+Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
   for(let attempt=0;attempt<=retries;attempt++){
     try{
-      const r=await fetchWithTimeout(url,30000);
-      return await r.json();
-    }catch(e){
-      if(attempt<retries){await new Promise(r=>setTimeout(r,1000));continue;}
-      return{ok:false,error:'Erro de conexão. Tente novamente.'};
-    }
+      const r=await fetchWithTimeout(url,35000);
+      const txt=await r.text();
+      try{return JSON.parse(txt);}catch(e){/* resposta não-JSON (redirect do Google), retry */}
+    }catch(e){/* timeout/rede, retry */}
+    if(attempt<retries)await new Promise(r=>setTimeout(r,2000));
   }
+  return{ok:false,error:'Servidor indisponível. Tente novamente.'};
 }
 
 function _checkGeoAndDo(action){
