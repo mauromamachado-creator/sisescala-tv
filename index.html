@@ -1570,7 +1570,7 @@ function renderScreen0(){
     const _done=getDiariasDownloaded();const _conc=getDiariasConcluidas();
     const _brP=['SB','SD','SN','SI','SS','SW'];
     const _missaoDiaria=m=>{if(!m)return true;const u=m.toUpperCase().trim();return['PR TLD','PR ESCAV','PR RES','ESCAV'].includes(u)||u==='PR';};
-    const _diarias=(omData||[]).filter(om=>om.pernas.every(p=>_brP.some(pf=>p.origem.startsWith(pf))&&_brP.some(pf=>p.destino.startsWith(pf)))&&_missaoDiaria(om.missao));
+    const _diarias=(omData||[]).filter(om=>om.pernas.every(p=>_brP.some(pf=>p.origem.startsWith(pf))&&_brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>p.origem!==p.destino)&&_missaoDiaria(om.missao));
     // Atualiza do GAS em background e re-renderiza se necessário
     fetchDiariasConcluidas().then(fresh=>{const pAfter=_diarias.filter(om=>!fresh[om.om]);if(pAfter.length!==_pend.length)renderScreen0();});
     const _pend=_diarias.filter(om=>!_conc[om.om]);
@@ -2831,6 +2831,8 @@ function renderScreenDiarias(){
   function _icaoOrig(p){return p.origem||(p.etd&&p.etd.match(/^([A-Z]{4})/)?p.etd.match(/^([A-Z]{4})/)[1]:'');}
   function _icaoDest(p){return p.destino||(p.eta&&p.eta.match(/([A-Z]{4})$/)?p.eta.match(/([A-Z]{4})$/)[1]:'');}
   const isNacional=om=>om.pernas.every(p=>brPrefixes.some(pf=>_icaoOrig(p).startsWith(pf))&&brPrefixes.some(pf=>_icaoDest(p).startsWith(pf)));
+  // Exclui OMs onde todas as pernas são mesma base (ex: SBBR→SBBR) — não geram diária
+  const _temDeslocamento=om=>om.pernas.some(p=>_icaoOrig(p)!==_icaoDest(p));
   // Missões que fazem jus a diárias
   const _MISSOES_DIARIA=['PR TLD','PR ESCAV','PR','PR RES','ESCAV'];
   const temMissaoDiaria=om=>{
@@ -2844,7 +2846,7 @@ function renderScreenDiarias(){
     // Campo missao ausente → mostra (melhor incluir do que excluir enquanto cron não reprocessou)
     return true;
   };
-  const sorted=[...omData].filter(om=>isNacional(om)&&temMissaoDiaria(om)).sort((a,b)=>omDataISO(b.data).localeCompare(omDataISO(a.data)));
+  const sorted=[...omData].filter(om=>isNacional(om)&&_temDeslocamento(om)&&temMissaoDiaria(om)).sort((a,b)=>omDataISO(b.data).localeCompare(omDataISO(a.data)));
   const pendentes=sorted.filter(om=>!concluidas[om.om]);
   const arquivadas=sorted.filter(om=>!!concluidas[om.om]);
   function nextBizDay(d){const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;}
@@ -6523,7 +6525,7 @@ function getDiariasAlerts(){
       if(om.missao){const m=(om.missao||'').toUpperCase().trim();if(m==='PR VER')return false;return _alertMissoes.some(t=>m===t||m.startsWith(t));}
       return true;
     };
-    const list=omData.filter(om=>!conc[om.om]&&om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf)))&&_alertTemMissao(om));
+    const list=omData.filter(om=>!conc[om.om]&&om.pernas.every(p=>brP.some(pf=>p.origem.startsWith(pf))&&brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>p.origem!==p.destino)&&_alertTemMissao(om));
     const nBiz=d=>{const r=new Date(d);r.setDate(r.getDate()+1);while(r.getDay()===0||r.getDay()===6)r.setDate(r.getDate()+1);return r;};
     const hj=nowBRT();hj.setHours(0,0,0,0);
     list.forEach(om=>{
