@@ -3837,6 +3837,7 @@ async function _bioAuthenticate(){
 // ===== GERENCIAL =====
 let _gerencialPeriodo='mes';
 let _s4PostLoginTarget=null; // 'gerencial' = redirecionar após login
+function _normSaram(s){return String(s||'').trim().replace(/[\.\-\s]/g,'');}
 
 const GERENCIAL_ALLOWED=['4004221','6085199']; // MACHADO + THIAGO VASCONCELOS
 
@@ -3849,7 +3850,7 @@ async function _s4Gerencial(periodo){
     return;
   }
   // Verificar acesso restrito
-  if(!GERENCIAL_ALLOWED.includes(normalizeSaram(ses.saram))){
+  if(!GERENCIAL_ALLOWED.includes(_normSaram(ses.saram))){
     const c=document.getElementById('screen16');
     c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--red);margin:40px 0"><div style="font-size:2rem;margin-bottom:10px">🔒</div><div style="font-size:.9rem;font-weight:700">Acesso restrito</div><div style="font-size:.78rem;color:var(--text2);margin-top:6px">Apenas gestores autorizados podem acessar o painel gerencial.</div></div><div style="text-align:center"><button onclick="renderScreenS4(true)" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">← Voltar</button></div>';
     return;
@@ -4368,7 +4369,7 @@ async function _s4DoLogin(){
     const ov=document.getElementById('s4-modal-overlay');if(ov)ov.remove();
     if(target==='gerencial'){
       // Verificar acesso antes de chamar gerencial
-      if(!GERENCIAL_ALLOWED.includes(normalizeSaram(saram))){
+      if(!GERENCIAL_ALLOWED.includes(_normSaram(saram))){
         const c=document.getElementById('screen16');
         c.innerHTML='<h2>📋 MNT — Presença</h2><div style="text-align:center;color:var(--red);margin:40px 0"><div style="font-size:2rem;margin-bottom:10px">🔒</div><div style="font-size:.9rem;font-weight:700">Acesso restrito</div><div style="font-size:.78rem;color:var(--text2);margin-top:6px">Apenas gestores autorizados podem acessar o painel gerencial.</div></div><div style="text-align:center"><button onclick="renderScreenS4(true)" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">← Voltar</button></div>';
       }else{
