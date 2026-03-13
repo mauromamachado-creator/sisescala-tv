@@ -29,6 +29,7 @@ function handleRequest(e) {
       case 'clockOut':  result = doClockOut(p); break;
       case 'status':    result = doStatus(p); break;
       case 'history':   result = doHistory(p); break;
+      case 'chamada':   result = doChamada(p); break;
       default:          result = { ok: false, error: 'Ação inválida' };
     }
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
@@ -347,4 +348,78 @@ function doHistory(p) {
   }
 
   return { ok: true, registros: registros };
+}
+
+function doChamada(p) {
+  const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
+  
+  // Buscar todos os usuários cadastrados
+  const usSheet = ss.getSheetByName('Usuarios');
+  if (!usSheet) return { ok: true, presentes: [], ausentes: [], total: 0 };
+  
+  const usData = usSheet.getDataRange().getValues();
+  const usuarios = [];
+  for (let i = 1; i < usData.length; i++) {
+    const saram = String(usData[i][0] || '').trim();
+    if (!saram) continue;
+    usuarios.push({
+      saram: saram,
+      saramNorm: normalizeSaram(saram),
+      posto: String(usData[i][2] || ''),
+      nomeCompleto: String(usData[i][3] || ''),
+      nomeGuerra: String(usData[i][4] || '')
+    });
+  }
+  
+  // Buscar registros de hoje
+  const regSheet = ss.getSheetByName('Registro');
+  const hoje = getBRTDate();
+  const hojeMap = {}; // saramNorm → {entrada, saida, horas}
+  
+  if (regSheet) {
+    const regData = regSheet.getDataRange().getValues();
+    for (let i = 1; i < regData.length; i++) {
+      if (cellToDate(regData[i][0]) === hoje) {
+        const sn = normalizeSaram(regData[i][6]);
+        hojeMap[sn] = {
+          entrada: String(regData[i][4] || ''),
+          saida: String(regData[i][5] || ''),
+          horas: String(regData[i][7] || '')
+        };
+      }
+    }
+  }
+  
+  const presentes = [];
+  const ausentes = [];
+  
+  for (const u of usuarios) {
+    const reg = hojeMap[u.saramNorm];
+    if (reg) {
+      presentes.push({
+        posto: u.posto,
+        nomeGuerra: u.nomeGuerra,
+        nomeCompleto: u.nomeCompleto,
+        entrada: reg.entrada,
+        saida: reg.saida,
+        horas: reg.horas
+      });
+    } else {
+      ausentes.push({
+        posto: u.posto,
+        nomeGuerra: u.nomeGuerra,
+        nomeCompleto: u.nomeCompleto
+      });
+    }
+  }
+  
+  return { 
+    ok: true, 
+    data: hoje,
+    presentes: presentes, 
+    ausentes: ausentes, 
+    totalPresentes: presentes.length,
+    totalAusentes: ausentes.length,
+    total: usuarios.length
+  };
 }

@@ -3743,7 +3743,7 @@ function toggleOMCancelada(omId, cancelled){
   s3RenderOM(document.getElementById('s3-content'));
 }
 
-// ===== S4 — PRESENÇA =====
+// ===== MNT — PRESENÇA =====
 const PRESENCA_API='https://script.google.com/macros/s/AKfycbz4zJ1MuAy_33m-twcgsCBB9j-QGHdYTi7x99KY-DPVKvVJh3xJ4IbSpKVKa0Uzz5M2fA/exec';
 const PRESENCA_BASE={lat:-15.8676989,lng:-47.9060863};
 const PRESENCA_RAIO_KM=1;
@@ -3936,6 +3936,7 @@ async function _renderS4Painel(){
   html+=`<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:20px 0">`;
   html+=`<button onclick="_checkGeoAndDo('clockIn')" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--green);background:rgba(0,255,136,.08);color:var(--green);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">🟢</span>ENTRADA</button>`;
   html+=`<button onclick="_checkGeoAndDo('clockOut')" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--red);background:rgba(255,68,68,.08);color:var(--red);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">🔴</span>SAÍDA</button>`;
+  html+=`<button onclick="_s4Chamada()" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--yellow);background:rgba(255,200,50,.08);color:var(--yellow);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">📋</span>CHAMADA</button>`;
   html+=`</div>`;
 
   html+=`<div id="s4-msg" style="text-align:center;margin:10px 0;min-height:30px"></div>`;
@@ -3959,6 +3960,62 @@ async function _renderS4Painel(){
   html+=`<div style="text-align:center;margin-top:20px;font-size:.72rem;color:var(--text2)">📍 Localização verificada automaticamente (raio de ${PRESENCA_RAIO_KM}km)</div>`;
 
   c.innerHTML=html;
+}
+
+async function _s4Chamada(){
+  const msgEl=document.getElementById('s4-msg');
+  if(msgEl)msgEl.innerHTML='<div style="color:var(--yellow)">📋 Carregando chamada...</div>';
+  const res=await _presencaApi({action:'chamada'});
+  if(!res.ok){
+    if(msgEl)msgEl.innerHTML=`<div style="color:var(--red)">❌ ${res.error||'Erro ao carregar chamada'}</div>`;
+    return;
+  }
+  // Renderizar lista no s4-msg
+  let h='';
+  h+=`<div style="max-width:500px;margin:0 auto;background:var(--bg2);border-radius:10px;padding:16px;border:1px solid var(--border)">`;
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">`;
+  h+=`<div style="font-weight:700;font-size:.95rem;color:var(--text1)">📋 Chamada — Hoje</div>`;
+  h+=`<div style="font-size:.75rem;color:var(--text2)">${res.data||''}</div>`;
+  h+=`</div>`;
+
+  // Contadores
+  h+=`<div style="display:flex;gap:12px;margin-bottom:14px;justify-content:center">`;
+  h+=`<div style="padding:6px 14px;border-radius:8px;background:rgba(0,255,136,.1);border:1px solid var(--green);text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--green)">${res.totalPresentes}</div><div style="font-size:.7rem;color:var(--green)">Presentes</div></div>`;
+  h+=`<div style="padding:6px 14px;border-radius:8px;background:rgba(255,68,68,.1);border:1px solid var(--red);text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--red)">${res.totalAusentes}</div><div style="font-size:.7rem;color:var(--red)">Ausentes</div></div>`;
+  h+=`<div style="padding:6px 14px;border-radius:8px;background:rgba(0,212,255,.1);border:1px solid var(--vc1);text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--vc1)">${res.total}</div><div style="font-size:.7rem;color:var(--vc1)">Total</div></div>`;
+  h+=`</div>`;
+
+  // Presentes
+  if(res.presentes&&res.presentes.length){
+    h+=`<div style="font-weight:700;font-size:.82rem;color:var(--green);margin-bottom:6px">✅ Presentes</div>`;
+    res.presentes.forEach(p=>{
+      const saida=p.saida?`→ ${p.saida}`:'<span style="color:var(--yellow)">em serviço</span>';
+      const hrs=p.horas?` (${p.horas}h)`:'';
+      h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;margin-bottom:3px;background:rgba(0,255,136,.04);border-radius:6px;border:1px solid rgba(0,255,136,.15)">`;
+      h+=`<span style="font-size:.82rem;color:var(--text1);font-weight:600">${p.posto} ${p.nomeGuerra}</span>`;
+      h+=`<span style="font-size:.75rem;color:var(--text2)">${p.entrada} ${saida}${hrs}</span>`;
+      h+=`</div>`;
+    });
+  }
+
+  // Ausentes
+  if(res.ausentes&&res.ausentes.length){
+    h+=`<div style="font-weight:700;font-size:.82rem;color:var(--red);margin:12px 0 6px">❌ Ausentes</div>`;
+    res.ausentes.forEach(p=>{
+      h+=`<div style="display:flex;align-items:center;padding:5px 8px;margin-bottom:3px;background:rgba(255,68,68,.04);border-radius:6px;border:1px solid rgba(255,68,68,.15)">`;
+      h+=`<span style="font-size:.82rem;color:var(--text2)">${p.posto} ${p.nomeGuerra}</span>`;
+      h+=`</div>`;
+    });
+  }
+
+  if(!res.presentes?.length&&!res.ausentes?.length){
+    h+=`<div style="text-align:center;color:var(--text2);font-size:.82rem;padding:20px 0">Nenhum militar cadastrado ainda.</div>`;
+  }
+
+  h+=`<div style="text-align:center;margin-top:12px"><button onclick="_renderS4Painel()" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.78rem;cursor:pointer">← Voltar</button></div>`;
+  h+=`</div>`;
+
+  if(msgEl)msgEl.innerHTML=h;
 }
 
 async function _s4DoLogin(){
