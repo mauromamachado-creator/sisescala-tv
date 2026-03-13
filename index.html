@@ -3818,31 +3818,26 @@ async function _bioAuthenticate(){
   }catch(e){console.warn('Bio auth error:',e);return null;}
 }
 
-async function _bioPromptAfterLogin(saram,posto,nomeCompleto,nomeGuerra,senha){
+async function _s4ActivateBio(){
+  const ses=_presencaSession();
+  if(!ses)return;
   const supported=await _bioSupported();
-  if(!supported)return;
-  const existing=_bioGetStored();
-  if(existing&&existing.saram===saram)return; // já configurado
-  // Mostra prompt
-  const msgEl=document.getElementById('s4-msg')||document.getElementById('s4-login-msg');
-  if(!msgEl)return;
-  msgEl.innerHTML=`<div style="margin-top:12px;padding:12px;background:var(--bg2);border:1px solid var(--vc1);border-radius:8px;text-align:center">
-    <div style="font-size:.85rem;color:var(--vc1);font-weight:700;margin-bottom:8px">🔒 Ativar login por biometria?</div>
-    <div style="font-size:.75rem;color:var(--text2);margin-bottom:10px">Use impressão digital ou reconhecimento facial nas próximas vezes.</div>
-    <button id="_bioYes" style="padding:8px 16px;border-radius:8px;border:none;background:var(--vc1);color:var(--bg);font-weight:700;font-size:.82rem;cursor:pointer;margin-right:8px">Ativar</button>
-    <button id="_bioNo" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer">Agora não</button>
-  </div>`;
-  document.getElementById('_bioYes').onclick=async()=>{
-    msgEl.innerHTML='<div style="color:var(--yellow)">🔒 Configure sua biometria...</div>';
-    const ok=await _bioRegister(saram,posto,nomeCompleto,nomeGuerra,senha);
-    if(ok){
-      msgEl.innerHTML='<div style="color:var(--green)">✅ Biometria ativada! Próxima vez, use o botão 🔒</div>';
-    }else{
-      msgEl.innerHTML='<div style="color:var(--red)">❌ Não foi possível ativar a biometria.</div>';
-    }
-    setTimeout(()=>_renderS4Painel(),2000);
-  };
-  document.getElementById('_bioNo').onclick=()=>{_renderS4Painel();};
+  if(!supported){
+    const el=document.getElementById('s4-bio-section');
+    if(el)el.innerHTML='<div style="color:var(--red);font-size:.78rem">❌ Este dispositivo não suporta biometria.</div>';
+    return;
+  }
+  const btn=document.getElementById('s4-bio-activate');
+  if(btn){btn.textContent='🔒 Configure sua biometria...';btn.disabled=true;}
+  const senha=ses.senha?atob(ses.senha):'';
+  const ok=await _bioRegister(ses.saram,ses.posto,ses.nomeCompleto,ses.nomeGuerra,senha);
+  if(ok){
+    _renderS4Painel();
+  }else{
+    if(btn){btn.textContent='🔒 Ativar login por biometria';btn.disabled=false;}
+    const el=document.getElementById('s4-bio-section');
+    if(el)el.innerHTML+='<div style="color:var(--red);font-size:.75rem;margin-top:4px">Não foi possível ativar. Tente novamente.</div>';
+  }
 }
 
 async function _s4BiometricLogin(){
@@ -3927,14 +3922,7 @@ async function _renderS4Painel(){
   html+=`<div style="font-size:1.1rem;font-weight:700;color:var(--vc1)">${ses.posto} ${ses.nomeGuerra}</div>`;
   html+=`<div style="font-size:.8rem;color:var(--text2);margin:4px 0">${ses.nomeCompleto}</div>`;
   html+=`<div style="font-size:.75rem;color:var(--text2)">SARAM: ${ses.saram}</div>`;
-  const bioStored=_bioGetStored();
-  const bioActive=bioStored&&bioStored.saram===ses.saram;
-  html+=`<div style="display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap">`;
-  if(bioActive){
-    html+=`<button onclick="_bioRemove();_renderS4Painel()" style="padding:4px 12px;border-radius:6px;border:1px solid var(--yellow);background:rgba(255,200,50,.1);color:var(--yellow);font-size:.75rem;cursor:pointer">🔒 Desativar biometria</button>`;
-  }
-  html+=`<button onclick="_presencaLogout()" style="padding:4px 12px;border-radius:6px;border:1px solid var(--red);background:rgba(255,68,68,.1);color:var(--red);font-size:.75rem;cursor:pointer">Sair</button>`;
-  html+=`</div>`;
+  html+=`<button onclick="_presencaLogout()" style="margin-top:8px;padding:4px 12px;border-radius:6px;border:1px solid var(--red);background:rgba(255,68,68,.1);color:var(--red);font-size:.75rem;cursor:pointer">Sair</button>`;
   html+=`</div>`;
 
   // Botões de registro
@@ -3944,6 +3932,20 @@ async function _renderS4Painel(){
   html+=`</div>`;
 
   html+=`<div id="s4-msg" style="text-align:center;margin:10px 0;min-height:30px"></div>`;
+
+  // Toggle biometria (fixo, sempre visível)
+  const bioStored=_bioGetStored();
+  const bioActive=bioStored&&bioStored.saram===ses.saram;
+  html+=`<div id="s4-bio-section" style="text-align:center;margin:10px 0">`;
+  if(bioActive){
+    html+=`<div style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:rgba(0,255,136,.06);border:1px solid var(--green)">`;
+    html+=`<span style="font-size:.82rem;color:var(--green);font-weight:600">🔒 Biometria ativada</span>`;
+    html+=`<button onclick="_bioRemove();_renderS4Painel()" style="padding:3px 10px;border-radius:6px;border:1px solid var(--red);background:rgba(255,68,68,.1);color:var(--red);font-size:.7rem;cursor:pointer">Desativar</button>`;
+    html+=`</div>`;
+  }else{
+    html+=`<button onclick="_s4ActivateBio()" id="s4-bio-activate" style="padding:8px 16px;border-radius:8px;border:1px solid var(--vc1);background:rgba(0,212,255,.06);color:var(--vc1);font-size:.82rem;font-weight:600;cursor:pointer">🔒 Ativar login por biometria</button>`;
+  }
+  html+=`</div>`;
 
   // Status de hoje
   if(status.ok&&status.registros&&status.registros.length){
@@ -4030,12 +4032,10 @@ async function _s4DoLogin(){
   msg.innerHTML='<span style="color:var(--yellow)">⏳ Verificando...</span>';
   const res=await _presencaApi({action:'login',saram,senha});
   if(res.ok){
-    _presencaSave({saram,posto:res.militar.posto,nomeCompleto:res.militar.nomeCompleto,nomeGuerra:res.militar.nomeGuerra});
+    _presencaSave({saram,senha:btoa(senha),posto:res.militar.posto,nomeCompleto:res.militar.nomeCompleto,nomeGuerra:res.militar.nomeGuerra});
     const ov=document.getElementById('s4-modal-overlay');
     if(ov)ov.remove();
-    _renderS4Painel();
-    // Oferecer biometria após login com senha
-    setTimeout(()=>_bioPromptAfterLogin(saram,res.militar.posto,res.militar.nomeCompleto,res.militar.nomeGuerra,senha),500);
+    await _renderS4Painel();
   }else{
     msg.innerHTML=`<span style="color:var(--red)">❌ ${res.error}</span>`;
   }
