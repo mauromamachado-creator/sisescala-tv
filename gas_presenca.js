@@ -50,6 +50,15 @@ function getBRTDate() {
   return Utilities.formatDate(new Date(), 'America/Sao_Paulo', "yyyy-MM-dd");
 }
 
+function cellToDate(cell) {
+  // Converte célula (Date ou string) para formato yyyy-MM-dd
+  if (!cell) return '';
+  if (cell instanceof Date) {
+    return Utilities.formatDate(cell, 'America/Sao_Paulo', "yyyy-MM-dd");
+  }
+  return String(cell).trim();
+}
+
 function getBRTTime() {
   return Utilities.formatDate(new Date(), 'America/Sao_Paulo', "HH:mm");
 }
@@ -176,7 +185,7 @@ function doClockIn(p) {
   const regData = regSheet.getDataRange().getValues();
   const hoje = getBRTDate();
   for (let i = 1; i < regData.length; i++) {
-    if (normalizeSaram(regData[i][6]) === saramNorm && String(regData[i][0]).trim() === hoje && !regData[i][5]) {
+    if (normalizeSaram(regData[i][6]) === saramNorm && cellToDate(regData[i][0]) === hoje && !regData[i][5]) {
       return { ok: false, error: 'Entrada já registrada hoje. Registre a saída primeiro.' };
     }
   }
@@ -202,7 +211,7 @@ function doClockOut(p) {
 
   // Encontrar a última entrada de hoje sem saída
   for (let i = regData.length - 1; i >= 1; i--) {
-    if (normalizeSaram(regData[i][6]) === saramNorm && String(regData[i][0]).trim() === hoje && !regData[i][5]) {
+    if (normalizeSaram(regData[i][6]) === saramNorm && cellToDate(regData[i][0]) === hoje && !regData[i][5]) {
       const hora = getBRTTime();
       regSheet.getRange(i + 1, 6).setValue(hora); // Coluna F = Saída
       return { ok: true, message: `Saída registrada: ${hora}`, hora: hora };
@@ -226,7 +235,7 @@ function doStatus(p) {
   let aberto = false;
 
   for (let i = 1; i < regData.length; i++) {
-    if (normalizeSaram(regData[i][6]) === saramNorm && String(regData[i][0]).trim() === hoje) {
+    if (normalizeSaram(regData[i][6]) === saramNorm && cellToDate(regData[i][0]) === hoje) {
       registros.push({
         entrada: String(regData[i][4] || ''),
         saida: String(regData[i][5] || '')
@@ -253,7 +262,7 @@ function doHistory(p) {
   for (let i = regData.length - 1; i >= 1; i--) {
     if (normalizeSaram(regData[i][6]) === saramNorm) {
       registros.push({
-        data: String(regData[i][0] || ''),
+        data: cellToDate(regData[i][0]),
         entrada: String(regData[i][4] || ''),
         saida: String(regData[i][5] || '')
       });
