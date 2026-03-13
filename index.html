@@ -3119,7 +3119,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   const cx=pw/2;
 
   // ═══ BRASÃO DA REPÚBLICA ═══
-  try{const brasaoW=15,brasaoH=15;doc.addImage(BRASAO_IMG,'PNG',cx-brasaoW/2,y,brasaoW,brasaoH);y+=brasaoH+3;}catch(e){}
+  try{const brasaoW=20,brasaoH=20;doc.addImage(BRASAO_IMG,'PNG',cx-brasaoW/2,y,brasaoW,brasaoH);y+=brasaoH+3;}catch(e){}
 
   // ═══ CABEÇALHO INSTITUCIONAL ═══
   doc.setFont('times','normal');doc.setFontSize(11);
