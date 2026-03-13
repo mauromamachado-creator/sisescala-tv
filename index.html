@@ -3845,7 +3845,7 @@ async function _s4Gerencial(periodo){
   const ses=_presencaSession();
   if(!ses){
     _s4PostLoginTarget='gerencial';
-    _s4ShowLoginModal();
+    _s4ShowLoginModal(true);
     return;
   }
   // Verificar acesso restrito
@@ -4411,7 +4411,7 @@ function renderScreenS4(forceMenu){
   c.innerHTML=html;
 }
 
-function _s4ShowLoginModal(){
+function _s4ShowLoginModal(loginOnly){
   // Modal overlay
   let ov=document.getElementById('s4-modal-overlay');
   if(ov)ov.remove();
@@ -4426,11 +4426,15 @@ function _s4ShowLoginModal(){
   let inner='';
   inner+=`<button onclick="document.getElementById('s4-modal-overlay').remove()" style="position:absolute;top:8px;right:12px;background:none;border:none;color:var(--text2);font-size:1.2rem;cursor:pointer">✕</button>`;
 
-  // Tabs
-  inner+=`<div id="s4-tab-btns" style="display:flex;gap:8px;margin-bottom:16px">`;
-  inner+=`<button onclick="_s4Tab('login')" id="s4-tab-login-btn" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--vc1);background:rgba(0,212,255,.1);color:var(--vc1);font-weight:700;cursor:pointer">ENTRAR</button>`;
-  inner+=`<button onclick="_s4Tab('register')" id="s4-tab-reg-btn" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-weight:700;cursor:pointer">CADASTRAR</button>`;
-  inner+=`</div>`;
+  // Tabs (esconde CADASTRAR quando loginOnly)
+  if(!loginOnly){
+    inner+=`<div id="s4-tab-btns" style="display:flex;gap:8px;margin-bottom:16px">`;
+    inner+=`<button onclick="_s4Tab('login')" id="s4-tab-login-btn" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--vc1);background:rgba(0,212,255,.1);color:var(--vc1);font-weight:700;cursor:pointer">ENTRAR</button>`;
+    inner+=`<button onclick="_s4Tab('register')" id="s4-tab-reg-btn" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-weight:700;cursor:pointer">CADASTRAR</button>`;
+    inner+=`</div>`;
+  }else{
+    inner+=`<div style="font-weight:700;color:var(--vc1);font-size:.9rem;margin-bottom:16px;text-align:center">⚙️ GERENCIAL — Login</div>`;
+  }
 
   // Login form
   inner+=`<div id="s4-tab-login">`;
