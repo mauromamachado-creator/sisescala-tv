@@ -475,7 +475,7 @@ function doChamada(p) {
 
 /* ---- Indisponibilidade ---- */
 const INDISP_HEADERS = ['SARAM', 'Posto', 'NomeGuerra', 'Tipo', 'DataInicio', 'DataFim', 'Obs', 'CriadoEm', 'Cancelado'];
-const TIPOS_INDISP = ['Serviço', 'Sorocaba', 'Férias', 'Licença', 'Dispensa Médica', 'Outros'];
+const TIPOS_INDISP = ['Serviço', 'Missão de Manutenção', 'Férias', 'Dispensa Chefia', 'Dispensa Médica', 'Outros'];
 
 function doLancarIndisp(p) {
   const saram = String(p.saram || '').trim();
