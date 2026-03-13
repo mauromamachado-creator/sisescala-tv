@@ -2938,7 +2938,7 @@ function openDiariaForm(omId){
       if(!ct&&t.nome){
         const _nUp=t.nome.toUpperCase();
         // Busca exata por nome+posto pra evitar ambiguidade (ex: dois "CAMPOS" diferentes)
-        ct=(cartoesData||[]).find(c=>c.nome&&c.nome.toUpperCase().includes(_nUp)&&c.posto&&c.posto.toUpperCase()===t.posto.toUpperCase());
+        ct=(cartoesData||[]).find(c=>c.nome&&c.nome.toUpperCase().includes(_nUp)&&c.postoGrad&&c.postoGrad.toUpperCase().startsWith(t.posto.toUpperCase()));
         if(!ct)ct=(cartoesData||[]).find(c=>c.nome&&c.nome.toUpperCase().includes(_nUp));
       }
       if(ct&&ct.funcao)funcao=ct.funcao;
