@@ -20,42 +20,50 @@
       {
         "origem": "SBBR",
         "origem_nome": "SBBR (EST AUT)",
-        "etd": "06/03/26 - 11:00 Z",
+        "etd": "06/03/26 - 11:20 Z",
         "ete": "01:20",
         "destino": "SBSC",
         "destino_nome": "SBSC (BASC)",
-        "eta": "06/03/26 - 12:20 Z",
-        "alternativa": "SBGL"
+        "eta": "06/03/26 - 12:40 Z",
+        "alternativa": "SBGL",
+        "comb_min": 5500,
+        "comb_rec": 9000
       },
       {
         "origem": "SBSC",
         "origem_nome": "SBSC (BASC)",
-        "etd": "06/03/26 - 12:50 Z",
+        "etd": "06/03/26 - 15:05 Z",
         "ete": "00:30",
         "destino": "SBGL",
         "destino_nome": "SBGL (BAGL)",
-        "eta": "06/03/26 - 13:20 Z",
-        "alternativa": "SBGR"
+        "eta": "06/03/26 - 15:25 Z",
+        "alternativa": "SBGR",
+        "comb_min": 5500,
+        "comb_rec": 9000
       },
       {
         "origem": "SBGL",
         "origem_nome": "SBGL (BAGL)",
-        "etd": "06/03/26 - 20:40 Z",
+        "etd": "06/03/26 - 20:25 Z",
         "ete": "00:50",
         "destino": "SBSP",
         "destino_nome": "SBSP (PAVOF)",
-        "eta": "06/03/26 - 21:30 Z",
-        "alternativa": "SBGL"
+        "eta": "06/03/26 - 21:10 Z",
+        "alternativa": "SBGL",
+        "comb_min": 6000,
+        "comb_rec": 9000
       },
       {
         "origem": "SBSP",
         "origem_nome": "SBSP (PAVOF)",
-        "etd": "08/03/26 - ADET",
+        "etd": "08/03/26 - 16:45 Z",
         "ete": "01:20",
         "destino": "SBBR",
         "destino_nome": "SBBR (EST AUT)",
-        "eta": "08/03/26 - ADET",
-        "alternativa": "SBCF"
+        "eta": "08/03/26 - 18:05 Z",
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 9000
       }
     ],
     "file_id": "drive_92_GTE1_2026",
@@ -93,7 +101,9 @@
         "destino": "SBGL",
         "destino_nome": "SBGL (BAGL)",
         "eta": "06/03/26 - 17:40 Z",
-        "alternativa": "SBGR"
+        "alternativa": "SBGR",
+        "comb_min": 5500,
+        "comb_rec": 10500
       },
       {
         "origem": "SBGL",
@@ -103,7 +113,9 @@
         "destino": "SBBR",
         "destino_nome": "SBBR (EST AUT)",
         "eta": "06/03/26 - 23:30 Z",
-        "alternativa": "SBCF"
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 7500
       }
     ],
     "file_id": "1ssJBo-oreeUPttN-tUEHWj54a3G966Kr",
@@ -114,7 +126,8 @@
     "om": "94/GTE-1/2026",
     "fab": "FAB 2590",
     "tipo": "ESCAV",
-    "missao": "PR TLD/PR VER, PR RES/PR ESCAV"
+    "missao": "PR TLD/PR VER, PR RES/PR ESCAV",
+    "observacoes": "O 1S Santiago assume como tripulante apenas no trecho SBGL-SBBR."
   },
   {
     "aeronave": "VC-2",
@@ -142,7 +155,9 @@
         "destino": "SCVM",
         "destino_nome": "SCVM (AEROP)",
         "eta": "08/03/26 - 17:25 Z / UTC-3",
-        "alternativa": "SCIE"
+        "alternativa": "SCIE",
+        "comb_min": 13500,
+        "comb_rec": 13500
       },
       {
         "origem": "SCVM",
@@ -152,7 +167,9 @@
         "destino": "SBBR",
         "destino_nome": "SBBR (EST AUT)",
         "eta": "08/03/26 - 23:15 Z / UTC-3",
-        "alternativa": "SBCF"
+        "alternativa": "SBCF",
+        "comb_min": 11500,
+        "comb_rec": 11500
       }
     ],
     "file_id": "10GjQ8cMecbNFjTCNgZB_o-cj4ZjOIWJZ",
@@ -165,7 +182,8 @@
     "om": "95/GTE-1/2026",
     "fab": "FAB 2590",
     "tipo": "ESCAV",
-    "missao": "PR ESCAV, PR TLD"
+    "missao": "PR ESCAV, PR TLD",
+    "observacoes": "O MJ Machado realiza REC em SCVM."
   },
   {
     "aeronave": "VC-2",
@@ -189,7 +207,9 @@
         "destino": "SBGL",
         "destino_nome": "SBGL (BAGL)",
         "eta": "07/03/26 - 02:00 Z",
-        "alternativa": "SBGR"
+        "alternativa": "SBGR",
+        "comb_min": 5500,
+        "comb_rec": 10500
       },
       {
         "origem": "SBGL",
@@ -199,7 +219,9 @@
         "destino": "SBBR",
         "destino_nome": "SBBR (EST AUT)",
         "eta": "07/03/26 - 04:25 Z",
-        "alternativa": "SBCF"
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 7500
       }
     ],
     "file_id": "1YyT0rCWlBgzLLk54YsTF3toi3dAKJJro",
@@ -211,49 +233,6 @@
     "fab": "FAB 2590",
     "tipo": "ESCAV",
     "missao": "PR TLD, PR ESCAV"
-  },
-  {
-    "aeronave": "VC-1",
-    "om_numero": "103/GTE-1/2026",
-    "data": "08/03/26",
-    "tripulacao": [
-      "CP VASCONCELOS (TVS / 563.133)",
-      "CP PEDRO CIRIACO (PCI / 574.168)",
-      "SO CIROMAR (520.531)",
-      "1S DANIEL (522.613)",
-      "1S AIMORÉ (524.355)"
-    ],
-    "pernas": [
-      {
-        "origem": "SBBR",
-        "origem_nome": "SBBR (EST AUT)",
-        "etd": "08/03/26 - 22:00 Z",
-        "ete": "01:00",
-        "destino": "SDSC",
-        "destino_nome": "SDSC (LATAM)",
-        "eta": "08/03/26 - 23:00 Z",
-        "alternativa": "SBGR"
-      },
-      {
-        "origem": "SDSC",
-        "origem_nome": "SDSC (LATAM)",
-        "etd": "09/03/26 - 10:05 Z",
-        "ete": "01:00",
-        "destino": "SBBR",
-        "destino_nome": "SBBR (EST AUT)",
-        "eta": "09/03/26 - 11:05 Z",
-        "alternativa": "SBCF"
-      }
-    ],
-    "file_id": "1rV0ymjEVdekYNdwQyv5fSLQUwtwrXJlE",
-    "file_ids": [
-      "1rV0ymjEVdekYNdwQyv5fSLQUwtwrXJlE"
-    ],
-    "observacoes": "MNT (Manutenção). Autorizado embarque 2S Danilo Miguel para acompanhar serviço.",
-    "om": "103/GTE-1/2026",
-    "fab": "FAB 2101",
-    "tipo": "MMT",
-    "missao": "MNT"
   },
   {
     "aeronave": "VC-1",
@@ -348,11 +327,11 @@
       {
         "origem": "SBBR",
         "origem_nome": "SBBR (EST AUT)",
-        "etd": "10/03/26 - 19:00 Z",
+        "etd": "10/03/26 - 19:00 Z / UTC-3",
         "ete": "04:25",
         "destino": "SCVM",
         "destino_nome": "SCVM (AEROP)",
-        "eta": "10/03/26 - 23:25 Z",
+        "eta": "10/03/26 - 23:25 Z / UTC-3",
         "alternativa": "SCIE",
         "comb_min": 14500,
         "comb_rec": 15500
@@ -360,11 +339,11 @@
       {
         "origem": "SCVM",
         "origem_nome": "SCVM (AEROP)",
-        "etd": "11/03/26 - 16:50 Z",
+        "etd": "11/03/26 - 16:50 Z / UTC-3",
         "ete": "04:20",
         "destino": "SBBR",
         "destino_nome": "SBBR (EST AUT)",
-        "eta": "11/03/26 - 21:10 Z",
+        "eta": "11/03/26 - 21:10 Z / UTC-3",
         "alternativa": "SBCF",
         "comb_min": 14000,
         "comb_rec": 15000
@@ -428,6 +407,118 @@
     ],
     "tipo": "ALT",
     "missao": "ALT SOLO"
+  },
+  {
+    "aeronave": "VC-2",
+    "om_numero": "102/GTE-1/2026",
+    "om": "102/GTE-1/2026",
+    "fab": "FAB 2590",
+    "data": "11/03/26",
+    "tripulacao": [
+      "MJ FARIAS (FAI / 552.925)",
+      "MJ SAMIR (SMR / 557.877)",
+      "CP CAMPOS (CPO / 563.414)",
+      "CP GABRIEL TODESCO (TOD / 515.359)",
+      "SO VINÍCIUS (474.042)",
+      "2S ALCANTARA (575.028)",
+      "2S NOGUEIRA (535.280)",
+      "1S SANTIAGO (PR) (525.328)",
+      "2S LOPES (PR) (530.806)",
+      "2S NEVES (543.527)",
+      "2S LUCAS SOUZA (581.915)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "10/03/26 - 17:00 Z / UTC-3",
+        "ete": "04:25",
+        "destino": "SCVM",
+        "destino_nome": "SCVM (AEROP)",
+        "eta": "10/03/26 - 21:25 Z / UTC-3",
+        "alternativa": "SCIE",
+        "comb_min": 11500,
+        "comb_rec": 12500
+      },
+      {
+        "origem": "SCVM",
+        "origem_nome": "SCVM (AEROP)",
+        "etd": "11/03/26 - 22:55 Z / UTC-3",
+        "ete": "03:00",
+        "destino": "SBCG",
+        "destino_nome": "SBCG (BACG)",
+        "eta": "12/03/26 - 01:55 Z / UTC-4",
+        "alternativa": "SBCY",
+        "comb_min": 10000,
+        "comb_rec": 11500
+      },
+      {
+        "origem": "SBCG",
+        "origem_nome": "SBCG (BACG)",
+        "etd": "11/03/26 - 02:55 Z / UTC-4",
+        "ete": "01:20",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "11/03/26 - 04:15 Z / UTC-3",
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 7500
+      }
+    ],
+    "file_id": "1ZMlzoh37qDhumr8K-yzB7g5lnszVeH-t",
+    "file_ids": [
+      "1yPgLxKa2xEx-F2VcHokIxjTNvw19UA2O",
+      "1ZMlzoh37qDhumr8K-yzB7g5lnszVeH-t"
+    ],
+    "tipo": "ESCAV",
+    "missao": "PR TLD/PR VER, PR RES/PR ESCAV, PR ESCAV"
+  },
+  {
+    "aeronave": "VC-1",
+    "om_numero": "103/GTE-1/2026",
+    "data": "08/03/26",
+    "tripulacao": [
+      "CP VASCONCELOS (TVS / 563.133)",
+      "CP PEDRO CIRIACO (PCI / 574.168)",
+      "SO CIROMAR (520.531)",
+      "1S DANIEL (522.613)",
+      "1S AIMORÉ (524.355)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "08/03/26 - 22:00 Z",
+        "ete": "01:00",
+        "destino": "SDSC",
+        "destino_nome": "SDSC (LATAM)",
+        "eta": "08/03/26 - 23:00 Z",
+        "alternativa": "SBGR",
+        "comb_min": 5500,
+        "comb_rec": 9000
+      },
+      {
+        "origem": "SDSC",
+        "origem_nome": "SDSC (LATAM)",
+        "etd": "09/03/26 - 10:05 Z",
+        "ete": "01:00",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "09/03/26 - 11:05 Z",
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 9000
+      }
+    ],
+    "file_id": "1rV0ymjEVdekYNdwQyv5fSLQUwtwrXJlE",
+    "file_ids": [
+      "1rV0ymjEVdekYNdwQyv5fSLQUwtwrXJlE"
+    ],
+    "observacoes": "MNT (Manutenção). Autorizado embarque 2S Danilo Miguel para acompanhar serviço.",
+    "om": "103/GTE-1/2026",
+    "fab": "FAB 2101",
+    "tipo": "MMT",
+    "missao": "MNT"
   },
   {
     "aeronave": "VC-1",
@@ -500,71 +591,6 @@
     "tipo": "VER",
     "missao": "PR VER",
     "observacoes": "Realizar readaptação do SO Júlio Cezar."
-  },
-  {
-    "aeronave": "VC-2",
-    "om_numero": "102/GTE-1/2026",
-    "om": "102/GTE-1/2026",
-    "fab": "FAB 2590",
-    "data": "11/03/26",
-    "tripulacao": [
-      "MJ FARIAS (FAI / 552.925)",
-      "MJ SAMIR (SMR / 557.877)",
-      "CP CAMPOS (CPO / 563.414)",
-      "CP GABRIEL TODESCO (TOD / 515.359)",
-      "SO VINÍCIUS (474.042)",
-      "2S ALCANTARA (575.028)",
-      "2S NOGUEIRA (535.280)",
-      "1S SANTIAGO (PR) (525.328)",
-      "2S LOPES (PR) (530.806)",
-      "2S NEVES (543.527)",
-      "2S LUCAS SOUZA (581.915)"
-    ],
-    "pernas": [
-      {
-        "origem": "SBBR",
-        "origem_nome": "SBBR (EST AUT)",
-        "etd": "11/03/26 - 10:05 Z / UTC-3",
-        "ete": "04:25",
-        "destino": "SCVM",
-        "destino_nome": "SCVM (AEROP)",
-        "eta": "11/03/26 - 14:30 Z / UTC-3",
-        "alternativa": "SCIE",
-        "comb_min": 11500,
-        "comb_rec": 12500
-      },
-      {
-        "origem": "SCVM",
-        "origem_nome": "SCVM (AEROP)",
-        "etd": "11/03/26 - 17:50 Z / UTC-3",
-        "ete": "03:00",
-        "destino": "SBCG",
-        "destino_nome": "SBCG (BACG)",
-        "eta": "11/03/26 - 20:50 Z / UTC-3",
-        "alternativa": "SBCY",
-        "comb_min": 10000,
-        "comb_rec": 11500
-      },
-      {
-        "origem": "SBCG",
-        "origem_nome": "SBCG (BACG)",
-        "etd": "11/03/26 - 21:50 Z / UTC-3",
-        "ete": "01:20",
-        "destino": "SBBR",
-        "destino_nome": "SBBR (EST AUT)",
-        "eta": "11/03/26 - 23:10 Z / UTC-3",
-        "alternativa": "SBCF",
-        "comb_min": 5500,
-        "comb_rec": 7500
-      }
-    ],
-    "file_id": "1ZMlzoh37qDhumr8K-yzB7g5lnszVeH-t",
-    "file_ids": [
-      "1yPgLxKa2xEx-F2VcHokIxjTNvw19UA2O",
-      "1ZMlzoh37qDhumr8K-yzB7g5lnszVeH-t"
-    ],
-    "tipo": "ESCAV",
-    "missao": "PR TLD/PR VER, PR RES/PR ESCAV, PR ESCAV"
   },
   {
     "aeronave": "VC-1",
