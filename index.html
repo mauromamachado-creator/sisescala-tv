@@ -3133,7 +3133,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   doc.text(titulo,cx,y,{align:'center'});
   const tW=doc.getTextWidth(titulo);
   doc.setLineWidth(0.4);doc.line(cx-tW/2,y+1,cx+tW/2,y+1);
-  y+=8;
+  y+=10;
 
   // ═══ NÚMERO DA SOLICITAÇÃO ═══
   if(numSolicitacao){
@@ -3264,7 +3264,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   doc.setFont('times','italic');
   doc.text(_ldLocal,pw-rm,y,{align:'right'});
   doc.setFont('times','normal');
-  y+=18;
+  y+=22;
 
   // Assinante (centralizado)
   doc.setFont('times','normal');
