@@ -3133,7 +3133,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   doc.text(titulo,cx,y,{align:'center'});
   const tW=doc.getTextWidth(titulo);
   doc.setLineWidth(0.4);doc.line(cx-tW/2,y+1,cx+tW/2,y+1);
-  y+=6;
+  y+=8;
 
   // ═══ NÚMERO DA SOLICITAÇÃO ═══
   if(numSolicitacao){
@@ -3201,7 +3201,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
     });
     y+=rowHP;
   }
-  y+=5;
+  y+=7;
 
   // ═══ CAMPO 6 - MILITARES ═══
   doc.setFontSize(11);doc.setFont('times','normal');
