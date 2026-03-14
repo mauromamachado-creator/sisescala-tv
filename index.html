@@ -1575,9 +1575,15 @@ function renderScreen0(){
   // --- Diárias pendentes (atualiza do GAS em background) ---
   {
     const _done=getDiariasDownloaded();const _conc=getDiariasConcluidas();
+    // Mesma lógica da tela Diárias (screen13) — funções idênticas
     const _brP=['SB','SD','SN','SI','SS','SW'];
-    const _missaoDiaria=m=>{if(!m)return true;const u=m.toUpperCase().trim();return['PR TLD','PR ESCAV','PR RES','ESCAV'].includes(u)||u==='PR';};
-    const _diarias=(omData||[]).filter(om=>om.pernas.every(p=>_brP.some(pf=>p.origem.startsWith(pf))&&_brP.some(pf=>p.destino.startsWith(pf)))&&om.pernas.some(p=>p.origem!==p.destino)&&_missaoDiaria(om.missao));
+    const _icaoO=p=>p.origem||(p.etd&&p.etd.match(/^([A-Z]{4})/)?p.etd.match(/^([A-Z]{4})/)[1]:'');
+    const _icaoD=p=>p.destino||(p.eta&&p.eta.match(/([A-Z]{4})$/)?p.eta.match(/([A-Z]{4})$/)[1]:'');
+    const _isNac=om=>om.pernas.every(p=>_brP.some(pf=>_icaoO(p).startsWith(pf))&&_brP.some(pf=>_icaoD(p).startsWith(pf)));
+    const _temDesloc=om=>om.pernas.some(p=>_icaoO(p)!==_icaoD(p));
+    const _MISSOES_D=['PR TLD','PR ESCAV','PR','PR RES','ESCAV'];
+    const _missaoDiaria=om=>{if(om.missao){const u=(om.missao||'').toUpperCase().trim();if(u==='PR VER')return false;return _MISSOES_D.some(t=>u===t||u.startsWith(t));}return true;};
+    const _diarias=(omData||[]).filter(om=>_isNac(om)&&_temDesloc(om)&&_missaoDiaria(om));
     // Atualiza do GAS em background e re-renderiza se necessário
     fetchDiariasConcluidas().then(fresh=>{const pAfter=_diarias.filter(om=>!fresh[om.om]);if(pAfter.length!==_pend.length)renderScreen0();});
     const _pend=_diarias.filter(om=>!_conc[om.om]);
