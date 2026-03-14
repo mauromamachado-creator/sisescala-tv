@@ -3119,13 +3119,13 @@ function gerarDiariaPDF(omId,numSolicitacao){
   const cx=pw/2;
 
   // ═══ BRASÃO DA REPÚBLICA ═══
-  try{const brasaoW=20,brasaoH=20*15/14;doc.addImage(BRASAO_IMG,'PNG',cx-brasaoW/2,y,brasaoW,brasaoH);y+=brasaoH+3;}catch(e){}
+  try{const brasaoW=20,brasaoH=20*15/14;doc.addImage(BRASAO_IMG,'PNG',cx-brasaoW/2,y,brasaoW,brasaoH);y+=brasaoH+2;}catch(e){}
 
   // ═══ CABEÇALHO INSTITUCIONAL ═══
   doc.setFont('times','normal');doc.setFontSize(11);
   doc.text('MINISTÉRIO DA DEFESA',cx,y,{align:'center'});y+=5;
   doc.text('COMANDO DA AERONÁUTICA',cx,y,{align:'center'});y+=5;
-  doc.text('GRUPO DE TRANSPORTE ESPECIAL',cx,y,{align:'center'});y+=10;
+  doc.text('GRUPO DE TRANSPORTE ESPECIAL',cx,y,{align:'center'});y+=7;
 
   // ═══ TÍTULO (negrito + sublinhado) ═══
   doc.setFont('times','bold');doc.setFontSize(12);
@@ -3133,7 +3133,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   doc.text(titulo,cx,y,{align:'center'});
   const tW=doc.getTextWidth(titulo);
   doc.setLineWidth(0.4);doc.line(cx-tW/2,y+1,cx+tW/2,y+1);
-  y+=7;
+  y+=6;
 
   // ═══ NÚMERO DA SOLICITAÇÃO ═══
   if(numSolicitacao){
@@ -3141,14 +3141,15 @@ function gerarDiariaPDF(omId,numSolicitacao){
     const numStr='Solicitação nº '+String(numSolicitacao).padStart(3,'0')+'/GTE-1/'+ano;
     doc.setFont('times','normal');doc.setFontSize(10);
     doc.text(numStr,lm,y);
-    y+=7;
+    y+=5;
   } else { y+=3; }
 
   // ═══ VOCATIVO + INTRO ═══
   doc.setFont('times','normal');doc.setFontSize(11);
   const indent=lm+10;
   doc.text('Senhor Oficial de Transporte Aéreo,',indent,y);y+=5;
-  doc.text('Solicito as providências necessárias para o pagamento de diárias, nos termos das informações abaixo:',indent,y,{maxWidth:tw-10});y+=10;
+  doc.setFontSize(11);
+  doc.text('Solicito as providências necessárias para o pagamento de diárias, nos termos das informações abaixo:',indent,y,{maxWidth:tw-10});y+=7;
 
   // ═══ CAMPOS 1-4 ═══
   doc.text(`1 - ORGANIZAÇÃO MILITAR: ${getVal('orgMil')}`,lm,y);y+=6;
@@ -3200,7 +3201,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
     });
     y+=rowHP;
   }
-  y+=8;
+  y+=5;
 
   // ═══ CAMPO 6 - MILITARES ═══
   doc.setFontSize(11);doc.setFont('times','normal');
@@ -3249,13 +3250,13 @@ function gerarDiariaPDF(omId,numSolicitacao){
     });
     y+=rowH;
   }
-  y+=6;
+  y+=4;
 
   // ═══ FECHAMENTO ═══
-  // Garante que o bloco de assinatura (~50mm) cabe na página atual
-  if(y+50>275){doc.addPage();y=20;}
+  // Garante que o bloco de assinatura (~40mm) cabe na página atual
+  if(y+40>275){doc.addPage();y=20;}
   doc.setFontSize(11);doc.setFont('times','normal');
-  doc.text('Atenciosamente / Respeitosamente,',lm,y);y+=10;
+  doc.text('Atenciosamente / Respeitosamente,',lm,y);y+=7;
 
   // Local e data (à direita)
   const localData=getVal('localData');
@@ -3263,7 +3264,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
   doc.setFont('times','italic');
   doc.text(_ldLocal,pw-rm,y,{align:'right'});
   doc.setFont('times','normal');
-  y+=24;
+  y+=18;
 
   // Assinante (centralizado)
   doc.setFont('times','normal');
