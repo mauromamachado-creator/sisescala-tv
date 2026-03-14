@@ -7167,8 +7167,8 @@ document.addEventListener('click',e=>{
   if(panel&&!panel.contains(e.target)&&e.target!==dot)panel.classList.remove('open');
 });
 async function loadAllData(){
-  // Não atualizar enquanto estiver na tela S3 (tela operacional)
-  if(currentScreen===14||currentScreen===16) return;
+  // Não atualizar enquanto estiver na tela S3/MNT (tela operacional) — exceto se chamado pela TV
+  if((currentScreen===14||currentScreen===16)&&currentScreen!==9) return;
   document.getElementById('errorOverlay').style.display='none';
   document.getElementById('loadingMsg').style.display='block';
   const dot=document.getElementById('statusDot');
@@ -7179,41 +7179,40 @@ async function loadAllData(){
     const metarMultiFetch=fetchMetarMulti().then(()=>{if(sourceStatus.metar!=='fail')sourceStatus.metar='ok';}).catch(()=>{sourceStatus.metar='fail';_trackLoadFailure('metar');});
     const planFetch=fetchWithTimeout(planCsvUrl()).then(r=>r.ok?r.text():'').then(t=>{sourceStatus.plan='ok';return t?parseCSV(t):[];}).catch(()=>{sourceStatus.plan='fail';return[];});
     const acntFetch=fetchWithTimeout(`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv&gid=${GIDS.acnt}`).then(r=>r.ok?r.text():'').then(t=>{sourceStatus.acnt='ok';return t?parseCSV(t):[];}).catch(()=>{sourceStatus.acnt='fail';return[];});
+    // ═══ TODOS OS FETCHES EM PARALELO ═══
+    const anualFetch=fetchAnual().then(()=>{sourceStatus.anual='ok';}).catch(()=>{sourceStatus.anual='fail';});
+    const omFetch=fetchWithTimeout('data/om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;sourceStatus.om='ok';}).catch(()=>{omData=[];sourceStatus.om='fail';});
+    const cartoesFetch=fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);cartoesFailed=false;sourceStatus.cartoes='ok';}).catch(()=>{cartoesData=[];cartoesFailed=true;sourceStatus.cartoes='fail';});
+    const dadosFetch=fetchCSVByName('dados').then(rows=>{dadosPessoais=parseDadosPessoais(rows);sourceStatus.dados='ok';}).catch(()=>{dadosPessoais={};sourceStatus.dados='fail';});
+    const pauFetch=fetchPauDeSebo().then(()=>{sourceStatus.pauSebo='ok';}).catch(()=>{sourceStatus.pauSebo='fail';});
+    const diariasFetch=Promise.all([fetchDiariasConcluidas(),fetchPdfGerado()]);
+
     const[dispRows,lancRows,ferRows,prevRows,planRows,acntRows]=await Promise.all([
       fetchCSV(GIDS.disp).then(r=>{sourceStatus.disp='ok';return r;}).catch(()=>{sourceStatus.disp='fail';return[];}),
       fetchCSV(GIDS.lanc).then(r=>{sourceStatus.lanc='ok';return r;}).catch(()=>{sourceStatus.lanc='fail';return[];}),
       fetchCSVByName('Férias').then(r=>{sourceStatus.ferias='ok';return r;}).catch(()=>{sourceStatus.ferias='fail';return[];}),
       fetchCSV(GIDS.previsao).then(r=>{sourceStatus.previsao='ok';return r;}).catch(()=>{sourceStatus.previsao='fail';return[];}),
-      planFetch,acntFetch]);
-    await metarFetch;
-    await metarMultiFetch;
+      planFetch,acntFetch,
+      metarFetch,metarMultiFetch,anualFetch,omFetch,cartoesFetch,dadosFetch,pauFetch,diariasFetch]);
     // Check individual METAR localities
     const expectedIcaos=['SBBR','SBCF','SBRJ','SBSP'];
     const missingIcaos=expectedIcaos.filter(i=>!metarMulti[i]);
     if(missingIcaos.length&&sourceStatus.metar==='ok')sourceStatus.metar='fail';
-    await fetchAnual().then(()=>{sourceStatus.anual='ok';}).catch(()=>{sourceStatus.anual='fail';});
-    await fetchWithTimeout('data/om_data.json?v='+Date.now()).then(r=>r.ok?r.json():[]).then(d=>{omData=d;sourceStatus.om='ok';}).catch(()=>{omData=[];sourceStatus.om='fail';});
-    await fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);cartoesFailed=false;sourceStatus.cartoes='ok';}).catch(()=>{cartoesData=[];cartoesFailed=true;sourceStatus.cartoes='fail';});
-    await fetchCSVByName('dados').then(rows=>{dadosPessoais=parseDadosPessoais(rows);sourceStatus.dados='ok';}).catch(()=>{dadosPessoais={};sourceStatus.dados='fail';});
     pilotData=parseDisponibilidade(dispRows);
     flights=parseLancamentos(lancRows);
-    await fetchPauDeSebo().then(()=>{sourceStatus.pauSebo='ok';}).catch(()=>{sourceStatus.pauSebo='fail';});
     fetchGlobalAirports(); // async, non-blocking
     calcAfastamentos();
     feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
     diarioData=parseDiario(planRows);
     acntData=parseACNT(acntRows);
     sourceStatus.brAirports=Object.keys(BR_AIRPORTS).length>0?'ok':'fail';
-    // Proxy CORS: ok se METAR conseguiu (usa proxyFetch)
     sourceStatus.proxy=(sourceStatus.metar==='ok')?'ok':'fail';
-    // PIMO: carrega sob demanda, marcar pending até primeiro acesso
     if(!_pimoCache){sourceStatus.pimo='pending';}else{sourceStatus.pimo='ok';}
     lastLoadTime=Date.now();
     const nowTxt=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
     document.getElementById('lastUpdate').textContent='Atualizado '+nowTxt;
     updateStatusPanel();
     checklistData=parseChecklist(planRows);
-    await Promise.all([fetchDiariasConcluidas(),fetchPdfGerado()]);
     renderAll();
     fetchAllAlerts();
   }catch(e){
@@ -7231,6 +7230,7 @@ function goScreen(n){
     _showS3LoginModal();
     return;
   }
+  if(n===13)renderScreenDiarias();
   if(n===15)renderScreenPimo();
   if(n===16)renderScreenS4();
   if(n===1&&!_pimoCache)loadPimoData().then(()=>{if(currentScreen===1)renderScreen1();});
@@ -7246,9 +7246,11 @@ function goScreen(n){
 }
 function goFullscreen(){document.documentElement.requestFullscreen?.();}
 function updateClock(){const d=new Date();const opts={timeZone:'America/Sao_Paulo'};const wd=d.toLocaleDateString('pt-BR',{...opts,weekday:'long'});const day=d.toLocaleDateString('pt-BR',{...opts,day:'numeric'});const mon=d.toLocaleDateString('pt-BR',{...opts,month:'long'});const yr=d.toLocaleDateString('pt-BR',{...opts,year:'numeric'});const time=d.toLocaleTimeString('pt-BR',{...opts,hour:'2-digit',minute:'2-digit',second:'2-digit'});document.getElementById('clock').textContent=`${wd}, ${day} de ${mon} de ${yr} - ${time}`;}
-let _clockInterval,_dataInterval,_codeInterval;
+let _clockInterval,_dataInterval,_codeInterval,_tvInterval;
 updateClock();_clockInterval=setInterval(updateClock,1000);
-loadAllData();_dataInterval=setInterval(loadAllData,300000);
+loadAllData();_dataInterval=setInterval(loadAllData,900000); // 15min refresh geral
+// TV (tela 9): refresh próprio a cada 5min
+_tvInterval=setInterval(()=>{if(currentScreen===9)loadAllData();},300000);
 // Auto-update: verifica se o código mudou a cada 5min e recarrega
 let _codeHash='';
 async function checkCodeUpdate(){
