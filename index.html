@@ -3141,7 +3141,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
     const numStr='Solicitação nº '+String(numSolicitacao).padStart(3,'0')+'/GTE-1/'+ano;
     doc.setFont('times','normal');doc.setFontSize(11);
     doc.text(numStr,lm,y);
-    y+=5;
+    y+=7;
   } else { y+=3; }
 
   // ═══ VOCATIVO + INTRO ═══
@@ -3192,7 +3192,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
     const valsP=[etd,orig,dest,eta];
     let rowHP=drh;
     valsP.forEach((v,j)=>{const lines=doc.splitTextToSize(v,c5w[j]-2);rowHP=Math.max(rowHP,lines.length*3.5+3);});
-    if(y+rowHP>280){doc.addPage();y=12;}
+    if(y+rowHP>285){doc.addPage();y=12;}
     x5=lm;
     valsP.forEach((v,j)=>{
       doc.rect(x5,y,c5w[j],rowHP);
@@ -3239,7 +3239,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
     const vals=[posto+' (FAB)',nome,cpf,funcao,'-'];
     let rowH=drh;
     vals.forEach((v,j)=>{const lines=doc.splitTextToSize(v,c6w[j]-2);rowH=Math.max(rowH,lines.length*3.5+3);});
-    if(y+rowH>280){doc.addPage();y=12;}
+    if(y+rowH>285){doc.addPage();y=12;}
     x6=lm;
     vals.forEach((v,j)=>{
       doc.rect(x6,y,c6w[j],rowH);
@@ -3254,7 +3254,7 @@ function gerarDiariaPDF(omId,numSolicitacao){
 
   // ═══ FECHAMENTO ═══
   // Garante que o bloco de assinatura (~40mm) cabe na página atual
-  if(y+40>285){doc.addPage();y=12;}
+  if(y+40>290){doc.addPage();y=12;}
   doc.setFontSize(11);doc.setFont('times','normal');
   doc.text('Atenciosamente / Respeitosamente,',lm,y);y+=7;
 
