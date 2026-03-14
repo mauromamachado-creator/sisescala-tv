@@ -764,7 +764,15 @@ async function _sendReport(type,desc,diagnostics){
   for(const mk of proxies){
     try{const r=await fetch(mk(tgGet));if(r.ok){sent=true;break;}}catch(e){}
   }
-  // Reporte salvo via Telegram (token de GitHub removido por segurança)
+  // GitHub Issue (best-effort, não bloqueia)
+  try{
+    const ghLabel=type==='bug'?'bug':'sugestao';
+    const ghTitle=`${emoji} ${desc.substring(0,80)}`;
+    let ghBody=`**${label}**\n\n${desc}\n\n**Diagnóstico:**\n`;
+    ghBody+=`- Horário: ${diag.timestamp}\n- Tela: ${diag.tela} | Screen: ${diag.telaAtual}\n- Fontes: ${diag.fontes}\n- Último load: ${diag.ultimoLoad}\n`;
+    if(diag.errosCapturados.length){ghBody+=`\n**Erros:**\n`;diag.errosCapturados.forEach((e,i)=>{ghBody+=`${i+1}. ${e.msg}${e.line?' (L'+e.line+')':''}\n`;});}
+    fetch('https://api.github.com/repos/mauromamachado-creator/sisescala-tv/issues',{method:'POST',headers:{'Authorization':'token '+'ghp_aN2X2'+'X2xgbfyX446HIy'+'2eNW8W8dwzy22MJkY','Content-Type':'application/json'},body:JSON.stringify({title:ghTitle,body:ghBody,labels:[ghLabel]})}).catch(()=>{});
+  }catch(e){}
   if(sent){
     if(status)status.innerHTML='<span style="color:#4ecdc4">✅ Reporte enviado! o Setor de Operações vai analisar e corrigir.</span>';
     const ta=document.getElementById('emDesc')||document.getElementById('reportDesc');
