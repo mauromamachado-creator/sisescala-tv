@@ -455,7 +455,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 </style>
 
 <footer>
-  <span>SisGOPA v6.0 - Desenvolvido para o GTE por Major Machado</span>
+  <span>SisGOPA v6.1 - Desenvolvido para o GTE por Major Machado</span>
   <a onclick="loadAllData()">Atualizar dados</a>
   <a onclick="showNovidades()" style="cursor:pointer;text-decoration:underline;margin-left:8px">Novidades</a>
 </footer>
@@ -466,9 +466,22 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <span style="position:absolute;top:12px;right:16px;font-size:22px;color:var(--text2);cursor:pointer" onclick="document.getElementById('novidadesModal').style.display='none'">✕</span>
     <div style="font-size:1.1rem;font-weight:700;color:var(--green);margin-bottom:16px">📋 Novidades - SisGOPA</div>
 
-    <!-- v6.0 — aberta por padrão -->
+    <!-- v6.1 — aberta por padrão -->
     <div style="margin-bottom:8px">
-      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v6.0 - 13/03/2026</div>
+      <div style="font-weight:700;color:#64b4ff;font-size:.9rem;border-bottom:1px solid #1a2a40;padding-bottom:4px;margin-bottom:8px">v6.1 - 13/03/2026</div>
+      <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
+        <li>📄 <b>PDF Diárias — modelo oficial</b>: brasão P&B proporção Lei 5.700 (15:14), cabeçalho "GRUPO DE TRANSPORTE ESPECIAL", recuo de parágrafo, fontes unificadas 11pt</li>
+        <li>📐 <b>PDF cabe em 1 página</b>: espaçamento vertical otimizado, margens reduzidas</li>
+        <li>📁 <b>Nome do arquivo oficial</b>: <code>Solicitação nº XXX_GTE-1_YYYY-RASC.pdf</code></li>
+        <li>⚡ <b>Performance</b>: fetches paralelos (~2s vs ~10s), refresh 15min, TV independente 5min</li>
+        <li>🔄 <b>Lazy load</b>: Diárias e MNT carregam só quando acessados</li>
+        <li>🔒 <b>Auditoria de segurança</b>: ~35 logs removidos, token GitHub removido, clockIn/clockOut com auth</li>
+        <li>🐛 <b>Bugfixes</b>: card Diárias sincronizado, _normSaram, cellToDate, Voltar sub-menus, GERENCIAL login, indisponibilidade dia único</li>
+      </ul>
+    </div>
+
+    <!-- v6.0 — colapsável -->
+    <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v6.0 - 13/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
       <ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.8;color:var(--text2)">
         <li>📋 <b>MNT — Sistema de Presença</b>: controle de presença com SARAM + senha</li>
         <li>🟢🔴 <b>Bate-ponto</b>: ENTRADA e SAÍDA com geolocalização (raio 1km)</li>
@@ -481,7 +494,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
         <li>📍 <b>Privacidade</b>: GPS acionado apenas no registro, não monitora</li>
         <li>🌐 <b>AISWEB API</b>: integração oficial DECEA (substituiu scraping)</li>
       </ul>
-    </div>
+    </details>
 
     <!-- v5.7 — colapsável -->
     <details style="margin-bottom:4px"><summary style="font-weight:700;color:#64b4ff;font-size:.85rem;cursor:pointer;padding:6px 0;list-style:none;display:flex;justify-content:space-between">v5.7 - 12/03/2026 <span style="color:var(--text2);font-size:.75rem">▸</span></summary>
