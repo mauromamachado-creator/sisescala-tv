@@ -560,8 +560,7 @@ setTimeout(function(){
 // ANALYTICS - tracking de uso, erros, segurança
 // ═══════════════════════════════════════════════════
 const _ANALYTICS_KEY='sisgopa_analytics';
-const _ANALYTICS_BOT='8622080128:AAGmCjyAtDpbxNUmzJdojTMQzKsJhfWuPdM';
-const _ANALYTICS_CHAT=673591486;
+/* Bot token removido — reports agora via GitHub Issues */
 function _todayStr(){return new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});}
 function _getAnalytics(){
   try{
@@ -663,9 +662,7 @@ async function _sendDailySummary(a){
   msg+=`  ${secEmoji} Score: ${secScore}/100\n\n`;
   msg+=`${sysEmoji} *Saúde do sistema:* ${sysScore}/100\n`;
   if(sysScore<90)msg+=`⚠️ Ações recomendadas em andamento\n`;
-  const tgGet=`https://api.telegram.org/bot${_ANALYTICS_BOT}/sendMessage?chat_id=${_ANALYTICS_CHAT}&parse_mode=Markdown&disable_notification=true&text=${encodeURIComponent(msg)}`;
-  const px=[u=>'https://corsproxy.io/?'+encodeURIComponent(u),u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u),u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u)];
-  for(const mk of px){try{const r=await fetch(mk(tgGet));if(r.ok)break;}catch(e){}}
+  // Analytics salvo apenas no localStorage (Telegram removido)
 }
 // XSS detection for inputs
 function _sanitizeInput(val){
@@ -754,24 +751,15 @@ async function _sendReport(type,desc,diagnostics){
   }
   msg+=`\n🌐 ${diag.url}\n📱 ${diag.userAgent.substring(0,80)}`;
   let sent=false;
-  // Telegram API GET via CORS proxy (POST blocked by most proxies)
-  const tgGet=`https://api.telegram.org/bot${_ANALYTICS_BOT}/sendMessage?chat_id=${_ANALYTICS_CHAT}&parse_mode=Markdown&text=${encodeURIComponent(msg)}`;
-  const proxies=[
-    url=>'https://corsproxy.io/?'+encodeURIComponent(url),
-    url=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(url),
-    url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url)
-  ];
-  for(const mk of proxies){
-    try{const r=await fetch(mk(tgGet));if(r.ok){sent=true;break;}}catch(e){}
-  }
-  // GitHub Issue (best-effort, não bloqueia)
+  // GitHub Issue — canal principal de reports
   try{
     const ghLabel=type==='bug'?'bug':'sugestao';
     const ghTitle=`${emoji} ${desc.substring(0,80)}`;
     let ghBody=`**${label}**\n\n${desc}\n\n**Diagnóstico:**\n`;
     ghBody+=`- Horário: ${diag.timestamp}\n- Tela: ${diag.tela} | Screen: ${diag.telaAtual}\n- Fontes: ${diag.fontes}\n- Último load: ${diag.ultimoLoad}\n`;
     if(diag.errosCapturados.length){ghBody+=`\n**Erros:**\n`;diag.errosCapturados.forEach((e,i)=>{ghBody+=`${i+1}. ${e.msg}${e.line?' (L'+e.line+')':''}\n`;});}
-    fetch('https://api.github.com/repos/mauromamachado-creator/sisescala-tv/issues',{method:'POST',headers:{'Authorization':'token '+'ghp_aN2X2'+'X2xgbfyX446HIy'+'2eNW8W8dwzy22MJkY','Content-Type':'application/json'},body:JSON.stringify({title:ghTitle,body:ghBody,labels:[ghLabel]})}).catch(()=>{});
+    const r=await fetch('https://api.github.com/repos/mauromamachado-creator/sisescala-tv/issues',{method:'POST',headers:{'Authorization':'token '+'ghp_aN2X2'+'X2xgbfyX446HIy'+'2eNW8W8dwzy22MJkY','Content-Type':'application/json'},body:JSON.stringify({title:ghTitle,body:ghBody,labels:[ghLabel]})});
+    if(r.ok||r.status===201)sent=true;
   }catch(e){}
   if(sent){
     if(status)status.innerHTML='<span style="color:#4ecdc4">✅ Reporte enviado! o Setor de Operações vai analisar e corrigir.</span>';
