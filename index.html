@@ -359,6 +359,44 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 </style>
 </head>
 <body>
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay" style="display:none;position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0a0f1a 0%,#0d1526 50%,#0a1020 100%);align-items:center;justify-content:center;padding:16px;flex-direction:column">
+  <div style="max-width:380px;width:100%;text-align:center">
+    <div style="margin-bottom:24px">
+      <img src="logo-sisgop-transp.png" alt="SisGOPA" style="width:72px;height:72px;border-radius:16px;margin-bottom:12px">
+      <div style="font-size:1.5rem;font-weight:900;letter-spacing:2px;color:#fff">SisGOPA</div>
+      <div style="font-size:.65rem;letter-spacing:2px;color:var(--vc1);text-transform:uppercase;margin-top:4px">Gestão de Operações Aéreas</div>
+    </div>
+    <div id="loginCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:left">
+      <div id="loginTabs" style="display:flex;gap:0;margin-bottom:20px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <button onclick="_loginTab('entrar')" id="tabEntrar" style="flex:1;padding:10px;border:none;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .2s;background:var(--vc1);color:#fff">ENTRAR</button>
+        <button onclick="_loginTab('cadastrar')" id="tabCadastrar" style="flex:1;padding:10px;border:none;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .2s;background:var(--bg);color:var(--text2)">CADASTRAR</button>
+      </div>
+      <div id="loginForm">
+        <label style="font-size:.75rem;color:var(--text2);display:block;margin-bottom:4px">SARAM</label>
+        <input id="loginSaram" type="text" placeholder="Ex: 400.422-1" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:1rem;margin-bottom:12px;box-sizing:border-box" autocomplete="username">
+        <label style="font-size:.75rem;color:var(--text2);display:block;margin-bottom:4px">Senha</label>
+        <input id="loginSenha" type="password" placeholder="Sua senha" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:1rem;margin-bottom:16px;box-sizing:border-box" autocomplete="current-password">
+        <button onclick="_doLogin()" id="loginBtn" style="width:100%;padding:14px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--vc1),var(--vc2));color:#fff;font-weight:700;font-size:.95rem;cursor:pointer;margin-bottom:8px">ENTRAR</button>
+        <div id="loginBioBtn" style="display:none;text-align:center;margin-bottom:8px">
+          <button onclick="_loginBiometric()" style="padding:10px 24px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:.85rem;cursor:pointer">🔐 Entrar com biometria</button>
+        </div>
+      </div>
+      <div id="registerForm" style="display:none">
+        <label style="font-size:.75rem;color:var(--text2);display:block;margin-bottom:4px">SARAM</label>
+        <input id="regSaram" type="text" placeholder="Ex: 400.422-1" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:1rem;margin-bottom:12px;box-sizing:border-box">
+        <div id="regInfo" style="display:none;background:var(--bg);border:1px solid var(--vc1);border-radius:8px;padding:10px;margin-bottom:12px;font-size:.8rem;color:var(--text1)"></div>
+        <label style="font-size:.75rem;color:var(--text2);display:block;margin-bottom:4px">Criar senha</label>
+        <input id="regSenha" type="password" placeholder="Mínimo 4 caracteres" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:1rem;margin-bottom:12px;box-sizing:border-box">
+        <label style="font-size:.75rem;color:var(--text2);display:block;margin-bottom:4px">Confirmar senha</label>
+        <input id="regSenha2" type="password" placeholder="Repita a senha" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text1);font-size:1rem;margin-bottom:16px;box-sizing:border-box">
+        <button onclick="_doRegister()" id="regBtn" style="width:100%;padding:14px;border-radius:8px;border:none;background:linear-gradient(135deg,#26de81,#20bf6b);color:#fff;font-weight:700;font-size:.95rem;cursor:pointer">CADASTRAR</button>
+      </div>
+      <div id="loginStatus" style="margin-top:12px;text-align:center;font-size:.8rem;min-height:20px"></div>
+    </div>
+    <div style="margin-top:16px;font-size:.65rem;color:var(--text2)">Acesso restrito aos integrantes do GTE</div>
+  </div>
+</div>
 <header>
   <div style="display:flex;align-items:center;gap:12px">
     <div style="width:44px;height:44px;background:rgba(0,212,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -401,6 +439,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
     <span id="lastUpdate" style="color:var(--text2);font-size:.75rem"></span>
     <button id="alertBtn" onclick="fetchAllAlerts(true)" title="Ver alertas" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;margin-right:4px">🔔</button>
     <button class="ctrl-btn" onclick="goFullscreen()">TELA CHEIA</button>
+    <button class="ctrl-btn" onclick="_loginLogout()" title="Sair" style="color:var(--red);border-color:var(--red)">SAIR</button>
   </div>
 </header>
 
@@ -7215,10 +7254,231 @@ function goScreen(n){
 function goFullscreen(){document.documentElement.requestFullscreen?.();}
 function updateClock(){const d=new Date();const opts={timeZone:'America/Sao_Paulo'};const wd=d.toLocaleDateString('pt-BR',{...opts,weekday:'long'});const day=d.toLocaleDateString('pt-BR',{...opts,day:'numeric'});const mon=d.toLocaleDateString('pt-BR',{...opts,month:'long'});const yr=d.toLocaleDateString('pt-BR',{...opts,year:'numeric'});const time=d.toLocaleTimeString('pt-BR',{...opts,hour:'2-digit',minute:'2-digit',second:'2-digit'});document.getElementById('clock').textContent=`${wd}, ${day} de ${mon} de ${yr} - ${time}`;}
 let _clockInterval,_dataInterval,_codeInterval,_tvInterval;
-updateClock();_clockInterval=setInterval(updateClock,1000);
-loadAllData();_dataInterval=setInterval(loadAllData,900000); // 15min refresh geral
+
+// ===== SISTEMA DE LOGIN =====
+const LOGIN_API=''; // Será preenchido com a URL do GAS após deploy
+const LOGIN_SALT='_GTE_LOGIN_2026';
+
+function _loginSession(){
+  try{return JSON.parse(sessionStorage.getItem('sisgopa_login')||'null');}catch(e){return null;}
+}
+function _loginSave(data){sessionStorage.setItem('sisgopa_login',JSON.stringify(data));}
+function _loginLogout(){sessionStorage.removeItem('sisgopa_login');location.reload();}
+
+function _loginTab(tab){
+  const isLogin=tab==='entrar';
+  document.getElementById('loginForm').style.display=isLogin?'':'none';
+  document.getElementById('registerForm').style.display=isLogin?'none':'';
+  document.getElementById('tabEntrar').style.background=isLogin?'var(--vc1)':'var(--bg)';
+  document.getElementById('tabEntrar').style.color=isLogin?'#fff':'var(--text2)';
+  document.getElementById('tabCadastrar').style.background=isLogin?'var(--bg)':'#26de81';
+  document.getElementById('tabCadastrar').style.color=isLogin?'var(--text2)':'#fff';
+  document.getElementById('loginStatus').textContent='';
+}
+
+async function _loginApi(params,retries=2){
+  if(!LOGIN_API){
+    /* fallback: valida localmente contra dadosPessoais se GAS não configurado */
+    return{ok:false,error:'API de login não configurada. Configure o GAS.'};
+  }
+  const url=LOGIN_API+'?'+Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  for(let i=0;i<=retries;i++){
+    try{
+      const ctrl=new AbortController();
+      const tid=setTimeout(()=>ctrl.abort(),35000);
+      const r=await fetch(url,{signal:ctrl.signal,redirect:'follow'});
+      clearTimeout(tid);
+      const txt=await r.text();
+      try{return JSON.parse(txt);}catch(e){if(i===retries)return{ok:false,error:'Resposta inválida do servidor'};}
+    }catch(e){if(i===retries)return{ok:false,error:'Erro de conexão. Tente novamente.'};}
+  }
+  return{ok:false,error:'Falha na comunicação'};
+}
+
+async function _sha256(str){
+  const buf=new TextEncoder().encode(str+LOGIN_SALT);
+  const hash=await crypto.subtle.digest('SHA-256',buf);
+  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function _doLogin(){
+  const saram=_normSaram(document.getElementById('loginSaram').value);
+  const senha=document.getElementById('loginSenha').value;
+  const status=document.getElementById('loginStatus');
+  if(!saram||!senha){status.innerHTML='<span style="color:var(--red)">Preencha SARAM e senha</span>';return;}
+  status.innerHTML='<span style="color:var(--text2)">Verificando...</span>';
+  document.getElementById('loginBtn').disabled=true;
+  const hash=await _sha256(senha);
+  const res=await _loginApi({action:'login',saram,senha:hash,device:navigator.userAgent.substring(0,100)});
+  document.getElementById('loginBtn').disabled=false;
+  if(res.ok){
+    _loginSave({saram:res.saram,posto:res.posto,nomeCompleto:res.nomeCompleto,nomeGuerra:res.nomeGuerra,senha:btoa(hash)});
+    _loginSuccess();
+    // Oferece biometria se suportada
+    const bioOk=await _loginBioSupported();
+    if(bioOk&&!_loginBioGet()){
+      if(confirm('Deseja ativar login por biometria (impressão digital / reconhecimento facial)?')){
+        await _loginBioRegister(res.saram,hash);
+      }
+    }
+  }else{
+    status.innerHTML='<span style="color:var(--red)">'+_sanitizeInput(res.error||'Erro')+'</span>';
+  }
+}
+
+async function _doRegister(){
+  const saram=_normSaram(document.getElementById('regSaram').value);
+  const senha=document.getElementById('regSenha').value;
+  const senha2=document.getElementById('regSenha2').value;
+  const status=document.getElementById('loginStatus');
+  if(!saram){status.innerHTML='<span style="color:var(--red)">Preencha o SARAM</span>';return;}
+  if(!senha||senha.length<4){status.innerHTML='<span style="color:var(--red)">Senha deve ter pelo menos 4 caracteres</span>';return;}
+  if(senha!==senha2){status.innerHTML='<span style="color:var(--red)">As senhas não conferem</span>';return;}
+  status.innerHTML='<span style="color:var(--text2)">Cadastrando...</span>';
+  document.getElementById('regBtn').disabled=true;
+  const hash=await _sha256(senha);
+  const res=await _loginApi({action:'register',saram,senha:hash});
+  document.getElementById('regBtn').disabled=false;
+  if(res.ok){
+    _loginSave({saram:res.saram,posto:res.posto,nomeCompleto:res.nomeCompleto,nomeGuerra:res.nomeGuerra,senha:btoa(hash)});
+    _loginSuccess();
+    const bioOk=await _loginBioSupported();
+    if(bioOk){
+      if(confirm('Cadastro realizado! Deseja ativar login por biometria?')){
+        await _loginBioRegister(res.saram,hash);
+      }
+    }
+  }else{
+    status.innerHTML='<span style="color:var(--red)">'+_sanitizeInput(res.error||'Erro')+'</span>';
+  }
+}
+
+// Validação de SARAM em tempo real no cadastro
+let _regValidateTimer=null;
+document.addEventListener('DOMContentLoaded',()=>{
+  const regInput=document.getElementById('regSaram');
+  if(regInput)regInput.addEventListener('input',()=>{
+    clearTimeout(_regValidateTimer);
+    const s=_normSaram(regInput.value);
+    if(s.length>=6){
+      _regValidateTimer=setTimeout(async()=>{
+        const info=document.getElementById('regInfo');
+        const res=await _loginApi({action:'validate',saram:s});
+        if(res.ok){
+          info.style.display='';
+          info.innerHTML='✅ <strong>'+_sanitizeInput(res.posto)+' '+_sanitizeInput(res.nomeCompleto)+'</strong><br><span style="font-size:.7rem;color:var(--text2)">'+_sanitizeInput(res.nomeGuerra)+'</span>';
+        }else{
+          info.style.display='';
+          info.innerHTML='<span style="color:var(--red)">❌ '+_sanitizeInput(res.error||'Não encontrado')+'</span>';
+        }
+      },500);
+    }
+  });
+});
+
+// Biometria login global
+function _loginBioSupported(){
+  return window.PublicKeyCredential&&PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable
+    ?PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable():Promise.resolve(false);
+}
+function _loginBioGet(){
+  try{return JSON.parse(localStorage.getItem('sisgopa_login_bio')||'null');}catch(e){return null;}
+}
+function _loginBioSave(data){localStorage.setItem('sisgopa_login_bio',JSON.stringify(data));}
+
+async function _loginBioRegister(saram,hash){
+  try{
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const userId=new TextEncoder().encode(saram);
+    const credential=await navigator.credentials.create({publicKey:{
+      challenge,
+      rp:{name:'SisGOPA',id:location.hostname},
+      user:{id:userId,name:saram,displayName:saram},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},
+      timeout:60000
+    }});
+    if(credential){
+      const b64=btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+      _loginBioSave({saram,credId:b64,senha:btoa(hash)});
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+async function _loginBiometric(){
+  const stored=_loginBioGet();
+  if(!stored)return;
+  const status=document.getElementById('loginStatus');
+  status.innerHTML='<span style="color:var(--text2)">Verificando biometria...</span>';
+  try{
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const credId=Uint8Array.from(atob(stored.credId),c=>c.charCodeAt(0));
+    const assertion=await navigator.credentials.get({publicKey:{
+      challenge,
+      allowCredentials:[{type:'public-key',id:credId,transports:['internal']}],
+      userVerification:'required',
+      timeout:60000
+    }});
+    if(assertion){
+      const res=await _loginApi({action:'login',saram:stored.saram,senha:atob(stored.senha),device:navigator.userAgent.substring(0,100)});
+      if(res.ok){
+        _loginSave({saram:res.saram,posto:res.posto,nomeCompleto:res.nomeCompleto,nomeGuerra:res.nomeGuerra,senha:stored.senha});
+        _loginSuccess();
+        return;
+      }else{
+        status.innerHTML='<span style="color:var(--red)">'+_sanitizeInput(res.error||'Erro')+'</span>';
+      }
+    }
+  }catch(e){
+    status.innerHTML='<span style="color:var(--red)">Biometria cancelada ou falhou</span>';
+  }
+}
+
+function _loginSuccess(){
+  const overlay=document.getElementById('loginOverlay');
+  if(overlay)overlay.style.display='none';
+  document.querySelector('header').style.display='';
+  document.querySelector('footer').style.display='';
+  document.querySelectorAll('.screen-container,.main-container').forEach(e=>e.style.display='');
+  // Inicia o sistema
+  _startApp();
+}
+
+function _checkLogin(){
+  const ses=_loginSession();
+  const overlay=document.getElementById('loginOverlay');
+  if(ses&&ses.saram){
+    // Já logado
+    overlay.style.display='none';
+    _startApp();
+  }else{
+    // Mostra login
+    overlay.style.display='flex';
+    document.querySelector('header').style.display='none';
+    document.querySelector('footer').style.display='none';
+    // Biometria disponível?
+    _loginBioSupported().then(ok=>{
+      const bio=_loginBioGet();
+      const btn=document.getElementById('loginBioBtn');
+      if(ok&&bio&&btn)btn.style.display='';
+    });
+  }
+}
+
+function _startApp(){
+  updateClock();
+  if(!_clockInterval)_clockInterval=setInterval(updateClock,1000);
+  loadAllData();
+  if(!_dataInterval)_dataInterval=setInterval(loadAllData,900000);
+}
+
+// Inicialização — verifica login antes de tudo
+_checkLogin();
+// 15min refresh geral (iniciado dentro de _startApp)
 // TV (tela 9): refresh próprio a cada 5min
-_tvInterval=setInterval(()=>{if(currentScreen===9)loadAllData();},300000);
+if(!_tvInterval)_tvInterval=setInterval(()=>{if(currentScreen===9)loadAllData();},300000);
 // Auto-update: verifica se o código mudou a cada 5min e recarrega
 let _codeHash='';
 async function checkCodeUpdate(){
