@@ -25,7 +25,12 @@ function j(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
+// O frontend envia o hash SHA-256 já calculado (senha + SALT).
+// O GAS armazena e compara esse hash diretamente.
 function hashPassword(senha) {
+  // Se já vier como hex (64 chars), é hash do frontend — usa direto
+  if (/^[0-9a-f]{64}$/.test(senha)) return senha;
+  // Fallback: hash local
   const raw = senha + SALT;
   const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw, Utilities.Charset.UTF_8);
   return digest.map(b => ('0' + ((b + 256) % 256).toString(16)).slice(-2)).join('');
