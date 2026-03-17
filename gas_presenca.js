@@ -73,6 +73,14 @@ function cellToDate(cell) {
   return String(cell).trim();
 }
 
+function cellToTime(cell) {
+  if (!cell) return '';
+  if (cell instanceof Date) {
+    return Utilities.formatDate(cell, 'America/Sao_Paulo', "HH:mm");
+  }
+  return String(cell).trim();
+}
+
 function normalizeSaram(s) {
   return String(s || '').trim().replace(/[\.\-\s]/g, '');
 }
@@ -81,8 +89,8 @@ function calcHoras(dataEntrada, horaEntrada, dataSaida, horaSaida) {
   // Monta datetimes completos e calcula diferença em horas
   try {
     // Parsear entrada
-    const dtEntStr = cellToDate(dataEntrada) + ' ' + String(horaEntrada || '').trim();
-    const dtSaiStr = (dataSaida ? cellToDate(dataSaida) : cellToDate(dataEntrada)) + ' ' + String(horaSaida || '').trim();
+    const dtEntStr = cellToDate(dataEntrada) + ' ' + cellToTime(horaEntrada);
+    const dtSaiStr = (dataSaida ? cellToDate(dataSaida) : cellToDate(dataEntrada)) + ' ' + cellToTime(horaSaida);
     
     const partes1 = dtEntStr.split(/[\s\-\:]/);
     const partes2 = dtSaiStr.split(/[\s\-\:]/);
@@ -269,7 +277,7 @@ function doClockOut(p) {
       const hora = getBRTTime();
       const hoje = getBRTDate();
       const dataEntrada = cellToDate(regData[i][0]);
-      const horaEntrada = String(regData[i][4] || '');
+      const horaEntrada = cellToTime(regData[i][4]);
       
       // Calcular horas trabalhadas
       const horas = calcHoras(dataEntrada, horaEntrada, hoje, hora);
@@ -307,9 +315,9 @@ function doStatus(p) {
   for (let i = 1; i < regData.length; i++) {
     if (normalizeSaram(regData[i][6]) === saramNorm && cellToDate(regData[i][0]) === hoje) {
       registros.push({
-        entrada: String(regData[i][4] || ''),
-        saida: String(regData[i][5] || ''),
-        horas: String(regData[i][7] || '')
+        entrada: cellToTime(regData[i][4]),
+        saida: cellToTime(regData[i][5]),
+        horas: cellToTime(regData[i][7])
       });
       if (!regData[i][5]) aberto = true;
     }
@@ -322,7 +330,7 @@ function doStatus(p) {
         aberto = true;
         registros.unshift({
           data: cellToDate(regData[i][0]),
-          entrada: String(regData[i][4] || ''),
+          entrada: cellToTime(regData[i][4]),
           saida: '',
           horas: '',
           diaAnterior: true
@@ -351,9 +359,9 @@ function doHistory(p) {
     if (normalizeSaram(regData[i][6]) === saramNorm) {
       registros.push({
         data: cellToDate(regData[i][0]),
-        entrada: String(regData[i][4] || ''),
-        saida: String(regData[i][5] || ''),
-        horas: String(regData[i][7] || '')
+        entrada: cellToTime(regData[i][4]),
+        saida: cellToTime(regData[i][5]),
+        horas: cellToTime(regData[i][7])
       });
       if (registros.length >= dias * 3) break;
     }
@@ -394,9 +402,9 @@ function doChamada(p) {
       if (cellToDate(regData[i][0]) === hoje) {
         const sn = normalizeSaram(regData[i][6]);
         hojeMap[sn] = {
-          entrada: String(regData[i][4] || ''),
-          saida: String(regData[i][5] || ''),
-          horas: String(regData[i][7] || '')
+          entrada: cellToTime(regData[i][4]),
+          saida: cellToTime(regData[i][5]),
+          horas: cellToTime(regData[i][7])
         };
       }
     }
@@ -602,9 +610,9 @@ function doGerencial(p) {
       const sn = normalizeSaram(regData[i][6]);
       if (!horasMap[sn]) horasMap[sn] = { dias: {}, totalMinutos: 0, registros: [] };
       
-      const entrada = String(regData[i][4] || '');
-      const saida = String(regData[i][5] || '');
-      const horas = String(regData[i][7] || '');
+      const entrada = cellToTime(regData[i][4]);
+      const saida = cellToTime(regData[i][5]);
+      const horas = cellToTime(regData[i][7]);
       
       horasMap[sn].dias[data] = true;
       

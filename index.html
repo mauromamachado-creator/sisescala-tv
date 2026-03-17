@@ -176,6 +176,7 @@ h3{font-size:1.05rem;margin:16px 0 10px;color:var(--text2);border-bottom:1px sol
 .mission-tipo{padding:3px 8px;border-radius:4px;font-size:.7rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center;background:rgba(221,204,85,.12);color:#ddcc55;border:1px solid rgba(221,204,85,.25);min-width:60px;text-align:center;flex-shrink:0;white-space:nowrap;line-height:1}
 .mission-ongoing{animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.spin-icon{display:inline-block;animation:spinAnim 1s linear infinite}@keyframes spinAnim{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 
 .full-missions{grid-column:1/-1}
 
@@ -4179,9 +4180,18 @@ async function _presencaApi(params,retries=2){
 
 function _checkGeoAndDo(action){
   const msgEl=document.getElementById('s4-msg');
+  // Desabilitar botões e mostrar loading
+  const btns=document.querySelectorAll('[data-clock-btn]');
+  btns.forEach(b=>{b.disabled=true;b.style.opacity='0.4';b.style.pointerEvents='none';});
+  const actionBtn=document.querySelector(`[data-clock-btn="${action}"]`);
+  const origContent=actionBtn?actionBtn.innerHTML:'';
+  if(actionBtn)actionBtn.innerHTML=`<span style="font-size:1.4rem" class="spin-icon">⏳</span><span style="font-size:.85rem">Aguarde...</span>`;
+  function _restoreBtns(){btns.forEach(b=>{b.disabled=false;b.style.opacity='1';b.style.pointerEvents='auto';});if(actionBtn)actionBtn.innerHTML=origContent;}
+
   if(msgEl)msgEl.innerHTML='<div style="color:var(--yellow)">📍 Verificando localização...</div>';
   if(!navigator.geolocation){
     if(msgEl)msgEl.innerHTML='<div style="color:var(--red)">❌ Geolocalização não disponível neste navegador.</div>';
+    _restoreBtns();
     return;
   }
   navigator.geolocation.getCurrentPosition(
@@ -4189,11 +4199,12 @@ function _checkGeoAndDo(action){
       const dist=_haversineKm(pos.coords.latitude,pos.coords.longitude,PRESENCA_BASE.lat,PRESENCA_BASE.lng);
       if(dist>PRESENCA_RAIO_KM){
         if(msgEl)msgEl.innerHTML=`<div style="color:var(--red)">❌ Você está a ${dist.toFixed(1)}km do local autorizado. Máximo permitido: ${PRESENCA_RAIO_KM}km.<br><span style="font-size:.75rem;color:var(--text2)">Sua posição: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}</span></div>`;
+        _restoreBtns();
         return;
       }
       // Localização OK — executar ação
       const ses=_presencaSession();
-      if(!ses)return;
+      if(!ses){_restoreBtns();return;}
       if(msgEl)msgEl.innerHTML='<div style="color:var(--yellow)">⏳ Registrando...</div>';
       const res=await _presencaApi({action,saram:ses.saram,senha:ses.senha?atob(ses.senha):''});
       if(res.ok){
@@ -4201,11 +4212,13 @@ function _checkGeoAndDo(action){
         setTimeout(()=>_renderS4Painel(),1500);
       }else{
         if(msgEl)msgEl.innerHTML=`<div style="color:var(--red)">❌ ${res.error}</div>`;
+        _restoreBtns();
       }
     },
     (err)=>{
       const msgs={1:'Permissão negada. Ative a localização.',2:'Posição indisponível.',3:'Tempo esgotado.'};
       if(msgEl)msgEl.innerHTML=`<div style="color:var(--red)">❌ ${msgs[err.code]||err.message}</div>`;
+      _restoreBtns();
     },
     {enableHighAccuracy:true,timeout:15000,maximumAge:0}
   );
@@ -4228,8 +4241,8 @@ async function _renderS4Painel(){
 
   // Botões de registro
   html+=`<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:20px 0">`;
-  html+=`<button onclick="_checkGeoAndDo('clockIn')" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--green);background:rgba(0,255,136,.08);color:var(--green);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">🟢</span>ENTRADA</button>`;
-  html+=`<button onclick="_checkGeoAndDo('clockOut')" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--red);background:rgba(255,68,68,.08);color:var(--red);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">🔴</span>SAÍDA</button>`;
+  html+=`<button data-clock-btn="clockIn" onclick="_checkGeoAndDo('clockIn')" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--green);background:rgba(0,255,136,.08);color:var(--green);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">🟢</span>ENTRADA</button>`;
+  html+=`<button data-clock-btn="clockOut" onclick="_checkGeoAndDo('clockOut')" style="width:160px;height:120px;border-radius:12px;border:2px solid var(--red);background:rgba(255,68,68,.08);color:var(--red);font-size:1rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:2rem">🔴</span>SAÍDA</button>`;
   html+=`</div>`;
 
   // Botão indisponibilidade
