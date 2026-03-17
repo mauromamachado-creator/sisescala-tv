@@ -777,5 +777,97 @@
       "1kzlla-UG3bG3C7rX978uCh7aeNPrGTuj"
     ],
     "observacoes": "Realizar IRJ-03 do CP Gabriel Todesco. Transporte de militares do IMAE no trecho SBRJ-SBBR."
+  },
+  {
+    "om_numero": "109/GTE-1/2026",
+    "om": "109/GTE-1/2026",
+    "aeronave": "VC-2",
+    "fab": "FAB 2590",
+    "tipo": "ESCAV",
+    "missao": "PR ESCAV",
+    "data": "17/03/26",
+    "tripulacao": [
+      "MJ VASCONCELOS (VAS / 552.888)",
+      "CP SAMPAIO (SAM / 563.661)",
+      "2S ALCANTARA (575.028)",
+      "2S NOGUEIRA (535.280)",
+      "2S CIRILO (PR) (548.498)",
+      "2S DOS SANTOS (PR) (553.428)",
+      "T1 SILVA JUNIOR (706.978)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "17/03/26 - 11:00 Z",
+        "ete": "01:20",
+        "destino": "SBSP",
+        "destino_nome": "SBSP (PAVOF)",
+        "eta": "17/03/26 - 12:20 Z",
+        "alternativa": "SBGL",
+        "comb_min": 5500,
+        "comb_rec": 7500
+      },
+      {
+        "origem": "SBSP",
+        "etd": "17/03/26 - 13:20 Z",
+        "ete": "01:20",
+        "destino": "SBBR",
+        "eta": "17/03/26 - 14:40 Z",
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 7500
+      }
+    ],
+    "file_id": "drive_109_GTE1_2026",
+    "file_ids": [
+      "1FoFDSkW5ouSpS1SgG3iI5jQFmaEkPt0Q"
+    ]
+  },
+  {
+    "om_numero": "110/GTE-1/2026",
+    "om": "110/GTE-1/2026",
+    "aeronave": "VC-2",
+    "fab": "FAB 2590",
+    "tipo": "ESCAV",
+    "missao": "PR ESCAV",
+    "data": "17/03/26",
+    "tripulacao": [
+      "MJ IGOR (IGO / 547.869)",
+      "MJ DA SILVA  (DSA / 553.262)",
+      "2S TADEU CAVALCANTE (564.971)",
+      "2S RONALDO (540.297)",
+      "1S PEREIRA (PR) (527.615)",
+      "1S SANTIAGO (PR) (525.328)",
+      "2S LUCAS SOUZA (581.915)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "17/03/26 - 16:00 Z",
+        "ete": "01:20",
+        "destino": "SBSP",
+        "destino_nome": "SBSP (PAVOF)",
+        "eta": "17/03/26 - 17:20 Z",
+        "alternativa": "SBGL",
+        "comb_min": 5500,
+        "comb_rec": 7500
+      },
+      {
+        "origem": "SBSP",
+        "etd": "17/03/26 - 18:20 Z",
+        "ete": "01:20",
+        "destino": "SBBR",
+        "eta": "17/03/26 - 19:40 Z",
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 7500
+      }
+    ],
+    "file_id": "drive_110_GTE1_2026",
+    "file_ids": [
+      "17t0fAjpjplfe75OM03b5t3d2Y5DCxmKO"
+    ]
   }
 ]
