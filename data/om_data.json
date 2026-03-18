@@ -872,5 +872,109 @@
     "file_ids": [
       "17t0fAjpjplfe75OM03b5t3d2Y5DCxmKO"
     ]
+  },
+  {
+    "aeronave": "VC-1",
+    "om_numero": "111/GTE-1/2026",
+    "om": "111/GTE-1/2026",
+    "fab": "FAB 2101",
+    "data": "18/03/26",
+    "tipo": "VER",
+    "missao": "INST, PR VER",
+    "tripulacao": [
+      "MJ MACHADO (MAC / 502.537)",
+      "MJ ATAIDE (ATD / 557.215)",
+      "2S ANDRÉ PEDRO (545.601)",
+      "SO ALEX (474.657)",
+      "2S MIGUEL (524.082)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "18/03/26 - 20:00 Z",
+        "ete": "01:25",
+        "destino": "SBGL",
+        "destino_nome": "SBGL (PERGOLA)",
+        "eta": "18/03/26 - 21:25 Z",
+        "alternativa": "SBGR",
+        "comb_min": 6500,
+        "comb_rec": 9000
+      },
+      {
+        "origem": "SBGL",
+        "origem_nome": "SBGL (PERGOLA)",
+        "etd": "18/03/26 - 23:00 Z",
+        "ete": "01:25",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "19/03/26 - 00:25 Z",
+        "alternativa": "SBCF",
+        "comb_min": 6500,
+        "comb_rec": 9000
+      }
+    ],
+    "file_id": "1rLY0eMsGyvNF0TfCp3VwV2HiE-H9tQd5",
+    "file_ids": [
+      "1rLY0eMsGyvNF0TfCp3VwV2HiE-H9tQd5"
+    ],
+    "drive_names": {
+      "1rLY0eMsGyvNF0TfCp3VwV2HiE-H9tQd5": "111_GTE1_2026 (VC-1 INST)(1).pdf"
+    }
+  },
+  {
+    "aeronave": "VC-2",
+    "om_numero": "112/GTE-1/2026",
+    "om": "112/GTE-1/2026",
+    "fab": "FAB 2590",
+    "data": "18/03/26",
+    "tipo": "ESCAV",
+    "missao": "PR ESCAV, PR TLD/PR VER",
+    "tripulacao": [
+      "MJ SAMIR (SMR / 557.877)",
+      "CP CAMPOS (CPO / 563.414)",
+      "CP GABRIEL TODESCO (TOD / 515.359)",
+      "CP VICTOR (VTO / 582.048)",
+      "SO VINÍCIUS (474.042)",
+      "2S ALCANTARA (575.028)",
+      "2S NOGUEIRA (535.280)",
+      "1S PEREIRA (PR) (527.615)",
+      "2S NEVES (543.527)",
+      "2S LUDMYLLA (PR) (582.959)",
+      "2S LUCAS SOUZA (581.915)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "18/03/26 - 08:20 Z / UTC-3",
+        "ete": "04:40",
+        "destino": "SKBO",
+        "destino_nome": "SKBO (AEROP)",
+        "eta": "18/03/26 - 13:00 Z / UTC-5",
+        "alternativa": "SKRG",
+        "comb_min": 13000,
+        "comb_rec": 15000
+      },
+      {
+        "origem": "SKBO",
+        "origem_nome": "SKBO (AEROP)",
+        "etd": "18/03/26 - 14:30 Z / UTC-5",
+        "ete": "04:50",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "18/03/26 - 19:20 Z / UTC-3",
+        "alternativa": "SBCF",
+        "comb_min": 11500,
+        "comb_rec": 13000
+      }
+    ],
+    "file_id": "1P6_wX48uQR4aFx6Ft8CtWGKdO7RtohVa",
+    "file_ids": [
+      "1P6_wX48uQR4aFx6Ft8CtWGKdO7RtohVa"
+    ],
+    "drive_names": {
+      "1P6_wX48uQR4aFx6Ft8CtWGKdO7RtohVa": "112_GTE1_2026 (VC-2 SKBO)(2).pdf"
+    }
   }
 ]
