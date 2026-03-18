@@ -4246,25 +4246,25 @@ async function _renderS4Painel(){
   html+=`</div>`;
 
   // Aviso de atraso
-  html+=`<div id="s4-atraso-section" style="max-width:400px;margin:12px auto;background:var(--bg2);border-radius:10px;padding:14px;border:1px solid var(--border)">`;
   if(status.ok&&status.atraso){
-    // Já tem atraso ativo hoje — mostrar info + botão cancelar
-    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.1rem">🕐</span><span style="font-weight:700;font-size:.85rem;color:var(--yellow)">Aviso de atraso ativo</span></div>`;
-    html+=`<div style="font-size:.82rem;color:var(--text1);margin:4px 0">Previsão: <b>${status.atraso.horario}</b></div>`;
+    // Atraso ativo — mostrar info + cancelar
+    html+=`<div style="max-width:400px;margin:12px auto;background:rgba(255,200,50,.06);border-radius:10px;padding:12px;border:1px solid var(--yellow)">`;
+    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1rem">🕐</span><span style="font-weight:700;font-size:.85rem;color:var(--yellow)">Aviso de atraso ativo</span></div>`;
+    html+=`<div style="font-size:.82rem;color:var(--text1)">Previsão: <b>${status.atraso.horario}</b></div>`;
     if(status.atraso.motivo)html+=`<div style="font-size:.78rem;color:var(--text2)">Motivo: ${status.atraso.motivo}</div>`;
     html+=`<button onclick="_s4CancelarAtraso()" id="s4-btn-cancel-atraso" style="margin-top:8px;padding:6px 14px;border-radius:6px;border:1px solid var(--red);background:rgba(255,68,68,.1);color:var(--red);font-size:.78rem;cursor:pointer">Cancelar aviso</button>`;
-  }else if(!status.ok||!status.registros||!status.registros.length){
-    // Sem entrada hoje e sem atraso — mostrar formulário
-    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer" onclick="document.getElementById('s4-atraso-form').style.display=document.getElementById('s4-atraso-form').style.display==='none'?'block':'none'"><span style="font-size:1.1rem">🕐</span><span style="font-weight:700;font-size:.85rem;color:var(--text1)">Chegará depois do início do Expediente</span><span style="font-size:.7rem;color:var(--text2)">▼</span></div>`;
-    html+=`<div id="s4-atraso-form" style="display:none">`;
-    html+=`<div style="margin-bottom:8px"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">Horário aproximado de chegada:</label><input type="time" id="s4-atraso-horario" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text1);font-size:.85rem"></div>`;
-    html+=`<div style="margin-bottom:10px"><label style="font-size:.78rem;color:var(--text2);display:block;margin-bottom:4px">Motivo (opcional):</label><input type="text" id="s4-atraso-motivo" maxlength="100" placeholder="Ex: consulta médica, trânsito..." style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text1);font-size:.85rem"></div>`;
-    html+=`<div style="text-align:center"><button onclick="_s4EnviarAtraso()" id="s4-btn-atraso" style="padding:8px 20px;border-radius:8px;border:1px solid var(--yellow);background:rgba(255,200,50,.08);color:var(--yellow);font-size:.85rem;font-weight:700;cursor:pointer">📨 Avisar atraso</button></div>`;
-    html+=`<div id="s4-atraso-msg" style="text-align:center;margin-top:8px;font-size:.78rem"></div>`;
     html+=`</div>`;
+  }else if(!status.ok||!status.registros||!status.registros.length){
+    // Sem entrada hoje — formulário inline lado a lado
+    html+=`<div style="display:flex;gap:0;max-width:400px;margin:12px auto;border:1px solid var(--border);border-radius:10px;overflow:hidden">`;
+    html+=`<div style="flex:0 0 45%;background:var(--bg2);padding:12px;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--border)"><span style="font-size:.82rem;font-weight:700;color:var(--text1);text-align:center;line-height:1.3">Chegará depois do<br>início do Exped</span></div>`;
+    html+=`<div style="flex:1;background:var(--bg2);padding:10px">`;
+    html+=`<div style="margin-bottom:6px"><label style="font-size:.75rem;color:var(--text2)">Horário aprox:</label><input type="time" id="s4-atraso-horario" style="width:100%;padding:5px 8px;border-radius:5px;border:1px solid var(--border);background:var(--bg3);color:var(--text1);font-size:.82rem;margin-top:2px"></div>`;
+    html+=`<div style="margin-bottom:8px"><label style="font-size:.75rem;color:var(--text2)">MOTIVO:</label><input type="text" id="s4-atraso-motivo" maxlength="100" style="width:100%;padding:5px 8px;border-radius:5px;border:1px solid var(--border);background:var(--bg3);color:var(--text1);font-size:.82rem;margin-top:2px"></div>`;
+    html+=`<button onclick="_s4EnviarAtraso()" id="s4-btn-atraso" style="width:100%;padding:6px;border-radius:6px;border:1px solid var(--yellow);background:rgba(255,200,50,.08);color:var(--yellow);font-size:.78rem;font-weight:700;cursor:pointer">ENVIAR</button>`;
+    html+=`<div id="s4-atraso-msg" style="text-align:center;margin-top:4px;font-size:.75rem"></div>`;
+    html+=`</div></div>`;
   }
-  // Se já tem entrada hoje, não mostra nada (atraso não faz sentido)
-  html+=`</div>`;
 
   // Botão indisponibilidade
   html+=`<div style="text-align:center;margin:8px 0">`;
