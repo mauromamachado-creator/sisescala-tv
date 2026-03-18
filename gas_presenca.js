@@ -7,8 +7,9 @@
  *   "Registro" — ponto diário (Data, Posto, Nome Completo, Nome de Guerra, Entrada, Saída, SARAM, Horas)
  *   "Usuarios" — credenciais  (SARAM, SenhaHash, Posto, NomeCompleto, NomeGuerra, CriadoEm)
  *   "Indisponibilidade" — lançamentos (SARAM, Posto, NomeGuerra, Tipo, DataInicio, DataFim, Obs, CriadoEm)
+ *   "Atraso" — avisos de chegada tardia (SARAM, Posto, NomeGuerra, Data, HorarioAprox, Motivo, CriadoEm, Resolvido)
  *
- * Actions: register, login, clockIn, clockOut, status, history, chamada, lancar_indisp, minhas_indisp, cancelar_indisp
+ * Actions: register, login, clockIn, clockOut, status, history, chamada, lancar_indisp, minhas_indisp, cancelar_indisp, avisar_atraso, cancelar_atraso
  */
 
 const PRESENCA_SHEET = '1E49Q1bPbhT2MlYjYXfpC5mbzuxTBAPzidY3DtZW2VAs';
@@ -35,6 +36,8 @@ function handleRequest(e) {
       case 'lancar_indisp': result = doLancarIndisp(p); break;
       case 'minhas_indisp': result = doMinhasIndisp(p); break;
       case 'cancelar_indisp': result = doCancelarIndisp(p); break;
+      case 'avisar_atraso':   result = doAvisarAtraso(p); break;
+      case 'cancelar_atraso': result = doCancelarAtraso(p); break;
       default:              result = { ok: false, error: 'Ação inválida' };
     }
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
@@ -259,6 +262,13 @@ function doClockIn(p) {
   const hoje = getBRTDate();
   regSheet.appendRow([hoje, mil.posto, mil.nomeCompleto, mil.nomeGuerra, hora, '', saramStored, '']);
 
+  // Resolver atraso ativo se existir
+  const atrasosHoje = _getAtrasosHoje(ss);
+  if (atrasosHoje[saramNorm]) {
+    const aSheet = ss.getSheetByName('Atraso');
+    if (aSheet) aSheet.getRange(atrasosHoje[saramNorm].linha, 8).setValue(getBRTNow());
+  }
+
   return { ok: true, message: 'Entrada registrada: ' + hora, hora: hora };
 }
 
@@ -340,7 +350,11 @@ function doStatus(p) {
     }
   }
 
-  return { ok: true, registros: registros, aberto: aberto };
+  // Verificar atraso ativo
+  const atrasosHoje = _getAtrasosHoje(ss);
+  const atrasoAtivo = atrasosHoje[saramNorm] || null;
+
+  return { ok: true, registros: registros, aberto: aberto, atraso: atrasoAtivo };
 }
 
 function doHistory(p) {
@@ -433,12 +447,17 @@ function doChamada(p) {
     }
   }
 
+  // Buscar atrasos de hoje
+  const atrasosHoje = _getAtrasosHoje(ss);
+
   const presentes = [];
+  const atrasados = [];
   const ausentes = [];
 
   for (const u of usuarios) {
     const reg = hojeMap[u.saramNorm];
     const indisp = indispMap[u.saramNorm] || null;
+    const atraso = atrasosHoje[u.saramNorm] || null;
     if (reg) {
       presentes.push({
         posto: u.posto,
@@ -447,6 +466,14 @@ function doChamada(p) {
         entrada: reg.entrada,
         saida: reg.saida,
         horas: reg.horas
+      });
+    } else if (atraso) {
+      atrasados.push({
+        posto: u.posto,
+        nomeGuerra: u.nomeGuerra,
+        nomeCompleto: u.nomeCompleto,
+        horario: atraso.horario,
+        motivo: atraso.motivo
       });
     } else {
       ausentes.push({
@@ -462,8 +489,10 @@ function doChamada(p) {
     ok: true, 
     data: hoje,
     presentes: presentes, 
+    atrasados: atrasados,
     ausentes: ausentes, 
     totalPresentes: presentes.length,
+    totalAtrasados: atrasados.length,
     totalAusentes: ausentes.length,
     total: usuarios.length
   };
@@ -685,4 +714,91 @@ function _fmtDate(d) {
   const m = String(d.getMonth()+1).padStart(2,'0');
   const dd = String(d.getDate()).padStart(2,'0');
   return y + '-' + m + '-' + dd;
+}
+
+/* ---- Atraso (chegada tardia autorizada) ---- */
+const ATRASO_HEADERS = ['SARAM', 'Posto', 'NomeGuerra', 'Data', 'HorarioAprox', 'Motivo', 'CriadoEm', 'Resolvido'];
+
+function _getAtrasosHoje(ss) {
+  const sheet = ss.getSheetByName('Atraso');
+  if (!sheet) return {};
+  const data = sheet.getDataRange().getValues();
+  const hoje = getBRTDate();
+  const map = {}; // saramNorm → {horario, motivo, linha}
+  for (let i = 1; i < data.length; i++) {
+    const dt = cellToDate(data[i][3]);
+    if (dt !== hoje) continue;
+    const resolvido = String(data[i][7] || '').trim();
+    if (resolvido) continue;
+    const sn = normalizeSaram(data[i][0]);
+    map[sn] = {
+      horario: cellToTime(data[i][4]) || String(data[i][4] || '').trim(),
+      motivo: String(data[i][5] || '').trim(),
+      linha: i + 1
+    };
+  }
+  return map;
+}
+
+function doAvisarAtraso(p) {
+  const saram = String(p.saram || '').trim();
+  const horario = String(p.horario || '').trim();
+  const motivo = String(p.motivo || '').trim();
+  if (!saram || !horario) return { ok: false, error: 'Horário aproximado é obrigatório.' };
+
+  const saramNorm = normalizeSaram(saram);
+  const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
+
+  // Verificar se é usuário cadastrado
+  const usSheet = ss.getSheetByName('Usuarios');
+  if (!usSheet) return { ok: false, error: 'Usuário não encontrado.' };
+  const usData = usSheet.getDataRange().getValues();
+  let mil = null;
+  for (let i = 1; i < usData.length; i++) {
+    if (normalizeSaram(usData[i][0]) === saramNorm) {
+      mil = { posto: String(usData[i][2] || ''), nomeGuerra: String(usData[i][4] || '') };
+      break;
+    }
+  }
+  if (!mil) return { ok: false, error: 'Usuário não cadastrado.' };
+
+  // Verificar se já tem atraso ativo hoje
+  const atrasosHoje = _getAtrasosHoje(ss);
+  if (atrasosHoje[saramNorm]) {
+    return { ok: false, error: 'Já existe um aviso de atraso para hoje. Cancele o anterior primeiro.' };
+  }
+
+  // Verificar se já tem entrada hoje (não faz sentido avisar atraso se já bateu ponto)
+  const regSheet = ss.getSheetByName('Registro');
+  if (regSheet) {
+    const regData = regSheet.getDataRange().getValues();
+    const hoje = getBRTDate();
+    for (let i = 1; i < regData.length; i++) {
+      if (normalizeSaram(regData[i][6]) === saramNorm && cellToDate(regData[i][0]) === hoje) {
+        return { ok: false, error: 'Você já registrou entrada hoje. Aviso de atraso não necessário.' };
+      }
+    }
+  }
+
+  const aSheet = getOrCreateSheet(ss, 'Atraso', ATRASO_HEADERS);
+  aSheet.appendRow([saram, mil.posto, mil.nomeGuerra, getBRTDate(), horario, motivo, getBRTNow(), '']);
+
+  return { ok: true, message: 'Aviso de atraso registrado. Previsão: ' + horario };
+}
+
+function doCancelarAtraso(p) {
+  const saram = String(p.saram || '').trim();
+  if (!saram) return { ok: false, error: 'SARAM obrigatório.' };
+
+  const saramNorm = normalizeSaram(saram);
+  const ss = SpreadsheetApp.openById(PRESENCA_SHEET);
+  const atrasosHoje = _getAtrasosHoje(ss);
+
+  if (!atrasosHoje[saramNorm]) {
+    return { ok: false, error: 'Nenhum aviso de atraso ativo para hoje.' };
+  }
+
+  const sheet = ss.getSheetByName('Atraso');
+  sheet.getRange(atrasosHoje[saramNorm].linha, 8).setValue(getBRTNow()); // Coluna "Resolvido"
+  return { ok: true, message: 'Aviso de atraso cancelado.' };
 }
