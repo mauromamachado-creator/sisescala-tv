@@ -25,5 +25,14 @@
     "source": "Estadão / Correio Braziliense",
     "date": "04/03/2026",
     "expires": "2026-04-19T00:00:00-03:00"
+  },
+  {
+    "id": "viagem-20260319-colombia",
+    "type": "viagem",
+    "title": "✈️ POSSÍVEL VIAGEM PR",
+    "body": "Lula pode viajar para a <b>Colômbia</b> em <b>20-21/03/2026</b>. Motivo: Cúpula da <b>Celac</b> e Fórum <b>Celac-África</b>, em Bogotá.",
+    "source": "Planalto.gov.br / CNN Brasil",
+    "date": "19/03/2026",
+    "expires": "2026-03-22T00:00:00-03:00"
   }
 ]
