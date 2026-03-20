@@ -1108,5 +1108,58 @@
     "drive_names": {
       "1NLzmcJix-DgPWlf0v4rKRyy0xlR0898K": "VC2 ALT SOLO OM_114_GTE1_2026.pdf"
     }
+  },
+  {
+    "aeronave": "VC-2",
+    "om_numero": "117/GTE-1/2026",
+    "data": "20/03/26",
+    "tripulacao": [
+      "MJ IGOR (IGO / 547.869)",
+      "MJ VASCONCELOS (VAS / 552.888)",
+      "MJ FARIAS (FAI / 552.925)",
+      "CP NORBERTO (490.840)",
+      "2S PAULO MARCIO (540.351)",
+      "2S RONALDO (540.297)",
+      "2S LOPES (PR) (530.806)",
+      "2S NEVES (543.527)",
+      "2S D. AUGUSTO (548.852)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "20/03/26 - 16:00 Z",
+        "ete": "00:50",
+        "destino": "SBCF",
+        "destino_nome": "SBCF (AEROP)",
+        "eta": "20/03/26 - 16:50 Z",
+        "alternativa": "SBGL",
+        "comb_min": 5000,
+        "comb_rec": 11000
+      },
+      {
+        "origem": "SBCF",
+        "origem_nome": "SBCF (AEROP)",
+        "etd": "20/03/26 - 22:30 Z",
+        "ete": "00:50",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "20/03/26 - 23:20 Z",
+        "alternativa": "SBCF",
+        "comb_min": 5500,
+        "comb_rec": 7500
+      }
+    ],
+    "file_id": "1ZMVyQSdXPl6a7fQTPTYu7hLDqeYerGN7",
+    "file_ids": [
+      "1ZMVyQSdXPl6a7fQTPTYu7hLDqeYerGN7"
+    ],
+    "om": "117/GTE-1/2026",
+    "fab": "FAB 2590",
+    "tipo": "ESCAV",
+    "missao": "PR TLD, PR RES/PR ESCAV",
+    "drive_names": {
+      "1ZMVyQSdXPl6a7fQTPTYu7hLDqeYerGN7": "117_GTE1_2026 (VC-2 - SBCF).pdf"
+    }
   }
 ]
