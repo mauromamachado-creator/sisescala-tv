@@ -318,6 +318,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 .cal-span-bar.ev-vc1{background:rgba(0,212,255,.2);color:var(--vc1);border-top:2px solid var(--vc1);border-bottom:2px solid var(--vc1)}
 .cal-span-bar.ev-vc2{background:rgba(0,255,136,.2);color:var(--vc2);border-top:2px solid var(--vc2);border-bottom:2px solid var(--vc2)}
 .cal-span-bar.ev-diario{background:rgba(190,160,255,.25);color:#c8a8ff;border-top:2px solid #c8a8ff;border-bottom:2px solid #c8a8ff}
+.cal-span-bar.ev-ferias{background:rgba(255,159,67,.2);color:#ff9f43;border-top:2px solid #ff9f43;border-bottom:2px solid #ff9f43}
 .cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding:10px 14px;background:#0d1220;border-radius:8px;border:1px solid #1a2a40}
 .cal-legend-item{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--text2)}
 .cal-legend-swatch{width:28px;height:12px;border-radius:3px}
@@ -1928,16 +1929,38 @@ function renderScreenDiario(){
 let calYear, calMonth;
 (function(){const t=nowBRT();calYear=t.getFullYear();calMonth=t.getMonth();})();
 
+// Filtros do calendário (persistem em sessionStorage)
+if(!window._calFilters){
+  try{window._calFilters=JSON.parse(sessionStorage.getItem('sisgopa_cal_filters'))||{};}catch(e){window._calFilters={};}
+  if(window._calFilters.vc1==null)window._calFilters.vc1=true;
+  if(window._calFilters.vc2==null)window._calFilters.vc2=true;
+  if(window._calFilters.previsao==null)window._calFilters.previsao=true;
+  if(window._calFilters.intl==null)window._calFilters.intl=true;
+  if(window._calFilters.ferias==null)window._calFilters.ferias=false;
+}
+function _calToggle(key){window._calFilters[key]=!window._calFilters[key];sessionStorage.setItem('sisgopa_cal_filters',JSON.stringify(window._calFilters));renderScreenCalendar();}
+
 function renderScreenCalendar(){
   const td=nowBRT();
   const monthNames=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const dayNames=['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+  const cf=window._calFilters;
 
   let html='<div class="cal-nav">';
   html+=`<button onclick="calPrev()">◀</button>`;
   html+=`<div class="cal-month">${monthNames[calMonth]} ${calYear}</div>`;
   html+=`<button onclick="calNext()">▶</button>`;
   html+='</div>';
+
+  // Filtros
+  const _fb=(key,label,color)=>`<button onclick="_calToggle('${key}')" style="padding:4px 10px;border-radius:14px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid ${color};background:${cf[key]?color+'33':'transparent'};color:${cf[key]?color:'var(--text2)'};opacity:${cf[key]?1:0.5};transition:.2s">${label}</button>`;
+  html+=`<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0 12px">`;
+  html+=_fb('vc1','✈️ VC-1','#00d4ff');
+  html+=_fb('vc2','✈️ VC-2','#00ff88');
+  html+=_fb('previsao','📋 Previsão','#c8a8ff');
+  html+=_fb('intl','🌍 Internacional','#ffc832');
+  html+=_fb('ferias','🏖 Férias','#ff9f43');
+  html+=`</div>`;
 
   html+='<div class="cal-grid">';
   html+='<div class="cal-header-row">';
@@ -1972,7 +1995,10 @@ function renderScreenCalendar(){
   (omData||[]).forEach(om=>{
     if(!om.aeronave||!om.pernas)return;
     const anv=om.aeronave;
-    const anv_cls=anv.includes('VC-1')?'ev-vc1':'ev-vc2';
+    const isVC1=anv.includes('VC-1');
+    if(isVC1&&!cf.vc1)return;
+    if(!isVC1&&!cf.vc2)return;
+    const anv_cls=isVC1?'ev-vc1':'ev-vc2';
     const omDays=[];
     om.pernas.forEach(p=>{
       [p.etd,p.eta].forEach(dt=>{
@@ -1990,7 +2016,7 @@ function renderScreenCalendar(){
   });
 
   // 2) Diário: dias sem OM → barra de dia único
-  (diarioData||[]).forEach(d=>{
+  if(cf.previsao)(diarioData||[]).forEach(d=>{
     if(!d.date||!d.legs||!d.legs.length)return;
     if(d.date.getMonth()!==calMonth||d.date.getFullYear()!==calYear)return;
     const fDay=d.date.getDate();
@@ -1999,11 +2025,12 @@ function renderScreenCalendar(){
       spanEvents.push({text:anvLabel(anv),cls:'ev-diario',start:fDay,end:fDay,isStart:true,isEnd:true});
     }
   });
-  missionsData.forEach(m=>{
+
+  // 3) Missões internacionais
+  if(cf.intl) missionsData.forEach(m=>{
     if(!m.pais||!m.inicio)return;
     const sd=new Date(m.inicio);
     const ed=m.fim?new Date(m.fim):sd;
-    // Recorta para o mês atual
     const monthStart=new Date(calYear,calMonth,1);
     const monthEnd=new Date(calYear,calMonth,daysInMonth);
     const clampStart=sd<monthStart?monthStart:sd;
@@ -2019,7 +2046,24 @@ function renderScreenCalendar(){
     });
   });
 
-  // Férias removidas do calendário (só missões)
+  // 4) Férias — barras laranja quando filtro ativo
+  if(cf.ferias)(feriasData||[]).forEach(f=>{
+    if(!f.trigrama||!f.inicio||!f.fim)return;
+    const sd=f.inicio;const ed=f.fim;
+    const monthStart=new Date(calYear,calMonth,1);
+    const monthEnd=new Date(calYear,calMonth,daysInMonth,23,59,59);
+    if(sd>monthEnd||ed<monthStart)return;
+    const clampStart=sd<monthStart?1:sd.getDate();
+    const clampEnd=ed>monthEnd?daysInMonth:ed.getDate();
+    spanEvents.push({
+      text:`🏖 ${f.trigrama}`,
+      cls:'ev-ferias',
+      start:clampStart,
+      end:clampEnd,
+      isStart:sd.getMonth()===calMonth&&sd.getFullYear()===calYear,
+      isEnd:ed.getMonth()===calMonth&&ed.getFullYear()===calYear
+    });
+  });
 
   // Monta semanas: array de arrays[7] de {day, otherMonth}
   const weeks=[];
@@ -2086,10 +2130,11 @@ function renderScreenCalendar(){
   html+='</div>';
   // Legenda
   html+=`<div class="cal-legend">
-    <div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(0,212,255,.25);border:1px solid var(--vc1)"></div>VC-1 2101 — missão com OM</div>
-    <div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(0,255,136,.25);border:1px solid var(--vc2)"></div>VC-2 2590 — missão com OM</div>
-    <div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(190,160,255,.25);border:1px solid #c8a8ff"></div>Previsão</div>
-    <div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(255,200,50,.25);border:1px solid #ffc832"></div>🌍 Missão internacional</div>
+    ${cf.vc1?'<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(0,212,255,.25);border:1px solid var(--vc1)"></div>VC-1 2101 — missão com OM</div>':''}
+    ${cf.vc2?'<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(0,255,136,.25);border:1px solid var(--vc2)"></div>VC-2 2590 — missão com OM</div>':''}
+    ${cf.previsao?'<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(190,160,255,.25);border:1px solid #c8a8ff"></div>Previsão (diário)</div>':''}
+    ${cf.intl?'<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(255,200,50,.25);border:1px solid #ffc832"></div>🌍 Missão internacional</div>':''}
+    ${cf.ferias?'<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(255,159,67,.25);border:1px solid #ff9f43"></div>🏖 Férias</div>':''}
   </div>`;
   document.getElementById('screen6').innerHTML=html;
 }
