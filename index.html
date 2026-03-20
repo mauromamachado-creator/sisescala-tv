@@ -816,12 +816,13 @@ async function _sendReport(type,desc,diagnostics){
 const SHEET='1gwkeV2iA_JPTZ3rp0wf1PvXUI0TiOzNg3Xd4DhWwpao';
 const PLAN_SHEET='1EV81x0Np-zeHhznvzAGrPyck5YUHgW_eRb18uOGc7nQ';
 const ESCALA_SHEET='1MxhMnlzZNdXUkFRs_XmBI8SI3xhL1TDLEiCZ7aJKE-g';
+const FERIAS_TRIP_SHEET='1y7bfgnNe-yesMQ4hd0Nt2KNULpPB6UI0Mpy7PARlMJg';
 const GIDS={disp:2129805598,lanc:489572946,previsao:1534384160,acnt:519681315};
 const csvUrl=gid=>`https://docs.google.com/spreadsheets/d/${SHEET}/export?format=csv&gid=${gid}`;
 const planCsvUrl=()=>`https://docs.google.com/spreadsheets/d/${PLAN_SHEET}/export?format=csv`;
 
 let currentScreen=0;
-let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], missionsData=[], diarioData=[], acntData=[], checklistData=[], metarRaw='', metarDecoded={};
+let pilotData={vc1:[],vc2:[]}, flights=[], feriasData=[], feriasTripData=[], missionsData=[], diarioData=[], acntData=[], checklistData=[], metarRaw='', metarDecoded={};
 let cartoesData=[];let cartoesFailed=false;let pauDeSeboData={};
 let metarMulti={};
 let anualVC1={voadas:0,esforco:650}, anualVC2={voadas:0,esforco:1220};
@@ -995,6 +996,100 @@ function parseFerias(rows){
     if(!tri||!ini||!fim)continue;
     const anv=anvIdx!=null?String(row[anvIdx]||'').trim():'';
     list.push({trigrama:tri.toUpperCase(),anv,inicio:ini,fim:fim});
+  }
+  return list;
+}
+
+function _isTripOnVacation(ct,date){
+  const nomeUp=(ct.nome||'').toUpperCase();
+  if(!nomeUp)return false;
+  return(feriasTripData||[]).some(f=>{
+    if(!f.inicio||!f.fim||f.inicio>date||f.fim<date)return false;
+    const fNome=f.nome||'';
+    if(!fNome)return false;
+    const nParts=nomeUp.split(/\s+/);
+    const fParts=fNome.split(/\s+/);
+    if(nParts.length&&fParts.length){
+      const lastN=nParts[nParts.length-1];
+      const lastF=fParts[fParts.length-1];
+      if(lastN.length>=3&&lastF.length>=3&&(lastN===lastF||nomeUp.includes(fNome)||fNome.includes(nomeUp)))return true;
+      for(const w of fParts){if(w.length>=4&&nomeUp.includes(w))return true;}
+      for(const w of nParts){if(w.length>=4&&fNome.includes(w))return true;}
+    }
+    return false;
+  });
+}
+
+function parseFeriasTrip(rows){
+  // Planilha de férias de tripulantes (não-pilotos)
+  // Formato: seções por função/anv, nomes com posto, períodos com datas
+  const postos=['MAJ','CAP','CP','1T','2T','ASP','SO','1S','2S','3S','T1','T2','SD','CB','CEL','TC'];
+  const secRegex=/^(MEC[ÂA]NICO|OPERADOR DE COMUNICA[ÇC][ÕO]ES|COMISS[ÁA]RIOS?)\s*(VC-?[12])?/i;
+  const dateRE=/(\d{2})\/(\d{2})\/(\d{2,4})/g;
+  const list=[];
+  let currentFuncao='',currentAnv='',currentNome='';
+
+  for(let i=0;i<rows.length;i++){
+    const colA=String(rows[i][0]||'').trim();
+    const colB=String(rows[i][1]||'').trim();
+    const colD=String(rows[i][3]||'').trim();
+
+    // Checar se é header de seção
+    const secMatch=colA.match(secRegex);
+    if(secMatch){
+      const raw=secMatch[1].toUpperCase();
+      if(raw.startsWith('MEC'))currentFuncao='Mecânico';
+      else if(raw.startsWith('OPERADOR'))currentFuncao='Operador de Comunicações';
+      else if(raw.startsWith('COMISS'))currentFuncao='Comissário';
+      currentAnv=secMatch[2]?(secMatch[2].includes('1')?'VC-1':'VC-2'):'';
+      currentNome='';
+      continue;
+    }
+    // Pular headers de coluna
+    if(colA==='TRIPULANTE'||colA==='PERÍODOS')continue;
+
+    // Se colA tem conteúdo e começa com posto, é um novo tripulante
+    if(colA){
+      const parts=colA.split(/\s+/);
+      const firstWord=parts[0].toUpperCase().replace(/[.\-]/g,'');
+      if(postos.includes(firstWord)){
+        currentNome=parts.slice(1).join(' ').toUpperCase();
+      }else{
+        currentNome=colA.toUpperCase();
+      }
+    }
+    if(!currentNome)continue;
+
+    // Ignorar "EM BRANCO"
+    const bClean=colB.toUpperCase().replace(/\s/g,'');
+    if(bClean==='EMBRANCO'||!colB){}
+
+    // Checar se alteração diz CANCELADO
+    if(colD.toUpperCase().includes('CANCELADO'))continue;
+
+    // Extrair datas: prioridade colD (alteração) se tiver datas, senão colB
+    const source=(colD&&colD.match(dateRE))?colD:colB;
+    if(!source||source.toUpperCase().replace(/\s/g,'')==='EMBRANCO')continue;
+
+    // Extrair todos os pares de data
+    const dates=[];
+    let m;
+    const re=new RegExp(dateRE.source,'g');
+    while((m=re.exec(source))!==null){
+      let yr=+m[3];if(yr<100)yr+=2000;
+      const d=new Date(yr,+m[2]-1,+m[1]);
+      if(!isNaN(d.getTime()))dates.push(d);
+    }
+    // Precisa de pelo menos 2 datas (início e fim)
+    if(dates.length>=2){
+      list.push({
+        nome:currentNome,
+        funcao:currentFuncao,
+        anv:currentAnv,
+        inicio:dates[0],
+        fim:dates[1]
+      });
+    }
   }
   return list;
 }
@@ -1632,6 +1727,8 @@ function renderScreen1(){
     const pimoTripsTotal=(_pimoCache&&_pimoCache.tripulantes)||[];
     const _cartoesCheckDisp=['inspSaude','crm','simulador','tdie','passaporte'];
     const tripDisp=allTrip.filter(ct=>{
+      // Checar férias tripulante
+      if(_isTripOnVacation(ct,td))return false;
       const pimoEntry=pimoTripsTotal.find(t=>t.trigrama===ct.trigrama||_normNome(t.nome)===_normNome(ct.nome));
       const afDias=pimoEntry?pimoEntry.afastamento:null;
       if(afDias!==null&&afDias>=45)return false;
@@ -1671,6 +1768,8 @@ function renderScreen1(){
     const pimoTrips=(_pimoCache&&_pimoCache.tripulantes)||[];
     const getTripStatus=(ct)=>{
       if(!ct)return{status:'SEM DADOS',cls:'st-out',detail:''};
+      // Checar férias de tripulante
+      if(_isTripOnVacation(ct,td))return{status:'FÉRIAS',cls:'st-ferias',detail:'Em férias'};
       // Checar desadaptação via PIMO
       const pimoEntry=pimoTrips.find(t=>t.trigrama===ct.trigrama||_normNome(t.nome)===_normNome(ct.nome));
       const afDias=pimoEntry?pimoEntry.afastamento:null;
@@ -1749,6 +1848,17 @@ function renderScreen3(){
     html+='<h3 style="border:none;margin:10px 0 8px">📅 Próximas férias</h3>';
     if(upcoming.length){for(const f of upcoming){const diasP=Math.ceil((f.inicio-td)/(86400000));html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:var(--text2)">F</div><div><strong>${f.trigrama}</strong> - ${fmtDate(f.inicio)} a ${fmtDate(f.fim)} <span style="font-size:.75rem;color:var(--text2)">(em ${diasP}d)</span></div></div>`;}}
     else html+='<div class="no-data" style="padding:10px 0">Nenhuma férias programada.</div>';
+  }
+  // Férias tripulantes (não-pilotos)
+  if(feriasTripData&&feriasTripData.length){
+    const tripNow=feriasTripData.filter(f=>f.inicio<=td&&td<=f.fim).sort((a,b)=>a.fim-b.fim);
+    const tripUp=feriasTripData.filter(f=>f.inicio>td).sort((a,b)=>a.inicio-b.inicio);
+    html+='<h3 style="border:none;margin:10px 0 8px">🏖 Tripulantes em férias hoje</h3>';
+    if(tripNow.length){for(const f of tripNow){const dias=Math.ceil((f.fim-td)/(86400000));html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:var(--orange)">T</div><div><strong>${f.nome}</strong> <span style="font-size:.7rem;color:var(--text2)">(${f.funcao})</span> - ${fmtDate(f.inicio)} a ${fmtDate(f.fim)} <span style="font-size:.75rem;color:var(--text2)">(volta em ${dias}d)</span></div></div>`;}}
+    else html+='<div class="no-data" style="padding:10px 0">Nenhum tripulante em férias hoje.</div>';
+    html+='<h3 style="border:none;margin:10px 0 8px">📅 Próximas férias tripulantes</h3>';
+    if(tripUp.length){for(const f of tripUp.slice(0,20)){const diasP=Math.ceil((f.inicio-td)/(86400000));html+=`<div class="alert-card vacation"><div class="alert-icon" style="color:var(--text2)">T</div><div><strong>${f.nome}</strong> <span style="font-size:.7rem;color:var(--text2)">(${f.funcao})</span> - ${fmtDate(f.inicio)} a ${fmtDate(f.fim)} <span style="font-size:.75rem;color:var(--text2)">(em ${diasP}d)</span></div></div>`;}}
+    else html+='<div class="no-data" style="padding:10px 0">Nenhuma férias programada para tripulantes.</div>';
   }
   html+='</div>';
   const alerts=[];const allPilots=[...pilotData.vc1,...pilotData.vc2];
@@ -2046,24 +2156,35 @@ function renderScreenCalendar(){
     });
   });
 
-  // 4) Férias — barras laranja quando filtro ativo
-  if(cf.ferias)(feriasData||[]).forEach(f=>{
-    if(!f.trigrama||!f.inicio||!f.fim)return;
-    const sd=f.inicio;const ed=f.fim;
-    const monthStart=new Date(calYear,calMonth,1);
-    const monthEnd=new Date(calYear,calMonth,daysInMonth,23,59,59);
-    if(sd>monthEnd||ed<monthStart)return;
-    const clampStart=sd<monthStart?1:sd.getDate();
-    const clampEnd=ed>monthEnd?daysInMonth:ed.getDate();
-    spanEvents.push({
-      text:`🏖 ${f.trigrama}`,
-      cls:'ev-ferias',
-      start:clampStart,
-      end:clampEnd,
-      isStart:sd.getMonth()===calMonth&&sd.getFullYear()===calYear,
-      isEnd:ed.getMonth()===calMonth&&ed.getFullYear()===calYear
+  // 4) Férias — barras laranja quando filtro ativo (pilotos + tripulantes)
+  if(cf.ferias){
+    // Pilotos (feriasData)
+    (feriasData||[]).forEach(f=>{
+      if(!f.trigrama||!f.inicio||!f.fim)return;
+      const sd=f.inicio;const ed=f.fim;
+      const monthStart=new Date(calYear,calMonth,1);
+      const monthEnd=new Date(calYear,calMonth,daysInMonth,23,59,59);
+      if(sd>monthEnd||ed<monthStart)return;
+      const clampStart=sd<monthStart?1:sd.getDate();
+      const clampEnd=ed>monthEnd?daysInMonth:ed.getDate();
+      spanEvents.push({text:`🏖 ${f.trigrama}`,cls:'ev-ferias',start:clampStart,end:clampEnd,
+        isStart:sd.getMonth()===calMonth&&sd.getFullYear()===calYear,
+        isEnd:ed.getMonth()===calMonth&&ed.getFullYear()===calYear});
     });
-  });
+    // Tripulantes (feriasTripData)
+    (feriasTripData||[]).forEach(f=>{
+      if(!f.nome||!f.inicio||!f.fim)return;
+      const sd=f.inicio;const ed=f.fim;
+      const monthStart=new Date(calYear,calMonth,1);
+      const monthEnd=new Date(calYear,calMonth,daysInMonth,23,59,59);
+      if(sd>monthEnd||ed<monthStart)return;
+      const clampStart=sd<monthStart?1:sd.getDate();
+      const clampEnd=ed>monthEnd?daysInMonth:ed.getDate();
+      spanEvents.push({text:`🏖 ${f.nome}`,cls:'ev-ferias',start:clampStart,end:clampEnd,
+        isStart:sd.getMonth()===calMonth&&sd.getFullYear()===calYear,
+        isEnd:ed.getMonth()===calMonth&&ed.getFullYear()===calYear});
+    });
+  }
 
   // Monta semanas: array de arrays[7] de {day, otherMonth}
   const weeks=[];
@@ -2362,6 +2483,7 @@ function renderScreenTV(){
   const _tvPimoTrips=(_pimoCache&&_pimoCache.tripulantes)||[];
   const _tvCartoesCheck=['inspSaude','crm','simulador','tdie','passaporte'];
   const _tvTripDisp=_tvAllTrip.filter(ct=>{
+    if(_isTripOnVacation(ct,td))return false;
     const pe=_tvPimoTrips.find(t=>t.trigrama===ct.trigrama||_normNome(t.nome)===_normNome(ct.nome));
     const af=pe?pe.afastamento:null;
     if(af!==null&&af>=45)return false;
@@ -7316,14 +7438,15 @@ async function loadAllData(){
     const cartoesFetch=fetchCSVByName('cartões').then(rows=>{cartoesData=parseCartoes(rows);cartoesFailed=false;sourceStatus.cartoes='ok';}).catch(()=>{cartoesData=[];cartoesFailed=true;sourceStatus.cartoes='fail';});
     const dadosFetch=fetchCSVByName('dados').then(rows=>{dadosPessoais=parseDadosPessoais(rows);sourceStatus.dados='ok';}).catch(()=>{dadosPessoais={};sourceStatus.dados='fail';});
     const pauFetch=fetchPauDeSebo().then(()=>{sourceStatus.pauSebo='ok';}).catch(()=>{sourceStatus.pauSebo='fail';});
+    const feriasTripFetch=fetchWithTimeout(`https://docs.google.com/spreadsheets/d/${FERIAS_TRIP_SHEET}/gviz/tq?tqx=out:csv`).then(r=>r.ok?r.text():'').then(t=>{sourceStatus.feriasTrip='ok';return t?parseCSV(t):[];}).catch(()=>{sourceStatus.feriasTrip='fail';return[];});
     const diariasFetch=Promise.all([fetchDiariasConcluidas(),fetchPdfGerado()]);
 
-    const[dispRows,lancRows,ferRows,prevRows,planRows,acntRows]=await Promise.all([
+    const[dispRows,lancRows,ferRows,prevRows,planRows,acntRows,ferTripRows]=await Promise.all([
       fetchCSV(GIDS.disp).then(r=>{sourceStatus.disp='ok';return r;}).catch(()=>{sourceStatus.disp='fail';return[];}),
       fetchCSV(GIDS.lanc).then(r=>{sourceStatus.lanc='ok';return r;}).catch(()=>{sourceStatus.lanc='fail';return[];}),
       fetchCSVByName('Férias').then(r=>{sourceStatus.ferias='ok';return r;}).catch(()=>{sourceStatus.ferias='fail';return[];}),
       fetchCSV(GIDS.previsao).then(r=>{sourceStatus.previsao='ok';return r;}).catch(()=>{sourceStatus.previsao='fail';return[];}),
-      planFetch,acntFetch,
+      planFetch,acntFetch,feriasTripFetch,
       metarFetch,metarMultiFetch,anualFetch,omFetch,cartoesFetch,dadosFetch,pauFetch,diariasFetch]);
     // Check individual METAR localities
     const expectedIcaos=['SBBR','SBCF','SBRJ','SBSP'];
@@ -7333,7 +7456,7 @@ async function loadAllData(){
     flights=parseLancamentos(lancRows);
     fetchGlobalAirports(); // async, non-blocking
     calcAfastamentos();
-    feriasData=parseFerias(ferRows);missionsData=parsePrevisaoMissoes(prevRows);
+    feriasData=parseFerias(ferRows);feriasTripData=parseFeriasTrip(ferTripRows);missionsData=parsePrevisaoMissoes(prevRows);
     diarioData=parseDiario(planRows);
     acntData=parseACNT(acntRows);
     sourceStatus.brAirports=Object.keys(BR_AIRPORTS).length>0?'ok':'fail';
