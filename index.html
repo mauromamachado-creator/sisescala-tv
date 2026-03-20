@@ -6628,7 +6628,11 @@ async function getAiswebData(icao){
       const begin=_xmlTag(tsBlocks[0],'begin');
       const end=_xmlTag(tsBlocks[0],'end');
       const days=_xmlTag(tsBlocks[0],'day');
-      if(begin&&end)adHr=`${days||'DLY'} ${begin}-${end}`;
+      if(begin&&end){
+        const dayLabel={'DLY':'Diário','MON':'Segunda','TUE':'Terça','WED':'Quarta','THU':'Quinta','FRI':'Sexta','SAT':'Sábado','SUN':'Domingo','HX':'Conforme NOTAM','H24':'24 horas'};
+        const daysStr=(days||'DLY').split(/[,\s]+/).map(d=>dayLabel[d.toUpperCase()]||d).join(', ');
+        adHr=`Horário de funcionamento: ${daysStr} ${begin}-${end} (UTC-3)`;
+      }
     }
 
     // Informação Adicional from remarks
