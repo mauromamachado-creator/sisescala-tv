@@ -319,6 +319,7 @@ footer a{color:var(--vc1);cursor:pointer;text-decoration:underline;white-space:n
 .cal-span-bar.ev-vc2{background:rgba(0,255,136,.2);color:var(--vc2);border-top:2px solid var(--vc2);border-bottom:2px solid var(--vc2)}
 .cal-span-bar.ev-diario{background:rgba(190,160,255,.25);color:#c8a8ff;border-top:2px solid #c8a8ff;border-bottom:2px solid #c8a8ff}
 .cal-span-bar.ev-ferias{background:rgba(255,159,67,.2);color:#ff9f43;border-top:2px solid #ff9f43;border-bottom:2px solid #ff9f43}
+.cal-span-bar.ev-ferias-trip{background:rgba(230,126,34,.2);color:#e67e22;border-top:2px solid #e67e22;border-bottom:2px solid #e67e22}
 .cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding:10px 14px;background:#0d1220;border-radius:8px;border:1px solid #1a2a40}
 .cal-legend-item{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--text2)}
 .cal-legend-swatch{width:28px;height:12px;border-radius:3px}
@@ -2046,7 +2047,9 @@ if(!window._calFilters){
   if(window._calFilters.vc2==null)window._calFilters.vc2=true;
   if(window._calFilters.previsao==null)window._calFilters.previsao=true;
   if(window._calFilters.intl==null)window._calFilters.intl=true;
-  if(window._calFilters.ferias==null)window._calFilters.ferias=false;
+  if(window._calFilters.feriasPilotos==null)window._calFilters.feriasPilotos=false;
+  if(window._calFilters.feriasTrip==null)window._calFilters.feriasTrip=false;
+  delete window._calFilters.ferias; // migrar filtro antigo
 }
 function _calToggle(key){window._calFilters[key]=!window._calFilters[key];sessionStorage.setItem('sisgopa_cal_filters',JSON.stringify(window._calFilters));renderScreenCalendar();}
 
@@ -2069,7 +2072,8 @@ function renderScreenCalendar(){
   html+=_fb('vc2','✈️ VC-2','#00ff88');
   html+=_fb('previsao','📋 Previsão','#c8a8ff');
   html+=_fb('intl','🌍 Internacional','#ffc832');
-  html+=_fb('ferias','🏖 Férias','#ff9f43');
+  html+=_fb('feriasPilotos','🏖 Férias Pilotos','#ff9f43');
+  html+=_fb('feriasTrip','🏖 Férias Tripulantes','#e67e22');
   html+=`</div>`;
 
   html+='<div class="cal-grid">';
@@ -2157,8 +2161,8 @@ function renderScreenCalendar(){
   });
 
   // 4) Férias — barras laranja quando filtro ativo (pilotos + tripulantes)
-  if(cf.ferias){
-    // Pilotos (feriasData)
+  // 4a) Férias Pilotos
+  if(cf.feriasPilotos){
     (feriasData||[]).forEach(f=>{
       if(!f.trigrama||!f.inicio||!f.fim)return;
       const sd=f.inicio;const ed=f.fim;
@@ -2171,7 +2175,9 @@ function renderScreenCalendar(){
         isStart:sd.getMonth()===calMonth&&sd.getFullYear()===calYear,
         isEnd:ed.getMonth()===calMonth&&ed.getFullYear()===calYear});
     });
-    // Tripulantes (feriasTripData)
+  }
+  // 4b) Férias Tripulantes
+  if(cf.feriasTrip){
     (feriasTripData||[]).forEach(f=>{
       if(!f.nome||!f.inicio||!f.fim)return;
       const sd=f.inicio;const ed=f.fim;
@@ -2180,7 +2186,7 @@ function renderScreenCalendar(){
       if(sd>monthEnd||ed<monthStart)return;
       const clampStart=sd<monthStart?1:sd.getDate();
       const clampEnd=ed>monthEnd?daysInMonth:ed.getDate();
-      spanEvents.push({text:`🏖 ${f.nome}`,cls:'ev-ferias',start:clampStart,end:clampEnd,
+      spanEvents.push({text:`🏖 ${f.nome}`,cls:'ev-ferias-trip',start:clampStart,end:clampEnd,
         isStart:sd.getMonth()===calMonth&&sd.getFullYear()===calYear,
         isEnd:ed.getMonth()===calMonth&&ed.getFullYear()===calYear});
     });
@@ -2255,7 +2261,8 @@ function renderScreenCalendar(){
     ${cf.vc2?'<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(0,255,136,.25);border:1px solid var(--vc2)"></div>VC-2 2590 — missão com OM</div>':''}
     ${cf.previsao?'<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(190,160,255,.25);border:1px solid #c8a8ff"></div>Previsão (diário)</div>':''}
     ${cf.intl?'<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(255,200,50,.25);border:1px solid #ffc832"></div>🌍 Missão internacional</div>':''}
-    ${cf.ferias?'<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(255,159,67,.25);border:1px solid #ff9f43"></div>🏖 Férias</div>':''}
+    ${cf.feriasPilotos?'<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(255,159,67,.25);border:1px solid #ff9f43"></div>🏖 Férias Pilotos</div>':''}
+    ${cf.feriasTrip?'<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(230,126,34,.25);border:1px solid #e67e22"></div>🏖 Férias Tripulantes</div>':''}
   </div>`;
   document.getElementById('screen6').innerHTML=html;
 }
