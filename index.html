@@ -6560,7 +6560,7 @@ async function getAiswebData(icao){
     const r=await fetchWithTimeout(_aiswebApiUrl('rotaer',icao),15000);
     if(!r.ok){sourceStatus.aisweb='fail';return empty;}
     const xml=await r.text();
-    if(!xml||xml.includes('Serviço')){sourceStatus.aisweb='fail';return empty;}
+    if(!xml||(!xml.includes('<AeroCode')&&xml.includes('Serviço indisponível'))){sourceStatus.aisweb='fail';return empty;}
     sourceStatus.aisweb='ok';
 
     // Basic info
