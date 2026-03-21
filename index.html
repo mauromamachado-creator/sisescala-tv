@@ -6522,7 +6522,7 @@ function haversine(lat1,lon1,lat2,lon2){
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*toRad)*Math.cos(lat2*toRad)*Math.sin(dLon/2)**2;
   return R*2*Math.asin(Math.sqrt(a));
 }
-function roundNearest5(min){return Math.round(min/5)*5;}
+function roundNearest5(min){return Math.ceil(min/5)*5;}
 function formatTime(h){const m=roundNearest5(h*60);return `${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}min`;}
 
 async function getAirportInfo(icao){
