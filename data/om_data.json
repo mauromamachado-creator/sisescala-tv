@@ -1161,5 +1161,72 @@
     "drive_names": {
       "1ZMVyQSdXPl6a7fQTPTYu7hLDqeYerGN7": "117_GTE1_2026 (VC-2 - SBCF).pdf"
     }
+  },
+  {
+    "aeronave": "VC-2",
+    "om_numero": "118/GTE-1/2026",
+    "om": "118/GTE-1/2026",
+    "fab": "FAB 2590",
+    "data": "21/03/26",
+    "tipo": "ESCAV",
+    "missao": "PR TLD/PR VER, PR RES/PR ESCAV, PR ESCAV",
+    "tripulacao": [
+      "MJ DA SILVA  (DSA / 553.262)",
+      "CP ALEXANDRE (ALX / 563.382)",
+      "CP CASTRO (CAS / 505.768)",
+      "CP GABRIEL TODESCO (TOD / 515.359)",
+      "SO VINÍCIUS (474.042)",
+      "2S ZITO (572.344)",
+      "1S MACÊDO (522.897)",
+      "1S CUNHA (459.354)",
+      "1S SANTIAGO (PR) (525.328)",
+      "2S ANJOS (548.988)",
+      "2S CIRILO (PR) (548.498)"
+    ],
+    "pernas": [
+      {
+        "origem": "SBBR",
+        "origem_nome": "SBBR (EST AUT)",
+        "etd": "21/03/26 - 14:20 Z / UTC-3",
+        "ete": "04:40",
+        "destino": "SKBO",
+        "destino_nome": "SKBO (AEROP)",
+        "eta": "21/03/26 - 19:00 Z / UTC-5",
+        "alternativa": "SKRG",
+        "comb_min": 13000,
+        "comb_rec": 15000
+      },
+      {
+        "origem": "SKBO",
+        "origem_nome": "SKBO (AEROP)",
+        "etd": "22/03/26 - 00:00 Z / UTC-5",
+        "ete": "02:40",
+        "destino": "SBEG",
+        "destino_nome": "SBEG (AEROP)",
+        "eta": "22/03/26 - 02:40 Z / UTC-4",
+        "alternativa": "SBBV",
+        "comb_min": 9000,
+        "comb_rec": 10000
+      },
+      {
+        "origem": "SBEG",
+        "origem_nome": "SBEG (AEROP)",
+        "etd": "22/03/26 - 03:40 Z / UTC-4",
+        "ete": "02:45",
+        "destino": "SBBR",
+        "destino_nome": "SBBR (EST AUT)",
+        "eta": "22/03/26 - 06:25 Z / UTC-3",
+        "alternativa": "SBCF",
+        "comb_min": 9000,
+        "comb_rec": 10000
+      }
+    ],
+    "file_id": "1ihklgZlefTvN7eB7MmovDonYlIYAuXdS",
+    "file_ids": [
+      "1ihklgZlefTvN7eB7MmovDonYlIYAuXdS"
+    ],
+    "drive_names": {
+      "1ihklgZlefTvN7eB7MmovDonYlIYAuXdS": "VC2 RESCAV SKBO OM_118_GTE1_2026.pdf"
+    }
   }
 ]
