@@ -6627,10 +6627,22 @@ async function getAiswebData(icao){
     if(tsBlocks.length){
       const begin=_xmlTag(tsBlocks[0],'begin');
       const end=_xmlTag(tsBlocks[0],'end');
-      const days=_xmlTag(tsBlocks[0],'day');
+      const dayTags=_xmlTags(tsBlocks[0],'day');
+      const dayLabel={'DLY':'Diário','MON':'Segunda','TUE':'Terça','WED':'Quarta','THU':'Quinta','FRI':'Sexta','SAT':'Sábado','SUN':'Domingo','HX':'Conforme NOTAM','H24':'24 horas'};
       if(begin&&end){
-        const dayLabel={'DLY':'Diário','MON':'Segunda','TUE':'Terça','WED':'Quarta','THU':'Quinta','FRI':'Sexta','SAT':'Sábado','SUN':'Domingo','HX':'Conforme NOTAM','H24':'24 horas'};
-        const daysStr=(days||'DLY').split(/[,\s]+/).map(d=>dayLabel[d.toUpperCase()]||d).join(', ');
+        const days=dayTags.length?dayTags.map(d=>d.trim().toUpperCase()):['DLY'];
+        // Agrupar dias consecutivos (ex: SEG a SEX)
+        const weekOrder=['MON','TUE','WED','THU','FRI','SAT','SUN'];
+        const translated=days.map(d=>dayLabel[d]||d);
+        let daysStr;
+        if(days.length>=5&&days.includes('MON')&&days.includes('FRI')){
+          const hasSat=days.includes('SAT'),hasSun=days.includes('SUN');
+          if(hasSat&&hasSun)daysStr='Diário';
+          else if(hasSat)daysStr='Segunda a Sábado';
+          else daysStr='Segunda a Sexta';
+        }else{
+          daysStr=translated.join(', ');
+        }
         adHr=`Horário de funcionamento: ${daysStr} ${begin}-${end} (UTC-3)`;
       }
     }
